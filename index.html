@@ -71,7 +71,7 @@ body{margin:0;font-family:Arial,"Microsoft YaHei",sans-serif;background:#f5f6f8;
 .form-item label{display:block;font-size:13px;font-weight:600;margin-bottom:7px}
 .form-item input,.form-item select,.form-item textarea{width:100%;height:40px;border:1px solid #d0d5dd;border-radius:6px;padding:0 10px;font-family:inherit;font-size:14px}
 .form-item textarea{height:72px;padding:8px 10px;resize:vertical}
-.form-item input:disabled,.form-item select:disabled{background:#f8fafc;color:#667085}
+.form-item input:disabled,.form-item select:disabled,.form-item input[readonly]{background:#f8fafc;color:#667085}
 .req{color:#d92d20}
 .modal-mask{align-items:center;justify-content:center}
 .modal{background:#fff;border-radius:10px;width:500px;max-width:calc(100% - 32px);padding:24px;max-height:90vh;overflow:auto}
@@ -134,8 +134,8 @@ body{margin:0;font-family:Arial,"Microsoft YaHei",sans-serif;background:#f5f6f8;
           <div class="hint">默认停用，需管理员手动激活</div>
         </div>
         <div class="form-item full"><label>库区数量</label>
-          <input id="whZoneCount" disabled>
-          <div class="hint">默认 3 大库区（收货区 / 存储区 / 待发货区），最多 8 个。双击列表中的库区数量可进入库区管理</div>
+          <input id="whZoneCount" readonly title="编辑已有仓库时，双击可进入库区管理" ondblclick="openZonesFromForm()">
+          <div class="hint">默认 3 大库区（收货区 / 存储区 / 待发货区），最多 8 个。双击该字段或列表中的库区数量可进入库区管理</div>
         </div>
       </div>
 
@@ -553,6 +553,7 @@ function openWarehouse(id){
   document.getElementById("whZoneCount").value = isEdit
     ? `${editingWarehouse.zones.length}（最多 ${MAX_ZONES}）`
     : `3（创建后自动生成收货区、存储区、待发货区）`;
+  document.getElementById("whZoneCount").style.cursor = isEdit ? "pointer" : "default";
   document.getElementById("whCountry").value = editingWarehouse?.country || "";
   document.getElementById("whProvince").value = editingWarehouse?.province || "";
   document.getElementById("whCity").value = editingWarehouse?.city || "";
@@ -570,6 +571,12 @@ function openWarehouse(id){
 }
 
 function closeDrawer(){ document.getElementById("drawerMask").style.display = "none"; }
+
+function openZonesFromForm(){
+  if(!editingWarehouse){ toast("请先保存仓库后再管理库区"); return; }
+  closeDrawer();
+  enterZoneModule(editingWarehouse.id);
+}
 
 function readWarehouseForm(){
   return {
