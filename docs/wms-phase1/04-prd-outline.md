@@ -1,6 +1,6 @@
 # 库存管理（仓库管理）PRD 大纲
 
-版本：v0.1 大纲（已被 [05-warehouse-prd.md](./05-warehouse-prd.md) v0.9 取代）  
+版本：v0.1 大纲（历史；正文见 [05-warehouse-prd.md](./05-warehouse-prd.md) **v0.10**）  
 产品：微型仓 WMS 一期  
 模块：库存管理  
 日期：2026-08-19
