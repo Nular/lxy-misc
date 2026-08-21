@@ -13,6 +13,16 @@ Warehouse Management System (WMS) interactive HTML prototype based on PRD specif
 
 ## Quick Start
 
+### 单文件版（推荐，无需服务器）
+
+直接双击打开：
+
+```
+prototype/kickbazar-wms-prototype.html
+```
+
+### 多文件版
+
 ```bash
 cd prototype
 python3 -m http.server 8080
