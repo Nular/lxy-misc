@@ -143,6 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initNavigation();
   initInventoryTabs();
   initRecordTabs();
+  renderHome();
   renderWarehouses();
   renderZones();
   renderSpuTable();
@@ -178,6 +179,88 @@ function navigateTo(pageId) {
 
   const navItem = document.querySelector(`.nav-item[data-page="${pageId}"]`);
   if (navItem) navItem.classList.add('active');
+
+  if (pageId === 'home') renderHome();
+}
+
+// ========== Home / Dashboard ==========
+function renderHome() {
+  const totalStock = warehouses.reduce((s, w) => s + w.total, 0);
+  const totalLocked = warehouses.reduce((s, w) => s + w.locked, 0);
+  const totalAvailable = warehouses.reduce((s, w) => s + w.available, 0);
+  const activeWarehouses = warehouses.filter(w => w.status === 'enable').length;
+
+  document.getElementById('dashboard-kpi').innerHTML = `
+    <div class="kpi-card total">
+      <span class="kpi-label">Total Inventory</span>
+      <span class="kpi-value">${totalStock.toLocaleString()}</span>
+      <span class="kpi-sub">Across ${warehouses.length} warehouses</span>
+    </div>
+    <div class="kpi-card locked">
+      <span class="kpi-label">Locked Inventory</span>
+      <span class="kpi-value">${totalLocked.toLocaleString()}</span>
+      <span class="kpi-sub">Reserved for outbound orders</span>
+    </div>
+    <div class="kpi-card available">
+      <span class="kpi-label">Available Inventory</span>
+      <span class="kpi-value">${totalAvailable.toLocaleString()}</span>
+      <span class="kpi-sub">Total − Locked (real-time)</span>
+    </div>
+    <div class="kpi-card warehouses">
+      <span class="kpi-label">Active Warehouses</span>
+      <span class="kpi-value">${activeWarehouses}</span>
+      <span class="kpi-sub">${warehouses.length} total registered</span>
+    </div>
+  `;
+
+  document.getElementById('dashboard-warehouse-table').innerHTML = warehouses
+    .filter(w => w.total > 0)
+    .map(w => `
+      <tr onclick="navigateTo('warehouse-management')" style="cursor:pointer">
+        <td><strong>${w.id}</strong><br><span style="color:#999;font-size:11px">${w.name}</span></td>
+        <td>${getStatusTag(w.status)}</td>
+        <td>${w.total.toLocaleString()}</td>
+        <td>${w.locked.toLocaleString()}</td>
+        <td>${w.available.toLocaleString()}</td>
+      </tr>
+    `).join('') || '<tr><td colspan="5" style="text-align:center;color:#999">No inventory data</td></tr>';
+
+  const allRecords = [
+    ...recordData.inbound,
+    ...recordData.occupy,
+    ...recordData.deduct,
+    ...recordData.unfreeze
+  ].sort((a, b) => b.time.localeCompare(a.time)).slice(0, 6);
+
+  const typeClass = {
+    'Purchase Inbound': 'type-inbound', 'Manual Adjustment': 'type-inbound',
+    'Outbound Occupy': 'type-occupy', 'Outbound Deduct': 'type-deduct', 'Unfreeze': 'type-unfreeze'
+  };
+
+  document.getElementById('dashboard-activity-table').innerHTML = allRecords.map(r => `
+    <tr onclick="navigateTo('record')" style="cursor:pointer">
+      <td>${r.time.split(' ')[0]}<br><span style="color:#999;font-size:11px">${r.time.split(' ')[1]}</span></td>
+      <td class="${typeClass[r.type] || ''}">${r.type}</td>
+      <td>${r.sku}</td>
+      <td style="font-weight:500">${r.qty}</td>
+      <td>${r.order}</td>
+    </tr>
+  `).join('');
+
+  const quickLinks = [
+    { page: 'warehouse-management', icon: '🏭', title: 'Warehouses', desc: 'Manage warehouse master data' },
+    { page: 'zone-management', icon: '📦', title: 'Zones', desc: 'Configure storage zones' },
+    { page: 'spu-sku-inventory', icon: '📊', title: 'Inventory', desc: 'View SPU/SKU stock levels' },
+    { page: 'record', icon: '📋', title: 'Records', desc: 'Track inventory transactions' }
+  ];
+
+  document.getElementById('dashboard-quick-access').innerHTML = quickLinks.map(q => `
+    <div class="quick-card" onclick="navigateTo('${q.page}')">
+      <span class="quick-icon">${q.icon}</span>
+      <span class="quick-title">${q.title}</span>
+      <span class="quick-desc">${q.desc}</span>
+    </div>
+  `).join('');
 }
 
 function navigateToZones(warehouseId) {
@@ -197,7 +280,11 @@ function navigateToZonesFromWarehouse() {
   navigateToZones(whId);
 }
 
-// ========== Warehouse Management ==========
+function refreshDashboard() {
+  if (document.getElementById('page-home').classList.contains('active')) {
+    renderHome();
+  }
+}
 function getAttributeTag(attr) {
   const map = { normal: 'tag-normal', fireproof: 'tag-fireproof', thermostatic: 'tag-thermostatic', 'cold chain': 'tag-cold' };
   const labels = { normal: 'Normal', fireproof: 'Fireproof', thermostatic: 'Thermostatic', 'cold chain': 'Cold Chain' };
@@ -355,6 +442,7 @@ function submitWarehouse() {
 
     closeModal('warehouse-modal');
     renderWarehouses();
+    refreshDashboard();
     if (wasDisabled && newStatus === 'enable') {
       showToast('Warehouse updated. Warehouse active. Ready for inbound/outbound operations.', 'success');
     } else {
@@ -385,6 +473,7 @@ function submitWarehouse() {
     closeModal('warehouse-modal');
     renderWarehouses();
     populateWarehouseSelects();
+    refreshDashboard();
     showToast('Warehouse created (Inactive). 3 default zones auto-generated. Enable to start operations.', 'success');
     setTimeout(() => navigateToZones(newId), 1500);
   }
@@ -416,6 +505,7 @@ function confirmDeleteWarehouse() {
   renderWarehouses();
   renderZones();
   populateWarehouseSelects();
+  refreshDashboard();
   showToast('Deleted successfully.', 'success');
 }
 
@@ -549,6 +639,7 @@ function submitZone() {
     closeModal('zone-modal');
     renderZones();
     renderWarehouses();
+    refreshDashboard();
     showToast('Zone created.', 'success');
   }
   document.getElementById('zone-wh-id').disabled = false;
@@ -580,6 +671,7 @@ function confirmDeleteZone() {
   closeModal('delete-zone-modal');
   renderZones();
   renderWarehouses();
+  refreshDashboard();
   showToast('Deleted successfully.', 'success');
 }
 

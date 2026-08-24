@@ -883,13 +883,156 @@ tbody tr.selected {
   display: block;
   margin-bottom: 4px;
 }
+
+/* Dashboard / Homepage */
+.dashboard-body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.dashboard-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.kpi-card {
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: box-shadow 0.2s;
+}
+
+.kpi-card:hover {
+  box-shadow: var(--shadow);
+}
+
+.kpi-card .kpi-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.kpi-card .kpi-value {
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.kpi-card .kpi-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.kpi-card.total { border-top: 3px solid var(--primary); }
+.kpi-card.locked { border-top: 3px solid var(--warning); }
+.kpi-card.available { border-top: 3px solid var(--success); }
+.kpi-card.warehouses { border-top: 3px solid #722ed1; }
+
+.kpi-card.total .kpi-value { color: var(--primary); }
+.kpi-card.locked .kpi-value { color: var(--warning); }
+.kpi-card.available .kpi-value { color: var(--success); }
+.kpi-card.warehouses .kpi-value { color: #722ed1; }
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.dashboard-panel {
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+  background: #fafafa;
+}
+
+.panel-header h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.dashboard-table {
+  border: none;
+  border-radius: 0;
+  max-height: 260px;
+}
+
+.dashboard-table table {
+  font-size: 12px;
+}
+
+.dashboard-table th,
+.dashboard-table td {
+  padding: 10px 16px;
+}
+
+.quick-access-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  padding: 16px 20px 20px;
+}
+
+.quick-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.quick-card:hover {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+.quick-card .quick-icon {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.quick-card .quick-title {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.quick-card .quick-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.quick-card:hover .quick-desc {
+  color: var(--primary);
+  opacity: 0.8;
+}
   </style>
 </head>
 <body>
   <div class="app-container">
     <!-- Header -->
     <header class="header">
-      <div class="logo">
+      <div class="logo" onclick="navigateTo('home')" style="cursor:pointer" title="Back to Home">
         <div class="logo-icon"></div>
         <span>KickBazar</span>
       </div>
@@ -898,6 +1041,10 @@ tbody tr.selected {
     <div class="main-layout">
       <!-- Sidebar -->
       <nav class="sidebar" id="sidebar">
+        <div class="nav-item active" data-page="home">
+          <span>Home</span>
+        </div>
+
         <div class="nav-item parent" data-group="inventory">
           <span>Inventory</span>
           <span class="chevron">▼</span>
@@ -917,14 +1064,76 @@ tbody tr.selected {
           <span>Warehouses</span>
           <span class="chevron">▼</span>
         </div>
-        <div class="nav-item sub active" data-page="warehouse-management">Warehouse Management</div>
+        <div class="nav-item sub" data-page="warehouse-management">Warehouse Management</div>
         <div class="nav-item sub" data-page="zone-management">Zone Management</div>
       </nav>
 
       <!-- Content Area -->
       <main class="content">
+        <!-- ========== HOME / DASHBOARD ========== -->
+        <div class="page active" id="page-home">
+          <div class="page-header">
+            <h1 class="page-title">Dashboard</h1>
+            <p class="page-subtitle">Warehouse inventory overview and recent activity</p>
+          </div>
+          <div class="page-body dashboard-body">
+            <div class="dashboard-kpi-row" id="dashboard-kpi"></div>
+
+            <div class="dashboard-grid">
+              <div class="dashboard-panel">
+                <div class="panel-header">
+                  <h3>Warehouse Inventory</h3>
+                  <a class="btn-link" onclick="navigateTo('warehouse-management')">View All →</a>
+                </div>
+                <div class="table-wrapper dashboard-table">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Warehouse</th>
+                        <th>Status</th>
+                        <th>Total</th>
+                        <th>Locked</th>
+                        <th>Available</th>
+                      </tr>
+                    </thead>
+                    <tbody id="dashboard-warehouse-table"></tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div class="dashboard-panel">
+                <div class="panel-header">
+                  <h3>Recent Activity</h3>
+                  <a class="btn-link" onclick="navigateTo('record')">View All →</a>
+                </div>
+                <div class="table-wrapper dashboard-table">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Time</th>
+                        <th>Type</th>
+                        <th>SKU</th>
+                        <th>Qty</th>
+                        <th>Order</th>
+                      </tr>
+                    </thead>
+                    <tbody id="dashboard-activity-table"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <div class="dashboard-panel">
+              <div class="panel-header">
+                <h3>Quick Access</h3>
+              </div>
+              <div class="quick-access-grid" id="dashboard-quick-access"></div>
+            </div>
+          </div>
+        </div>
+
         <!-- ========== WAREHOUSE MANAGEMENT ========== -->
-        <div class="page active" id="page-warehouse-management">
+        <div class="page" id="page-warehouse-management">
           <div class="page-header">
             <h1 class="page-title">Warehouse Management</h1>
             <p class="page-subtitle">Create and maintain warehouse master data</p>
@@ -1689,6 +1898,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initNavigation();
   initInventoryTabs();
   initRecordTabs();
+  renderHome();
   renderWarehouses();
   renderZones();
   renderSpuTable();
@@ -1724,6 +1934,88 @@ function navigateTo(pageId) {
 
   const navItem = document.querySelector(`.nav-item[data-page="${pageId}"]`);
   if (navItem) navItem.classList.add('active');
+
+  if (pageId === 'home') renderHome();
+}
+
+// ========== Home / Dashboard ==========
+function renderHome() {
+  const totalStock = warehouses.reduce((s, w) => s + w.total, 0);
+  const totalLocked = warehouses.reduce((s, w) => s + w.locked, 0);
+  const totalAvailable = warehouses.reduce((s, w) => s + w.available, 0);
+  const activeWarehouses = warehouses.filter(w => w.status === 'enable').length;
+
+  document.getElementById('dashboard-kpi').innerHTML = `
+    <div class="kpi-card total">
+      <span class="kpi-label">Total Inventory</span>
+      <span class="kpi-value">${totalStock.toLocaleString()}</span>
+      <span class="kpi-sub">Across ${warehouses.length} warehouses</span>
+    </div>
+    <div class="kpi-card locked">
+      <span class="kpi-label">Locked Inventory</span>
+      <span class="kpi-value">${totalLocked.toLocaleString()}</span>
+      <span class="kpi-sub">Reserved for outbound orders</span>
+    </div>
+    <div class="kpi-card available">
+      <span class="kpi-label">Available Inventory</span>
+      <span class="kpi-value">${totalAvailable.toLocaleString()}</span>
+      <span class="kpi-sub">Total − Locked (real-time)</span>
+    </div>
+    <div class="kpi-card warehouses">
+      <span class="kpi-label">Active Warehouses</span>
+      <span class="kpi-value">${activeWarehouses}</span>
+      <span class="kpi-sub">${warehouses.length} total registered</span>
+    </div>
+  `;
+
+  document.getElementById('dashboard-warehouse-table').innerHTML = warehouses
+    .filter(w => w.total > 0)
+    .map(w => `
+      <tr onclick="navigateTo('warehouse-management')" style="cursor:pointer">
+        <td><strong>${w.id}</strong><br><span style="color:#999;font-size:11px">${w.name}</span></td>
+        <td>${getStatusTag(w.status)}</td>
+        <td>${w.total.toLocaleString()}</td>
+        <td>${w.locked.toLocaleString()}</td>
+        <td>${w.available.toLocaleString()}</td>
+      </tr>
+    `).join('') || '<tr><td colspan="5" style="text-align:center;color:#999">No inventory data</td></tr>';
+
+  const allRecords = [
+    ...recordData.inbound,
+    ...recordData.occupy,
+    ...recordData.deduct,
+    ...recordData.unfreeze
+  ].sort((a, b) => b.time.localeCompare(a.time)).slice(0, 6);
+
+  const typeClass = {
+    'Purchase Inbound': 'type-inbound', 'Manual Adjustment': 'type-inbound',
+    'Outbound Occupy': 'type-occupy', 'Outbound Deduct': 'type-deduct', 'Unfreeze': 'type-unfreeze'
+  };
+
+  document.getElementById('dashboard-activity-table').innerHTML = allRecords.map(r => `
+    <tr onclick="navigateTo('record')" style="cursor:pointer">
+      <td>${r.time.split(' ')[0]}<br><span style="color:#999;font-size:11px">${r.time.split(' ')[1]}</span></td>
+      <td class="${typeClass[r.type] || ''}">${r.type}</td>
+      <td>${r.sku}</td>
+      <td style="font-weight:500">${r.qty}</td>
+      <td>${r.order}</td>
+    </tr>
+  `).join('');
+
+  const quickLinks = [
+    { page: 'warehouse-management', icon: '🏭', title: 'Warehouses', desc: 'Manage warehouse master data' },
+    { page: 'zone-management', icon: '📦', title: 'Zones', desc: 'Configure storage zones' },
+    { page: 'spu-sku-inventory', icon: '📊', title: 'Inventory', desc: 'View SPU/SKU stock levels' },
+    { page: 'record', icon: '📋', title: 'Records', desc: 'Track inventory transactions' }
+  ];
+
+  document.getElementById('dashboard-quick-access').innerHTML = quickLinks.map(q => `
+    <div class="quick-card" onclick="navigateTo('${q.page}')">
+      <span class="quick-icon">${q.icon}</span>
+      <span class="quick-title">${q.title}</span>
+      <span class="quick-desc">${q.desc}</span>
+    </div>
+  `).join('');
 }
 
 function navigateToZones(warehouseId) {
@@ -1743,7 +2035,11 @@ function navigateToZonesFromWarehouse() {
   navigateToZones(whId);
 }
 
-// ========== Warehouse Management ==========
+function refreshDashboard() {
+  if (document.getElementById('page-home').classList.contains('active')) {
+    renderHome();
+  }
+}
 function getAttributeTag(attr) {
   const map = { normal: 'tag-normal', fireproof: 'tag-fireproof', thermostatic: 'tag-thermostatic', 'cold chain': 'tag-cold' };
   const labels = { normal: 'Normal', fireproof: 'Fireproof', thermostatic: 'Thermostatic', 'cold chain': 'Cold Chain' };
@@ -1901,6 +2197,7 @@ function submitWarehouse() {
 
     closeModal('warehouse-modal');
     renderWarehouses();
+    refreshDashboard();
     if (wasDisabled && newStatus === 'enable') {
       showToast('Warehouse updated. Warehouse active. Ready for inbound/outbound operations.', 'success');
     } else {
@@ -1931,6 +2228,7 @@ function submitWarehouse() {
     closeModal('warehouse-modal');
     renderWarehouses();
     populateWarehouseSelects();
+    refreshDashboard();
     showToast('Warehouse created (Inactive). 3 default zones auto-generated. Enable to start operations.', 'success');
     setTimeout(() => navigateToZones(newId), 1500);
   }
@@ -1962,6 +2260,7 @@ function confirmDeleteWarehouse() {
   renderWarehouses();
   renderZones();
   populateWarehouseSelects();
+  refreshDashboard();
   showToast('Deleted successfully.', 'success');
 }
 
@@ -2095,6 +2394,7 @@ function submitZone() {
     closeModal('zone-modal');
     renderZones();
     renderWarehouses();
+    refreshDashboard();
     showToast('Zone created.', 'success');
   }
   document.getElementById('zone-wh-id').disabled = false;
@@ -2126,6 +2426,7 @@ function confirmDeleteZone() {
   closeModal('delete-zone-modal');
   renderZones();
   renderWarehouses();
+  refreshDashboard();
   showToast('Deleted successfully.', 'success');
 }
 
