@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1440">
+  <title>KickBazar WMS - Dashboard</title>
+  <style>
+    :root {
+      --header-height: 56px;
+      --sidebar-width: 220px;
+      --border-color: #e8e8e8;
+      --bg-gray: #f5f5f5;
+      --text-primary: #333;
+      --text-secondary: #666;
+      --text-muted: #999;
+      --primary: #1890ff;
+      --primary-light: #e6f7ff;
+      --success: #52c41a;
+      --success-bg: #f6ffed;
+      --danger: #ff4d4f;
+      --warning: #faad14;
+      --warning-bg: #fffbe6;
+      --purple: #722ed1;
+      --purple-bg: #f9f0ff;
+      --cyan: #13c2c2;
+      --cyan-bg: #e6fffb;
+      --logo-pink: #e85d75;
+      --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      font-size: 14px;
+      color: var(--text-primary);
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .app-container {
+      width: 1440px;
+      height: 900px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      border: 1px solid var(--border-color);
+    }
+
+    .header {
+      height: var(--header-height);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      background: #fff;
+      flex-shrink: 0;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 700;
+      font-size: 18px;
+    }
+
+    .logo-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--logo-pink);
+      border-radius: 50% 50% 50% 20%;
+      position: relative;
+    }
+
+    .logo-icon::before {
+      content: "";
+      position: absolute;
+      width: 8px; height: 12px;
+      background: #fff;
+      border-radius: 50%;
+      top: 8px; left: 6px;
+      box-shadow: 14px 0 0 #fff;
+    }
+
+    .logo-icon::after {
+      content: "";
+      position: absolute;
+      width: 16px; height: 10px;
+      background: rgba(255,255,255,0.6);
+      border-radius: 0 0 8px 8px;
+      bottom: 4px; left: 8px;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .header-date {
+      padding: 4px 12px;
+      background: var(--bg-gray);
+      border-radius: 4px;
+    }
+
+    .main-layout {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    .sidebar {
+      width: var(--sidebar-width);
+      background: var(--bg-gray);
+      border-right: 1px solid var(--border-color);
+      padding: 12px 0;
+      flex-shrink: 0;
+    }
+
+    .nav-item {
+      padding: 10px 16px 10px 24px;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+    }
+
+    .nav-item.active {
+      background: #fff;
+      color: var(--primary);
+      font-weight: 500;
+      border-right: 3px solid var(--primary);
+    }
+
+    .nav-item.sub { padding-left: 40px; font-size: 13px; color: var(--text-secondary); }
+    .nav-item.parent { font-weight: 500; }
+    .nav-item .chevron { margin-left: auto; font-size: 10px; color: var(--text-muted); }
+
+    .content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    .page-header {
+      padding: 20px 24px 16px;
+      border-bottom: 1px solid var(--border-color);
+      flex-shrink: 0;
+    }
+
+    .page-title { font-size: 20px; font-weight: 600; margin-bottom: 4px; }
+    .page-subtitle { font-size: 13px; color: var(--text-secondary); }
+
+    .page-body {
+      flex: 1;
+      overflow: auto;
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* KPI Cards */
+    .kpi-row {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 12px;
+    }
+
+    .kpi-card {
+      background: #fff;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      position: relative;
+      overflow: hidden;
+      transition: box-shadow 0.2s;
+    }
+
+    .kpi-card:hover { box-shadow: var(--shadow); }
+
+    .kpi-card::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+
+    .kpi-card.stock::before { background: var(--primary); }
+    .kpi-card.inbound::before { background: var(--cyan); }
+    .kpi-card.allocate::before { background: var(--warning); }
+    .kpi-card.pick::before { background: #fa8c16; }
+    .kpi-card.pack::before { background: var(--purple); }
+    .kpi-card.shipped::before { background: var(--success); }
+
+    .kpi-icon {
+      font-size: 20px;
+      line-height: 1;
+      margin-bottom: 2px;
+    }
+
+    .kpi-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+
+    .kpi-value {
+      font-size: 26px;
+      font-weight: 700;
+      line-height: 1.1;
+    }
+
+    .kpi-unit {
+      font-size: 13px;
+      font-weight: 400;
+      color: var(--text-secondary);
+      margin-left: 2px;
+    }
+
+    .kpi-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .kpi-card.stock .kpi-value { color: var(--primary); }
+    .kpi-card.inbound .kpi-value { color: var(--cyan); }
+    .kpi-card.allocate .kpi-value { color: var(--warning); }
+    .kpi-card.pick .kpi-value { color: #fa8c16; }
+    .kpi-card.pack .kpi-value { color: var(--purple); }
+    .kpi-card.shipped .kpi-value { color: var(--success); }
+
+    /* Main grid */
+    .dashboard-main {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 20px;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .panel {
+      background: #fff;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border-color);
+      background: #fafafa;
+      flex-shrink: 0;
+    }
+
+    .panel-header h3 {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .panel-body {
+      flex: 1;
+      overflow: auto;
+      padding: 0;
+    }
+
+    /* Pipeline */
+    .pipeline {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .pipeline-step {
+      display: flex;
+      align-items: stretch;
+      gap: 16px;
+      position: relative;
+    }
+
+    .pipeline-step:not(:last-child) .pipeline-line {
+      position: absolute;
+      left: 19px;
+      top: 40px;
+      bottom: -8px;
+      width: 2px;
+      background: var(--border-color);
+    }
+
+    .pipeline-dot {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+      z-index: 1;
+      border: 2px solid;
+    }
+
+    .pipeline-dot.inbound { background: var(--cyan-bg); border-color: var(--cyan); }
+    .pipeline-dot.allocate { background: var(--warning-bg); border-color: var(--warning); }
+    .pipeline-dot.pick { background: #fff7e6; border-color: #fa8c16; }
+    .pipeline-dot.pack { background: var(--purple-bg); border-color: var(--purple); }
+    .pipeline-dot.ship { background: var(--success-bg); border-color: var(--success); }
+
+    .pipeline-content {
+      flex: 1;
+      padding: 8px 0 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #f5f5f5;
+    }
+
+    .pipeline-step:last-child .pipeline-content { border-bottom: none; padding-bottom: 0; }
+
+    .pipeline-info h4 {
+      font-size: 14px;
+      font-weight: 500;
+      margin-bottom: 2px;
+    }
+
+    .pipeline-info p {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .pipeline-count {
+      text-align: right;
+    }
+
+    .pipeline-count .num {
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .pipeline-count .unit {
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    /* Quick Access */
+    .quick-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      padding: 16px;
+    }
+
+    .quick-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+      padding: 20px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-align: center;
+    }
+
+    .quick-card:hover {
+      border-color: var(--primary);
+      background: var(--primary-light);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow);
+    }
+
+    .quick-card .icon { font-size: 28px; line-height: 1; }
+    .quick-card .title { font-size: 14px; font-weight: 600; }
+    .quick-card .desc { font-size: 11px; color: var(--text-muted); }
+    .quick-card:hover .title { color: var(--primary); }
+    .quick-card:hover .desc { color: var(--primary); opacity: 0.7; }
+
+    /* Tables */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+
+    thead { background: #fafafa; }
+
+    th {
+      padding: 10px 16px;
+      text-align: left;
+      font-weight: 500;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border-color);
+      white-space: nowrap;
+      font-size: 12px;
+    }
+
+    td {
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border-color);
+      vertical-align: middle;
+    }
+
+    tbody tr:hover { background: #fafafa; }
+
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      line-height: 18px;
+    }
+
+    .tag-pending { background: var(--warning-bg); color: #d46b08; border: 1px solid #ffe58f; }
+    .tag-processing { background: var(--primary-light); color: var(--primary); border: 1px solid #91d5ff; }
+    .tag-done { background: var(--success-bg); color: var(--success); border: 1px solid #b7eb8f; }
+    .tag-urgent { background: #fff1f0; color: var(--danger); border: 1px solid #ffa39e; }
+
+    .bottom-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .stock-bar {
+      display: flex;
+      height: 6px;
+      border-radius: 3px;
+      overflow: hidden;
+      margin-top: 6px;
+      background: #f0f0f0;
+    }
+
+    .stock-bar .locked { background: var(--warning); }
+    .stock-bar .available { background: var(--success); }
+
+    .stock-legend {
+      display: flex;
+      gap: 16px;
+      margin-top: 8px;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .stock-legend span::before {
+      content: "";
+      display: inline-block;
+      width: 8px; height: 8px;
+      border-radius: 2px;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+
+    .stock-legend .l-locked::before { background: var(--warning); }
+    .stock-legend .l-available::before { background: var(--success); }
+
+    .toast-container {
+      position: fixed;
+      top: 72px; right: 24px;
+      z-index: 2000;
+    }
+
+    .toast {
+      padding: 12px 20px;
+      background: #fff;
+      border-radius: 4px;
+      box-shadow: var(--shadow);
+      border-left: 4px solid var(--primary);
+      animation: slideIn 0.3s ease;
+      font-size: 13px;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <header class="header">
+      <div class="logo">
+        <div class="logo-icon"></div>
+        <span>KickBazar</span>
+      </div>
+      <div class="header-right">
+        <span class="header-date" id="current-date"></span>
+        <span>Warehouse Management System</span>
+      </div>
+    </header>
+
+    <div class="main-layout">
+      <nav class="sidebar">
+        <div class="nav-item active"><span>Dashboard</span></div>
+        <div class="nav-item parent"><span>Inbound</span><span class="chevron">▼</span></div>
+        <div class="nav-item sub">Purchase Orders</div>
+        <div class="nav-item sub">Inbound Orders</div>
+        <div class="nav-item parent"><span>Outbound</span><span class="chevron">▼</span></div>
+        <div class="nav-item sub">Outbound Orders</div>
+        <div class="nav-item sub">Allocation</div>
+        <div class="nav-item sub">Picking</div>
+        <div class="nav-item sub">Packing</div>
+        <div class="nav-item parent"><span>Inventory</span><span class="chevron">▼</span></div>
+        <div class="nav-item sub">SPU/SKU Inventory</div>
+        <div class="nav-item sub">Record</div>
+        <div class="nav-item parent"><span>Warehouses</span><span class="chevron">▼</span></div>
+        <div class="nav-item sub">Warehouse Management</div>
+        <div class="nav-item sub">Zone Management</div>
+      </nav>
+
+      <main class="content">
+        <div class="page-header">
+          <h1 class="page-title">Dashboard</h1>
+          <p class="page-subtitle">Full WMS operations overview — inbound, outbound, inventory &amp; warehouse</p>
+        </div>
+
+        <div class="page-body">
+          <!-- KPI Row -->
+          <div class="kpi-row" id="kpi-row"></div>
+
+          <!-- Main: Pipeline + Quick Access -->
+          <div class="dashboard-main">
+            <div class="panel">
+              <div class="panel-header">
+                <h3>Outbound Pipeline</h3>
+                <span style="font-size:12px;color:#999">Today's order flow</span>
+              </div>
+              <div class="panel-body">
+                <div class="pipeline" id="pipeline"></div>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-header">
+                <h3>Quick Access</h3>
+              </div>
+              <div class="panel-body">
+                <div class="quick-grid" id="quick-access"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom: Inbound + Stock -->
+          <div class="bottom-row">
+            <div class="panel">
+              <div class="panel-header">
+                <h3>Pending Inbound</h3>
+                <span style="font-size:12px;color:#999">Vehicles awaiting unloading</span>
+              </div>
+              <div class="panel-body">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Vehicle No.</th>
+                      <th>PO / Inbound No.</th>
+                      <th>Warehouse</th>
+                      <th>SKUs</th>
+                      <th>ETA</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="inbound-table"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="panel">
+              <div class="panel-header">
+                <h3>Inventory by Warehouse</h3>
+                <span style="font-size:12px;color:#999">Total = Locked + Available</span>
+              </div>
+              <div class="panel-body">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Warehouse</th>
+                      <th>Total</th>
+                      <th>Locked</th>
+                      <th>Available</th>
+                      <th>Distribution</th>
+                    </tr>
+                  </thead>
+                  <tbody id="stock-table"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toast-container"></div>
+
+  <script>
+    const data = {
+      totalStock: 26060,
+      lockedStock: 4790,
+      availableStock: 21270,
+      pendingInboundVehicles: 3,
+      pendingAllocation: 12,
+      pendingPicking: 8,
+      pendingPacking: 5,
+      shippedToday: 156,
+
+      inboundVehicles: [
+        { vehicle: '沪A·D3821', order: 'PO-20260824001 / IN-24001', warehouse: 'SH-001', skus: 48, eta: '10:30', status: 'pending', urgent: true },
+        { vehicle: '京B·F9205', order: 'PO-20260824003 / IN-24003', warehouse: 'BJ-001', skus: 32, eta: '14:00', status: 'pending', urgent: false },
+        { vehicle: '粤C·H1147', order: 'PO-20260823008 / IN-23908', warehouse: 'SH-001', skus: 21, eta: '16:45', status: 'unloading', urgent: false }
+      ],
+
+      warehouses: [
+        { id: 'SH-001', name: 'Shanghai Main', total: 12580, locked: 2340, available: 10240 },
+        { id: 'BJ-001', name: 'Beijing DC', total: 8920, locked: 1560, available: 7360 },
+        { id: 'SG-001', name: 'Singapore Hub', total: 4560, locked: 890, available: 3670 }
+      ],
+
+      pipeline: [
+        { key: 'allocate', icon: '📋', title: 'Pending Allocation', desc: 'Orders awaiting warehouse & zone assignment', count: 12, unit: 'orders', color: 'allocate' },
+        { key: 'pick', icon: '🛒', title: 'Pending Picking', desc: 'Allocated orders awaiting pick confirmation', count: 8, unit: 'orders', color: 'pick' },
+        { key: 'pack', icon: '📦', title: 'Pending Packing', desc: 'Picked orders awaiting pack & label', count: 5, unit: 'orders', color: 'pack' },
+        { key: 'ship', icon: '🚚', title: 'Shipped Today', desc: 'Orders confirmed shipped today', count: 156, unit: 'orders', color: 'ship' }
+      ],
+
+      quickAccess: [
+        { icon: '📝', title: 'Purchase Orders', desc: 'Create & manage PO', action: 'Purchase Orders' },
+        { icon: '📥', title: 'Inbound', desc: 'Receive & putaway', action: 'Inbound' },
+        { icon: '📤', title: 'Outbound', desc: 'Allocate, pick & ship', action: 'Outbound' },
+        { icon: '🏗️', title: 'Zone Management', desc: 'Configure storage zones', action: 'Zone Management' }
+      ]
+    };
+
+    function render() {
+      document.getElementById('current-date').textContent =
+        new Date().toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
+
+      document.getElementById('kpi-row').innerHTML = `
+        <div class="kpi-card stock">
+          <span class="kpi-icon">📊</span>
+          <span class="kpi-label">Total Inventory</span>
+          <span class="kpi-value">${data.totalStock.toLocaleString()}</span>
+          <span class="kpi-sub">Locked ${data.lockedStock.toLocaleString()} · Available ${data.availableStock.toLocaleString()}</span>
+        </div>
+        <div class="kpi-card inbound">
+          <span class="kpi-icon">🚛</span>
+          <span class="kpi-label">Pending Inbound</span>
+          <span class="kpi-value">${data.pendingInboundVehicles}<span class="kpi-unit">vehicles</span></span>
+          <span class="kpi-sub">Awaiting unloading &amp; putaway</span>
+        </div>
+        <div class="kpi-card allocate">
+          <span class="kpi-icon">📋</span>
+          <span class="kpi-label">Pending Allocation</span>
+          <span class="kpi-value">${data.pendingAllocation}<span class="kpi-unit">orders</span></span>
+          <span class="kpi-sub">Awaiting warehouse assignment</span>
+        </div>
+        <div class="kpi-card pick">
+          <span class="kpi-icon">🛒</span>
+          <span class="kpi-label">Pending Picking</span>
+          <span class="kpi-value">${data.pendingPicking}<span class="kpi-unit">orders</span></span>
+          <span class="kpi-sub">Allocated, awaiting pick</span>
+        </div>
+        <div class="kpi-card pack">
+          <span class="kpi-icon">📦</span>
+          <span class="kpi-label">Pending Packing</span>
+          <span class="kpi-value">${data.pendingPacking}<span class="kpi-unit">orders</span></span>
+          <span class="kpi-sub">Picked, awaiting pack</span>
+        </div>
+        <div class="kpi-card shipped">
+          <span class="kpi-icon">✅</span>
+          <span class="kpi-label">Shipped Today</span>
+          <span class="kpi-value">${data.shippedToday}<span class="kpi-unit">orders</span></span>
+          <span class="kpi-sub">Confirmed shipped today</span>
+        </div>
+      `;
+
+      document.getElementById('pipeline').innerHTML = `
+        <div class="pipeline-step">
+          <div class="pipeline-dot inbound">🚛</div>
+          <div class="pipeline-line"></div>
+          <div class="pipeline-content">
+            <div class="pipeline-info">
+              <h4>Pending Inbound</h4>
+              <p>Vehicles at dock awaiting receiving &amp; putaway</p>
+            </div>
+            <div class="pipeline-count">
+              <div class="num" style="color:var(--cyan)">${data.pendingInboundVehicles}</div>
+              <div class="unit">vehicles</div>
+            </div>
+          </div>
+        </div>
+        ${data.pipeline.map(s => `
+          <div class="pipeline-step">
+            <div class="pipeline-dot ${s.color}">${s.icon}</div>
+            <div class="pipeline-line"></div>
+            <div class="pipeline-content">
+              <div class="pipeline-info">
+                <h4>${s.title}</h4>
+                <p>${s.desc}</p>
+              </div>
+              <div class="pipeline-count">
+                <div class="num">${s.count}</div>
+                <div class="unit">${s.unit}</div>
+              </div>
+            </div>
+          </div>
+        `).join('')}
+      `;
+
+      document.getElementById('quick-access').innerHTML = data.quickAccess.map(q => `
+        <div class="quick-card" onclick="showToast('Navigate to: ${q.action}')">
+          <span class="icon">${q.icon}</span>
+          <span class="title">${q.title}</span>
+          <span class="desc">${q.desc}</span>
+        </div>
+      `).join('');
+
+      const statusMap = {
+        pending: '<span class="tag tag-pending">Awaiting</span>',
+        unloading: '<span class="tag tag-processing">Unloading</span>'
+      };
+
+      document.getElementById('inbound-table').innerHTML = data.inboundVehicles.map(v => `
+        <tr>
+          <td><strong>${v.vehicle}</strong>${v.urgent ? ' <span class="tag tag-urgent">Urgent</span>' : ''}</td>
+          <td style="font-size:12px">${v.order}</td>
+          <td>${v.warehouse}</td>
+          <td>${v.skus}</td>
+          <td>${v.eta}</td>
+          <td>${statusMap[v.status]}</td>
+        </tr>
+      `).join('');
+
+      const maxTotal = Math.max(...data.warehouses.map(w => w.total));
+
+      document.getElementById('stock-table').innerHTML = data.warehouses.map(w => {
+        const lockedPct = w.total ? (w.locked / w.total * 100).toFixed(0) : 0;
+        const availPct = w.total ? (w.available / w.total * 100).toFixed(0) : 0;
+        return `
+          <tr>
+            <td><strong>${w.id}</strong><br><span style="color:#999;font-size:11px">${w.name}</span></td>
+            <td>${w.total.toLocaleString()}</td>
+            <td>${w.locked.toLocaleString()}</td>
+            <td>${w.available.toLocaleString()}</td>
+            <td style="min-width:120px">
+              <div class="stock-bar">
+                <div class="locked" style="width:${lockedPct}%"></div>
+                <div class="available" style="width:${availPct}%"></div>
+              </div>
+              <div class="stock-legend">
+                <span class="l-locked">Locked ${lockedPct}%</span>
+                <span class="l-available">Avail ${availPct}%</span>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function showToast(msg) {
+      const c = document.getElementById('toast-container');
+      const t = document.createElement('div');
+      t.className = 'toast';
+      t.textContent = msg + ' (prototype)';
+      c.appendChild(t);
+      setTimeout(() => t.remove(), 3000);
+    }
+
+    render();
+  </script>
+</body>
+</html>
