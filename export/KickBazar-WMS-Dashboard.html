@@ -167,12 +167,27 @@
     .kpi-card.pack .kpi-value { color: var(--purple); }
     .kpi-card.shipped .kpi-value { color: var(--success); }
 
-    /* Quick Access - horizontal action bar */
+    /* Quick Access */
+    .quick-section { display: flex; flex-direction: column; gap: 8px; }
+
+    .quick-section-label {
+      font-size: 12px; font-weight: 600; color: var(--text-secondary);
+      display: flex; align-items: center; gap: 8px;
+    }
+
+    .perm-badge {
+      font-size: 10px; font-weight: 500;
+      padding: 1px 6px; border-radius: 3px;
+      background: #fff1f0; color: #cf1322; border: 1px solid #ffa39e;
+    }
+
     .quick-bar {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
+      grid-template-columns: repeat(3, 1fr);
       gap: 12px;
     }
+
+    .quick-bar.admin { grid-template-columns: repeat(2, 1fr); }
 
     .quick-btn {
       display: flex;
@@ -204,7 +219,21 @@
     .quick-btn.po .qb-icon { background: #fff7e6; }
     .quick-btn.inbound .qb-icon { background: #e6fffb; }
     .quick-btn.outbound .qb-icon { background: #fff1f0; }
-    .quick-btn.zone .qb-icon { background: #f9f0ff; }
+    .quick-btn.warehouse .qb-icon { background: #f9f0ff; }
+    .quick-btn.zone .qb-icon { background: #e6f7ff; }
+
+    .quick-btn.admin-entry {
+      border-color: #d3adf7;
+      background: #faf5ff;
+    }
+
+    .quick-btn.admin-entry:hover {
+      border-color: var(--purple);
+      background: #f9f0ff;
+    }
+
+    .quick-btn.admin-entry:hover .qb-title { color: var(--purple); }
+    .quick-btn.admin-entry:hover .qb-arrow { color: var(--purple); }
 
     .quick-btn .qb-text { flex: 1; }
     .quick-btn .qb-title { font-size: 15px; font-weight: 600; display: block; }
@@ -381,9 +410,6 @@
         <div class="nav-item parent"><span>Inventory</span><span class="chevron">▼</span></div>
         <div class="nav-item sub">SPU/SKU Inventory</div>
         <div class="nav-item sub">Record</div>
-        <div class="nav-item parent"><span>Warehouses</span><span class="chevron">▼</span></div>
-        <div class="nav-item sub">Warehouse Management</div>
-        <div class="nav-item sub">Zone Management</div>
       </nav>
 
       <main class="content">
@@ -395,7 +421,15 @@
         <div class="page-body">
           <div class="kpi-row" id="kpi-row"></div>
 
-          <div class="quick-bar" id="quick-bar"></div>
+          <div class="quick-section">
+            <div class="quick-section-label">Operations</div>
+            <div class="quick-bar" id="quick-ops"></div>
+          </div>
+
+          <div class="quick-section">
+            <div class="quick-section-label">Warehouse Setup <span class="perm-badge">Admin Only</span></div>
+            <div class="quick-bar admin" id="quick-admin"></div>
+          </div>
 
           <div class="bottom-row">
             <div class="panel">
@@ -443,11 +477,15 @@
       pendingInboundVehicles: 3, pendingAllocation: 12,
       pendingPicking: 8, pendingPacking: 5, shippedToday: 156,
 
-      quickAccess: [
+      quickOps: [
         { cls: 'po', icon: '📝', title: 'Purchase Orders', action: 'Purchase Orders' },
         { cls: 'inbound', icon: '📥', title: 'Inbound', action: 'Inbound' },
-        { cls: 'outbound', icon: '📤', title: 'Outbound', action: 'Outbound' },
-        { cls: 'zone', icon: '🏗️', title: 'Zone Management', action: 'Zone Management' }
+        { cls: 'outbound', icon: '📤', title: 'Outbound', action: 'Outbound' }
+      ],
+
+      quickAdmin: [
+        { cls: 'warehouse admin-entry', icon: '🏭', title: 'Warehouse Management', link: 'KickBazar-WMS-Warehouse-Setup.html' },
+        { cls: 'zone admin-entry', icon: '🏗️', title: 'Zone Management', link: 'KickBazar-WMS-Warehouse-Setup.html#page-zone' }
       ],
 
       warehouses: [
@@ -531,8 +569,16 @@
         </div>
       `;
 
-      document.getElementById('quick-bar').innerHTML = data.quickAccess.map(q => `
+      document.getElementById('quick-ops').innerHTML = data.quickOps.map(q => `
         <div class="quick-btn ${q.cls}" onclick="showToast('${q.action}')">
+          <div class="qb-icon">${q.icon}</div>
+          <div class="qb-text"><span class="qb-title">${q.title}</span></div>
+          <span class="qb-arrow">→</span>
+        </div>
+      `).join('');
+
+      document.getElementById('quick-admin').innerHTML = data.quickAdmin.map(q => `
+        <div class="quick-btn ${q.cls}" onclick="window.location.href='${q.link}'">
           <div class="qb-icon">${q.icon}</div>
           <div class="qb-text"><span class="qb-title">${q.title}</span></div>
           <span class="qb-arrow">→</span>
