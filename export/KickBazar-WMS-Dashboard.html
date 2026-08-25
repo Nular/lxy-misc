@@ -297,6 +297,47 @@
     .stock-legend .l-locked::before { background: var(--warning); }
     .stock-legend .l-available::before { background: var(--success); }
 
+    .wh-select {
+      height: 28px; padding: 0 8px;
+      border: 1px solid #d9d9d9; border-radius: 4px;
+      font-size: 12px; background: #fff; cursor: pointer;
+    }
+
+    .wh-select:focus { outline: none; border-color: var(--primary); }
+
+    .wh-summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-color);
+      background: #fafafa;
+    }
+
+    .wh-stat {
+      text-align: center;
+      padding: 10px 8px;
+      background: #fff;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+    }
+
+    .wh-stat .label { font-size: 11px; color: var(--text-muted); display: block; margin-bottom: 4px; }
+    .wh-stat .val { font-size: 20px; font-weight: 700; }
+    .wh-stat.total .val { color: var(--primary); }
+    .wh-stat.locked .val { color: var(--warning); }
+    .wh-stat.available .val { color: var(--success); }
+
+    .wh-distribution {
+      padding: 10px 16px 6px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .wh-distribution .bar-label {
+      display: flex; justify-content: space-between;
+      font-size: 11px; color: var(--text-muted); margin-bottom: 4px;
+    }
+
     .toast-container { position: fixed; top: 72px; right: 24px; z-index: 2000; }
 
     .toast {
@@ -383,23 +424,10 @@
 
             <div class="panel">
               <div class="panel-header">
-                <h3>Inventory by Warehouse</h3>
-                <span class="meta">Total = Locked + Available</span>
+                <h3>Warehouse Inventory</h3>
+                <select class="wh-select" id="wh-select" onchange="renderWarehouseDetail()"></select>
               </div>
-              <div class="panel-body">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Warehouse</th>
-                      <th>Total</th>
-                      <th>Locked</th>
-                      <th>Available</th>
-                      <th>Distribution</th>
-                    </tr>
-                  </thead>
-                  <tbody id="stock-table"></tbody>
-                </table>
-              </div>
+              <div id="wh-detail"></div>
             </div>
           </div>
         </div>
@@ -423,9 +451,33 @@
       ],
 
       warehouses: [
-        { id: 'SH-001', name: 'Shanghai Main', total: 12580, locked: 2340, available: 10240 },
-        { id: 'BJ-001', name: 'Beijing DC', total: 8920, locked: 1560, available: 7360 },
-        { id: 'SG-001', name: 'Singapore Hub', total: 4560, locked: 890, available: 3670 }
+        {
+          id: 'SH-001', name: 'Shanghai Main Warehouse', status: 'Enable',
+          total: 12580, locked: 2340, available: 10240,
+          zones: [
+            { code: 'SH-001-STO', name: 'Main Storage', type: 'Storage Zone', total: 12200, locked: 2300, available: 9900 },
+            { code: 'SH-001-RCV', name: 'Receiving Zone', type: 'Receiving Zone', total: 120, locked: 0, available: 120 },
+            { code: 'SH-001-SHP', name: 'Shipping Zone', type: 'Shipping Zone', total: 180, locked: 40, available: 140 },
+            { code: 'SH-001-DMG', name: 'Damaged Goods', type: 'Damaged Goods Zone', total: 80, locked: 0, available: 80 }
+          ]
+        },
+        {
+          id: 'BJ-001', name: 'Beijing Distribution Center', status: 'Enable',
+          total: 8920, locked: 1560, available: 7360,
+          zones: [
+            { code: 'BJ-001-STO', name: 'Cold Storage', type: 'Storage Zone', total: 8920, locked: 1560, available: 7360 }
+          ]
+        },
+        {
+          id: 'SG-001', name: 'Singapore Regional Hub', status: 'Enable',
+          total: 4560, locked: 890, available: 3670,
+          zones: [
+            { code: 'SG-001-STO', name: 'Storage Zone', type: 'Storage Zone', total: 4200, locked: 800, available: 3400 },
+            { code: 'SG-001-RCV', name: 'Receiving Zone', type: 'Receiving Zone', total: 50, locked: 0, available: 50 },
+            { code: 'SG-001-SHP', name: 'Shipping Zone', type: 'Shipping Zone', total: 200, locked: 60, available: 140 },
+            { code: 'SG-001-RTN', name: 'Returns Zone', type: 'Returns Zone', total: 110, locked: 30, available: 80 }
+          ]
+        }
       ],
 
       todayRecords: [
@@ -505,28 +557,71 @@
         `;
       }).join('');
 
-      document.getElementById('stock-table').innerHTML = data.warehouses.map(w => {
-        const lockedPct = w.total ? (w.locked / w.total * 100).toFixed(0) : 0;
-        const availPct = w.total ? (w.available / w.total * 100).toFixed(0) : 0;
-        return `
-          <tr>
-            <td><strong>${w.id}</strong><br><span style="color:#999;font-size:11px">${w.name}</span></td>
-            <td>${w.total.toLocaleString()}</td>
-            <td>${w.locked.toLocaleString()}</td>
-            <td>${w.available.toLocaleString()}</td>
-            <td>
-              <div class="stock-bar">
-                <div class="locked" style="width:${lockedPct}%"></div>
-                <div class="available" style="width:${availPct}%"></div>
-              </div>
-              <div class="stock-legend">
-                <span class="l-locked">L ${lockedPct}%</span>
-                <span class="l-available">A ${availPct}%</span>
-              </div>
-            </td>
-          </tr>
-        `;
-      }).join('');
+      document.getElementById('wh-select').innerHTML = data.warehouses.map(w =>
+        `<option value="${w.id}">${w.id} — ${w.name}</option>`
+      ).join('');
+
+      renderWarehouseDetail();
+    }
+
+    function renderWarehouseDetail() {
+      const whId = document.getElementById('wh-select').value;
+      const wh = data.warehouses.find(w => w.id === whId);
+      if (!wh) return;
+
+      const lockedPct = wh.total ? (wh.locked / wh.total * 100).toFixed(0) : 0;
+      const availPct = wh.total ? (wh.available / wh.total * 100).toFixed(0) : 0;
+
+      document.getElementById('wh-detail').innerHTML = `
+        <div class="wh-summary">
+          <div class="wh-stat total">
+            <span class="label">Total</span>
+            <span class="val">${wh.total.toLocaleString()}</span>
+          </div>
+          <div class="wh-stat locked">
+            <span class="label">Locked</span>
+            <span class="val">${wh.locked.toLocaleString()}</span>
+          </div>
+          <div class="wh-stat available">
+            <span class="label">Available</span>
+            <span class="val">${wh.available.toLocaleString()}</span>
+          </div>
+        </div>
+        <div class="wh-distribution">
+          <div class="bar-label">
+            <span>Locked ${lockedPct}%</span>
+            <span>Available ${availPct}%</span>
+          </div>
+          <div class="stock-bar" style="height:8px">
+            <div class="locked" style="width:${lockedPct}%"></div>
+            <div class="available" style="width:${availPct}%"></div>
+          </div>
+        </div>
+        <div class="panel-body">
+          <table>
+            <thead>
+              <tr>
+                <th>Zone Code</th>
+                <th>Zone Name</th>
+                <th>Total</th>
+                <th>Locked</th>
+                <th>Available</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${wh.zones.map(z => `
+                <tr>
+                  <td style="font-size:12px">${z.code}</td>
+                  <td>${z.name}<br><span style="color:#999;font-size:11px">${z.type}</span></td>
+                  <td>${z.total.toLocaleString()}</td>
+                  <td>${z.locked.toLocaleString()}</td>
+                  <td>${z.available.toLocaleString()}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
     }
 
     function showToast(action) {
