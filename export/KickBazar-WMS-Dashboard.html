@@ -21,9 +21,7 @@
       --warning: #faad14;
       --warning-bg: #fffbe6;
       --purple: #722ed1;
-      --purple-bg: #f9f0ff;
       --cyan: #13c2c2;
-      --cyan-bg: #e6fffb;
       --logo-pink: #e85d75;
       --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     }
@@ -58,17 +56,10 @@
       flex-shrink: 0;
     }
 
-    .logo {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-weight: 700;
-      font-size: 18px;
-    }
+    .logo { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 18px; }
 
     .logo-icon {
-      width: 32px;
-      height: 32px;
+      width: 32px; height: 32px;
       background: var(--logo-pink);
       border-radius: 50% 50% 50% 20%;
       position: relative;
@@ -78,8 +69,7 @@
       content: "";
       position: absolute;
       width: 8px; height: 12px;
-      background: #fff;
-      border-radius: 50%;
+      background: #fff; border-radius: 50%;
       top: 8px; left: 6px;
       box-shadow: 14px 0 0 #fff;
     }
@@ -94,24 +84,13 @@
     }
 
     .header-right {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      font-size: 13px;
-      color: var(--text-secondary);
+      display: flex; align-items: center; gap: 16px;
+      font-size: 13px; color: var(--text-secondary);
     }
 
-    .header-date {
-      padding: 4px 12px;
-      background: var(--bg-gray);
-      border-radius: 4px;
-    }
+    .header-date { padding: 4px 12px; background: var(--bg-gray); border-radius: 4px; }
 
-    .main-layout {
-      display: flex;
-      flex: 1;
-      overflow: hidden;
-    }
+    .main-layout { display: flex; flex: 1; overflow: hidden; }
 
     .sidebar {
       width: var(--sidebar-width);
@@ -124,30 +103,20 @@
     .nav-item {
       padding: 10px 16px 10px 24px;
       color: var(--text-primary);
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      display: flex; align-items: center; gap: 8px;
       font-size: 14px;
     }
 
     .nav-item.active {
-      background: #fff;
-      color: var(--primary);
-      font-weight: 500;
-      border-right: 3px solid var(--primary);
+      background: #fff; color: var(--primary);
+      font-weight: 500; border-right: 3px solid var(--primary);
     }
 
     .nav-item.sub { padding-left: 40px; font-size: 13px; color: var(--text-secondary); }
     .nav-item.parent { font-weight: 500; }
     .nav-item .chevron { margin-left: auto; font-size: 10px; color: var(--text-muted); }
 
-    .content {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      background: #fff;
-    }
+    .content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 
     .page-header {
       padding: 20px 24px 16px;
@@ -159,41 +128,24 @@
     .page-subtitle { font-size: 13px; color: var(--text-secondary); }
 
     .page-body {
-      flex: 1;
-      overflow: auto;
+      flex: 1; overflow: auto;
       padding: 20px 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
+      display: flex; flex-direction: column; gap: 16px;
     }
 
-    /* KPI Cards */
-    .kpi-row {
-      display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 12px;
-    }
+    /* KPI */
+    .kpi-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
 
     .kpi-card {
-      background: #fff;
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      position: relative;
-      overflow: hidden;
-      transition: box-shadow 0.2s;
+      background: #fff; border: 1px solid var(--border-color);
+      border-radius: 8px; padding: 14px 16px;
+      display: flex; flex-direction: column; gap: 4px;
+      position: relative; overflow: hidden;
     }
 
-    .kpi-card:hover { box-shadow: var(--shadow); }
-
     .kpi-card::before {
-      content: "";
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 3px;
+      content: ""; position: absolute;
+      top: 0; left: 0; right: 0; height: 3px;
     }
 
     .kpi-card.stock::before { background: var(--primary); }
@@ -203,35 +155,10 @@
     .kpi-card.pack::before { background: var(--purple); }
     .kpi-card.shipped::before { background: var(--success); }
 
-    .kpi-icon {
-      font-size: 20px;
-      line-height: 1;
-      margin-bottom: 2px;
-    }
-
-    .kpi-label {
-      font-size: 12px;
-      color: var(--text-secondary);
-      white-space: nowrap;
-    }
-
-    .kpi-value {
-      font-size: 26px;
-      font-weight: 700;
-      line-height: 1.1;
-    }
-
-    .kpi-unit {
-      font-size: 13px;
-      font-weight: 400;
-      color: var(--text-secondary);
-      margin-left: 2px;
-    }
-
-    .kpi-sub {
-      font-size: 11px;
-      color: var(--text-muted);
-    }
+    .kpi-label { font-size: 12px; color: var(--text-secondary); }
+    .kpi-value { font-size: 24px; font-weight: 700; line-height: 1.2; }
+    .kpi-unit { font-size: 12px; font-weight: 400; color: var(--text-secondary); margin-left: 2px; }
+    .kpi-sub { font-size: 11px; color: var(--text-muted); }
 
     .kpi-card.stock .kpi-value { color: var(--primary); }
     .kpi-card.inbound .kpi-value { color: var(--cyan); }
@@ -240,11 +167,56 @@
     .kpi-card.pack .kpi-value { color: var(--purple); }
     .kpi-card.shipped .kpi-value { color: var(--success); }
 
-    /* Main grid */
-    .dashboard-main {
+    /* Quick Access - horizontal action bar */
+    .quick-bar {
       display: grid;
-      grid-template-columns: 1fr 340px;
-      gap: 20px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    .quick-btn {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px 20px;
+      background: #fff;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .quick-btn:hover {
+      border-color: var(--primary);
+      background: var(--primary-light);
+      box-shadow: var(--shadow);
+      transform: translateY(-1px);
+    }
+
+    .quick-btn .qb-icon {
+      width: 44px; height: 44px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+
+    .quick-btn.po .qb-icon { background: #fff7e6; }
+    .quick-btn.inbound .qb-icon { background: #e6fffb; }
+    .quick-btn.outbound .qb-icon { background: #fff1f0; }
+    .quick-btn.zone .qb-icon { background: #f9f0ff; }
+
+    .quick-btn .qb-text { flex: 1; }
+    .quick-btn .qb-title { font-size: 15px; font-weight: 600; display: block; }
+    .quick-btn .qb-arrow { font-size: 18px; color: var(--text-muted); transition: color 0.15s; }
+    .quick-btn:hover .qb-title { color: var(--primary); }
+    .quick-btn:hover .qb-arrow { color: var(--primary); }
+
+    /* Panels */
+    .bottom-row {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 16px;
       flex: 1;
       min-height: 0;
     }
@@ -254,161 +226,34 @@
       border: 1px solid var(--border-color);
       border-radius: 8px;
       overflow: hidden;
-      display: flex;
-      flex-direction: column;
+      display: flex; flex-direction: column;
     }
 
     .panel-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 14px 20px;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 20px;
       border-bottom: 1px solid var(--border-color);
       background: #fafafa;
       flex-shrink: 0;
     }
 
-    .panel-header h3 {
-      font-size: 14px;
-      font-weight: 600;
-    }
+    .panel-header h3 { font-size: 14px; font-weight: 600; }
+    .panel-header .meta { font-size: 12px; color: var(--text-muted); }
 
-    .panel-body {
-      flex: 1;
-      overflow: auto;
-      padding: 0;
-    }
+    .panel-body { flex: 1; overflow: auto; }
 
-    /* Pipeline */
-    .pipeline {
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-    }
-
-    .pipeline-step {
-      display: flex;
-      align-items: stretch;
-      gap: 16px;
-      position: relative;
-    }
-
-    .pipeline-step:not(:last-child) .pipeline-line {
-      position: absolute;
-      left: 19px;
-      top: 40px;
-      bottom: -8px;
-      width: 2px;
-      background: var(--border-color);
-    }
-
-    .pipeline-dot {
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      flex-shrink: 0;
-      z-index: 1;
-      border: 2px solid;
-    }
-
-    .pipeline-dot.inbound { background: var(--cyan-bg); border-color: var(--cyan); }
-    .pipeline-dot.allocate { background: var(--warning-bg); border-color: var(--warning); }
-    .pipeline-dot.pick { background: #fff7e6; border-color: #fa8c16; }
-    .pipeline-dot.pack { background: var(--purple-bg); border-color: var(--purple); }
-    .pipeline-dot.ship { background: var(--success-bg); border-color: var(--success); }
-
-    .pipeline-content {
-      flex: 1;
-      padding: 8px 0 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid #f5f5f5;
-    }
-
-    .pipeline-step:last-child .pipeline-content { border-bottom: none; padding-bottom: 0; }
-
-    .pipeline-info h4 {
-      font-size: 14px;
-      font-weight: 500;
-      margin-bottom: 2px;
-    }
-
-    .pipeline-info p {
-      font-size: 12px;
-      color: var(--text-muted);
-    }
-
-    .pipeline-count {
-      text-align: right;
-    }
-
-    .pipeline-count .num {
-      font-size: 22px;
-      font-weight: 700;
-    }
-
-    .pipeline-count .unit {
-      font-size: 12px;
-      color: var(--text-secondary);
-    }
-
-    /* Quick Access */
-    .quick-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      padding: 16px;
-    }
-
-    .quick-card {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 8px;
-      padding: 20px 12px;
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.2s;
-      text-align: center;
-    }
-
-    .quick-card:hover {
-      border-color: var(--primary);
-      background: var(--primary-light);
-      transform: translateY(-1px);
-      box-shadow: var(--shadow);
-    }
-
-    .quick-card .icon { font-size: 28px; line-height: 1; }
-    .quick-card .title { font-size: 14px; font-weight: 600; }
-    .quick-card .desc { font-size: 11px; color: var(--text-muted); }
-    .quick-card:hover .title { color: var(--primary); }
-    .quick-card:hover .desc { color: var(--primary); opacity: 0.7; }
-
-    /* Tables */
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
-
-    thead { background: #fafafa; }
+    thead { background: #fafafa; position: sticky; top: 0; z-index: 1; }
 
     th {
-      padding: 10px 16px;
-      text-align: left;
-      font-weight: 500;
-      color: var(--text-secondary);
+      padding: 9px 14px; text-align: left;
+      font-weight: 500; color: var(--text-secondary);
       border-bottom: 1px solid var(--border-color);
-      white-space: nowrap;
-      font-size: 12px;
+      white-space: nowrap; font-size: 12px;
     }
 
     td {
-      padding: 10px 16px;
+      padding: 9px 14px;
       border-bottom: 1px solid var(--border-color);
       vertical-align: middle;
     }
@@ -417,69 +262,49 @@
 
     .tag {
       display: inline-block;
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-size: 11px;
-      line-height: 18px;
+      padding: 2px 7px; border-radius: 4px;
+      font-size: 11px; line-height: 18px;
     }
 
-    .tag-pending { background: var(--warning-bg); color: #d46b08; border: 1px solid #ffe58f; }
-    .tag-processing { background: var(--primary-light); color: var(--primary); border: 1px solid #91d5ff; }
-    .tag-done { background: var(--success-bg); color: var(--success); border: 1px solid #b7eb8f; }
-    .tag-urgent { background: #fff1f0; color: var(--danger); border: 1px solid #ffa39e; }
+    .type-inbound { color: #389e0d; font-weight: 500; }
+    .type-occupy { color: #d46b08; font-weight: 500; }
+    .type-deduct { color: #cf1322; font-weight: 500; }
+    .type-unfreeze { color: #096dd9; font-weight: 500; }
 
-    .bottom-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
-    }
+    .qty-up { color: var(--success); font-weight: 600; }
+    .qty-down { color: var(--danger); font-weight: 600; }
 
     .stock-bar {
-      display: flex;
-      height: 6px;
-      border-radius: 3px;
-      overflow: hidden;
-      margin-top: 6px;
-      background: #f0f0f0;
+      display: flex; height: 6px;
+      border-radius: 3px; overflow: hidden;
+      margin-top: 4px; background: #f0f0f0;
     }
 
     .stock-bar .locked { background: var(--warning); }
     .stock-bar .available { background: var(--success); }
 
     .stock-legend {
-      display: flex;
-      gap: 16px;
-      margin-top: 8px;
-      font-size: 11px;
-      color: var(--text-muted);
+      display: flex; gap: 12px;
+      margin-top: 4px; font-size: 10px; color: var(--text-muted);
     }
 
     .stock-legend span::before {
-      content: "";
-      display: inline-block;
-      width: 8px; height: 8px;
-      border-radius: 2px;
-      margin-right: 4px;
-      vertical-align: middle;
+      content: ""; display: inline-block;
+      width: 7px; height: 7px;
+      border-radius: 2px; margin-right: 3px; vertical-align: middle;
     }
 
     .stock-legend .l-locked::before { background: var(--warning); }
     .stock-legend .l-available::before { background: var(--success); }
 
-    .toast-container {
-      position: fixed;
-      top: 72px; right: 24px;
-      z-index: 2000;
-    }
+    .toast-container { position: fixed; top: 72px; right: 24px; z-index: 2000; }
 
     .toast {
-      padding: 12px 20px;
-      background: #fff;
-      border-radius: 4px;
-      box-shadow: var(--shadow);
+      padding: 12px 20px; background: #fff;
+      border-radius: 4px; box-shadow: var(--shadow);
       border-left: 4px solid var(--primary);
-      animation: slideIn 0.3s ease;
       font-size: 13px;
+      animation: slideIn 0.3s ease;
     }
 
     @keyframes slideIn {
@@ -523,55 +348,35 @@
       <main class="content">
         <div class="page-header">
           <h1 class="page-title">Dashboard</h1>
-          <p class="page-subtitle">Full WMS operations overview — inbound, outbound, inventory &amp; warehouse</p>
+          <p class="page-subtitle">Full WMS operations overview</p>
         </div>
 
         <div class="page-body">
-          <!-- KPI Row -->
           <div class="kpi-row" id="kpi-row"></div>
 
-          <!-- Main: Pipeline + Quick Access -->
-          <div class="dashboard-main">
-            <div class="panel">
-              <div class="panel-header">
-                <h3>Outbound Pipeline</h3>
-                <span style="font-size:12px;color:#999">Today's order flow</span>
-              </div>
-              <div class="panel-body">
-                <div class="pipeline" id="pipeline"></div>
-              </div>
-            </div>
+          <div class="quick-bar" id="quick-bar"></div>
 
-            <div class="panel">
-              <div class="panel-header">
-                <h3>Quick Access</h3>
-              </div>
-              <div class="panel-body">
-                <div class="quick-grid" id="quick-access"></div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Bottom: Inbound + Stock -->
           <div class="bottom-row">
             <div class="panel">
               <div class="panel-header">
-                <h3>Pending Inbound</h3>
-                <span style="font-size:12px;color:#999">Vehicles awaiting unloading</span>
+                <h3>Today's Operations</h3>
+                <span class="meta" id="record-count"></span>
               </div>
               <div class="panel-body">
                 <table>
                   <thead>
                     <tr>
-                      <th>Vehicle No.</th>
-                      <th>PO / Inbound No.</th>
+                      <th>Time</th>
+                      <th>Type</th>
                       <th>Warehouse</th>
-                      <th>SKUs</th>
-                      <th>ETA</th>
-                      <th>Status</th>
+                      <th>Zone</th>
+                      <th>SKU</th>
+                      <th>Qty</th>
+                      <th>Order No.</th>
+                      <th>Operator</th>
                     </tr>
                   </thead>
-                  <tbody id="inbound-table"></tbody>
+                  <tbody id="records-table"></tbody>
                 </table>
               </div>
             </div>
@@ -579,7 +384,7 @@
             <div class="panel">
               <div class="panel-header">
                 <h3>Inventory by Warehouse</h3>
-                <span style="font-size:12px;color:#999">Total = Locked + Available</span>
+                <span class="meta">Total = Locked + Available</span>
               </div>
               <div class="panel-body">
                 <table>
@@ -606,19 +411,15 @@
 
   <script>
     const data = {
-      totalStock: 26060,
-      lockedStock: 4790,
-      availableStock: 21270,
-      pendingInboundVehicles: 3,
-      pendingAllocation: 12,
-      pendingPicking: 8,
-      pendingPacking: 5,
-      shippedToday: 156,
+      totalStock: 26060, lockedStock: 4790, availableStock: 21270,
+      pendingInboundVehicles: 3, pendingAllocation: 12,
+      pendingPicking: 8, pendingPacking: 5, shippedToday: 156,
 
-      inboundVehicles: [
-        { vehicle: '沪A·D3821', order: 'PO-20260824001 / IN-24001', warehouse: 'SH-001', skus: 48, eta: '10:30', status: 'pending', urgent: true },
-        { vehicle: '京B·F9205', order: 'PO-20260824003 / IN-24003', warehouse: 'BJ-001', skus: 32, eta: '14:00', status: 'pending', urgent: false },
-        { vehicle: '粤C·H1147', order: 'PO-20260823008 / IN-23908', warehouse: 'SH-001', skus: 21, eta: '16:45', status: 'unloading', urgent: false }
+      quickAccess: [
+        { cls: 'po', icon: '📝', title: 'Purchase Orders', action: 'Purchase Orders' },
+        { cls: 'inbound', icon: '📥', title: 'Inbound', action: 'Inbound' },
+        { cls: 'outbound', icon: '📤', title: 'Outbound', action: 'Outbound' },
+        { cls: 'zone', icon: '🏗️', title: 'Zone Management', action: 'Zone Management' }
       ],
 
       warehouses: [
@@ -627,20 +428,19 @@
         { id: 'SG-001', name: 'Singapore Hub', total: 4560, locked: 890, available: 3670 }
       ],
 
-      pipeline: [
-        { key: 'allocate', icon: '📋', title: 'Pending Allocation', desc: 'Orders awaiting warehouse & zone assignment', count: 12, unit: 'orders', color: 'allocate' },
-        { key: 'pick', icon: '🛒', title: 'Pending Picking', desc: 'Allocated orders awaiting pick confirmation', count: 8, unit: 'orders', color: 'pick' },
-        { key: 'pack', icon: '📦', title: 'Pending Packing', desc: 'Picked orders awaiting pack & label', count: 5, unit: 'orders', color: 'pack' },
-        { key: 'ship', icon: '🚚', title: 'Shipped Today', desc: 'Orders confirmed shipped today', count: 156, unit: 'orders', color: 'ship' }
-      ],
-
-      quickAccess: [
-        { icon: '📝', title: 'Purchase Orders', desc: 'Create & manage PO', action: 'Purchase Orders' },
-        { icon: '📥', title: 'Inbound', desc: 'Receive & putaway', action: 'Inbound' },
-        { icon: '📤', title: 'Outbound', desc: 'Allocate, pick & ship', action: 'Outbound' },
-        { icon: '🏗️', title: 'Zone Management', desc: 'Configure storage zones', action: 'Zone Management' }
+      todayRecords: [
+        { time: '14:20:33', type: 'Outbound Deduct', typeCls: 'type-deduct', warehouse: 'SH-001', zone: 'SH-001-STO', sku: 'SKU-10001-WH', qty: '-25', order: 'OUT-20260825012', operator: 'Li Ming' },
+        { time: '11:45:22', type: 'Outbound Occupy', typeCls: 'type-occupy', warehouse: 'SH-001', zone: 'SH-001-STO', sku: 'SKU-10001-BK', qty: '50', order: 'OUT-20260825005', operator: 'System' },
+        { time: '10:30:18', type: 'Outbound Occupy', typeCls: 'type-occupy', warehouse: 'SH-001', zone: 'SH-001-STO', sku: 'SKU-10002-42', qty: '30', order: 'OUT-20260825003', operator: 'System' },
+        { time: '09:32:15', type: 'Purchase Inbound', typeCls: 'type-inbound', warehouse: 'SH-001', zone: 'SH-001-STO', sku: 'SKU-10001-BK', qty: '+200', order: 'IN-20260825001', operator: 'Zhang Wei' },
+        { time: '09:15:28', type: 'Unfreeze', typeCls: 'type-unfreeze', warehouse: 'SH-001', zone: 'SH-001-STO', sku: 'SKU-10002-46', qty: '20', order: 'OUT-20260824010', operator: 'System' },
+        { time: '08:45:10', type: 'Purchase Inbound', typeCls: 'type-inbound', warehouse: 'BJ-001', zone: 'BJ-001-STO', sku: 'SKU-10003-01', qty: '+150', order: 'IN-20260825002', operator: 'Wang Fang' },
+        { time: '08:12:55', type: 'Outbound Deduct', typeCls: 'type-deduct', warehouse: 'BJ-001', zone: 'BJ-001-STO', sku: 'SKU-10003-01', qty: '-60', order: 'OUT-20260824018', operator: 'Chen Hua' },
+        { time: '07:58:40', type: 'Outbound Occupy', typeCls: 'type-occupy', warehouse: 'SG-001', zone: 'SG-001-STO', sku: 'SKU-10004-01', qty: '15', order: 'OUT-20260825001', operator: 'System' }
       ]
     };
+
+    const typeClass = { 'Purchase Inbound': 'type-inbound', 'Manual Adjustment': 'type-inbound', 'Outbound Occupy': 'type-occupy', 'Outbound Deduct': 'type-deduct', 'Unfreeze': 'type-unfreeze' };
 
     function render() {
       document.getElementById('current-date').textContent =
@@ -648,101 +448,62 @@
 
       document.getElementById('kpi-row').innerHTML = `
         <div class="kpi-card stock">
-          <span class="kpi-icon">📊</span>
           <span class="kpi-label">Total Inventory</span>
           <span class="kpi-value">${data.totalStock.toLocaleString()}</span>
-          <span class="kpi-sub">Locked ${data.lockedStock.toLocaleString()} · Available ${data.availableStock.toLocaleString()}</span>
+          <span class="kpi-sub">Locked ${data.lockedStock.toLocaleString()} · Avail ${data.availableStock.toLocaleString()}</span>
         </div>
         <div class="kpi-card inbound">
-          <span class="kpi-icon">🚛</span>
           <span class="kpi-label">Pending Inbound</span>
           <span class="kpi-value">${data.pendingInboundVehicles}<span class="kpi-unit">vehicles</span></span>
-          <span class="kpi-sub">Awaiting unloading &amp; putaway</span>
+          <span class="kpi-sub">Awaiting unloading</span>
         </div>
         <div class="kpi-card allocate">
-          <span class="kpi-icon">📋</span>
           <span class="kpi-label">Pending Allocation</span>
           <span class="kpi-value">${data.pendingAllocation}<span class="kpi-unit">orders</span></span>
-          <span class="kpi-sub">Awaiting warehouse assignment</span>
+          <span class="kpi-sub">Awaiting assignment</span>
         </div>
         <div class="kpi-card pick">
-          <span class="kpi-icon">🛒</span>
           <span class="kpi-label">Pending Picking</span>
           <span class="kpi-value">${data.pendingPicking}<span class="kpi-unit">orders</span></span>
-          <span class="kpi-sub">Allocated, awaiting pick</span>
+          <span class="kpi-sub">Awaiting pick</span>
         </div>
         <div class="kpi-card pack">
-          <span class="kpi-icon">📦</span>
           <span class="kpi-label">Pending Packing</span>
           <span class="kpi-value">${data.pendingPacking}<span class="kpi-unit">orders</span></span>
-          <span class="kpi-sub">Picked, awaiting pack</span>
+          <span class="kpi-sub">Awaiting pack</span>
         </div>
         <div class="kpi-card shipped">
-          <span class="kpi-icon">✅</span>
           <span class="kpi-label">Shipped Today</span>
           <span class="kpi-value">${data.shippedToday}<span class="kpi-unit">orders</span></span>
-          <span class="kpi-sub">Confirmed shipped today</span>
+          <span class="kpi-sub">Confirmed today</span>
         </div>
       `;
 
-      document.getElementById('pipeline').innerHTML = `
-        <div class="pipeline-step">
-          <div class="pipeline-dot inbound">🚛</div>
-          <div class="pipeline-line"></div>
-          <div class="pipeline-content">
-            <div class="pipeline-info">
-              <h4>Pending Inbound</h4>
-              <p>Vehicles at dock awaiting receiving &amp; putaway</p>
-            </div>
-            <div class="pipeline-count">
-              <div class="num" style="color:var(--cyan)">${data.pendingInboundVehicles}</div>
-              <div class="unit">vehicles</div>
-            </div>
-          </div>
-        </div>
-        ${data.pipeline.map(s => `
-          <div class="pipeline-step">
-            <div class="pipeline-dot ${s.color}">${s.icon}</div>
-            <div class="pipeline-line"></div>
-            <div class="pipeline-content">
-              <div class="pipeline-info">
-                <h4>${s.title}</h4>
-                <p>${s.desc}</p>
-              </div>
-              <div class="pipeline-count">
-                <div class="num">${s.count}</div>
-                <div class="unit">${s.unit}</div>
-              </div>
-            </div>
-          </div>
-        `).join('')}
-      `;
-
-      document.getElementById('quick-access').innerHTML = data.quickAccess.map(q => `
-        <div class="quick-card" onclick="showToast('Navigate to: ${q.action}')">
-          <span class="icon">${q.icon}</span>
-          <span class="title">${q.title}</span>
-          <span class="desc">${q.desc}</span>
+      document.getElementById('quick-bar').innerHTML = data.quickAccess.map(q => `
+        <div class="quick-btn ${q.cls}" onclick="showToast('${q.action}')">
+          <div class="qb-icon">${q.icon}</div>
+          <div class="qb-text"><span class="qb-title">${q.title}</span></div>
+          <span class="qb-arrow">→</span>
         </div>
       `).join('');
 
-      const statusMap = {
-        pending: '<span class="tag tag-pending">Awaiting</span>',
-        unloading: '<span class="tag tag-processing">Unloading</span>'
-      };
+      document.getElementById('record-count').textContent = `${data.todayRecords.length} records today`;
 
-      document.getElementById('inbound-table').innerHTML = data.inboundVehicles.map(v => `
-        <tr>
-          <td><strong>${v.vehicle}</strong>${v.urgent ? ' <span class="tag tag-urgent">Urgent</span>' : ''}</td>
-          <td style="font-size:12px">${v.order}</td>
-          <td>${v.warehouse}</td>
-          <td>${v.skus}</td>
-          <td>${v.eta}</td>
-          <td>${statusMap[v.status]}</td>
-        </tr>
-      `).join('');
-
-      const maxTotal = Math.max(...data.warehouses.map(w => w.total));
+      document.getElementById('records-table').innerHTML = data.todayRecords.map(r => {
+        const qtyCls = r.qty.startsWith('+') ? 'qty-up' : r.qty.startsWith('-') ? 'qty-down' : '';
+        return `
+          <tr>
+            <td>${r.time}</td>
+            <td class="${r.typeCls}">${r.type}</td>
+            <td>${r.warehouse}</td>
+            <td style="font-size:12px">${r.zone}</td>
+            <td>${r.sku}</td>
+            <td class="${qtyCls}">${r.qty}</td>
+            <td style="font-size:12px">${r.order}</td>
+            <td>${r.operator}</td>
+          </tr>
+        `;
+      }).join('');
 
       document.getElementById('stock-table').innerHTML = data.warehouses.map(w => {
         const lockedPct = w.total ? (w.locked / w.total * 100).toFixed(0) : 0;
@@ -753,14 +514,14 @@
             <td>${w.total.toLocaleString()}</td>
             <td>${w.locked.toLocaleString()}</td>
             <td>${w.available.toLocaleString()}</td>
-            <td style="min-width:120px">
+            <td>
               <div class="stock-bar">
                 <div class="locked" style="width:${lockedPct}%"></div>
                 <div class="available" style="width:${availPct}%"></div>
               </div>
               <div class="stock-legend">
-                <span class="l-locked">Locked ${lockedPct}%</span>
-                <span class="l-available">Avail ${availPct}%</span>
+                <span class="l-locked">L ${lockedPct}%</span>
+                <span class="l-available">A ${availPct}%</span>
               </div>
             </td>
           </tr>
@@ -768,13 +529,13 @@
       }).join('');
     }
 
-    function showToast(msg) {
+    function showToast(action) {
       const c = document.getElementById('toast-container');
       const t = document.createElement('div');
       t.className = 'toast';
-      t.textContent = msg + ' (prototype)';
+      t.textContent = `Navigate to: ${action}`;
       c.appendChild(t);
-      setTimeout(() => t.remove(), 3000);
+      setTimeout(() => t.remove(), 2500);
     }
 
     render();
