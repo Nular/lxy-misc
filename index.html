@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>微型仓 WMS - 仓库管理原型</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,"Microsoft YaHei",sans-serif;background:#f5f6f8;color:#1f2329}
+.app{display:flex;min-height:100vh}
+.side{width:220px;background:#172033;color:#c8d0df;padding:18px 12px;flex-shrink:0}
+.logo{font-size:18px;font-weight:700;color:#fff;padding:10px 12px 24px}
+.nav-title{font-size:12px;color:#7f8ba3;padding:10px 12px}
+.nav{padding:10px 12px;border-radius:6px;margin:4px 0;cursor:pointer}
+.nav.active{background:#2b3850;color:#fff}
+.nav.sub{margin:0 0 4px 12px;padding:8px 12px 8px 22px;font-size:13px;position:relative}
+.nav.sub::before{content:"";position:absolute;left:8px;top:0;width:10px;height:18px;border-left:1px solid #3d4a63;border-bottom:1px solid #3d4a63;border-bottom-left-radius:6px}
+.main{flex:1;min-width:0}
+.top{height:64px;background:#fff;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;padding:0 28px}
+.crumb{font-size:14px;color:#667085}
+.crumb b{color:#1f2329;font-weight:600}
+.user{font-size:14px}
+.content{padding:28px;max-width:1400px;margin:auto}
+.page-title{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;gap:16px}
+.page-title h1{font-size:24px;margin:0}
+.muted{color:#667085;font-size:13px}
+.btn{border:1px solid #d0d5dd;background:#fff;border-radius:6px;padding:9px 16px;cursor:pointer}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.primary{background:#2864dc;color:#fff;border-color:#2864dc}
+.btn.danger{color:#d92d20;border-color:#f0c4c0}
+.toolbar{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:16px;display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.input,.select{height:38px;border:1px solid #d0d5dd;border-radius:6px;padding:0 12px;width:220px;background:#fff}
+.select{width:160px}
+.table-wrap{overflow-x:auto}
+.table-card,.card{background:#fff;border:1px solid #e5e7eb;border-radius:8px;overflow:hidden}
+.table{width:100%;border-collapse:collapse;min-width:1080px}
+.table.compact{min-width:720px}
+.table th,.table td{padding:14px 16px;text-align:left;border-bottom:1px solid #eef0f3;font-size:14px;white-space:nowrap}
+.table th{background:#fafbfc;color:#667085;font-weight:600}
+.table td.wrap{white-space:normal;min-width:180px;line-height:1.45}
+.link{color:#2864dc;cursor:pointer;margin-right:14px}
+.link.danger{color:#d92d20}
+.badge{display:inline-block;padding:3px 9px;border-radius:12px;background:#eef4ff;color:#2864dc;font-size:12px}
+.badge.on{background:#e8f7ee;color:#067647}
+.badge.off{background:#f2f4f7;color:#667085}
+.badge.warn{background:#fff6ed;color:#c4320a}
+.empty{padding:50px;text-align:center;color:#98a2b3}
+.detail-head{background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:22px;margin-bottom:16px}
+.detail-title{display:flex;justify-content:space-between;align-items:flex-start;gap:16px}
+.detail-title h2{margin:0 0 8px}
+.kv{display:grid;grid-template-columns:repeat(4,1fr);gap:16px 20px;margin-top:18px}
+.kv .muted{display:block;margin-bottom:4px}
+.kv b{font-size:14px;font-weight:600}
+.stats{display:flex;gap:30px;margin-top:18px}
+.stat b{display:block;font-size:20px;margin-top:5px}
+.zone-count{color:#2864dc;cursor:pointer;font-weight:600;border-bottom:1px dashed #2864dc}
+.zone-count:hover{color:#1d4cb3}
+.hint{font-size:12px;color:#98a2b3;margin-top:6px;font-weight:400}
+.drawer-mask,.modal-mask{position:fixed;inset:0;background:rgba(16,24,40,.45);display:none;z-index:20}
+.drawer-mask{justify-content:flex-end}
+.drawer{width:640px;max-width:100%;height:100%;background:#fff;box-shadow:-5px 0 20px rgba(0,0,0,.12);display:flex;flex-direction:column}
+.drawer h2,.modal h2{margin:0}
+.drawer-head{padding:22px 26px 12px;border-bottom:1px solid #eef0f3;flex-shrink:0}
+.drawer-body{flex:1;overflow-y:auto;padding:8px 26px 28px}
+.drawer-foot{padding:16px 26px;border-top:1px solid #eee;background:#fff;text-align:right;flex-shrink:0}
+.form-section{font-size:13px;font-weight:700;color:#344054;margin:22px 0 8px;padding-top:8px;border-top:1px dashed #eef0f3}
+.form-section:first-child{border-top:0;margin-top:12px;padding-top:0}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+.form-item{margin:14px 0}
+.form-item.full{grid-column:1/-1}
+.form-item label{display:block;font-size:13px;font-weight:600;margin-bottom:7px}
+.form-item input,.form-item select,.form-item textarea{width:100%;height:40px;border:1px solid #d0d5dd;border-radius:6px;padding:0 10px;font-family:inherit;font-size:14px}
+.form-item textarea{height:72px;padding:8px 10px;resize:vertical}
+.form-item input:disabled,.form-item select:disabled,.form-item input[readonly]{background:#f8fafc;color:#667085}
+.req{color:#d92d20}
+.modal-mask{align-items:center;justify-content:center}
+.modal{background:#fff;border-radius:10px;width:500px;max-width:calc(100% - 32px);padding:24px;max-height:90vh;overflow:auto}
+.toast{position:fixed;right:24px;top:78px;background:#1f2937;color:#fff;padding:12px 18px;border-radius:7px;display:none;z-index:40}
+.back{color:#2864dc;cursor:pointer;font-size:14px;margin-bottom:12px}
+@media (max-width:900px){
+  .kv{grid-template-columns:1fr 1fr}
+  .form-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="logo">微型仓 WMS</div>
+    <div class="nav-title">库存管理</div>
+    <div class="nav active" id="navWarehouse" onclick="renderList()">仓库管理</div>
+    <div class="nav sub" id="navZone" onclick="renderZoneList()">仓库库区管理</div>
+    <div class="nav" onclick="toast('功能规划中')">库存查询</div>
+    <div class="nav" onclick="toast('功能规划中')">库存流水</div>
+    <div class="nav-title">入库</div>
+    <div class="nav" onclick="toast('功能规划中')">采购单</div>
+    <div class="nav" onclick="toast('功能规划中')">收货</div>
+    <div class="nav-title">出库</div>
+    <div class="nav" onclick="toast('功能规划中')">出库单</div>
+  </aside>
+  <main class="main">
+    <header class="top">
+      <div class="crumb" id="crumb">库存管理 / <b>仓库管理</b></div>
+      <div class="user">运营管理员 ▾</div>
+    </header>
+    <section class="content" id="page"></section>
+  </main>
+</div>
+
+<div class="drawer-mask" id="drawerMask">
+  <div class="drawer">
+    <div class="drawer-head">
+      <h2 id="drawerTitle">新建仓库</h2>
+      <div class="hint" id="drawerHint">新建仓库默认停用，需管理员在编辑页手动激活</div>
+    </div>
+    <div class="drawer-body">
+      <div class="form-section">基础信息</div>
+      <div class="form-grid">
+        <div class="form-item"><label>仓库ID <span class="req">*</span></label><input id="whId" placeholder="唯一标识，如 WH001"><div class="hint">全系统唯一，创建后不可修改</div></div>
+        <div class="form-item"><label>仓库名称 <span class="req">*</span></label><input id="whName" placeholder="请输入仓库名称"></div>
+        <div class="form-item"><label>仓库属性 <span class="req">*</span></label>
+          <select id="whAttr">
+            <option value="普通">普通</option>
+            <option value="防火">防火</option>
+            <option value="恒温">恒温</option>
+            <option value="冷链">冷链</option>
+          </select>
+        </div>
+        <div class="form-item"><label>状态 <span class="req">*</span></label>
+          <select id="whStatus">
+            <option value="停用">停用</option>
+            <option value="启用">启用</option>
+          </select>
+          <div class="hint">默认停用，需管理员手动激活</div>
+        </div>
+        <div class="form-item full"><label>库区数量</label>
+          <input id="whZoneCount" readonly title="编辑已有仓库时，双击可进入库区管理" ondblclick="openZonesFromForm()">
+          <div class="hint">默认 3 大库区（收货区 / 存储区 / 待发货区），最多 8 个。双击该字段或列表中的库区数量可进入库区管理</div>
+        </div>
+      </div>
+
+      <div class="form-section">仓库地址（标准化，精确到门牌号）</div>
+      <div class="form-grid">
+        <div class="form-item"><label>国家 <span class="req">*</span></label><input id="whCountry" placeholder="如 新加坡 / 中国 / 美国"></div>
+        <div class="form-item"><label>省 / 州 <span class="req">*</span></label><input id="whProvince" placeholder="省或州"></div>
+        <div class="form-item"><label>市 / 县 <span class="req">*</span></label><input id="whCity" placeholder="市或县"></div>
+        <div class="form-item full"><label>详细信息 <span class="req">*</span></label><textarea id="whDetail" placeholder="街道、楼栋、门牌号，如 Tanjong Pagar Road 10"></textarea></div>
+        <div class="form-item"><label>经度</label><input id="whLng" placeholder="如 103.8439"></div>
+        <div class="form-item"><label>纬度</label><input id="whLat" placeholder="如 1.2731"></div>
+      </div>
+
+      <div class="form-section">设施与合规</div>
+      <div class="form-grid">
+        <div class="form-item"><label>面积（㎡）</label><input id="whArea" type="number" min="0" step="0.01" placeholder="建筑面积"></div>
+        <div class="form-item"><label>层高（m）</label><input id="whHeight" type="number" min="0" step="0.01" placeholder="净空层高"></div>
+        <div class="form-item"><label>称重合规</label>
+          <select id="whWeighing">
+            <option value="待核验">待核验</option>
+            <option value="合格">合格</option>
+            <option value="不合格">不合格</option>
+          </select>
+        </div>
+        <div class="form-item"><label>消防合规</label>
+          <select id="whFire">
+            <option value="待核验">待核验</option>
+            <option value="合格">合格</option>
+            <option value="不合格">不合格</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-section">负责人与联系方式</div>
+      <div class="form-grid">
+        <div class="form-item"><label>负责人 <span class="req">*</span></label><input id="whOwner" placeholder="仓库负责人"></div>
+        <div class="form-item"><label>联系人 <span class="req">*</span></label><input id="whContact" placeholder="日常联系人"></div>
+        <div class="form-item full"><label>联系电话 <span class="req">*</span></label><input id="whPhone" placeholder="含国际区号，如 +65 6123 4567"></div>
+      </div>
+    </div>
+    <div class="drawer-foot">
+      <button class="btn" onclick="closeDrawer()">取消</button>
+      <button class="btn primary" onclick="saveWarehouse()">确定</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-mask" id="zoneModal">
+  <div class="modal">
+    <h2 id="zoneModalTitle">添加库区</h2>
+    <div class="form-item"><label>仓库ID</label><input id="zoneWarehouseId" disabled></div>
+    <div class="form-item" id="zoneWarehouseSelectWrap" style="display:none">
+      <label>所属仓库 <span class="req">*</span></label>
+      <select id="zoneWarehouseSelect" onchange="onZoneWarehouseChange()"></select>
+    </div>
+    <div class="form-item"><label>库区类型 <span class="req">*</span></label>
+      <select id="zoneType" onchange="onZoneTypeChange()"></select>
+    </div>
+    <div class="form-item"><label>库区编码 <span class="req">*</span></label><input id="zoneCode" placeholder="如 WH001-RCV"></div>
+    <div class="form-item"><label>状态 <span class="req">*</span></label>
+      <select id="zoneStatus">
+        <option value="停用">停用</option>
+        <option value="启用">启用</option>
+      </select>
+    </div>
+    <div style="text-align:right;margin-top:28px">
+      <button class="btn" onclick="closeZone()">取消</button>
+      <button class="btn primary" onclick="saveZone()">保存</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const DEFAULT_ZONE_TYPES = ["收货区","存储区","待发货区"];
+const OPTIONAL_ZONE_TYPES = ["打包区","退货区","动街区","报损区","特殊区"];
+const ALL_ZONE_TYPES = DEFAULT_ZONE_TYPES.concat(OPTIONAL_ZONE_TYPES);
+const ZONE_CODE_MAP = {收货区:"RCV",存储区:"STG",待发货区:"SHP",打包区:"PKG",退货区:"RTN",动街区:"PCK",报损区:"DMG",特殊区:"SPC"};
+const MAX_ZONES = 8;
+
+let warehouses = [
+  {
+    id:"WH001", name:"新加坡仓", attr:"普通", status:"启用",
+    country:"新加坡", province:"Central Region", city:"Singapore",
+    detail:"Tanjong Pagar Road 10", lng:"103.8439", lat:"1.2731",
+    area:"12000", height:"9.5", weighing:"合格", fire:"合格",
+    owner:"张伟", contact:"李娜", phone:"+65 6123 4567",
+    zones:[
+      {id:11, code:"WH001-RCV", type:"收货区", status:"启用", locations:10},
+      {id:12, code:"WH001-STG", type:"存储区", status:"启用", locations:100},
+      {id:13, code:"WH001-SHP", type:"待发货区", status:"启用", locations:16}
+    ]
+  },
+  {
+    id:"WH002", name:"美国仓", attr:"冷链", status:"停用",
+    country:"美国", province:"California", city:"Los Angeles",
+    detail:"2150 S Alameda St", lng:"-118.2381", lat:"34.0219",
+    area:"8600", height:"8.0", weighing:"待核验", fire:"合格",
+    owner:"Anna Chen", contact:"David Lee", phone:"+1 213 555 0198",
+    zones:[
+      {id:21, code:"WH002-RCV", type:"收货区", status:"停用", locations:8},
+      {id:22, code:"WH002-STG", type:"存储区", status:"停用", locations:80},
+      {id:23, code:"WH002-SHP", type:"待发货区", status:"停用", locations:8}
+    ]
+  }
+];
+
+let currentWarehouse = null;
+let currentZone = null;
+let editingWarehouse = null;
+let zoneFilterWarehouseId = null;
+let zoneModalMode = "add";
+
+function esc(s){
+  return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+}
+function setNav(active){
+  document.getElementById("navWarehouse").className = "nav" + (active === "warehouse" ? " active" : "");
+  document.getElementById("navZone").className = "nav sub" + (active === "zone" ? " active" : "");
+}
+function statusBadge(status){
+  return `<span class="badge ${status === "启用" ? "on" : "off"}">${esc(status)}</span>`;
+}
+function attrBadge(attr){
+  return `<span class="badge">${esc(attr)}</span>`;
+}
+function complianceBadge(v){
+  const cls = v === "合格" ? "on" : v === "不合格" ? "warn" : "off";
+  return `<span class="badge ${cls}">${esc(v || "待核验")}</span>`;
+}
+function formatAddress(w){
+  return [w.country, w.province, w.city, w.detail].filter(Boolean).join(" · ");
+}
+function formatCoord(w){
+  if(!w.lng && !w.lat) return "-";
+  return `${w.lng || "-"}, ${w.lat || "-"}`;
+}
+function findWarehouse(id){ return warehouses.find(w => w.id === id); }
+function nextWarehouseId(){
+  const nums = warehouses.map(w => parseInt(String(w.id).replace(/\D/g,""), 10)).filter(n => !isNaN(n));
+  const next = (nums.length ? Math.max.apply(null, nums) : 0) + 1;
+  return "WH" + String(next).padStart(3, "0");
+}
+function makeDefaultZones(whId){
+  const t = Date.now();
+  return DEFAULT_ZONE_TYPES.map((type, i) => ({
+    id: t + i + 1,
+    code: `${whId}-${ZONE_CODE_MAP[type]}`,
+    type,
+    status: "停用",
+    locations: 0
+  }));
+}
+function leftoverTypes(wh){
+  const used = new Set((wh?.zones || []).map(z => z.type));
+  return ALL_ZONE_TYPES.filter(t => !used.has(t));
+}
+function isDefaultType(type){ return DEFAULT_ZONE_TYPES.includes(type); }
+
+function renderList(){
+  currentWarehouse = null;
+  zoneFilterWarehouseId = null;
+  setNav("warehouse");
+  document.getElementById("crumb").innerHTML = "库存管理 / <b>仓库管理</b>";
+  document.getElementById("page").innerHTML = `
+    <div class="page-title">
+      <div>
+        <h1>仓库管理</h1>
+        <div class="muted" style="margin-top:6px">维护仓库基础信息；双击「库区数量」进入仓库库区管理</div>
+      </div>
+      <button class="btn primary" onclick="openWarehouse()">＋ 新建仓库</button>
+    </div>
+    <div class="toolbar">
+      <input class="input" id="search" placeholder="仓库ID / 名称 / 地址" oninput="filterWarehouses()">
+      <select class="select" id="statusFilter" onchange="filterWarehouses()">
+        <option value="">全部状态</option>
+        <option value="启用">启用</option>
+        <option value="停用">停用</option>
+      </select>
+      <select class="select" id="attrFilter" onchange="filterWarehouses()">
+        <option value="">全部属性</option>
+        <option value="普通">普通</option>
+        <option value="防火">防火</option>
+        <option value="恒温">恒温</option>
+        <option value="冷链">冷链</option>
+      </select>
+      <button class="btn" onclick="filterWarehouses()">搜索</button>
+    </div>
+    <div class="table-card table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>仓库ID</th>
+            <th>仓库名称</th>
+            <th>仓库属性</th>
+            <th>状态</th>
+            <th>库区数量<div class="hint">双击进入库区管理</div></th>
+            <th>仓库地址</th>
+            <th>坐标</th>
+            <th>面积 / 层高</th>
+            <th>称重 / 消防</th>
+            <th>负责人</th>
+            <th>联系人及电话</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="warehouseRows"></tbody>
+      </table>
+    </div>`;
+  filterWarehouses();
+}
+
+function filterWarehouses(){
+  const q = (document.getElementById("search")?.value || "").toLowerCase();
+  const st = document.getElementById("statusFilter")?.value || "";
+  const at = document.getElementById("attrFilter")?.value || "";
+  const list = warehouses.filter(w => {
+    const blob = [w.id, w.name, formatAddress(w), w.owner, w.contact, w.phone].join(" ").toLowerCase();
+    return blob.includes(q) && (!st || w.status === st) && (!at || w.attr === at);
+  });
+  const rows = list.map(w => `
+    <tr>
+      <td>${esc(w.id)}</td>
+      <td><span class="link" onclick="showWarehouse('${esc(w.id)}')">${esc(w.name)}</span></td>
+      <td>${attrBadge(w.attr)}</td>
+      <td>${statusBadge(w.status)}</td>
+      <td><span class="zone-count" title="双击进入库区管理" ondblclick="enterZoneModule('${esc(w.id)}')">${w.zones.length}</span></td>
+      <td class="wrap">${esc(formatAddress(w))}</td>
+      <td>${esc(formatCoord(w))}</td>
+      <td>${esc(w.area || "-")} ㎡ / ${esc(w.height || "-")} m</td>
+      <td>${complianceBadge(w.weighing)} ${complianceBadge(w.fire)}</td>
+      <td>${esc(w.owner || "-")}</td>
+      <td class="wrap">${esc(w.contact || "-")}<div class="hint">${esc(w.phone || "")}</div></td>
+      <td>
+        <span class="link" onclick="openWarehouse('${esc(w.id)}')">编辑</span>
+        <span class="link" onclick="showWarehouse('${esc(w.id)}')">查看</span>
+        <span class="link" onclick="enterZoneModule('${esc(w.id)}')">库区</span>
+        <span class="link danger" onclick="deleteWarehouse('${esc(w.id)}')">删除</span>
+      </td>
+    </tr>`).join("");
+  document.getElementById("warehouseRows").innerHTML = rows || `<tr><td colspan="12" class="empty">暂无仓库</td></tr>`;
+}
+
+function showWarehouse(id){
+  currentWarehouse = findWarehouse(id);
+  if(!currentWarehouse){ renderList(); return; }
+  setNav("warehouse");
+  const w = currentWarehouse;
+  document.getElementById("crumb").innerHTML = `库存管理 / <span class="link" onclick="renderList()">仓库管理</span> / <b>${esc(w.name)}</b>`;
+  document.getElementById("page").innerHTML = `
+    <div class="back" onclick="renderList()">← 返回仓库列表</div>
+    <div class="detail-head">
+      <div class="detail-title">
+        <div>
+          <h2>${esc(w.name)} ${statusBadge(w.status)} ${attrBadge(w.attr)}</h2>
+          <div class="muted">仓库ID：${esc(w.id)}　地址：${esc(formatAddress(w))}</div>
+        </div>
+        <div>
+          <button class="btn" onclick="openWarehouse('${esc(w.id)}')">编辑仓库</button>
+          <button class="btn" onclick="enterZoneModule('${esc(w.id)}')">库区管理</button>
+          <button class="btn danger" onclick="deleteWarehouse('${esc(w.id)}')">删除仓库</button>
+        </div>
+      </div>
+      <div class="kv">
+        <div><span class="muted">仓库坐标</span><b>${esc(formatCoord(w))}</b></div>
+        <div><span class="muted">面积</span><b>${esc(w.area || "-")} ㎡</b></div>
+        <div><span class="muted">层高</span><b>${esc(w.height || "-")} m</b></div>
+        <div><span class="muted">库区数量</span><b class="zone-count" title="双击进入库区管理" ondblclick="enterZoneModule('${esc(w.id)}')">${w.zones.length}</b></div>
+        <div><span class="muted">称重合规</span><b>${complianceBadge(w.weighing)}</b></div>
+        <div><span class="muted">消防合规</span><b>${complianceBadge(w.fire)}</b></div>
+        <div><span class="muted">负责人</span><b>${esc(w.owner || "-")}</b></div>
+        <div><span class="muted">联系人及电话</span><b>${esc(w.contact || "-")} / ${esc(w.phone || "-")}</b></div>
+      </div>
+    </div>
+    <div class="page-title">
+      <div>
+        <h2 style="font-size:18px;margin:0">库区一览</h2>
+        <div class="muted">默认收货区、存储区、待发货区；最多可扩展至 8 个库区。双击行可进入库区管理</div>
+      </div>
+      <button class="btn primary" onclick="enterZoneModule('${esc(w.id)}')">进入仓库库区管理</button>
+    </div>
+    <div class="table-card table-wrap">
+      <table class="table compact">
+        <thead>
+          <tr><th>仓库ID</th><th>库区编码</th><th>库区类型</th><th>状态</th><th>操作</th></tr>
+        </thead>
+        <tbody>
+          ${w.zones.map(z => `
+            <tr ondblclick="enterZoneModule('${esc(w.id)}')">
+              <td>${esc(w.id)}</td>
+              <td>${esc(z.code)}</td>
+              <td><span class="badge">${esc(z.type)}</span></td>
+              <td>${statusBadge(z.status)}</td>
+              <td>
+                <span class="link" onclick="openZone('${esc(w.id)}', ${z.id})">编辑</span>
+                <span class="link danger" onclick="deleteZone('${esc(w.id)}', ${z.id})">删除</span>
+              </td>
+            </tr>`).join("")}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+function enterZoneModule(warehouseId){
+  zoneFilterWarehouseId = warehouseId || null;
+  renderZoneList(warehouseId || null);
+}
+
+function renderZoneList(warehouseId){
+  if(warehouseId !== undefined) zoneFilterWarehouseId = warehouseId || null;
+  currentWarehouse = zoneFilterWarehouseId ? findWarehouse(zoneFilterWarehouseId) : null;
+  setNav("zone");
+  const filterId = zoneFilterWarehouseId;
+  const crumb = filterId
+    ? `库存管理 / <span class="link" onclick="renderList()">仓库管理</span> / <b>仓库库区管理</b>`
+    : `库存管理 / <span class="link" onclick="renderList()">仓库管理</span> / <b>仓库库区管理</b>`;
+  document.getElementById("crumb").innerHTML = crumb;
+
+  const options = [`<option value="">全部仓库</option>`]
+    .concat(warehouses.map(w => `<option value="${esc(w.id)}" ${w.id === filterId ? "selected" : ""}>${esc(w.id)} · ${esc(w.name)}</option>`))
+    .join("");
+
+  const selected = filterId ? findWarehouse(filterId) : null;
+  const canAdd = selected && leftoverTypes(selected).length > 0 && selected.zones.length < MAX_ZONES;
+  const addHint = !selected
+    ? "请先筛选具体仓库后再添加库区"
+    : selected.zones.length >= MAX_ZONES
+      ? "该仓库库区已达上限 8 个"
+      : leftoverTypes(selected).length === 0
+        ? "无可再添加的库区类型"
+        : `当前 ${selected.zones.length} / ${MAX_ZONES}，可继续添加可选库区`;
+
+  document.getElementById("page").innerHTML = `
+    <div class="page-title">
+      <div>
+        <h1>仓库库区管理</h1>
+        <div class="muted" style="margin-top:6px">层级：仓库管理 → 仓库库区管理。默认三大库区不可删除，可选库区：打包区、退货区、动街区、报损区、特殊区</div>
+      </div>
+      <button class="btn primary" ${canAdd ? "" : "disabled"} onclick="openZone(${selected ? `'${esc(selected.id)}'` : "null"})">＋ 添加库区</button>
+    </div>
+    <div class="toolbar">
+      <select class="select" id="zoneWhFilter" style="width:260px" onchange="enterZoneModule(this.value)">
+        ${options}
+      </select>
+      <input class="input" id="zoneSearch" placeholder="库区编码 / 类型 / 仓库ID" oninput="filterZones()">
+      <select class="select" id="zoneStatusFilter" onchange="filterZones()">
+        <option value="">全部状态</option>
+        <option value="启用">启用</option>
+        <option value="停用">停用</option>
+      </select>
+      <button class="btn" onclick="filterZones()">搜索</button>
+      <span class="muted">${esc(addHint)}</span>
+    </div>
+    <div class="table-card table-wrap">
+      <table class="table compact">
+        <thead>
+          <tr>
+            <th>仓库ID</th>
+            <th>库区编码</th>
+            <th>库区类型</th>
+            <th>状态</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody id="zoneRows"></tbody>
+      </table>
+    </div>`;
+  filterZones();
+}
+
+function collectZones(){
+  const filterId = zoneFilterWarehouseId;
+  const rows = [];
+  warehouses.forEach(w => {
+    if(filterId && w.id !== filterId) return;
+    w.zones.forEach(z => rows.push({ warehouse: w, zone: z }));
+  });
+  return rows;
+}
+
+function filterZones(){
+  const q = (document.getElementById("zoneSearch")?.value || "").toLowerCase();
+  const st = document.getElementById("zoneStatusFilter")?.value || "";
+  const list = collectZones().filter(({warehouse:w, zone:z}) => {
+    const blob = [w.id, z.code, z.type].join(" ").toLowerCase();
+    return blob.includes(q) && (!st || z.status === st);
+  });
+  const html = list.map(({warehouse:w, zone:z}) => `
+    <tr>
+      <td>${esc(w.id)}</td>
+      <td>${esc(z.code)}</td>
+      <td><span class="badge">${esc(z.type)}</span></td>
+      <td>${statusBadge(z.status)}</td>
+      <td>
+        <span class="link" onclick="openZone('${esc(w.id)}', ${z.id})">编辑</span>
+        <span class="link danger" onclick="deleteZone('${esc(w.id)}', ${z.id})">删除</span>
+      </td>
+    </tr>`).join("");
+  const el = document.getElementById("zoneRows");
+  if(el) el.innerHTML = html || `<tr><td colspan="5" class="empty">暂无库区</td></tr>`;
+}
+
+function openWarehouse(id){
+  editingWarehouse = id ? findWarehouse(id) : null;
+  const isEdit = !!editingWarehouse;
+  document.getElementById("drawerTitle").textContent = isEdit ? "编辑仓库" : "新建仓库";
+  document.getElementById("drawerHint").textContent = isEdit
+    ? "修改属性、状态与标准化地址；库区请在仓库库区管理中维护"
+    : "新建仓库默认停用，并自动生成收货区、存储区、待发货区；需管理员手动激活";
+  document.getElementById("whId").value = editingWarehouse?.id || nextWarehouseId();
+  document.getElementById("whId").disabled = isEdit;
+  document.getElementById("whName").value = editingWarehouse?.name || "";
+  document.getElementById("whAttr").value = editingWarehouse?.attr || "普通";
+  document.getElementById("whStatus").value = editingWarehouse?.status || "停用";
+  document.getElementById("whZoneCount").value = isEdit
+    ? `${editingWarehouse.zones.length}（最多 ${MAX_ZONES}）`
+    : `3（创建后自动生成收货区、存储区、待发货区）`;
+  document.getElementById("whZoneCount").style.cursor = isEdit ? "pointer" : "default";
+  document.getElementById("whCountry").value = editingWarehouse?.country || "";
+  document.getElementById("whProvince").value = editingWarehouse?.province || "";
+  document.getElementById("whCity").value = editingWarehouse?.city || "";
+  document.getElementById("whDetail").value = editingWarehouse?.detail || "";
+  document.getElementById("whLng").value = editingWarehouse?.lng || "";
+  document.getElementById("whLat").value = editingWarehouse?.lat || "";
+  document.getElementById("whArea").value = editingWarehouse?.area || "";
+  document.getElementById("whHeight").value = editingWarehouse?.height || "";
+  document.getElementById("whWeighing").value = editingWarehouse?.weighing || "待核验";
+  document.getElementById("whFire").value = editingWarehouse?.fire || "待核验";
+  document.getElementById("whOwner").value = editingWarehouse?.owner || "";
+  document.getElementById("whContact").value = editingWarehouse?.contact || "";
+  document.getElementById("whPhone").value = editingWarehouse?.phone || "";
+  document.getElementById("drawerMask").style.display = "flex";
+}
+
+function closeDrawer(){ document.getElementById("drawerMask").style.display = "none"; }
+
+function openZonesFromForm(){
+  if(!editingWarehouse){ toast("请先保存仓库后再管理库区"); return; }
+  closeDrawer();
+  enterZoneModule(editingWarehouse.id);
+}
+
+function readWarehouseForm(){
+  return {
+    id: document.getElementById("whId").value.trim(),
+    name: document.getElementById("whName").value.trim(),
+    attr: document.getElementById("whAttr").value,
+    status: document.getElementById("whStatus").value,
+    country: document.getElementById("whCountry").value.trim(),
+    province: document.getElementById("whProvince").value.trim(),
+    city: document.getElementById("whCity").value.trim(),
+    detail: document.getElementById("whDetail").value.trim(),
+    lng: document.getElementById("whLng").value.trim(),
+    lat: document.getElementById("whLat").value.trim(),
+    area: document.getElementById("whArea").value.trim(),
+    height: document.getElementById("whHeight").value.trim(),
+    weighing: document.getElementById("whWeighing").value,
+    fire: document.getElementById("whFire").value,
+    owner: document.getElementById("whOwner").value.trim(),
+    contact: document.getElementById("whContact").value.trim(),
+    phone: document.getElementById("whPhone").value.trim()
+  };
+}
+
+function saveWarehouse(){
+  const form = readWarehouseForm();
+  if(!form.id || !form.name){ alert("仓库ID和仓库名称不能为空"); return; }
+  if(!/^[A-Za-z0-9_-]+$/.test(form.id)){ alert("仓库ID仅支持字母、数字、下划线和中划线"); return; }
+  if(!form.country || !form.province || !form.city || !form.detail){
+    alert("请完整填写标准化地址：国家、省/州、市/县、详细信息（精确到门牌号）");
+    return;
+  }
+  if(!form.owner || !form.contact || !form.phone){ alert("负责人、联系人及电话不能为空"); return; }
+  if(warehouses.some(w => w.id === form.id && (!editingWarehouse || w.id !== editingWarehouse.id))){
+    alert("仓库ID已存在，必须唯一"); return;
+  }
+  if(warehouses.some(w => w.name === form.name && (!editingWarehouse || w.id !== editingWarehouse.id))){
+    alert("仓库名称已存在"); return;
+  }
+  if(editingWarehouse){
+    Object.assign(editingWarehouse, form);
+    toast("仓库编辑成功");
+  }else{
+    warehouses.push(Object.assign({}, form, { zones: makeDefaultZones(form.id) }));
+    toast("仓库创建成功：默认停用，已生成收货区、存储区、待发货区");
+  }
+  closeDrawer();
+  if(currentWarehouse) showWarehouse(currentWarehouse.id);
+  else renderList();
+}
+
+function deleteWarehouse(id){
+  const w = findWarehouse(id);
+  if(!w) return;
+  if(w.zones.some(z => z.locations > 0)){ alert("当前仓库存在库位，不允许删除"); return; }
+  if(!confirm(`确定删除仓库“${w.name}”（${w.id}）吗？其下库区将一并删除。`)) return;
+  warehouses = warehouses.filter(x => x.id !== id);
+  currentWarehouse = null;
+  toast("仓库已删除");
+  renderList();
+}
+
+function fillZoneTypeOptions(wh, selectedType, lockType){
+  const sel = document.getElementById("zoneType");
+  const types = lockType ? [selectedType] : leftoverTypes(wh);
+  sel.innerHTML = types.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join("");
+  if(selectedType && types.includes(selectedType)) sel.value = selectedType;
+  sel.disabled = !!lockType;
+}
+
+function suggestedZoneCode(whId, type){
+  return `${whId}-${ZONE_CODE_MAP[type] || "ZON"}`;
+}
+
+function onZoneWarehouseChange(){
+  const id = document.getElementById("zoneWarehouseSelect").value;
+  const wh = findWarehouse(id);
+  document.getElementById("zoneWarehouseId").value = wh ? wh.id : "";
+  if(!wh){ document.getElementById("zoneType").innerHTML = ""; return; }
+  fillZoneTypeOptions(wh, leftoverTypes(wh)[0], false);
+  onZoneTypeChange();
+}
+
+function onZoneTypeChange(){
+  if(zoneModalMode !== "add") return;
+  const whId = document.getElementById("zoneWarehouseId").value;
+  const type = document.getElementById("zoneType").value;
+  if(whId && type) document.getElementById("zoneCode").value = suggestedZoneCode(whId, type);
+}
+
+function openZone(warehouseId, zoneId){
+  const adding = zoneId == null;
+  zoneModalMode = adding ? "add" : "edit";
+  document.getElementById("zoneModalTitle").textContent = adding ? "添加库区" : "编辑库区";
+  const selectWrap = document.getElementById("zoneWarehouseSelectWrap");
+
+  if(adding){
+    currentWarehouse = warehouseId ? findWarehouse(warehouseId) : (zoneFilterWarehouseId ? findWarehouse(zoneFilterWarehouseId) : null);
+    currentZone = null;
+    if(!currentWarehouse && warehouses.length === 1) currentWarehouse = warehouses[0];
+    if(!currentWarehouse){
+      selectWrap.style.display = "block";
+      document.getElementById("zoneWarehouseSelect").innerHTML =
+        `<option value="">请选择仓库</option>` + warehouses.map(w => `<option value="${esc(w.id)}">${esc(w.id)} · ${esc(w.name)}</option>`).join("");
+      document.getElementById("zoneWarehouseId").value = "";
+      document.getElementById("zoneType").innerHTML = "";
+      document.getElementById("zoneCode").value = "";
+      document.getElementById("zoneStatus").value = "停用";
+    }else{
+      if(currentWarehouse.zones.length >= MAX_ZONES){ alert("每个仓库最多 8 个库区"); return; }
+      const left = leftoverTypes(currentWarehouse);
+      if(!left.length){ alert("当前仓库已包含全部库区类型"); return; }
+      selectWrap.style.display = "none";
+      document.getElementById("zoneWarehouseId").value = currentWarehouse.id;
+      fillZoneTypeOptions(currentWarehouse, left[0], false);
+      document.getElementById("zoneCode").value = suggestedZoneCode(currentWarehouse.id, left[0]);
+      document.getElementById("zoneStatus").value = "停用";
+    }
+  }else{
+    currentWarehouse = findWarehouse(warehouseId);
+    currentZone = currentWarehouse.zones.find(z => z.id === zoneId);
+    selectWrap.style.display = "none";
+    document.getElementById("zoneWarehouseId").value = currentWarehouse.id;
+    fillZoneTypeOptions(currentWarehouse, currentZone.type, true);
+    document.getElementById("zoneCode").value = currentZone.code;
+    document.getElementById("zoneStatus").value = currentZone.status;
+  }
+  document.getElementById("zoneModal").style.display = "flex";
+}
+
+function closeZone(){ document.getElementById("zoneModal").style.display = "none"; }
+
+function saveZone(){
+  let wh = currentWarehouse;
+  if(zoneModalMode === "add" && !wh){
+    const id = document.getElementById("zoneWarehouseSelect").value;
+    wh = findWarehouse(id);
+  }
+  if(!wh){ alert("请选择所属仓库"); return; }
+  if(zoneModalMode === "add" && wh.zones.length >= MAX_ZONES){ alert("每个仓库最多 8 个库区"); return; }
+  const type = document.getElementById("zoneType").value;
+  const code = document.getElementById("zoneCode").value.trim();
+  const status = document.getElementById("zoneStatus").value;
+  if(!type){ alert("请选择库区类型"); return; }
+  if(!code){ alert("库区编码不能为空"); return; }
+  const editingId = currentZone?.id;
+  if(wh.zones.some(z => z.code === code && z.id !== editingId)){ alert("同一仓库下库区编码必须唯一"); return; }
+  if(zoneModalMode === "add"){
+    if(wh.zones.some(z => z.type === type)){ alert("该库区类型已存在"); return; }
+    wh.zones.push({ id: Date.now(), code, type, status, locations: 0 });
+    toast("库区已添加");
+  }else{
+    currentZone.code = code;
+    currentZone.status = status;
+    toast("库区编辑成功");
+  }
+  currentWarehouse = wh;
+  closeZone();
+  refreshAfterZoneChange(wh.id);
+}
+
+function deleteZone(warehouseId, zoneId){
+  const wh = findWarehouse(warehouseId);
+  const z = wh.zones.find(x => x.id === zoneId);
+  if(z.locations > 0){ alert("当前库区存在库位，不允许删除"); return; }
+  if(isDefaultType(z.type)){ alert("收货区、存储区、待发货区为默认三大库区，不允许删除"); return; }
+  if(!confirm(`确定删除库区“${z.type}”（${z.code}）吗？`)) return;
+  wh.zones = wh.zones.filter(x => x.id !== zoneId);
+  toast("库区已删除");
+  refreshAfterZoneChange(wh.id);
+}
+
+function refreshAfterZoneChange(warehouseId){
+  if(document.getElementById("zoneRows")) renderZoneList(zoneFilterWarehouseId);
+  else if(currentWarehouse) showWarehouse(warehouseId);
+  else renderList();
+}
+
+function toast(msg){
+  const e = document.getElementById("toast");
+  e.textContent = msg;
+  e.style.display = "block";
+  setTimeout(() => e.style.display = "none", 2200);
+}
+
+renderList();
+</script>
+</body>
+</html>
