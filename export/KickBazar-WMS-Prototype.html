@@ -1,0 +1,2303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1440">
+  <title>KickBazar WMS - Prototype</title>
+  <style>
+/* KickBazar WMS Prototype - 1440x900 */
+:root {
+  --header-height: 56px;
+  --sidebar-width: 220px;
+  --border-color: #e8e8e8;
+  --bg-gray: #f5f5f5;
+  --text-primary: #333;
+  --text-secondary: #666;
+  --text-muted: #999;
+  --primary: #1890ff;
+  --primary-light: #e6f7ff;
+  --success: #52c41a;
+  --success-bg: #f6ffed;
+  --danger: #ff4d4f;
+  --warning: #faad14;
+  --logo-pink: #e85d75;
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 14px;
+  color: var(--text-primary);
+  background: #fff;
+  overflow: hidden;
+}
+
+.app-container {
+  width: 1440px;
+  height: 900px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-color);
+  position: relative;
+}
+
+/* Header */
+.header {
+  height: var(--header-height);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.logo-icon {
+  width: 32px;
+  height: 32px;
+  background: var(--logo-pink);
+  border-radius: 50% 50% 50% 20%;
+  position: relative;
+}
+
+.logo-icon::before {
+  content: "";
+  position: absolute;
+  width: 8px;
+  height: 12px;
+  background: #fff;
+  border-radius: 50%;
+  top: 8px;
+  left: 6px;
+  box-shadow: 14px 0 0 #fff;
+}
+
+.logo-icon::after {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 0 0 8px 8px;
+  bottom: 4px;
+  left: 8px;
+}
+
+.main-layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Sidebar */
+.sidebar {
+  width: var(--sidebar-width);
+  background: var(--bg-gray);
+  border-right: 1px solid var(--border-color);
+  overflow-y: auto;
+  flex-shrink: 0;
+  padding: 12px 0;
+}
+
+.nav-group-title {
+  padding: 8px 16px 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.nav-item {
+  padding: 10px 16px 10px 24px;
+  cursor: pointer;
+  color: var(--text-primary);
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-item:hover {
+  background: #ebebeb;
+}
+
+.nav-item.active {
+  background: #fff;
+  color: var(--primary);
+  font-weight: 500;
+  border-right: 3px solid var(--primary);
+}
+
+.nav-item.sub {
+  padding-left: 40px;
+  font-size: 13px;
+}
+
+.nav-item.parent {
+  font-weight: 500;
+}
+
+.nav-item .chevron {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+/* Content */
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #fff;
+}
+
+.page {
+  display: none;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
+.page.active {
+  display: flex;
+}
+
+.page-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.page-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.page-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.page-body {
+  flex: 1;
+  overflow: auto;
+  padding: 16px 24px;
+}
+
+/* Filters */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+  margin-bottom: 16px;
+  padding: 16px;
+  background: var(--bg-gray);
+  border-radius: 4px;
+}
+
+.filter-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.filter-item label {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.filter-item input,
+.filter-item select {
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  font-size: 13px;
+  min-width: 140px;
+  background: #fff;
+}
+
+.filter-item input:focus,
+.filter-item select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+.filter-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+/* Buttons */
+.btn {
+  height: 32px;
+  padding: 0 16px;
+  border-radius: 4px;
+  border: 1px solid #d9d9d9;
+  background: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.btn-primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: #40a9ff;
+  border-color: #40a9ff;
+  color: #fff;
+}
+
+.btn-danger {
+  color: var(--danger);
+  border-color: #ffa39e;
+}
+
+.btn-danger:hover {
+  background: #fff1f0;
+}
+
+.btn:disabled,
+.btn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-link {
+  border: none;
+  background: none;
+  color: var(--primary);
+  padding: 0 4px;
+  height: auto;
+}
+
+.btn-link:hover {
+  text-decoration: underline;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+/* Table */
+.table-wrapper {
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  overflow: auto;
+  flex: 1;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+thead {
+  background: #fafafa;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+th {
+  padding: 12px 12px;
+  text-align: left;
+  font-weight: 500;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+
+td {
+  padding: 12px 12px;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+}
+
+tbody tr {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+tbody tr:hover {
+  background: #fafafa;
+}
+
+tbody tr.selected {
+  background: var(--primary-light);
+}
+
+.zone-count-cell {
+  color: var(--primary);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.zone-count-cell:hover {
+  color: #40a9ff;
+}
+
+/* Tags */
+.tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.tag-enable {
+  background: var(--success-bg);
+  color: var(--success);
+  border: 1px solid #b7eb8f;
+}
+
+.tag-disable {
+  background: #f5f5f5;
+  color: var(--text-muted);
+  border: 1px solid #d9d9d9;
+}
+
+.tag-normal { background: #f0f0f0; color: #666; }
+.tag-fireproof { background: #fff7e6; color: #d46b08; }
+.tag-thermostatic { background: #e6f7ff; color: #096dd9; }
+.tag-cold { background: #e6fffb; color: #08979c; }
+
+.tag-rcv { background: #fff7e6; color: #d46b08; }
+.tag-sto { background: #f6ffed; color: #389e0d; }
+.tag-shp { background: #e6f7ff; color: #096dd9; }
+.tag-dmg { background: #fff1f0; color: #cf1322; }
+
+/* Pagination */
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  padding: 12px 24px;
+  border-top: 1px solid var(--border-color);
+  flex-shrink: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.pagination-pages {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.page-num {
+  min-width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  cursor: pointer;
+  background: #fff;
+}
+
+.page-num.active {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.page-num:hover:not(.active) {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.rows-select {
+  height: 28px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  padding: 0 4px;
+}
+
+.goto-input {
+  width: 48px;
+  height: 28px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  text-align: center;
+}
+
+/* Modal */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-overlay.show {
+  display: flex;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  max-height: 85vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-sm { width: 480px; }
+.modal-md { width: 640px; }
+.modal-lg { width: 800px; }
+
+.modal-header {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: var(--text-muted);
+  line-height: 1;
+}
+
+.modal-body {
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.modal-footer {
+  padding: 12px 24px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* Form */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 24px;
+}
+
+.form-grid.single {
+  grid-template-columns: 1fr;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group.full {
+  grid-column: 1 / -1;
+}
+
+.form-group label {
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.form-group label .required {
+  color: var(--danger);
+  margin-left: 2px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.form-group textarea {
+  height: 64px;
+  padding: 8px 10px;
+  resize: vertical;
+}
+
+.form-group .hint {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.form-group .readonly {
+  background: #f5f5f5;
+  color: var(--text-secondary);
+}
+
+.form-section-title {
+  grid-column: 1 / -1;
+  font-weight: 600;
+  font-size: 14px;
+  margin-top: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 16px;
+}
+
+.tab {
+  padding: 10px 20px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: all 0.2s;
+}
+
+.tab:hover {
+  color: var(--primary);
+}
+
+.tab.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  font-weight: 500;
+}
+
+.sub-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.sub-tab {
+  padding: 4px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-secondary);
+  border: 1px solid transparent;
+}
+
+.sub-tab.active {
+  background: var(--primary-light);
+  color: var(--primary);
+  border-color: #91d5ff;
+}
+
+/* Empty state */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  color: var(--text-muted);
+}
+
+.empty-state .icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.4;
+}
+
+.empty-state p {
+  margin-bottom: 16px;
+}
+
+/* Switch */
+.switch {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  display: inline-block;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch .slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #ccc;
+  border-radius: 22px;
+  transition: 0.3s;
+}
+
+.switch .slider::before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 2px;
+  bottom: 2px;
+  background: white;
+  border-radius: 50%;
+  transition: 0.3s;
+}
+
+.switch input:checked + .slider {
+  background: var(--primary);
+}
+
+.switch input:checked + .slider::before {
+  transform: translateX(18px);
+}
+
+/* Expandable rows */
+.expand-icon {
+  display: inline-block;
+  width: 16px;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: transform 0.2s;
+}
+
+.expand-icon.expanded {
+  transform: rotate(90deg);
+}
+
+.sku-subtable {
+  background: #fafafa;
+}
+
+.sku-subtable td {
+  padding-left: 48px;
+  font-size: 12px;
+}
+
+.sku-subtable td:first-child {
+  padding-left: 48px;
+}
+
+/* Toast */
+.toast-container {
+  position: fixed;
+  top: 72px;
+  right: 24px;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toast {
+  padding: 12px 20px;
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--primary);
+  animation: slideIn 0.3s ease;
+  max-width: 400px;
+}
+
+.toast.success { border-left-color: var(--success); }
+.toast.error { border-left-color: var(--danger); }
+.toast.warning { border-left-color: var(--warning); }
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* Action links */
+.action-links {
+  display: flex;
+  gap: 12px;
+}
+
+.action-links a {
+  color: var(--primary);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.action-links a:hover {
+  text-decoration: underline;
+}
+
+.action-links a.disabled {
+  color: var(--text-muted);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.action-links a.danger {
+  color: var(--danger);
+}
+
+/* Barcode tooltip */
+.barcode-cell {
+  position: relative;
+  cursor: help;
+  border-bottom: 1px dashed var(--text-muted);
+}
+
+/* Record type badges */
+.type-inbound { color: #389e0d; }
+.type-occupy { color: #d46b08; }
+.type-deduct { color: #cf1322; }
+.type-unfreeze { color: #096dd9; }
+
+/* Placeholder pages */
+.placeholder-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+}
+
+.placeholder-page h2 {
+  font-size: 24px;
+  margin-bottom: 8px;
+  color: var(--text-secondary);
+}
+
+/* Stock summary cards */
+.stock-summary {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.stock-card {
+  flex: 1;
+  padding: 12px 16px;
+  background: var(--bg-gray);
+  border-radius: 4px;
+  border-left: 3px solid var(--primary);
+}
+
+.stock-card.locked { border-left-color: var(--warning); }
+.stock-card.available { border-left-color: var(--success); }
+
+.stock-card .label {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.stock-card .value {
+  font-size: 20px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+/* Inventory change columns */
+.stock-change {
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.stock-change .up { color: var(--success); }
+.stock-change .down { color: var(--danger); }
+.stock-change .same { color: var(--text-muted); }
+
+/* View mode readonly */
+.view-mode .form-group input,
+.view-mode .form-group select,
+.view-mode .form-group textarea {
+  pointer-events: none;
+  background: #f5f5f5;
+  border-color: #e8e8e8;
+}
+
+/* Prototype nav helper */
+.prototype-nav {
+  position: fixed;
+  bottom: 12px;
+  left: 12px;
+  background: rgba(0,0,0,0.75);
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 11px;
+  z-index: 3000;
+  max-width: 280px;
+}
+
+.prototype-nav strong {
+  display: block;
+  margin-bottom: 4px;
+}
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="logo">
+        <div class="logo-icon"></div>
+        <span>KickBazar</span>
+      </div>
+    </header>
+
+    <div class="main-layout">
+      <!-- Sidebar -->
+      <nav class="sidebar" id="sidebar">
+        <div class="nav-item parent" data-group="inventory">
+          <span>Inventory</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="nav-item sub" data-page="spu-sku-inventory">SPU/SKU inventory</div>
+        <div class="nav-item sub" data-page="record">Record</div>
+
+        <div class="nav-item parent" data-group="inbound">
+          <span>Inbound</span>
+        </div>
+
+        <div class="nav-item parent" data-group="outbound">
+          <span>Outbound</span>
+        </div>
+
+        <div class="nav-item parent" data-group="warehouses">
+          <span>Warehouses</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="nav-item sub active" data-page="warehouse-management">Warehouse Management</div>
+        <div class="nav-item sub" data-page="zone-management">Zone Management</div>
+      </nav>
+
+      <!-- Content Area -->
+      <main class="content">
+        <!-- ========== WAREHOUSE MANAGEMENT ========== -->
+        <div class="page active" id="page-warehouse-management">
+          <div class="page-header">
+            <h1 class="page-title">Warehouse Management</h1>
+            <p class="page-subtitle">Create and maintain warehouse master data</p>
+          </div>
+          <div class="page-body">
+            <div class="filter-bar">
+              <div class="filter-item">
+                <label>Search Field</label>
+                <select id="wh-search-field">
+                  <option value="warehouse_id">Warehouse ID</option>
+                  <option value="warehouse">Warehouse Name</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <label>Search Value</label>
+                <input type="text" placeholder="Enter search value" id="wh-search-value">
+              </div>
+              <div class="filter-item">
+                <label>Attribute</label>
+                <select id="wh-filter-attribute">
+                  <option value="">All</option>
+                  <option value="normal">Normal</option>
+                  <option value="fireproof">Fireproof</option>
+                  <option value="thermostatic">Thermostatic</option>
+                  <option value="cold chain">Cold Chain</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <label>Status</label>
+                <select id="wh-filter-status">
+                  <option value="">All</option>
+                  <option value="enable">Enable</option>
+                  <option value="disable">Disable</option>
+                </select>
+              </div>
+              <div class="filter-actions">
+                <button class="btn btn-primary" onclick="searchWarehouses()">Search</button>
+                <button class="btn" onclick="resetWarehouseFilters()">Reset</button>
+              </div>
+            </div>
+            <div class="toolbar">
+              <span></span>
+              <button class="btn btn-primary" onclick="openCreateWarehouse()">+ Add Warehouse</button>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Warehouse ID</th>
+                    <th>Warehouse</th>
+                    <th>Attribute</th>
+                    <th>Status</th>
+                    <th>Zone Count</th>
+                    <th>Total</th>
+                    <th>Locked</th>
+                    <th>Available</th>
+                    <th>Address</th>
+                    <th>Owner</th>
+                    <th>Contact / Phone</th>
+                    <th>Operation</th>
+                  </tr>
+                </thead>
+                <tbody id="warehouse-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="pagination-bar">
+            <span>Total <strong id="wh-total">5</strong> records</span>
+            <div class="pagination-pages">
+              <span class="page-num">&lt;</span>
+              <span class="page-num active">1</span>
+              <span class="page-num">2</span>
+              <span class="page-num">3</span>
+              <span>...</span>
+              <span class="page-num">&gt;</span>
+            </div>
+            <select class="rows-select">
+              <option>20/page</option>
+              <option>50/page</option>
+              <option>100/page</option>
+              <option>150/page</option>
+            </select>
+            <span>Go to <input type="text" class="goto-input" value="1"></span>
+          </div>
+        </div>
+
+        <!-- ========== ZONE MANAGEMENT ========== -->
+        <div class="page" id="page-zone-management">
+          <div class="page-header">
+            <h1 class="page-title">Zone Management</h1>
+            <p class="page-subtitle">Manage warehouse zones and storage areas</p>
+          </div>
+          <div class="page-body">
+            <div class="filter-bar">
+              <div class="filter-item">
+                <label>Warehouse ID</label>
+                <select id="zone-filter-warehouse">
+                  <option value="">All</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <label>Zone Code</label>
+                <input type="text" placeholder="Zone code" id="zone-filter-code">
+              </div>
+              <div class="filter-item">
+                <label>Zone Type</label>
+                <select id="zone-filter-type">
+                  <option value="">All</option>
+                  <option value="Receiving Zone">Receiving Zone</option>
+                  <option value="Storage Zone">Storage Zone</option>
+                  <option value="Shipping Zone">Shipping Zone</option>
+                  <option value="Damaged Goods Zone">Damaged Goods Zone</option>
+                  <option value="Packing Zone">Packing Zone</option>
+                  <option value="Returns Zone">Returns Zone</option>
+                  <option value="Quarantine Zone">Quarantine Zone</option>
+                  <option value="Special Zone">Special Zone</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <label>Status</label>
+                <select id="zone-filter-status">
+                  <option value="">All</option>
+                  <option value="enable">Enable</option>
+                  <option value="disable">Disable</option>
+                </select>
+              </div>
+              <div class="filter-actions">
+                <button class="btn btn-primary" onclick="searchZones()">Search</button>
+                <button class="btn" onclick="resetZoneFilters()">Reset</button>
+              </div>
+            </div>
+            <div class="toolbar">
+              <span></span>
+              <button class="btn btn-primary" onclick="openCreateZone()">+ Add Zone</button>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Warehouse ID</th>
+                    <th>Zone Code</th>
+                    <th>Zone</th>
+                    <th>Zone Name</th>
+                    <th>Status</th>
+                    <th>Total</th>
+                    <th>Locked</th>
+                    <th>Available</th>
+                    <th>Operation</th>
+                  </tr>
+                </thead>
+                <tbody id="zone-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="pagination-bar">
+            <span>Total <strong id="zone-total">12</strong> records</span>
+            <div class="pagination-pages">
+              <span class="page-num">&lt;</span>
+              <span class="page-num active">1</span>
+              <span class="page-num">&gt;</span>
+            </div>
+            <select class="rows-select"><option>20/page</option></select>
+            <span>Go to <input type="text" class="goto-input" value="1"></span>
+          </div>
+        </div>
+
+        <!-- ========== SPU/SKU INVENTORY ========== -->
+        <div class="page" id="page-spu-sku-inventory">
+          <div class="page-header">
+            <h1 class="page-title">SPU/SKU Inventory</h1>
+            <p class="page-subtitle">View current product inventory by SPU or SKU</p>
+          </div>
+          <div class="page-body">
+            <div class="tabs" id="inventory-tabs">
+              <div class="tab active" data-inv-tab="spu">SPU</div>
+              <div class="tab" data-inv-tab="sku">SKU</div>
+            </div>
+
+            <!-- SPU View -->
+            <div id="inv-view-spu">
+              <div class="filter-bar">
+                <div class="filter-item">
+                  <label>Warehouse ID/Name</label>
+                  <select id="spu-filter-warehouse"><option value="">All</option></select>
+                </div>
+                <div class="filter-item">
+                  <label>Zone Code</label>
+                  <input type="text" placeholder="Zone code" id="spu-filter-zone">
+                </div>
+                <div class="filter-item">
+                  <label>Product ID</label>
+                  <input type="text" placeholder="Exact match" id="spu-filter-product-id">
+                </div>
+                <div class="filter-item">
+                  <label>Product Name</label>
+                  <input type="text" placeholder="Fuzzy search" id="spu-filter-product-name">
+                </div>
+                <div class="filter-item">
+                  <label>In Stock Only</label>
+                  <label class="switch"><input type="checkbox" id="spu-in-stock"><span class="slider"></span></label>
+                </div>
+                <div class="filter-actions">
+                  <button class="btn btn-primary">Search</button>
+                  <button class="btn">Reset</button>
+                </div>
+              </div>
+              <div class="table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th style="width:40px"></th>
+                      <th>Product ID</th>
+                      <th>Product Name</th>
+                      <th>SKU</th>
+                      <th>Total</th>
+                      <th>Locked</th>
+                      <th>Available</th>
+                      <th>Warehouse</th>
+                      <th>Zone Name</th>
+                    </tr>
+                  </thead>
+                  <tbody id="spu-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- SKU View -->
+            <div id="inv-view-sku" style="display:none">
+              <div class="filter-bar">
+                <div class="filter-item">
+                  <label>Warehouse ID/Name</label>
+                  <select id="sku-filter-warehouse"><option value="">All</option></select>
+                </div>
+                <div class="filter-item">
+                  <label>Zone Code</label>
+                  <input type="text" placeholder="Zone code" id="sku-filter-zone">
+                </div>
+                <div class="filter-item">
+                  <label>Product ID</label>
+                  <input type="text" placeholder="Exact match">
+                </div>
+                <div class="filter-item">
+                  <label>Product Name</label>
+                  <input type="text" placeholder="Fuzzy search">
+                </div>
+                <div class="filter-item">
+                  <label>SKU ID</label>
+                  <input type="text" placeholder="Exact match">
+                </div>
+                <div class="filter-item">
+                  <label>In Stock Only</label>
+                  <label class="switch"><input type="checkbox"><span class="slider"></span></label>
+                </div>
+                <div class="filter-actions">
+                  <button class="btn btn-primary">Search</button>
+                  <button class="btn">Reset</button>
+                </div>
+              </div>
+              <div class="table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>SKU ID</th>
+                      <th>Specification</th>
+                      <th>Product Name</th>
+                      <th>Total</th>
+                      <th>Locked</th>
+                      <th>Available</th>
+                      <th>Warehouse</th>
+                      <th>Zone</th>
+                      <th>Zone Code</th>
+                      <th>Primary Barcode</th>
+                    </tr>
+                  </thead>
+                  <tbody id="sku-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="pagination-bar">
+            <span>Total <strong>128</strong> records</span>
+            <div class="pagination-pages">
+              <span class="page-num">&lt;</span>
+              <span class="page-num active">1</span>
+              <span class="page-num">2</span>
+              <span class="page-num">3</span>
+              <span>...</span>
+              <span class="page-num">7</span>
+              <span class="page-num">&gt;</span>
+            </div>
+            <select class="rows-select"><option>20/page</option></select>
+            <span>Go to <input type="text" class="goto-input"></span>
+          </div>
+        </div>
+
+        <!-- ========== INVENTORY RECORD ========== -->
+        <div class="page" id="page-record">
+          <div class="page-header">
+            <h1 class="page-title">Inventory Record</h1>
+            <p class="page-subtitle">Track inventory changes: inbound, outbound occupy, deduct, unfreeze</p>
+          </div>
+          <div class="page-body">
+            <div class="tabs" id="record-tabs">
+              <div class="tab active" data-record-tab="inbound">Inbound</div>
+              <div class="tab" data-record-tab="occupy">Outbound Occupy</div>
+              <div class="tab" data-record-tab="deduct">Outbound Deduct</div>
+              <div class="tab" data-record-tab="unfreeze">Unfreeze</div>
+              <div class="tab" data-record-tab="all">All</div>
+            </div>
+
+            <div class="filter-bar">
+              <div class="filter-item">
+                <label>Time Range</label>
+                <select>
+                  <option>Last 7 days</option>
+                  <option>Last 30 days</option>
+                  <option>Custom</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <label>Warehouse</label>
+                <select id="record-filter-warehouse"><option value="">All</option></select>
+              </div>
+              <div class="filter-item">
+                <label>Zone</label>
+                <select><option value="">All</option></select>
+              </div>
+              <div class="filter-item">
+                <label>SKU</label>
+                <input type="text" placeholder="SKU ID">
+              </div>
+              <div class="filter-item">
+                <label>Related Order No.</label>
+                <input type="text" placeholder="Order number">
+              </div>
+              <div class="filter-item">
+                <label>Operator</label>
+                <input type="text" placeholder="Operator name">
+              </div>
+              <div class="filter-actions">
+                <button class="btn btn-primary">Search</button>
+                <button class="btn">Reset</button>
+              </div>
+            </div>
+
+            <!-- Sub filter for inbound -->
+            <div class="sub-tabs" id="inbound-sub-tabs">
+              <div class="sub-tab active">All</div>
+              <div class="sub-tab">Initial Stock</div>
+              <div class="sub-tab">Purchase</div>
+            </div>
+
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>Warehouse</th>
+                    <th>Zone</th>
+                    <th>SKU</th>
+                    <th>Qty</th>
+                    <th>After Change (Total/Locked/Available)</th>
+                    <th>Type</th>
+                    <th>Related Order No.</th>
+                    <th>Operator</th>
+                  </tr>
+                </thead>
+                <tbody id="record-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="pagination-bar">
+            <span>Total <strong>356</strong> records</span>
+            <div class="pagination-pages">
+              <span class="page-num">&lt;</span>
+              <span class="page-num active">1</span>
+              <span class="page-num">2</span>
+              <span>...</span>
+              <span class="page-num">18</span>
+              <span class="page-num">&gt;</span>
+            </div>
+            <select class="rows-select"><option>20/page</option></select>
+            <span>Go to <input type="text" class="goto-input"></span>
+          </div>
+        </div>
+
+        <!-- ========== INBOUND PLACEHOLDER ========== -->
+        <div class="page" id="page-inbound">
+          <div class="placeholder-page">
+            <h2>Inbound</h2>
+            <p>Module under development — not in current prototype scope</p>
+          </div>
+        </div>
+
+        <!-- ========== OUTBOUND PLACEHOLDER ========== -->
+        <div class="page" id="page-outbound">
+          <div class="placeholder-page">
+            <h2>Outbound</h2>
+            <p>Module under development — not in current prototype scope</p>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Create/Edit Warehouse Modal -->
+  <div class="modal-overlay" id="warehouse-modal">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <span class="modal-title" id="warehouse-modal-title">Create Warehouse</span>
+        <button class="modal-close" onclick="closeModal('warehouse-modal')">&times;</button>
+      </div>
+      <div class="modal-body" id="warehouse-form-container">
+        <form class="form-grid" id="warehouse-form">
+          <div class="form-group" id="wh-id-group" style="display:none">
+            <label>Warehouse ID</label>
+            <input type="text" class="readonly" id="wh-id" readonly>
+          </div>
+          <div class="form-group">
+            <label>Warehouse Name <span class="required">*</span></label>
+            <input type="text" placeholder="Warehouse Name, 2-50 characters" id="wh-name" maxlength="50">
+            <span class="hint">2-50 characters. Chinese, letters, and numbers only.</span>
+          </div>
+          <div class="form-group">
+            <label>Attribute <span class="required">*</span></label>
+            <select id="wh-attribute">
+              <option value="normal">Normal</option>
+              <option value="fireproof">Fireproof</option>
+              <option value="thermostatic">Thermostatic</option>
+              <option value="cold chain">Cold Chain</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Status</label>
+            <span class="tag tag-disable" id="wh-status-tag">Disable</span>
+            <select id="wh-status" style="display:none;margin-top:6px">
+              <option value="disable">Disable</option>
+              <option value="enable">Enable</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Zone Count</label>
+            <input type="text" class="readonly" value="3 (Auto-generate: Receiving Zone, Storage Zone, Shipping Zone)" readonly id="wh-zone-count">
+            <a class="btn-link" id="wh-manage-zones" style="display:none" onclick="navigateToZonesFromWarehouse()">Manage Zones</a>
+          </div>
+
+          <div class="form-section-title">Address</div>
+          <div class="form-group">
+            <label>Country <span class="required">*</span></label>
+            <select id="wh-country">
+              <option value="">Select Country</option>
+              <option value="CN">China</option>
+              <option value="SG">Singapore</option>
+              <option value="US">United States</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>State/Province <span class="required">*</span></label>
+            <select id="wh-state">
+              <option value="">Select State/Province</option>
+              <option value="SH">Shanghai</option>
+              <option value="BJ">Beijing</option>
+              <option value="GD">Guangdong</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>City/County <span class="required">*</span></label>
+            <select id="wh-city">
+              <option value="">Select City/County</option>
+              <option value="PD">Pudong</option>
+              <option value="HP">Huangpu</option>
+            </select>
+          </div>
+          <div class="form-group full">
+            <label>Detailed Address <span class="required">*</span></label>
+            <input type="text" placeholder="Unit Number, Building, Street" id="wh-address" maxlength="200">
+          </div>
+
+          <div class="form-section-title">Additional Info</div>
+          <div class="form-group">
+            <label>Longitude</label>
+            <input type="text" placeholder="eg: 103.1234" id="wh-longitude">
+          </div>
+          <div class="form-group">
+            <label>Latitude</label>
+            <input type="text" placeholder="eg: 31.2304" id="wh-latitude">
+            <span class="hint">Longitude and latitude are both required or leave blank.</span>
+          </div>
+          <div class="form-group">
+            <label>Area (㎡)</label>
+            <input type="number" placeholder="Gross Floor Area" min="0" id="wh-area">
+          </div>
+          <div class="form-group">
+            <label>Ceiling Height (m)</label>
+            <input type="number" placeholder="Clear Height" min="0" id="wh-height">
+          </div>
+          <div class="form-group">
+            <label>Weighing Compliance</label>
+            <select id="wh-weighing">
+              <option value="pending">Pending</option>
+              <option value="compliant">Compliant</option>
+              <option value="error">Error</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Fire Safety Compliance</label>
+            <select id="wh-fire">
+              <option value="pending">Pending</option>
+              <option value="compliant">Compliant</option>
+              <option value="error">Error</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Owner</label>
+            <input type="text" placeholder="Warehouse Owner" id="wh-owner">
+          </div>
+          <div class="form-group">
+            <label>Contact</label>
+            <input type="text" placeholder="Contact Person" id="wh-contact">
+          </div>
+          <div class="form-group">
+            <label>Phone Number</label>
+            <input type="text" placeholder="with Country Code, eg: +65 1234 5678" id="wh-phone">
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer" id="warehouse-modal-footer">
+        <button class="btn" onclick="closeModal('warehouse-modal')">Cancel</button>
+        <button class="btn btn-primary" id="warehouse-submit-btn" onclick="submitWarehouse()">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Warehouse Confirm -->
+  <div class="modal-overlay" id="delete-warehouse-modal">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <span class="modal-title">Confirm Delete</span>
+        <button class="modal-close" onclick="closeModal('delete-warehouse-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="delete-warehouse-msg">Delete warehouse?</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('delete-warehouse-modal')">Cancel</button>
+        <button class="btn btn-danger" onclick="confirmDeleteWarehouse()">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create/Edit Zone Modal -->
+  <div class="modal-overlay" id="zone-modal">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <span class="modal-title" id="zone-modal-title">Create Zone</span>
+        <button class="modal-close" onclick="closeModal('zone-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form class="form-grid single" id="zone-form">
+          <div class="form-group">
+            <label>Warehouse ID</label>
+            <select id="zone-wh-id"></select>
+          </div>
+          <div class="form-group">
+            <label>Zone <span class="required">*</span></label>
+            <select id="zone-type">
+              <option value="">Select Zone Type</option>
+              <option value="Damaged Goods Zone">Damaged Goods Zone (DMG)</option>
+              <option value="Packing Zone">Packing Zone (PKG)</option>
+              <option value="Returns Zone">Returns Zone (RTN)</option>
+              <option value="Quarantine Zone">Quarantine Zone (HLD)</option>
+              <option value="Special Zone">Special Zone (SPC)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Zone Name</label>
+            <input type="text" placeholder="Default same as Zone type" id="zone-name">
+          </div>
+          <div class="form-group">
+            <label>Zone Code <span class="required">*</span></label>
+            <input type="text" placeholder="e.g. SH-001-DMG" id="zone-code">
+            <span class="hint">Unique within warehouse. Cannot be changed after creation.</span>
+          </div>
+          <div class="form-group">
+            <label>Status <span class="required">*</span></label>
+            <select id="zone-status">
+              <option value="enable">Enable</option>
+              <option value="disable">Disable</option>
+            </select>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer" id="zone-modal-footer">
+        <button class="btn" onclick="closeModal('zone-modal')">Cancel</button>
+        <button class="btn btn-primary" id="zone-submit-btn" onclick="submitZone()">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Zone Confirm -->
+  <div class="modal-overlay" id="delete-zone-modal">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <span class="modal-title">Confirm Delete</span>
+        <button class="modal-close" onclick="closeModal('delete-zone-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="delete-zone-msg">Delete zone?</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('delete-zone-modal')">Cancel</button>
+        <button class="btn btn-danger" onclick="confirmDeleteZone()">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toast-container"></div>
+
+  <script>
+// KickBazar WMS Prototype - App Logic
+
+// ========== Mock Data ==========
+let warehouses = [
+  {
+    id: 'SH-001', name: 'Shanghai Main Warehouse', attribute: 'normal', status: 'enable',
+    zoneCount: 5, total: 12580, locked: 2340, available: 10240,
+    address: 'China, Shanghai, Pudong, No.888 Zhangyang Road',
+    owner: 'Zhang Wei', contact: 'Li Ming', phone: '+86 138 0013 8000',
+    country: 'CN', state: 'SH', city: 'PD', detail: 'No.888 Zhangyang Road',
+    longitude: '121.5447', latitude: '31.2244', area: 5000, height: 12,
+    weighing: 'compliant', fire: 'compliant', hasStock: true, hasPendingOrders: false
+  },
+  {
+    id: 'BJ-001', name: 'Beijing Distribution Center', attribute: 'cold chain', status: 'enable',
+    zoneCount: 3, total: 8920, locked: 1560, available: 7360,
+    address: 'China, Beijing, Chaoyang, No.15 Jianguo Road',
+    owner: 'Wang Fang', contact: 'Chen Hua', phone: '+86 139 0013 9000',
+    country: 'CN', state: 'BJ', city: 'CY', detail: 'No.15 Jianguo Road',
+    longitude: '116.4551', latitude: '39.9189', area: 3200, height: 10,
+    weighing: 'pending', fire: 'compliant', hasStock: true, hasPendingOrders: false
+  },
+  {
+    id: 'GZ-001', name: 'Guangzhou South Hub', attribute: 'fireproof', status: 'disable',
+    zoneCount: 3, total: 0, locked: 0, available: 0,
+    address: 'China, Guangdong, Guangzhou, No.100 Tianhe Road',
+    owner: 'Liu Yang', contact: 'Liu Yang', phone: '+86 137 0013 7000',
+    country: 'CN', state: 'GD', city: 'GZ', detail: 'No.100 Tianhe Road',
+    longitude: '', latitude: '', area: 2800, height: 8,
+    weighing: 'pending', fire: 'pending', hasStock: false, hasPendingOrders: false
+  },
+  {
+    id: 'SG-001', name: 'Singapore Regional Warehouse', attribute: 'thermostatic', status: 'enable',
+    zoneCount: 4, total: 4560, locked: 890, available: 3670,
+    address: 'Singapore, Central, 10 Anson Road',
+    owner: 'Tan Wei Ming', contact: 'Tan Wei Ming', phone: '+65 9123 4567',
+    country: 'SG', state: 'Central', city: 'SG', detail: '10 Anson Road',
+    longitude: '103.8198', latitude: '1.2754', area: 1500, height: 6,
+    weighing: 'compliant', fire: 'compliant', hasStock: true, hasPendingOrders: true
+  },
+  {
+    id: 'SH-002', name: 'Shanghai Backup Warehouse', attribute: 'normal', status: 'disable',
+    zoneCount: 3, total: 0, locked: 0, available: 0,
+    address: 'China, Shanghai, Minhang, No.200 Humin Road',
+    owner: 'Zhao Lei', contact: 'Zhao Lei', phone: '+86 136 0013 6000',
+    country: 'CN', state: 'SH', city: 'MH', detail: 'No.200 Humin Road',
+    longitude: '', latitude: '', area: 1800, height: 8,
+    weighing: 'pending', fire: 'pending', hasStock: false, hasPendingOrders: false
+  }
+];
+
+let zones = [
+  { whId: 'SH-001', code: 'SH-001-RCV', type: 'Receiving Zone', name: 'Receiving Zone', status: 'disable', total: 120, locked: 0, available: 120 },
+  { whId: 'SH-001', code: 'SH-001-STO', type: 'Storage Zone', name: 'Main Storage', status: 'enable', total: 12200, locked: 2300, available: 9900 },
+  { whId: 'SH-001', code: 'SH-001-SHP', type: 'Shipping Zone', name: 'Shipping Zone', status: 'disable', total: 180, locked: 40, available: 140 },
+  { whId: 'SH-001', code: 'SH-001-DMG', type: 'Damaged Goods Zone', name: 'Damaged Goods', status: 'disable', total: 80, locked: 0, available: 80 },
+  { whId: 'SH-001', code: 'SH-001-PKG', type: 'Packing Zone', name: 'Packing Zone', status: 'disable', total: 0, locked: 0, available: 0 },
+  { whId: 'BJ-001', code: 'BJ-001-RCV', type: 'Receiving Zone', name: 'Receiving Zone', status: 'disable', total: 0, locked: 0, available: 0 },
+  { whId: 'BJ-001', code: 'BJ-001-STO', type: 'Storage Zone', name: 'Cold Storage', status: 'enable', total: 8920, locked: 1560, available: 7360 },
+  { whId: 'BJ-001', code: 'BJ-001-SHP', type: 'Shipping Zone', name: 'Shipping Zone', status: 'disable', total: 0, locked: 0, available: 0 },
+  { whId: 'GZ-001', code: 'GZ-001-RCV', type: 'Receiving Zone', name: 'Receiving Zone', status: 'disable', total: 0, locked: 0, available: 0 },
+  { whId: 'GZ-001', code: 'GZ-001-STO', type: 'Storage Zone', name: 'Storage Zone', status: 'enable', total: 0, locked: 0, available: 0 },
+  { whId: 'GZ-001', code: 'GZ-001-SHP', type: 'Shipping Zone', name: 'Shipping Zone', status: 'disable', total: 0, locked: 0, available: 0 },
+  { whId: 'SG-001', code: 'SG-001-RCV', type: 'Receiving Zone', name: 'Receiving Zone', status: 'disable', total: 50, locked: 0, available: 50 },
+  { whId: 'SG-001', code: 'SG-001-STO', type: 'Storage Zone', name: 'Storage Zone', status: 'enable', total: 4200, locked: 800, available: 3400 },
+  { whId: 'SG-001', code: 'SG-001-SHP', type: 'Shipping Zone', name: 'Shipping Zone', status: 'disable', total: 200, locked: 60, available: 140 },
+  { whId: 'SG-001', code: 'SG-001-RTN', type: 'Returns Zone', name: 'Returns Zone', status: 'disable', total: 110, locked: 30, available: 80 },
+  { whId: 'SH-002', code: 'SH-002-RCV', type: 'Receiving Zone', name: 'Receiving Zone', status: 'disable', total: 0, locked: 0, available: 0 },
+  { whId: 'SH-002', code: 'SH-002-STO', type: 'Storage Zone', name: 'Storage Zone', status: 'enable', total: 0, locked: 0, available: 0 },
+  { whId: 'SH-002', code: 'SH-002-SHP', type: 'Shipping Zone', name: 'Shipping Zone', status: 'disable', total: 0, locked: 0, available: 0 }
+];
+
+const spuData = [
+  {
+    productId: 'PRD-10001', productName: 'Wireless Bluetooth Earbuds Pro',
+    skuCount: 3, total: 2580, locked: 420, available: 2160,
+    warehouse: '-', zoneName: '-',
+    skus: [
+      { skuId: 'SKU-10001-BK', spec: 'Black', total: 1200, locked: 200, available: 1000, warehouse: 'Shanghai Main Warehouse', zone: 'Main Storage' },
+      { skuId: 'SKU-10001-WH', spec: 'White', total: 980, locked: 150, available: 830, warehouse: 'Shanghai Main Warehouse', zone: 'Main Storage' },
+      { skuId: 'SKU-10001-BL', spec: 'Blue', total: 400, locked: 70, available: 330, warehouse: 'Beijing Distribution Center', zone: 'Cold Storage' }
+    ]
+  },
+  {
+    productId: 'PRD-10002', productName: 'Smart Watch Series X',
+    skuCount: 2, total: 1560, locked: 280, available: 1280,
+    warehouse: 'Shanghai Main Warehouse', zoneName: 'Main Storage',
+    skus: [
+      { skuId: 'SKU-10002-42', spec: '42mm Silver', total: 900, locked: 160, available: 740, warehouse: 'Shanghai Main Warehouse', zone: 'Main Storage' },
+      { skuId: 'SKU-10002-46', spec: '46mm Black', total: 660, locked: 120, available: 540, warehouse: 'Shanghai Main Warehouse', zone: 'Main Storage' }
+    ]
+  },
+  {
+    productId: 'PRD-10003', productName: 'Portable Power Bank 20000mAh',
+    skuCount: 1, total: 3200, locked: 560, available: 2640,
+    warehouse: 'Beijing Distribution Center', zoneName: 'Cold Storage',
+    skus: [
+      { skuId: 'SKU-10003-01', spec: 'Standard', total: 3200, locked: 560, available: 2640, warehouse: 'Beijing Distribution Center', zone: 'Cold Storage' }
+    ]
+  }
+];
+
+const skuData = [
+  { skuId: 'SKU-10001-BK', spec: 'Black', productName: 'Wireless Bluetooth Earbuds Pro', total: 1200, locked: 200, available: 1000, warehouse: 'Shanghai Main Warehouse', zone: 'Main Storage', zoneCode: 'SH-001-STO', barcode: 'EAN: 6901234567890', barcodes: ['EAN: 6901234567890', 'UPC: 012345678901', 'PAN: KB-10001-BK'] },
+  { skuId: 'SKU-10001-WH', spec: 'White', productName: 'Wireless Bluetooth Earbuds Pro', total: 980, locked: 150, available: 830, warehouse: 'Shanghai Main Warehouse', zone: 'Main Storage', zoneCode: 'SH-001-STO', barcode: 'EAN: 6901234567891', barcodes: ['EAN: 6901234567891'] },
+  { skuId: 'SKU-10001-BL', spec: 'Blue', productName: 'Wireless Bluetooth Earbuds Pro', total: 400, locked: 70, available: 330, warehouse: 'Beijing Distribution Center', zone: 'Cold Storage', zoneCode: 'BJ-001-STO', barcode: 'UPC: 012345678902', barcodes: ['UPC: 012345678902', 'PAN: KB-10001-BL'] },
+  { skuId: 'SKU-10002-42', spec: '42mm Silver', productName: 'Smart Watch Series X', total: 900, locked: 160, available: 740, warehouse: 'Shanghai Main Warehouse', zone: 'Main Storage', zoneCode: 'SH-001-STO', barcode: 'EAN: 6901234567900', barcodes: ['EAN: 6901234567900'] },
+  { skuId: 'SKU-10002-46', spec: '46mm Black', productName: 'Smart Watch Series X', total: 660, locked: 120, available: 540, warehouse: 'Shanghai Main Warehouse', zone: 'Main Storage', zoneCode: 'SH-001-STO', barcode: 'EAN: 6901234567901', barcodes: ['EAN: 6901234567901', 'PAN: KB-10002-46'] },
+  { skuId: 'SKU-10003-01', spec: 'Standard', productName: 'Portable Power Bank 20000mAh', total: 3200, locked: 560, available: 2640, warehouse: 'Beijing Distribution Center', zone: 'Cold Storage', zoneCode: 'BJ-001-STO', barcode: 'EAN: 6901234567910', barcodes: ['EAN: 6901234567910'] },
+  { skuId: 'SKU-10004-01', spec: '128GB', productName: 'USB-C Flash Drive', total: 450, locked: 80, available: 370, warehouse: 'Singapore Regional Warehouse', zone: 'Storage Zone', zoneCode: 'SG-001-STO', barcode: 'PAN: KB-10004-01', barcodes: ['PAN: KB-10004-01'] }
+];
+
+const recordData = {
+  inbound: [
+    { time: '2026-08-21 09:32:15', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10001-BK', qty: '+200', after: { total: 1200, locked: 200, available: 1000 }, type: 'Purchase Inbound', order: 'IN-20260821001', operator: 'Zhang Wei', sub: 'purchase' },
+    { time: '2026-08-20 14:18:42', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10002-42', qty: '+150', after: { total: 900, locked: 160, available: 740 }, type: 'Purchase Inbound', order: 'IN-20260820003', operator: 'Li Ming', sub: 'purchase' },
+    { time: '2026-08-19 10:05:30', warehouse: 'BJ-001', zone: 'BJ-001-STO (Storage)', sku: 'SKU-10003-01', qty: '+500', after: { total: 3200, locked: 560, available: 2640 }, type: 'Manual Adjustment', order: 'IN-20260819001', operator: 'Wang Fang', sub: 'initial' },
+    { time: '2026-08-18 16:22:08', warehouse: 'SG-001', zone: 'SG-001-STO (Storage)', sku: 'SKU-10004-01', qty: '+100', after: { total: 450, locked: 80, available: 370 }, type: 'Purchase Inbound', order: 'IN-20260818002', operator: 'Tan Wei Ming', sub: 'purchase' }
+  ],
+  occupy: [
+    { time: '2026-08-21 11:45:22', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10001-BK', qty: '50', after: { total: 1200, locked: 200, available: 1000 }, type: 'Outbound Occupy', order: 'OUT-20260821005', operator: 'System' },
+    { time: '2026-08-21 10:30:18', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10002-42', qty: '30', after: { total: 900, locked: 160, available: 740 }, type: 'Outbound Occupy', order: 'OUT-20260821003', operator: 'System' },
+    { time: '2026-08-20 15:12:55', warehouse: 'BJ-001', zone: 'BJ-001-STO (Storage)', sku: 'SKU-10003-01', qty: '100', after: { total: 3200, locked: 560, available: 2640 }, type: 'Outbound Occupy', order: 'OUT-20260820008', operator: 'System' }
+  ],
+  deduct: [
+    { time: '2026-08-21 14:20:33', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10001-WH', qty: '-25', after: { total: 980, locked: 150, available: 830 }, type: 'Outbound Deduct', order: 'OUT-20260820012', operator: 'Li Ming' },
+    { time: '2026-08-20 17:05:41', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10001-BK', qty: '-40', after: { total: 1000, locked: 150, available: 850 }, type: 'Outbound Deduct', order: 'OUT-20260819015', operator: 'Zhang Wei' }
+  ],
+  unfreeze: [
+    { time: '2026-08-20 09:15:28', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10002-46', qty: '20', after: { total: 660, locked: 100, available: 560 }, type: 'Unfreeze', order: 'OUT-20260819010', operator: 'System' },
+    { time: '2026-08-19 11:42:17', warehouse: 'BJ-001', zone: 'BJ-001-STO (Storage)', sku: 'SKU-10003-01', qty: '50', after: { total: 3200, locked: 510, available: 2690 }, type: 'Unfreeze', order: 'OUT-20260818005', operator: 'System' }
+  ]
+};
+
+let currentWarehouseEdit = null;
+let currentZoneEdit = null;
+let deleteTarget = null;
+let lockedZoneWarehouse = null;
+let currentRecordTab = 'inbound';
+
+// ========== Init ==========
+document.addEventListener('DOMContentLoaded', () => {
+  initNavigation();
+  initInventoryTabs();
+  initRecordTabs();
+  renderWarehouses();
+  renderZones();
+  renderSpuTable();
+  renderSkuTable();
+  renderRecords();
+  populateWarehouseSelects();
+});
+
+// ========== Navigation ==========
+function initNavigation() {
+  document.querySelectorAll('.nav-item[data-page]').forEach(item => {
+    item.addEventListener('click', () => {
+      const page = item.dataset.page;
+      navigateTo(page);
+    });
+  });
+
+  document.querySelectorAll('.nav-item.parent').forEach(item => {
+    item.addEventListener('click', (e) => {
+      const group = item.dataset.group;
+      if (group === 'inbound') navigateTo('inbound');
+      if (group === 'outbound') navigateTo('outbound');
+    });
+  });
+}
+
+function navigateTo(pageId) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+  const page = document.getElementById('page-' + pageId);
+  if (page) page.classList.add('active');
+
+  const navItem = document.querySelector(`.nav-item[data-page="${pageId}"]`);
+  if (navItem) navItem.classList.add('active');
+}
+
+function navigateToZones(warehouseId) {
+  lockedZoneWarehouse = warehouseId || null;
+  const select = document.getElementById('zone-filter-warehouse');
+  if (warehouseId) {
+    select.value = warehouseId;
+    select.disabled = false;
+  }
+  navigateTo('zone-management');
+  renderZones();
+}
+
+function navigateToZonesFromWarehouse() {
+  const whId = document.getElementById('wh-id').value;
+  closeModal('warehouse-modal');
+  navigateToZones(whId);
+}
+
+// ========== Warehouse Management ==========
+function getAttributeTag(attr) {
+  const map = { normal: 'tag-normal', fireproof: 'tag-fireproof', thermostatic: 'tag-thermostatic', 'cold chain': 'tag-cold' };
+  const labels = { normal: 'Normal', fireproof: 'Fireproof', thermostatic: 'Thermostatic', 'cold chain': 'Cold Chain' };
+  return `<span class="tag ${map[attr] || 'tag-normal'}">${labels[attr] || attr}</span>`;
+}
+
+function getStatusTag(status) {
+  return status === 'enable'
+    ? '<span class="tag tag-enable">Enable</span>'
+    : '<span class="tag tag-disable">Disable</span>';
+}
+
+function renderWarehouses() {
+  const tbody = document.getElementById('warehouse-table-body');
+  document.getElementById('wh-total').textContent = warehouses.length;
+
+  if (warehouses.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="12"><div class="empty-state"><div class="icon">📦</div><p>No data</p><button class="btn btn-primary" onclick="openCreateWarehouse()">Add Warehouse</button></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = warehouses.map(wh => `
+    <tr onclick="openEditWarehouse('${wh.id}')">
+      <td>${wh.id}</td>
+      <td>${wh.name}</td>
+      <td>${getAttributeTag(wh.attribute)}</td>
+      <td>${getStatusTag(wh.status)}</td>
+      <td class="zone-count-cell" ondblclick="event.stopPropagation(); navigateToZones('${wh.id}')" title="Double-click to manage zones">${wh.zoneCount}</td>
+      <td>${wh.total.toLocaleString()}</td>
+      <td>${wh.locked.toLocaleString()}</td>
+      <td>${wh.available.toLocaleString()}</td>
+      <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${wh.address}">${wh.address}</td>
+      <td>${wh.owner}</td>
+      <td>${wh.contact}<br><span style="color:#999;font-size:12px">${wh.phone}</span></td>
+      <td onclick="event.stopPropagation()">
+        <div class="action-links">
+          <a onclick="openEditWarehouse('${wh.id}')">Edit</a>
+          <a class="danger ${wh.hasStock || wh.hasPendingOrders ? 'disabled' : ''}" 
+             onclick="openDeleteWarehouse('${wh.id}')"
+             title="${wh.hasStock ? 'Cannot delete: Warehouse has active stock.' : wh.hasPendingOrders ? 'Cannot delete: Pending PO, inbound, or outbound orders exist.' : ''}">Delete</a>
+          <a onclick="openViewWarehouse('${wh.id}')">View</a>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function searchWarehouses() {
+  showToast('Search executed with current filters', 'success');
+  renderWarehouses();
+}
+
+function resetWarehouseFilters() {
+  document.getElementById('wh-search-value').value = '';
+  document.getElementById('wh-filter-attribute').value = '';
+  document.getElementById('wh-filter-status').value = '';
+}
+
+function openCreateWarehouse() {
+  currentWarehouseEdit = null;
+  document.getElementById('warehouse-modal-title').textContent = 'Create Warehouse';
+  document.getElementById('warehouse-submit-btn').textContent = 'Create';
+  document.getElementById('wh-id-group').style.display = 'none';
+  document.getElementById('wh-manage-zones').style.display = 'none';
+  document.getElementById('wh-status-tag').style.display = 'inline-block';
+  document.getElementById('wh-status').style.display = 'none';
+  document.getElementById('warehouse-form-container').classList.remove('view-mode');
+  document.getElementById('warehouse-modal-footer').style.display = 'flex';
+  document.getElementById('wh-zone-count').value = '3 (Auto-generate: Receiving Zone, Storage Zone, Shipping Zone)';
+
+  document.getElementById('warehouse-form').reset();
+  document.getElementById('wh-attribute').value = 'normal';
+  openModal('warehouse-modal');
+}
+
+function openEditWarehouse(id) {
+  const wh = warehouses.find(w => w.id === id);
+  if (!wh) return;
+  currentWarehouseEdit = wh;
+  fillWarehouseForm(wh, false);
+  document.getElementById('warehouse-modal-title').textContent = 'Edit Warehouse';
+  document.getElementById('warehouse-submit-btn').textContent = 'Save';
+  document.getElementById('wh-id-group').style.display = 'flex';
+  document.getElementById('wh-manage-zones').style.display = 'inline';
+  document.getElementById('wh-status-tag').style.display = 'none';
+  document.getElementById('wh-status').style.display = 'block';
+  document.getElementById('warehouse-form-container').classList.remove('view-mode');
+  document.getElementById('warehouse-modal-footer').style.display = 'flex';
+  document.getElementById('wh-zone-count').value = wh.zoneCount + ' zones';
+  openModal('warehouse-modal');
+}
+
+function openViewWarehouse(id) {
+  const wh = warehouses.find(w => w.id === id);
+  if (!wh) return;
+  fillWarehouseForm(wh, true);
+  document.getElementById('warehouse-modal-title').textContent = 'View Warehouse';
+  document.getElementById('wh-id-group').style.display = 'flex';
+  document.getElementById('wh-manage-zones').style.display = 'inline';
+  document.getElementById('wh-status-tag').style.display = 'none';
+  document.getElementById('wh-status').style.display = 'block';
+  document.getElementById('warehouse-form-container').classList.add('view-mode');
+  document.getElementById('warehouse-modal-footer').style.display = 'none';
+  document.getElementById('wh-zone-count').value = wh.zoneCount + ' zones';
+  openModal('warehouse-modal');
+}
+
+function fillWarehouseForm(wh, readonly) {
+  document.getElementById('wh-id').value = wh.id;
+  document.getElementById('wh-name').value = wh.name;
+  document.getElementById('wh-attribute').value = wh.attribute;
+  document.getElementById('wh-status').value = wh.status;
+  document.getElementById('wh-country').value = wh.country;
+  document.getElementById('wh-state').value = wh.state;
+  document.getElementById('wh-city').value = wh.city;
+  document.getElementById('wh-address').value = wh.detail;
+  document.getElementById('wh-longitude').value = wh.longitude;
+  document.getElementById('wh-latitude').value = wh.latitude;
+  document.getElementById('wh-area').value = wh.area || '';
+  document.getElementById('wh-height').value = wh.height || '';
+  document.getElementById('wh-weighing').value = wh.weighing;
+  document.getElementById('wh-fire').value = wh.fire;
+  document.getElementById('wh-owner').value = wh.owner;
+  document.getElementById('wh-contact').value = wh.contact;
+  document.getElementById('wh-phone').value = wh.phone;
+}
+
+function submitWarehouse() {
+  const name = document.getElementById('wh-name').value.trim();
+  if (!name || name.length < 2) {
+    showToast('2-50 characters. Chinese, letters, and numbers only.', 'error');
+    return;
+  }
+
+  if (currentWarehouseEdit) {
+    currentWarehouseEdit.name = name;
+    currentWarehouseEdit.attribute = document.getElementById('wh-attribute').value;
+    const newStatus = document.getElementById('wh-status').value;
+    const wasDisabled = currentWarehouseEdit.status === 'disable';
+    currentWarehouseEdit.status = newStatus;
+    currentWarehouseEdit.country = document.getElementById('wh-country').value;
+    currentWarehouseEdit.state = document.getElementById('wh-state').value;
+    currentWarehouseEdit.city = document.getElementById('wh-city').value;
+    currentWarehouseEdit.detail = document.getElementById('wh-address').value;
+    currentWarehouseEdit.longitude = document.getElementById('wh-longitude').value;
+    currentWarehouseEdit.latitude = document.getElementById('wh-latitude').value;
+    currentWarehouseEdit.area = document.getElementById('wh-area').value;
+    currentWarehouseEdit.height = document.getElementById('wh-height').value;
+    currentWarehouseEdit.weighing = document.getElementById('wh-weighing').value;
+    currentWarehouseEdit.fire = document.getElementById('wh-fire').value;
+    currentWarehouseEdit.owner = document.getElementById('wh-owner').value;
+    currentWarehouseEdit.contact = document.getElementById('wh-contact').value;
+    currentWarehouseEdit.phone = document.getElementById('wh-phone').value;
+    currentWarehouseEdit.address = `${currentWarehouseEdit.country}, ${currentWarehouseEdit.state}, ${currentWarehouseEdit.city}, ${currentWarehouseEdit.detail}`;
+
+    closeModal('warehouse-modal');
+    renderWarehouses();
+    if (wasDisabled && newStatus === 'enable') {
+      showToast('Warehouse updated. Warehouse active. Ready for inbound/outbound operations.', 'success');
+    } else {
+      showToast('Warehouse updated.', 'success');
+    }
+  } else {
+    const newId = 'SH-' + String(warehouses.length + 1).padStart(3, '0');
+    const newWh = {
+      id: newId, name, attribute: document.getElementById('wh-attribute').value, status: 'disable',
+      zoneCount: 3, total: 0, locked: 0, available: 0,
+      address: 'China, Shanghai, Pudong, New Address',
+      owner: 'Current User', contact: 'Current User', phone: '+86 138 0000 0000',
+      country: document.getElementById('wh-country').value || 'CN',
+      state: document.getElementById('wh-state').value || 'SH',
+      city: document.getElementById('wh-city').value || 'PD',
+      detail: document.getElementById('wh-address').value || 'New Address',
+      longitude: '', latitude: '', area: 0, height: 0,
+      weighing: 'pending', fire: 'pending', hasStock: false, hasPendingOrders: false
+    };
+    warehouses.unshift(newWh);
+
+    zones.push(
+      { whId: newId, code: `${newId}-RCV`, type: 'Receiving Zone', name: 'Receiving Zone', status: 'disable', total: 0, locked: 0, available: 0 },
+      { whId: newId, code: `${newId}-STO`, type: 'Storage Zone', name: 'Storage Zone', status: 'enable', total: 0, locked: 0, available: 0 },
+      { whId: newId, code: `${newId}-SHP`, type: 'Shipping Zone', name: 'Shipping Zone', status: 'disable', total: 0, locked: 0, available: 0 }
+    );
+
+    closeModal('warehouse-modal');
+    renderWarehouses();
+    populateWarehouseSelects();
+    showToast('Warehouse created (Inactive). 3 default zones auto-generated. Enable to start operations.', 'success');
+    setTimeout(() => navigateToZones(newId), 1500);
+  }
+}
+
+function openDeleteWarehouse(id) {
+  const wh = warehouses.find(w => w.id === id);
+  if (!wh) return;
+  if (wh.hasStock) {
+    showToast('Cannot delete: Warehouse has active stock.', 'error');
+    return;
+  }
+  if (wh.hasPendingOrders) {
+    showToast('Cannot delete: Pending PO, inbound, or outbound orders exist.', 'error');
+    return;
+  }
+  deleteTarget = { type: 'warehouse', id };
+  document.getElementById('delete-warehouse-msg').textContent =
+    `Delete warehouse "${wh.name}" (${wh.id})? All associated zones will be deleted and cannot be recovered.`;
+  openModal('delete-warehouse-modal');
+}
+
+function confirmDeleteWarehouse() {
+  if (!deleteTarget || deleteTarget.type !== 'warehouse') return;
+  warehouses = warehouses.filter(w => w.id !== deleteTarget.id);
+  zones = zones.filter(z => z.whId !== deleteTarget.id);
+  deleteTarget = null;
+  closeModal('delete-warehouse-modal');
+  renderWarehouses();
+  renderZones();
+  populateWarehouseSelects();
+  showToast('Deleted successfully.', 'success');
+}
+
+// ========== Zone Management ==========
+function getZoneTypeTag(type) {
+  const map = {
+    'Receiving Zone': 'tag-rcv', 'Storage Zone': 'tag-sto', 'Shipping Zone': 'tag-shp',
+    'Damaged Goods Zone': 'tag-dmg'
+  };
+  return `<span class="tag ${map[type] || 'tag-normal'}">${type}</span>`;
+}
+
+function renderZones() {
+  const tbody = document.getElementById('zone-table-body');
+  const whFilter = document.getElementById('zone-filter-warehouse').value;
+  let filtered = zones;
+  if (whFilter) filtered = zones.filter(z => z.whId === whFilter);
+
+  document.getElementById('zone-total').textContent = filtered.length;
+
+  tbody.innerHTML = filtered.map(z => `
+    <tr>
+      <td>${z.whId}</td>
+      <td>${z.code}</td>
+      <td>${getZoneTypeTag(z.type)}</td>
+      <td>${z.name}</td>
+      <td>${getStatusTag(z.status)}</td>
+      <td>${z.total.toLocaleString()}</td>
+      <td>${z.locked.toLocaleString()}</td>
+      <td>${z.available.toLocaleString()}</td>
+      <td>
+        <div class="action-links">
+          <a onclick="openEditZone('${z.code}')">Edit</a>
+          <a class="danger ${z.total > 0 || z.locked > 0 ? 'disabled' : ''}" onclick="openDeleteZone('${z.code}')">Delete</a>
+          <a onclick="openViewZone('${z.code}')">View</a>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function searchZones() {
+  showToast('Search executed with current filters', 'success');
+  renderZones();
+}
+
+function resetZoneFilters() {
+  document.getElementById('zone-filter-code').value = '';
+  document.getElementById('zone-filter-type').value = '';
+  document.getElementById('zone-filter-status').value = '';
+  if (!lockedZoneWarehouse) {
+    document.getElementById('zone-filter-warehouse').value = '';
+  }
+  renderZones();
+}
+
+function openCreateZone() {
+  currentZoneEdit = null;
+  document.getElementById('zone-modal-title').textContent = 'Create Zone';
+  document.getElementById('zone-submit-btn').textContent = 'Create';
+  document.getElementById('zone-form').reset();
+  document.getElementById('zone-status').value = 'enable';
+
+  const select = document.getElementById('zone-wh-id');
+  select.innerHTML = warehouses.map(w => `<option value="${w.id}">${w.id} - ${w.name}</option>`).join('');
+  if (lockedZoneWarehouse) select.value = lockedZoneWarehouse;
+
+  document.getElementById('zone-type').disabled = false;
+  document.getElementById('zone-code').readOnly = false;
+  document.getElementById('zone-form').closest('.modal-body').classList.remove('view-mode');
+  document.getElementById('zone-modal-footer').style.display = 'flex';
+  openModal('zone-modal');
+}
+
+function openEditZone(code) {
+  const z = zones.find(zn => zn.code === code);
+  if (!z) return;
+  currentZoneEdit = z;
+  document.getElementById('zone-modal-title').textContent = 'Edit Zone';
+  document.getElementById('zone-submit-btn').textContent = 'Save';
+
+  const select = document.getElementById('zone-wh-id');
+  select.innerHTML = `<option value="${z.whId}">${z.whId}</option>`;
+  select.disabled = true;
+
+  document.getElementById('zone-type').innerHTML = `<option value="${z.type}">${z.type}</option>`;
+  document.getElementById('zone-type').disabled = true;
+  document.getElementById('zone-code').value = z.code;
+  document.getElementById('zone-code').readOnly = true;
+  document.getElementById('zone-name').value = z.name;
+  document.getElementById('zone-status').value = z.status;
+
+  document.getElementById('zone-form').closest('.modal-body').classList.remove('view-mode');
+  document.getElementById('zone-modal-footer').style.display = 'flex';
+  openModal('zone-modal');
+}
+
+function openViewZone(code) {
+  openEditZone(code);
+  document.getElementById('zone-modal-title').textContent = 'View Zone';
+  document.getElementById('zone-form').closest('.modal-body').classList.add('view-mode');
+  document.getElementById('zone-modal-footer').style.display = 'none';
+}
+
+function submitZone() {
+  const whId = document.getElementById('zone-wh-id').value;
+  const zoneType = document.getElementById('zone-type').value;
+  const zoneName = document.getElementById('zone-name').value || zoneType;
+  const zoneCode = document.getElementById('zone-code').value;
+  const status = document.getElementById('zone-status').value;
+
+  if (currentZoneEdit) {
+    if (status === 'enable' && currentZoneEdit.type !== 'Storage Zone' && currentZoneEdit.status === 'disable') {
+      showToast('Not available in this version.', 'warning');
+      document.getElementById('zone-status').value = 'disable';
+      return;
+    }
+    currentZoneEdit.name = zoneName;
+    currentZoneEdit.status = status;
+    closeModal('zone-modal');
+    renderZones();
+    showToast('Zone updated.', 'success');
+  } else {
+    if (!zoneType || !zoneCode) {
+      showToast('Please fill in required fields.', 'error');
+      return;
+    }
+    zones.push({ whId, code: zoneCode, type: zoneType, name: zoneName, status, total: 0, locked: 0, available: 0 });
+    const wh = warehouses.find(w => w.id === whId);
+    if (wh) wh.zoneCount++;
+    closeModal('zone-modal');
+    renderZones();
+    renderWarehouses();
+    showToast('Zone created.', 'success');
+  }
+  document.getElementById('zone-wh-id').disabled = false;
+}
+
+function openDeleteZone(code) {
+  const z = zones.find(zn => zn.code === code);
+  if (!z) return;
+  if (z.total > 0 || z.locked > 0) {
+    showToast('Cannot delete: Zone has active stock.', 'error');
+    return;
+  }
+  const wh = warehouses.find(w => w.id === z.whId);
+  deleteTarget = { type: 'zone', code };
+  document.getElementById('delete-zone-msg').textContent =
+    `Delete Warehouse ${wh ? wh.name : z.whId} Zone "${z.code}"? All associated zones will be deleted and cannot be recovered.`;
+  openModal('delete-zone-modal');
+}
+
+function confirmDeleteZone() {
+  if (!deleteTarget || deleteTarget.type !== 'zone') return;
+  const z = zones.find(zn => zn.code === deleteTarget.code);
+  if (z) {
+    zones = zones.filter(zn => zn.code !== deleteTarget.code);
+    const wh = warehouses.find(w => w.id === z.whId);
+    if (wh) wh.zoneCount--;
+  }
+  deleteTarget = null;
+  closeModal('delete-zone-modal');
+  renderZones();
+  renderWarehouses();
+  showToast('Deleted successfully.', 'success');
+}
+
+// ========== Inventory ==========
+function initInventoryTabs() {
+  document.querySelectorAll('#inventory-tabs .tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('#inventory-tabs .tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      const view = tab.dataset.invTab;
+      document.getElementById('inv-view-spu').style.display = view === 'spu' ? 'block' : 'none';
+      document.getElementById('inv-view-sku').style.display = view === 'sku' ? 'block' : 'none';
+    });
+  });
+}
+
+function renderSpuTable() {
+  const tbody = document.getElementById('spu-table-body');
+  tbody.innerHTML = spuData.map((spu, idx) => `
+    <tr>
+      <td><span class="expand-icon" onclick="toggleSpuExpand(${idx}, this)">▶</span></td>
+      <td>${spu.productId}</td>
+      <td>${spu.productName}</td>
+      <td>${spu.skuCount}</td>
+      <td>${spu.total.toLocaleString()}</td>
+      <td>${spu.locked.toLocaleString()}</td>
+      <td>${spu.available.toLocaleString()}</td>
+      <td>${spu.warehouse}</td>
+      <td>${spu.zoneName}</td>
+    </tr>
+    <tr class="sku-subtable" id="spu-expand-${idx}" style="display:none">
+      <td colspan="9">
+        <table style="width:100%">
+          <thead>
+            <tr style="background:#f0f0f0">
+              <th>SKU ID</th><th>Specification</th><th>Total</th><th>Locked</th><th>Available</th><th>Warehouse</th><th>Zone</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${spu.skus.map(s => `
+              <tr>
+                <td>${s.skuId}</td><td>${s.spec}</td>
+                <td>${s.total}</td><td>${s.locked}</td><td>${s.available}</td>
+                <td>${s.warehouse}</td><td>${s.zone}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function toggleSpuExpand(idx, el) {
+  const row = document.getElementById('spu-expand-' + idx);
+  const isHidden = row.style.display === 'none';
+  row.style.display = isHidden ? 'table-row' : 'none';
+  el.classList.toggle('expanded', isHidden);
+}
+
+function renderSkuTable() {
+  const tbody = document.getElementById('sku-table-body');
+  tbody.innerHTML = skuData.map(s => `
+    <tr>
+      <td>${s.skuId}</td>
+      <td>${s.spec}</td>
+      <td>${s.productName}</td>
+      <td>${s.total.toLocaleString()}</td>
+      <td>${s.locked.toLocaleString()}</td>
+      <td>${s.available.toLocaleString()}</td>
+      <td>${s.warehouse}</td>
+      <td>${s.zone}</td>
+      <td>${s.zoneCode}</td>
+      <td><span class="barcode-cell" title="${s.barcodes.join('\n')}">${s.barcode}</span></td>
+    </tr>
+  `).join('');
+}
+
+// ========== Records ==========
+function initRecordTabs() {
+  document.querySelectorAll('#record-tabs .tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('#record-tabs .tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      currentRecordTab = tab.dataset.recordTab;
+      document.getElementById('inbound-sub-tabs').style.display =
+        currentRecordTab === 'inbound' ? 'flex' : 'none';
+      renderRecords();
+    });
+  });
+
+  document.querySelectorAll('#inbound-sub-tabs .sub-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('#inbound-sub-tabs .sub-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      renderRecords();
+    });
+  });
+}
+
+function renderRecords() {
+  const tbody = document.getElementById('record-table-body');
+  let data = [];
+
+  if (currentRecordTab === 'all') {
+    data = [...recordData.inbound, ...recordData.occupy, ...recordData.deduct, ...recordData.unfreeze];
+    data.sort((a, b) => b.time.localeCompare(a.time));
+  } else if (currentRecordTab === 'inbound') {
+    data = recordData.inbound;
+    const activeSub = document.querySelector('#inbound-sub-tabs .sub-tab.active');
+    if (activeSub) {
+      const subText = activeSub.textContent.trim().toLowerCase();
+      if (subText === 'initial stock') data = data.filter(d => d.sub === 'initial');
+      if (subText === 'purchase') data = data.filter(d => d.sub === 'purchase');
+    }
+  } else {
+    data = recordData[currentRecordTab] || [];
+  }
+
+  const typeClass = { 'Purchase Inbound': 'type-inbound', 'Manual Adjustment': 'type-inbound', 'Outbound Occupy': 'type-occupy', 'Outbound Deduct': 'type-deduct', 'Unfreeze': 'type-unfreeze' };
+
+  tbody.innerHTML = data.map(r => {
+    const qtyClass = r.qty.startsWith('+') ? 'up' : r.qty.startsWith('-') ? 'down' : '';
+    return `
+      <tr>
+        <td>${r.time}</td>
+        <td>${r.warehouse}</td>
+        <td>${r.zone}</td>
+        <td>${r.sku}</td>
+        <td class="${qtyClass}" style="font-weight:500">${r.qty}</td>
+        <td class="stock-change">
+          T: ${r.after.total} / L: ${r.after.locked} / A: ${r.after.available}
+        </td>
+        <td class="${typeClass[r.type] || ''}">${r.type}</td>
+        <td>${r.order}</td>
+        <td>${r.operator}</td>
+      </tr>
+    `;
+  }).join('');
+}
+
+// ========== Utilities ==========
+function populateWarehouseSelects() {
+  const options = '<option value="">All</option>' +
+    warehouses.map(w => `<option value="${w.id}">${w.id} - ${w.name}</option>`).join('');
+
+  ['zone-filter-warehouse', 'spu-filter-warehouse', 'sku-filter-warehouse', 'record-filter-warehouse'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = options;
+  });
+
+  if (lockedZoneWarehouse) {
+    document.getElementById('zone-filter-warehouse').value = lockedZoneWarehouse;
+  }
+}
+
+function openModal(id) {
+  document.getElementById(id).classList.add('show');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+}
+
+function showToast(message, type = 'info') {
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.textContent = message;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 4000);
+}
+  </script>
+</body>
+</html>
