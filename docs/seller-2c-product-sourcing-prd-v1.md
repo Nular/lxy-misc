@@ -158,8 +158,8 @@ KickBazar 平台采用 **2B 货源 + 2C 零售** 模式：2B 商铺提供货源�
 | 商品详情 | `/seller/2c/sourcing/product/{id}` |
 | Checkout | `/seller/2c/sourcing/checkout` |
 | Order Success | `/seller/2c/sourcing/checkout/result?orderId={id}` |
-| Purchase Orders List | `/seller/2c/sourcing/orders` |
-| Purchase Order Detail | `/seller/2c/sourcing/orders/{id}` |
+| Purchase Orders List | `/seller/2c/sourcing/orders?tab=all|published|unpublished` |
+| Purchase Order Detail | `/seller/2c/sourcing/orders/{id}?tab=all|published|unpublished` |
 
 **菜单命名（English）**：
 
