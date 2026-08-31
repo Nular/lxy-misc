@@ -4,68 +4,53 @@
 
 ## 一、文档信息
 
-| 项 | 内容 |
-|----|------|
-| **文档名称** | Seller 2C 选品中心 Product Sourcing PRD |
-| **产品** | KickBazar Seller 后台（2C 商家端） |
-| **文档版本** | v1.0 |
-| **文档状态** | 评审稿 |
-| **撰写语言** | 中文（界面文案为英语） |
-| **目标市场** | 孟加拉国（Bangladesh） |
-| **关联文档** | `docs/seller-2c-product-sourcing-brainstorming.md` v0.2 |
-| **创建日期** | 2026-08-31 |
-| **负责人** | 2C 店铺产品经理 |
+| 版本号 | 修订日期 | 修订人 | 修订内容 | 审批状态 |
+|--------|---------|--------|---------|---------|
+| V1.0.0 | 2026-08-31 | — | 初始版本，完成项目概述、Checkout / Order Success 流程及核心功能需求定义 | 待审批 |
+| V1.0.1 | - | - | - | - |
+| V1.1.0 | - | - | - | - |
 
-### 修订记录
-
-| 版本 | 日期 | 修订人 | 修订说明 |
-|------|------|--------|---------|
-| v1.0 | 2026-08-31 | — | 首版：含 Checkout、Order Success 字段与流程定稿 |
+**关联文档**：`docs/seller-2c-product-sourcing-brainstorming.md` v0.3  
+**界面语言**：English（仅英语）  
+**PRD 语言**：中文  
+**目标市场**：孟加拉国（Bangladesh）  
+**本文档涉及时间**：均为孟加拉达卡时间（UTC+6）
 
 ---
 
 ## 二、项目概述
 
-### 2.1 背景
+### 2.1 项目背景
 
-KickBazar 平台连接 **2B 货源端** 与 **2C 零售商家**。2C 商家可通过 App 完成选品、下单、银行转账、上传凭证、一键上架等操作。当前 2C 商家在 PC 办公场景缺乏对等能力，需在 **Seller Web 后台** 补齐选品与采购闭环。
+KickBazar 平台采用 **2B 货源 + 2C 零售** 模式：2B 商铺提供货源，2C 商家通过选品完成下单、银行转账、铺货上架，面向消费者销售。当前 2C 商家的选品、采购、转账、查单等核心操作主要在 **移动端 App** 完成；在 PC 办公场景下，商家无法高效浏览货源、核对结算明细、上传转账凭证及管理采购订单。
 
-### 2.2 目标
+与此同时，**2B 账户端（Web）** 已支持根据订单与转账信息确认收款，确认后 2C 商家可一键上架，2B 按订单发货。为保持跨端体验一致，需在 **Seller Web 后台（2C 店铺）** 新增 **选品中心（Product Sourcing）** 模块，补齐 Web 端选品与采购闭环。
 
-| 目标 | 说明 |
-|------|------|
-| **G1** | 在 Seller 2C 后台新增 **选品中心（Product Sourcing）** 菜单 |
-| **G2** | Web 端完成：浏览 2B 商品 → 立即购买 → Checkout → 下单成功 → 转账指引 |
-| **G3** | 支持 **采购订单（Purchase Orders）** 查询与详情操作，与消费者订单（Orders List）分离 |
-| **G4** | 与 App、2B Web 在订单状态、转账、一键上架规则上 **保持一致** |
+### 2.2 核心目标
 
-### 2.3 范围说明
+1. **补齐 Web 选品能力**：2C 商家可在 Seller 后台浏览绑定 **单一 2B 货源** 的商品，按 SKU 维度区分已发布/未发布状态，并完成搜索与详情查看。
+2. **打通单笔采购闭环**：支持立即购买 → Checkout（地址、配送、支付、费用明细）→ Order & Pay → 下单成功页（Payment Details、上传凭证、推荐商品），**本期不做购物车**。
+3. **采购订单独立管理**：提供 **Purchase Orders List** 与详情，与面向消费者的 **Orders List** 菜单分离，状态与 App、2B 端对齐。
+4. **铺货与支付对齐 App**：支持转账凭证上传、2B 确认收款后 **一键上架（Publish to Store）**，业务规则与 App 保持一致。
 
-#### In Scope（本期）
+### 2.3 项目范围
 
-- 选品中心商品列表（Tab：全部 / 已发布 / 未发布，按 SKU）
-- 搜索、橱窗型商品详情、立即购买
-- **Checkout 结算页**（地址、商品、配送方式、支付方式、费用明细、安全提示、Order & Pay）
-- **下单成功页**（成功话术、总价、Payment Details、View Order List、Recommend）
-- 转账凭证上传、采购订单列表/详情、一键上架（2B 确认收款后）
-- 界面语言：**仅英语**
+**业务边界**：本模块为 Seller Web 后台 **2C 店铺** 下的核心功能模块，主要面向 2C 零售商家（主账号及可授权子账号）。
 
-#### Out of Scope（本期不做）
+**核心能力**：
 
-- 购物车（Cart）
-- 多 2B 店铺混合选品
-- 阶梯价 / 会员价
-- 待转账超时自动取消
-- 孟语界面
-- 消费者侧 Orders List 功能改造（仅明确菜单区分）
+1. **选品浏览**：商品列表（Tab：全部 / 已发布 / 未发布）、搜索、橱窗型商品详情、立即购买。
+2. **Checkout 结算**：Shipping Address、Product Information、Shipping Method（Standard / Air Express / Air Priority）、Payment Method（Bank Transfer）、Order Summary（Subtotal、Shipping Fee、COD Handling Fee、Grand Total）、Security Reminder、Order & Pay。
+3. **下单成功页**：成功话术、Grand Total、Payment Details、Upload Payment Proof、View Order List、Recommend。
+4. **采购订单**：Purchase Orders List / Detail，含物流、凭证、一键上架。
 
-### 2.4 成功指标
+**非本次迭代范围**：
 
-| 指标 | 目标 |
-|------|------|
-| 主路径可用性 | 2C 商家可在 Web 完成选品→Checkout→提交订单 |
-| 跨端一致性 | 采购订单状态与 App 一致率 100% |
-| 转账指引完整 | 成功页 Payment Details 字段完整可复制 |
+- 购物车（Cart）及多 SKU 合并下单（本期仅立即购买单笔路径）。
+- 多 2B 店铺混合选品、阶梯价/会员价。
+- 待转账超时自动取消订单。
+- 孟语界面；消费者 Orders List 功能改造（仅明确菜单命名与路由分离）。
+- 2B 端确认收款、发货的实现（状态需对齐，不在本 PRD 实现范围）。
 
 ---
 
@@ -73,273 +58,346 @@ KickBazar 平台连接 **2B 货源端** 与 **2C 零售商家**。2C 商家可�
 
 ### 3.1 角色定义
 
-| 角色 | 说明 | 使用端 |
-|------|------|--------|
-| **2C 店铺主账号** | 零售商家主账号，拥有店铺全部操作权限 | Seller Web 2C |
-| **2C 子账号** | 店铺员工账号，权限由主账号分配 | Seller Web 2C |
-| **2B 货源方** | 确认收款、发货（非本期 2C PRD 实现范围） | 2B Web |
-| **平台运营** | 配置 BDT 格式、银行名称等 | 运营后台 |
+| 角色 | 描述 | 权限范围 |
+|------|------|---------|
+| **2C 店铺主账号（Shop Admin）** | 零售店铺主账号，负责店铺整体运营 | 可进入选品中心；浏览、搜索、立即购买、Checkout、Order & Pay；上传转账凭证；查看采购订单；2B 确认收款后可一键上架；管理收货地址（添加/编辑/设默认） |
+| **2C 子账号（Sub-account）** | 店铺员工账号，权限由主账号分配 | 权限可配置（⚙️）：默认与主账号一致项需 RBAC 细化；无权限时不可见选品中心或不可下单 |
+| **2B 货源方** | 绑定货源的 2B 账户 | 不在 Seller 2C 端操作；在 2B Web 确认收款、发货，驱动采购订单状态跃迁 |
+| **平台运营** | 平台配置人员 | 配置 BDT 展示格式、银行名称列表、安全提示文案等 |
 
-### 3.2 权限矩阵（2C Seller Web）
+### 3.2 数据权限规则
 
-| 功能 | 主账号 | 子账号 | 备注 |
-|------|--------|--------|------|
-| 进入选品中心 | ✅ | ⚙️ 可配置 | 默认主账号可用 |
-| 浏览商品列表 / 搜索 / 详情 | ✅ | ⚙️ | — |
-| 立即购买、Checkout、Order & Pay | ✅ | ⚙️ | 建议与采购权限绑定 |
-| 上传转账凭证 | ✅ | ⚙️ | 对齐 App |
-| 查看采购订单列表 / 详情 | ✅ | ⚙️ | — |
-| 一键上架 | ✅ | ⚙️ | 须 2B 已确认收款 |
-| 地址管理（添加/编辑/设默认） | ✅ | ⚙️ | 复用已有地址流程 |
+**数据可见范围**：每个 2C 店铺仅可查看 **绑定单一 2B 货源** 的商品数据及本店铺发起的 **采购订单** 数据。
 
-> **⚙️ 可配置**：子账号 RBAC 细则待与研发对齐（Brainstorming R2）。
+**与消费者订单隔离**：采购订单（Purchase Orders）与消费者订单（Orders List）**分菜单、分接口、分路由**，2C 商家在 Seller 后台通过不同入口访问，命名上不混淆。
 
-### 3.3 数据隔离
+**跨店铺隔离**：不同 2C 店铺之间的选品货源绑定关系、采购订单数据严格隔离，不可跨店查看。
 
-- 每个 2C 店铺仅可见 **绑定单一 2B 货源** 的商品与采购订单。
-- 采购订单与消费者订单数据 **分表/分接口**，菜单与路由分离。
+**权限校验**：数据权限与下单、上传凭证、一键上架等写操作必须在 **服务端** 执行；禁止仅依赖前端隐藏按钮。子账号 RBAC 细则待研发对齐（R2）。
+
+**地址权限**：Checkout 收货地址复用 Seller 已有地址管理能力；近期收货地址、2C 店铺地址的读取与修改遵循现有地址模块权限。
 
 ---
 
 ## 四、功能需求总览
 
-### 4.1 模块地图
+### Feature List
+
+| 模块 | 功能点 | 优先级 | 简述 |
+|------|--------|--------|------|
+| 选品浏览 | 商品列表（Tab：全部/已发布/未发布） | P0 | 展示绑定 2B 货源商品，按 SKU 判定铺货状态 |
+| 选品浏览 | 商品搜索 | P0 | 支持商品名称、货号/SKU 编码模糊搜索 |
+| 选品浏览 | 橱窗型商品详情 | P0 | 采购价、SKU 规格、库存、立即购买入口 |
+| 立即购买 | 规格/数量确认弹层 | P0 | 确认 SKU、数量后进入 Checkout；允许超卖 |
+| Checkout | 结算页完整流程 | P0 | 地址、商品、配送、支付、费用明细、安全提示、Order & Pay |
+| 下单成功 | Order Success 页 | P0 | 成功话术、总价、Payment Details、凭证、推荐 |
+| 支付 | 上传转账凭证 | P0 | 成功页与订单详情均可上传，对齐 App |
+| 采购订单 | Purchase Orders List | P0 | 与消费者 Orders List 分开，状态 Tab 筛选 |
+| 采购订单 | 采购订单详情 | P0 | 费用、物流、Payment Details、凭证、状态时间轴 |
+| 铺货 | 一键上架（Publish to Store） | P0 | 严格依赖 2B 确认收款后，按 SKU 铺货 |
+| 选品浏览 | 列表排序、类目筛选 | P1 | 与 App 对齐后排期 |
+| 采购订单 | 订单号搜索、再次购买 | P1 | 提升跟单与复购效率 |
+
+### 4.1 核心功能详细说明
+
+#### 4.1.1 选品至下单主流程
+
+**功能描述**：2C 商家从选品中心浏览 2B 商品，经商品详情立即购买，在 Checkout 页确认地址、配送方式、支付方式及费用后，点击 **Order & Pay** 创建采购订单，进入下单成功页完成转账指引与凭证上传。
+
+**业务规则**：
+
+- 商品数据源为 **单一绑定 2B 店铺**；已发布/未发布按 **SKU** 判定。
+- 采购价为 **单一价**，无阶梯价、会员价。
+- 允许 **超卖**：库存不足仍可提交订单（受 MOQ 约束）。
+- 支付方式本期仅 **Bank Transfer**；收款账户为 **2B 店铺固定账户**。
+- **无**待转账超时自动取消。
+- 费用公式：`Grand Total = Subtotal + Shipping Fee + COD Handling Fee`。
+
+**交互说明**：
 
 ```
-选品中心 Product Sourcing
-├── M1  商品列表（Tab + 搜索）
-├── M2  商品详情（橱窗型）
-├── M3  立即购买（规格/数量弹层）
-├── M4  Checkout 结算页          ← 本期重点补充
-├── M5  下单成功页               ← 本期重点补充
-├── M6  采购订单列表
-├── M7  采购订单详情
-└── M8  一键上架 / 转账凭证
+商品详情 → Buy Now（选 SKU/数量）→ Checkout → Order & Pay
+    → Order Success → 线下转账 + Upload Payment Proof
+    → 2B 确认收款 → 待发货 → 待收货 → 已完成 → Publish to Store
 ```
 
-### 4.2 功能清单
+#### 4.1.2 Checkout 结算页
 
-| 模块 | 功能点 | 优先级 |
-|------|--------|--------|
-| M1 | 商品列表、Tab（全部/已发布/未发布）、分页 | P0 |
-| M1 | 关键词搜索 | P0 |
-| M2 | 橱窗型详情、SKU 选择、立即购买入口 | P0 |
-| M3 | 数量选择（允许超卖）、进入 Checkout | P0 |
-| M4 | 地址、商品信息、Shipping Method、Payment Method、费用明细、安全提示、Order & Pay | P0 |
-| M5 | 成功话术、总价、Payment Details、View Order List、Recommend | P0 |
-| M5 | 上传转账凭证 | P0 |
-| M6 | 采购订单列表（状态 Tab） | P0 |
-| M7 | 订单详情、物流、Payment Details、上传凭证 | P0 |
-| M8 | 一键上架（2B 确认收款后） | P0 |
+**功能描述**：商家在提交订单前确认收货地址、商品信息、Shipping Method、Payment Method 及 Order Summary，阅读 Security Reminder 后点击 Order & Pay。
 
-### 4.3 核心流程图
+**业务规则**：
 
-```
-商品详情 → 立即购买（选 SKU/数量）
-    → Checkout（地址 + 配送 + 支付 + 费用确认）
-    → 点击 [Order & Pay]
-    → 下单成功页（话术 + Payment Details + 凭证上传）
-    → 线下转账 → 上传凭证
-    → 2B 确认收款 → 待发货 → 待收货 → 已完成
-    → 一键上架（Publish to Store）
-```
+- Shipping Method 三选一：**Standard**（默认）、**Air Express**、**Air Priority**；切换时 **实时重算** Shipping Fee、COD Handling Fee、Grand Total。
+- 收货地址默认：优先 **近期收货地址**；若无则使用 **2C 店铺地址**；支持 Change / Add New / Edit / Set as Default（复用已有流程）。
+- BDT 金额格式、银行名称由 **运营后台配置**。
+
+**交互说明**：Checkout 页字段加载失败时保留用户已填信息；Order & Pay 提交中按钮 Loading 并防重复点击；提交成功后跳转 Order Success 页，Grand Total 与 Checkout 展示一致。
+
+#### 4.1.3 下单成功页（Order Success）
+
+**功能描述**：展示订单提交成功话术、Grand Total、Payment Details（2B 固定收款账户）、Upload Payment Proof、View Order List、Recommend 推荐商品。
+
+**业务规则**：Payment Details 展示 2B 固定账户信息；Amount to Pay = Grand Total；订单初始状态为 **Pending Payment**。
+
+**交互说明**：账号、订单号、金额支持 Copy；View Order List 跳转 Purchase Orders List；推荐区点击商品进入详情。
+
+#### 4.1.4 采购订单与一键上架
+
+**功能描述**：独立菜单 **Purchase Orders List** 管理采购单全生命周期；订单详情支持查看物流、补充凭证；2B 确认收款且订单完成后可 **Publish to Store**。
+
+**业务规则**：一键上架 **严格依赖** 2B 已确认收款；铺货粒度为 **SKU**；成功后该 SKU 在选品列表 **Published** Tab 可见。
+
+### 4.2 功能总览
+
+**页面 / 路由草案**：
+
+| 页面 | URL 草案 |
+|------|---------|
+| 选品列表 | `/seller/2c/sourcing` |
+| 商品详情 | `/seller/2c/sourcing/product/{id}` |
+| Checkout | `/seller/2c/sourcing/checkout` |
+| Order Success | `/seller/2c/sourcing/checkout/result?orderId={id}` |
+| Purchase Orders List | `/seller/2c/sourcing/orders` |
+| Purchase Order Detail | `/seller/2c/sourcing/orders/{id}` |
+
+**菜单命名（English）**：
+
+| 中文（PRD） | 界面 English |
+|------------|-------------|
+| 选品中心 | Product Sourcing |
+| 采购订单 | Purchase Orders |
+| 消费者订单 | Orders List |
 
 ---
 
 ## 五、功能需求详述
 
+### 5.1 选品浏览模块
+
+#### 5.1.1 商品列表
+
+**功能描述**：以商品卡片形式展示绑定 2B 货源的可售商品，支持 Tab 筛选与分页，点击卡片进入橱窗型商品详情。
+
+**业务规则**：
+
+1. 数据源：当前 2C 店铺 **绑定单一 2B 店铺** 的可售商品；过滤 2B 侧已下架/不可售商品。
+2. Tab 定义（按 **SKU**）：
+   - **All**：全部可售商品。
+   - **Published**：该 SKU 已在当前 2C 店铺铺货上架。
+   - **Unpublished**：2B 可售但该 SKU 尚未在 2C 上架。
+3. 卡片展示采购价（BDT），无阶梯价/会员价；若当前展示 SKU 已铺货，显示 **Published** 标签。
+4. 默认进入 **All** Tab；Tab 切换保留搜索关键词 `q`。
+
+**字段定义**：
+
+| 字段 | 英文界面 | 说明 |
+|------|---------|------|
+| Product Image | — | 主图缩略图 |
+| Product Title | — | 商品标题 |
+| Purchase Price | Purchase Price | 采购价 BDT |
+| Publish Tag | Published | 可选，SKU 已铺货时展示 |
+| SKU Code | — | 列表可选展示货号 |
+
+**交互说明**：
+
+1. 点击商品卡片 → 商品详情页。
+2. URL 参数：`?tab=all|published|unpublished&q={keyword}`。
+3. 分页规则与 Seller 后台统一；列表首屏 Loading，无数据展示空状态。
+4. 若 SPU 下部分 SKU 已发布、部分未发布，Tab 筛选在 SKU 粒度生效；SPU 卡片展示细节待研发与设计对齐（R1）。
+
+#### 5.1.2 商品搜索
+
+**功能描述**：在选品列表页提供搜索框，支持按商品名称、货号/SKU 编码查找目标货源。
+
+**业务规则**：
+
+1. 搜索与 Tab 条件 **取交集**。
+2. 支持模糊匹配；无结果展示空状态（如 **NO DATA**）。
+3. 搜索与列表同路由，通过 `q` 参数传递。
+
+**交互说明**：
+
+1. 输入关键词后触发搜索（Enter 或搜索按钮，与 Seller 后台搜索交互保持一致）。
+2. 支持一键清除搜索词并刷新列表。
+3. Tab 切换不丢失 `q` 参数。
+
+#### 5.1.3 橱窗型商品详情
+
+**功能描述**：以采购决策为导向的商品详情页，展示主图、采购价、SKU 规格、库存及图文详情，底栏提供 **Buy Now** 进入立即购买。
+
+**业务规则**：
+
+1. 展示当前选中 SKU 的 **Published / Unpublished** 状态。
+2. 库存仅供参考；**允许超卖**，缺货 SKU 可不置灰（可提示库存风险）。
+3. 切换 SKU 时同步更新采购价、库存、铺货状态。
+
+**字段定义**：
+
+| 字段 | 英文界面 | 必填展示 |
+|------|---------|---------|
+| Product Images | — | ✅ |
+| Product Title | — | ✅ |
+| SKU Code | SKU Code | ✅ |
+| Publish Status | Published / Unpublished | ✅ |
+| Purchase Price | Purchase Price | ✅ |
+| Stock | Stock | ✅ |
+| SKU Attributes | Color / Size 等 | 有则展示 |
+| Description | Description | ✅ 图文详情 Tab |
+
+**交互说明**：
+
+1. 底栏 Sticky **Buy Now** → 打开立即购买弹层（5.2）。
+2. 面包屑：Product Sourcing > Product Detail。
+
 ---
 
-### M1 选品中心 — 商品列表
-
-#### 5.1.1 功能描述
-
-展示绑定 **单一 2B 货源** 的可售商品，支持 Tab 筛选与搜索。
-
-#### 5.1.2 业务规则
-
-| 规则 ID | 规则 |
-|---------|------|
-| BR-01 | 数据源为绑定单一 2B 店铺商品 |
-| BR-03~05 | 已发布/未发布按 **SKU** 判定 |
-| BR-07 | 展示单一 **采购价**，无阶梯价/会员价 |
-
-#### 5.1.3 页面元素
-
-| 元素 | 说明 |
-|------|------|
-| 搜索框 | 支持商品名称、货号/SKU 编码 |
-| Tab | All / Published / Unpublished |
-| 商品卡片 | 主图、标题、采购价（BDT）、Published 标签（若该 SKU 已铺货） |
-| 分页 | 每页条数与 Seller 后台统一 |
-
-#### 5.1.4 交互
-
-- 点击卡片 → 商品详情（M2）
-- Tab 切换保留搜索词 `q`
-- URL：`/seller/2c/sourcing?tab=all|published|unpublished&q=`
-
----
-
-### M2 商品详情（橱窗型）
+### 5.2 立即购买模块
 
 #### 5.2.1 功能描述
 
-以采购决策为导向的商品详情页，支持 SKU 选择与立即购买。
+在下单前确认 SKU 与购买数量，预览行小计后进入 Checkout 页。
 
-#### 5.2.2 字段
+#### 5.2.2 业务规则
 
-| 字段 | 说明 | 必填展示 |
-|------|------|---------|
-| Product Images | 主图画廊 | ✅ |
-| Product Title | 商品标题 | ✅ |
-| SKU Code | 货号 | ✅ |
-| Publish Status | Published / Unpublished（按当前 SKU） | ✅ |
-| Purchase Price | 采购价（BDT） | ✅ |
-| Stock | 库存（仅供参考，允许超卖） | ✅ |
-| SKU Attributes | 颜色、尺码等 | 有则展示 |
-| Description | 图文详情 | ✅ |
+1. 数量受 **MOQ（最小起订量）** 约束。
+2. **允许超卖**：库存小于购买数量时仍可 Confirm 进入 Checkout。
+3. Subtotal Preview = Unit Price × Quantity。
 
-#### 5.2.3 交互
+#### 5.2.3 字段定义
 
-- 底栏 Sticky **[Buy Now]** → M3 立即购买弹层
-- 切换 SKU 时更新价格、库存、Publish Status
+| 字段 | 英文界面 | 说明 |
+|------|---------|------|
+| Selected SKU | — | 已选规格属性 |
+| Unit Price | Unit Price | 采购单价 BDT |
+| Quantity | Quantity | 数量输入/步进器 |
+| Subtotal Preview | Subtotal | 行小计预览 |
+
+#### 5.2.4 交互说明
+
+1. **Confirm** → 跳转 Checkout，携带 `skuId`、`quantity` 等参数。
+2. **Cancel** → 关闭弹层，停留商品详情。
+3. 本期无购物车，Checkout 内商品数量 **只读**；修改数量需返回详情页。
 
 ---
 
-### M3 立即购买
+### 5.3 Checkout 结算模块
 
 #### 5.3.1 功能描述
 
-在下单前确认 SKU 与数量，进入 Checkout。
+商家确认收货地址、商品信息、配送方式、支付方式及费用明细，阅读安全提示后点击 **Order & Pay** 提交采购订单。
 
-#### 5.3.2 字段与规则
-
-| 字段 | 规则 |
-|------|------|
-| Selected SKU | 当前选中规格 |
-| Unit Price | 采购单价（BDT） |
-| Quantity | 受 MOQ 约束；**允许超卖**（库存不足仍可下单） |
-| Subtotal Preview | 单价 × 数量 |
-
-#### 5.3.3 交互
-
-- **[Confirm]** → 跳转 Checkout（M4），携带 SKU、数量等结算参数
-- **[Cancel]** → 关闭弹层
-
----
-
-### M4 Checkout 结算页（核心）
-
-#### 5.4.1 功能描述
-
-商家确认收货信息、配送方式、支付方式及费用明细后，通过 **[Order & Pay]** 提交采购订单。本期支付方式仅 **Bank Transfer**。
-
-#### 5.4.2 页面结构
+#### 5.3.2 页面结构
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│ Breadcrumb: Product Sourcing > Checkout                  │
-├─────────────────────────────────────────────────────────┤
-│ [1] Shipping Address                                     │
-│ [2] Product Information                                  │
-│ [3] Shipping Method                                      │
-│ [4] Payment Method                                       │
-│ [5] Order Summary（Subtotal / Shipping Fee / COD Fee / Grand Total）│
-│ [6] Security Reminder                                    │
-│ [7] [ Order & Pay ]                                      │
-└─────────────────────────────────────────────────────────┘
+Breadcrumb: Product Sourcing > Checkout
+[1] Shipping Address
+[2] Product Information
+[3] Shipping Method
+[4] Payment Method
+[5] Order Summary
+[6] Security Reminder
+[7] [ Order & Pay ]
 ```
 
-#### 5.4.3 区块详述
+#### 5.3.3 字段定义与业务规则
 
-##### （1）Shipping Address 收货地址
+##### （1）Shipping Address
 
-| 字段 | 英文界面文案 | 说明 |
-|------|-------------|------|
-| Recipient Name | Recipient Name | 收货人 |
-| Phone | Phone Number | +880 格式 |
-| Division / District / Upazila | — | 孟加拉行政区 |
-| Detailed Address | Address | 街道门牌等 |
-| Default Tag | Default | 默认地址标识 |
+| 字段 | 英文界面 | 必填 | 说明 |
+|------|---------|------|------|
+| recipientName | Recipient Name | ✅ | 收货人 |
+| phone | Phone Number | ✅ | +880 格式 |
+| division | Division | ✅ | 一级行政区 |
+| district | District | ✅ | 二级行政区 |
+| upazila | Upazila / Thana | ✅ | 三级行政区 |
+| addressLine | Address | ✅ | 详细地址 |
+| isDefault | Default | — | 默认地址标签 |
 
-**默认逻辑（BR-ADDR）**：
+**默认地址规则（BR-ADDR）**：
 
-1. 优先使用 **近期收货地址**（最近一次采购/收货使用地址）
-2. 若无近期地址 → 使用 **2C 店铺地址**
-3. 支持：**Change**（选择其他地址）、**Add New**、**Edit**、**Set as Default**（复用 Seller 已有地址流程）
+1. 优先展示 **近期收货地址**（最近一次采购/收货使用地址）。
+2. 若无近期地址 → 使用 **2C 店铺地址**。
+3. 支持 **Change**（选择其他地址）、**Add New**、**Edit**、**Set as Default**，复用 Seller 已有地址流程。
 
-##### （2）Product Information 商品信息
+##### （2）Product Information
 
-| 字段 | 说明 |
-|------|------|
-| Product Image | 缩略图 |
-| Product Title | 商品标题 |
-| SKU Attributes | 规格（如 Color: Red, Size: M） |
-| SKU Code | 货号 |
-| Unit Price | 采购单价（BDT） |
-| Quantity | 数量（只读，来自 M3；本期无购物车不可在本页改量，需返回详情修改） |
-| Line Subtotal | 行小计 = Unit Price × Quantity |
+| 字段 | 英文界面 | 说明 |
+|------|---------|------|
+| productImage | — | 商品缩略图 |
+| productTitle | — | 商品标题 |
+| skuAttributes | — | 规格属性 |
+| skuCode | SKU Code | 货号 |
+| unitPrice | Unit Price | 采购单价 |
+| quantity | Quantity | 数量（只读） |
+| lineSubtotal | — | Unit Price × Quantity |
 
-> 本期单笔立即购买，清单为 **单行或多 SKU 仅当从同一详情多次购买合并** 时扩展；默认 **单 SKU 单行**。
+本期默认 **单 SKU 单行**（立即购买路径，无购物车）。
 
-##### （3）Shipping Method 配送方式
+##### （3）Shipping Method
 
-| 选项值 | 英文展示 | 说明 |
+| 枚举值 | 英文界面 | 说明 |
 |--------|---------|------|
-| `standard` | Standard | 标准配送 |
-| `air_express` | Air Express | 航空快递 |
-| `air_priority` | Air Priority | 航空优先 |
+| standard | Standard | 标准配送，**默认选中** |
+| air_express | Air Express | 航空快递 |
+| air_priority | Air Priority | 航空优先 |
 
-| 规则 | 说明 |
-|------|------|
-| SM-01 | 三选一，默认 **Standard** |
-| SM-02 | 切换配送方式时 **实时重算** Shipping Fee、COD Handling Fee（如有）、Grand Total |
-| SM-03 | 运费规则由 **2B/平台配置**，前端按接口返回展示 |
+**业务规则**：
 
-##### （4）Payment Method 支付方式
+1. 三选一，单选。
+2. 切换选项时调用运费试算接口，**实时更新** Shipping Fee、COD Handling Fee、Grand Total。
+3. 运费与 COD Handling Fee 计算规则由 2B/平台配置（R4 待业务确认各配送方式费率）。
 
-| 选项值 | 英文展示 | 说明 |
+##### （4）Payment Method
+
+| 枚举值 | 英文界面 | 说明 |
 |--------|---------|------|
-| `bank_transfer` | Bank Transfer | 本期 **唯一** 支付方式，默认选中且不可切换 |
+| bank_transfer | Bank Transfer | 本期 **唯一** 支付方式，默认选中，不可切换 |
 
-##### （5）Order Summary 结算信息
+##### （5）Order Summary
 
-| 字段 | 英文展示 | 计算规则 |
+| 字段 | 英文界面 | 计算规则 |
 |------|---------|---------|
-| Subtotal | Subtotal | 商品行小计之和 |
-| Shipping Fee | Shipping Fee | 根据 Shipping Method 计算 |
-| COD Handling Fee | COD Handling Fee | 根据配送方式/平台规则计算（即使支付为转账，仍按业务配置展示该项） |
-| Grand Total | Grand Total | Subtotal + Shipping Fee + COD Handling Fee |
+| subtotal | Subtotal | 商品行小计之和 |
+| shippingFee | Shipping Fee | 依 Shipping Method 计算 |
+| codHandlingFee | COD Handling Fee | 依配送方式/平台规则计算 |
+| grandTotal | Grand Total | Subtotal + Shipping Fee + COD Handling Fee |
 
-**金额展示**：
+金额货币 **BDT（৳）**；千分位等格式由运营后台配置（PAY-08）。
 
-- 货币：**BDT（৳）**
-- 格式：由运营后台配置（千分位等，PAY-08）
+##### （6）Security Reminder
 
-##### （6）Security Reminder 安全信息提醒
+**功能描述**：在 Order & Pay 按钮上方展示安全信息提醒，降低转账诈骗与操作错误风险。
 
-固定或配置化安全提示文案，建议包含：
+**建议文案要点（English）**：
 
-| 要点 | 示例文案（English） |
-|------|-------------------|
-| 转账安全 | Only transfer to the **official bank account** shown after order submission. |
-| 金额一致 | Please ensure the transfer amount matches the **Grand Total**. |
-| 订单备注 | Include your **Order Number** in the transfer reference/note. |
+| 要点 | 示例 |
+|------|------|
+| 官方账户 | Only transfer to the official bank account shown after order submission. |
+| 金额一致 | Ensure the transfer amount matches the Grand Total. |
+| 备注订单号 | Include your Order Number in the transfer reference/note. |
 | 防诈骗 | KickBazar will never ask you to transfer to a personal account via chat. |
 
-展示形式：信息提示条（Info Banner）或折叠面板，位于 Order Summary 下方、按钮上方。
+文案可由运营后台配置；展示形式为 Info Banner 或折叠说明区。
 
-##### （7）主操作按钮 Order & Pay
+##### （7）Order & Pay
 
 | 属性 | 说明 |
 |------|------|
-| 文案 | **Order & Pay** |
-| 前置校验 | 地址完整、配送方式已选、支付方式已选、Grand Total > 0 |
-| 点击后 | 创建采购订单 → 跳转下单成功页（M5） |
-| 加载态 | 提交中禁用按钮，防重复提交 |
+| 按钮文案 | Order & Pay |
+| 前置校验 | 地址完整；Shipping Method 已选；Payment Method 已选；Grand Total > 0 |
+| 提交行为 | 创建采购订单，状态 = Pending Payment |
+| 成功跳转 | Order Success 页 |
+| 防重复 | 提交中 Loading + 禁用按钮 |
 
-#### 5.4.4 Checkout 提交数据（接口草案）
+#### 5.3.4 交互说明
+
+1. 进入 Checkout 时并行加载：默认地址、商品快照、默认 Shipping Method 运费试算结果。
+2. 运费试算失败：Toast 提示，保留已选配送方式，支持 Retry。
+3. 地址为空：阻断 Order & Pay，引导 Add New Address。
+4. 提交失败：Toast 错误信息，停留 Checkout 页保留表单状态。
+5. 提交前后端校验价格：若采购价/运费变动，提示用户刷新 Checkout。
+
+#### 5.3.5 提交接口入参（草案）
 
 ```json
 {
@@ -355,197 +413,204 @@ KickBazar 平台连接 **2B 货源端** 与 **2C 零售商家**。2C 商家可�
 }
 ```
 
-#### 5.4.5 异常与边界
-
-| 场景 | 处理 |
-|------|------|
-| 地址为空 | 阻断提交，引导 Add New Address |
-| 运费接口失败 | 提示重试，保留已填信息 |
-| 提交失败 | Toast 错误信息，保留 Checkout 状态 |
-| 价格变动 | 提交前后端校验；若变价提示刷新 Checkout |
-
 ---
 
-### M5 下单成功页（Order Success）
+### 5.4 下单成功模块（Order Success）
 
-#### 5.5.1 功能描述
+#### 5.4.1 功能描述
 
-订单创建成功后展示确认信息与转账指引，引导商家完成线下转账、上传凭证，并提供订单入口与推荐商品。
+订单创建成功后展示确认信息、应付总额、2B 固定收款账户（Payment Details），引导上传转账凭证，并提供采购订单入口与推荐商品。
 
-#### 5.5.2 页面结构
+#### 5.4.2 页面结构
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│ Success Icon + Success Message                           │
-│ Grand Total（总价）                                      │
-│ Payment Details（收款账户 + 订单信息）                   │
-│ Upload Payment Proof（上传转账凭证）                     │
-│ [ View Order List ]                                      │
-│ Recommend（推荐商品）                                    │
-└─────────────────────────────────────────────────────────┘
+[Success Message]
+[Grand Total]
+[Payment Details]
+[Upload Payment Proof]
+[View Order List]
+[Recommend]
 ```
 
-#### 5.5.3 区块详述
+#### 5.4.3 字段定义
 
-##### （1）Success Message 成功话术
+##### Success Message
 
-| 元素 | 说明 |
-|------|------|
-| 图标 | 成功状态图标（绿色勾） |
-| 主标题 | 示例：`Order Submitted Successfully!` |
-| 副文案 | 示例：`Your purchase order has been created. Please complete the bank transfer and upload your payment proof.` |
-| 订单号 | `Order No.: PO202608310001`（可复制） |
-| 订单状态 | `Pending Payment` |
+| 元素 | 英文界面 / 内容 | 说明 |
+|------|----------------|------|
+| successIcon | — | 成功图标 |
+| successTitle | Order Submitted Successfully! | 主标题 |
+| successMessage | Your purchase order has been created. Please complete the bank transfer and upload your payment proof. | 副文案，可配置 |
+| orderNo | Order No. | 采购订单号，可复制 |
+| orderStatus | Pending Payment | 初始状态 |
 
-##### （2）Grand Total 总价
+##### Grand Total
 
-| 字段 | 说明 |
-|------|------|
-| Grand Total | 与 Checkout 提交时 **Grand Total** 一致（BDT） |
-| 明细折叠（可选） | Subtotal / Shipping Fee / COD Handling Fee |
-
-##### （3）Payment Details 支付详情
-
-展示 **2B 店铺固定收款账户**（PAY-02）及转账必要信息：
-
-| 字段 | 英文展示 | 说明 |
+| 字段 | 英文界面 | 说明 |
 |------|---------|------|
-| Payment Method | Bank Transfer | 固定 |
-| Bank Name | Bank Name | 后台配置 |
-| Account Name | Account Name | 收款户名 |
-| Account Number | Account Number | 可复制 |
-| Branch / SWIFT | Branch / SWIFT Code | 如有则展示 |
-| Amount to Pay | Amount to Pay | = Grand Total，可复制 |
-| Transfer Note | Transfer Note | 提示备注 Order Number |
+| grandTotal | Grand Total | 与 Checkout 提交金额一致 |
+| feeBreakdown | Subtotal / Shipping Fee / COD Handling Fee | 可选折叠展示 |
 
-每项支持 **Copy** 按钮（账号、金额、订单号）。
+##### Payment Details
 
-##### （4）Upload Payment Proof 上传转账凭证
+| 字段 | 英文界面 | 说明 |
+|------|---------|------|
+| paymentMethod | Bank Transfer | 固定 |
+| bankName | Bank Name | 后台配置 |
+| accountName | Account Name | 2B 店铺固定账户户名 |
+| accountNumber | Account Number | 可复制 |
+| branchCode | Branch / SWIFT Code | 有则展示 |
+| amountToPay | Amount to Pay | = Grand Total，可复制 |
+| transferNote | Transfer Note | 提示备注 Order Number |
+
+**业务规则**：收款账户为 **2B 店铺固定账户**（非每单动态生成）。
+
+##### Upload Payment Proof
 
 | 属性 | 说明 |
 |------|------|
+| 文案 | Upload Payment Proof |
 | 时机 | 成功页即可上传；订单详情可补充 |
-| 格式/大小 | 对齐 App（待 R3 确认：如 JPG/PNG，≤5MB） |
-| 上传后 | 订单可进入「待确认收款」流程（与 2B 确认并行） |
+| 格式限制 | 对齐 App（R3：如 JPG/PNG，≤5MB） |
+| 上传后 | 进入待 2B 确认收款流程 |
 
-##### （5）View Order List
-
-| 属性 | 说明 |
-|------|------|
-| 文案 | **View Order List** |
-| 跳转 | 采购订单列表 `/seller/2c/sourcing/orders` |
-| 类型 | 主按钮或次级按钮 |
-
-##### （6）Recommend 推荐商品
+##### View Order List
 
 | 属性 | 说明 |
 |------|------|
-| 标题 | 示例：`You May Also Like` / `Recommended Products` |
-| 内容 | 2B 货源商品推荐（算法或热销兜底，对齐 App 若有） |
-| 布局 | 横向滑动或网格，复用商品卡片组件 |
-| 交互 | 点击 → 商品详情（M2） |
+| 文案 | View Order List |
+| 跳转 | Purchase Orders List |
 
-#### 5.5.4 URL
+##### Recommend
 
-`/seller/2c/sourcing/checkout/result?orderId={id}`
+| 属性 | 说明 |
+|------|------|
+| 标题 | You May Also Like / Recommended Products |
+| 内容 | 2B 货源推荐商品（算法或热销兜底，R5） |
+| 交互 | 点击卡片 → 商品详情 |
+
+#### 5.4.4 交互说明
+
+1. URL：`/seller/2c/sourcing/checkout/result?orderId={id}`。
+2. Payment Details 各关键字段提供 **Copy** 按钮。
+3. 上传凭证成功 Toast 提示；失败可 Retry。
+4. 页面加载失败展示错误态，提供返回 Purchase Orders 或 Product Sourcing 入口。
 
 ---
 
-### M6 采购订单列表（Purchase Orders List）
+### 5.5 采购订单模块
 
-#### 5.6.1 功能描述
+#### 5.5.1 Purchase Orders List
 
-独立菜单 **Purchase Orders**，与消费者 **Orders List** 分开。
+**功能描述**：独立菜单 **Purchase Orders**，列表化展示本店铺采购订单，支持按状态 Tab 筛选，与消费者 **Orders List** 分离。
 
-#### 5.6.2 状态 Tab
+**业务规则**：
 
-| Tab | 英文 | 说明 |
-|-----|------|------|
+1. **无**待转账超时自动取消。
+2. 列表默认按 **创建时间倒序**。
+3. 分页与 Seller 后台统一。
+
+**状态 Tab**：
+
+| 状态 | 英文界面 | 说明 |
+|------|---------|------|
 | 全部 | All | — |
-| 待转账 | Pending Payment | 已下单未转账/未上传凭证 |
-| 待确认收款 | Pending Confirmation | 已转账待 2B 确认 |
+| 待转账 | Pending Payment | 已下单，待转账/待上传凭证 |
+| 待确认收款 | Pending Confirmation | 已转账/已上传凭证，待 2B 确认 |
 | 待发货 | Pending Shipment | 2B 已确认收款 |
 | 待收货 | Pending Receipt | 已发货 |
 | 已完成 | Completed | 已签收 |
 
-> **无**待转账超时自动取消（PAY-07）。
+**列表卡片字段**：
 
-#### 5.6.3 列表卡片字段
+| 字段 | 英文界面 |
+|------|---------|
+| orderNo | Order No. |
+| status | Status |
+| productImage | — |
+| itemCount | Items |
+| grandTotal | Grand Total |
+| createdAt | Created Time |
+| action | View Detail |
 
-Order No.、Status、Product Image、Item Count、Grand Total、Created Time、**View Detail**
+**交互说明**：点击 View Detail → 采购订单详情；空状态引导返回 Product Sourcing。
+
+#### 5.5.2 Purchase Order Detail
+
+**功能描述**：展示采购单完整信息、状态时间轴、Payment Details、物流、凭证及操作按钮。
+
+**信息区块**：
+
+| 区块 | 内容 |
+|------|------|
+| 状态区 | 当前状态 + 状态时间轴 |
+| Product Information | 同 Checkout 商品信息快照 |
+| Shipping Address | 下单时地址快照 |
+| Shipping Method | Standard / Air Express / Air Priority |
+| Order Summary | Subtotal、Shipping Fee、COD Handling Fee、Grand Total |
+| Payment Details | 同 Order Success |
+| Payment Proof | 已上传凭证预览 / Upload Payment Proof |
+| Logistics | 运单号、物流时间轴（2B 回传后） |
+
+**状态与主操作**：
+
+| 状态 | 英文 | 主操作 |
+|------|------|--------|
+| 待转账 | Pending Payment | Copy Payment Details、Upload Payment Proof |
+| 待确认收款 | Pending Confirmation | View / Supplement Payment Proof |
+| 待发货 | Pending Shipment | — |
+| 待收货 | Pending Receipt | View Logistics |
+| 已完成 | Completed | **Publish to Store**（须 2B 已确认收款） |
+| 已取消 | Cancelled | 仅主动取消，无超时取消 |
 
 ---
 
-### M7 采购订单详情
+### 5.6 一键上架模块（Publish to Store）
+
+#### 5.6.1 功能描述
+
+2B 确认收款且采购订单完成后，2C 商家可将对应 **SKU** 一键铺货至当前 2C 店铺。
+
+#### 5.6.2 业务规则
+
+1. **PUB-01**：操作前置条件 = 2B 已 **确认收款**（严格依赖，前端 + 后端双重校验）。
+2. **PUB-02**：铺货粒度 = **SKU**。
+3. **PUB-03**：成功后该 SKU 在选品列表 **Published** Tab 可见，详情页状态变为 Published。
+4. 若 SKU 已 Published，按钮置灰或隐藏。
+
+#### 5.6.3 交互说明
+
+1. 入口：采购订单详情（Completed 状态）主按钮 **Publish to Store**。
+2. 点击后 Loading；成功 Toast：`Published successfully.`；失败 Toast 并保留原状态。
+3. 后端返回最新铺货状态，前端以接口数据刷新 UI。
+
+---
+
+### 5.7 转账凭证模块
 
 #### 5.7.1 功能描述
 
-展示采购单全貌，支持查看 Payment Details、上传凭证、查看物流、一键上架。
+支持商家在 Order Success 页与采购订单详情上传银行转账凭证，与 App 能力对齐。
 
-#### 5.7.2 信息区块
+#### 5.7.2 业务规则
 
-| 区块 | 字段 |
-|------|------|
-| 状态区 | 当前状态、状态时间轴 |
-| 商品信息 | 同 Checkout Product Information |
-| 地址 | Shipping Address 快照 |
-| 配送 | Shipping Method |
-| 费用 | Subtotal、Shipping Fee、COD Handling Fee、Grand Total |
-| Payment Details | 同成功页（固定 2B 账户） |
-| 凭证 | 已上传凭证预览 / Upload Payment Proof |
-| 物流 | 运单号、物流时间轴（2B 回传后） |
+1. 成功页、订单详情均可上传；已上传可在详情预览。
+2. 文件格式、大小、张数限制对齐 App（R3）。
+3. 上传不替代 2B 确认收款；状态跃迁仍以 2B 确认为准。
 
-#### 5.7.3 状态与操作
+#### 5.7.3 交互说明
 
-| 状态 | 主操作 |
-|------|--------|
-| Pending Payment | Copy Payment Details、Upload Payment Proof |
-| Pending Confirmation | View / Supplement Payment Proof |
-| Pending Shipment | — |
-| Pending Receipt | View Logistics |
-| Completed | **Publish to Store**（一键上架，须 2B 已确认收款） |
+1. 点击 Upload Payment Proof → 选择文件 → 上传 Loading → 成功/失败反馈。
+2. 支持重新上传或补充（以 App 规则为准）。
 
 ---
 
-### M8 一键上架 & 转账凭证（跨页面能力）
-
-#### 5.8.1 一键上架（Publish to Store）
-
-| 规则 | 说明 |
-|------|------|
-| PUB-01 | **严格依赖** 2B 已确认收款 |
-| PUB-02 | 按 **SKU** 铺货至当前 2C 店铺 |
-| PUB-03 | 成功后该 SKU 在选品列表 Tab **Published** 可见 |
-
-#### 5.8.2 转账凭证
-
-| 规则 | 说明 |
-|------|------|
-| PROOF-01 | 成功页、订单详情均可上传 |
-| PROOF-02 | 与 App 能力对齐 |
-
----
-
-## 六、业务规则汇总
-
-| 规则 ID | 规则摘要 |
-|---------|---------|
-| BR-01 | 单一 2B 货源 |
-| BR-03~05 | 发布状态按 SKU |
-| BR-07 | 无阶梯/会员价 |
-| BR-ADDR | 近期地址优先，否则店铺地址 |
-| PAY-01~08 | 银行转账、固定账户、凭证上传、无超时取消、BDT 配置 |
-| SM-01~03 | 三种配送方式、切换重算费用 |
-| PUB-01~03 | 一键上架依赖 2B 确认收款 |
-
----
-
-## 七、订单状态与流程
+### 5.8 订单状态与流程
 
 ```
-提交订单（Order & Pay）
+Order & Pay 提交
     → Pending Payment（待转账）
-    → [转账 + 上传凭证]
+    → [线下转账 + Upload Payment Proof]
     → Pending Confirmation（待确认收款）
     → [2B 确认收款]
     → Pending Shipment（待发货）
@@ -556,157 +621,165 @@ Order No.、Status、Product Image、Item Count、Grand Total、Created Time、*
     → [Publish to Store] → SKU Published
 ```
 
-| 英文状态 | 中文 |
-|---------|------|
-| Pending Payment | 待转账 |
-| Pending Confirmation | 待确认收款 |
-| Pending Shipment | 待发货 |
-| Pending Receipt | 待收货 |
-| Completed | 已完成 |
-| Cancelled | 已取消（仅主动取消，无超时） |
+**关键对齐**：2C Web 状态名、颜色、按钮与 **App 采购订单** 一致；2B 确认收款为状态跃迁权威来源。
 
 ---
 
-## 八、数据字段定义（Checkout & Success 核心）
+## 六、数据模型
 
-### 8.1 Checkout 页字段表
+### 6.1 核心数据实体
 
-| 区块 | 字段名 | 类型 | 必填 | 英文文案 |
-|------|--------|------|------|---------|
-| Address | recipientName | string | ✅ | Recipient Name |
-| Address | phone | string | ✅ | Phone Number |
-| Address | division/district/upazila | string | ✅ | — |
-| Address | addressLine | string | ✅ | Address |
-| Product | skuId | string | ✅ | — |
-| Product | productTitle | string | ✅ | — |
-| Product | skuAttributes | object | — | — |
-| Product | unitPrice | decimal | ✅ | Unit Price |
-| Product | quantity | int | ✅ | Quantity |
-| Product | lineSubtotal | decimal | ✅ | — |
-| Shipping | shippingMethod | enum | ✅ | Shipping Method |
-| Payment | paymentMethod | enum | ✅ | Payment Method |
-| Summary | subtotal | decimal | ✅ | Subtotal |
-| Summary | shippingFee | decimal | ✅ | Shipping Fee |
-| Summary | codHandlingFee | decimal | ✅ | COD Handling Fee |
-| Summary | grandTotal | decimal | ✅ | Grand Total |
+| 实体名称 | 说明 | 关键字段 |
+|---------|------|---------|
+| **2C Shop（2C 店铺）** | 零售商家店铺 | shop_id, shop_name, bound_2b_supplier_id（绑定单一 2B 货源）, shop_address_id |
+| **2B Product / SKU** | 2B 货源商品 | sku_id, spu_id, supplier_id, sku_code, purchase_price, stock, attributes, sellable_status |
+| **2C Publish Record** | 2C 铺货记录 | publish_id, shop_id, sku_id, publish_status（published/unpublished） |
+| **Shipping Address** | 收货地址 | address_id, shop_id, recipient_name, phone, division, district, upazila, address_line, is_default, last_used_at |
+| **Purchase Order（采购订单）** | 2C 向 2B 采购单 | order_id, order_no, shop_id, status, shipping_address_snapshot, shipping_method, payment_method, subtotal, shipping_fee, cod_handling_fee, grand_total, created_at |
+| **Purchase Order Line** | 采购订单行 | line_id, order_id, sku_id, unit_price, quantity, line_subtotal |
+| **Payment Account（2B 固定账户）** | 2B 收款账户配置 | supplier_id, bank_name, account_name, account_number, branch_code, swift_code |
+| **Payment Proof** | 转账凭证 | proof_id, order_id, file_url, uploaded_at, uploaded_by |
+| **Logistics Record** | 物流信息 | order_id, carrier, tracking_no, timeline_events[] |
 
-### 8.2 Success 页字段表
+### 6.2 枚举定义
 
-| 字段名 | 说明 | 英文文案 |
-|--------|------|---------|
-| orderNo | 采购订单号 | Order No. |
-| orderStatus | 订单状态 | Status |
-| successTitle | 成功主标题 | Order Submitted Successfully! |
-| successMessage | 成功副文案 | （见 5.5.3） |
-| grandTotal | 应付总额 | Grand Total |
-| bankName | 银行名称 | Bank Name |
-| accountName | 户名 | Account Name |
-| accountNumber | 账号 | Account Number |
-| branchCode | 支行/SWIFT | Branch / SWIFT Code |
-| amountToPay | 应付金额 | Amount to Pay |
-| paymentProof | 凭证文件 | Upload Payment Proof |
+| 枚举 | 值 | 英文展示 |
+|------|-----|---------|
+| shipping_method | standard | Standard |
+| shipping_method | air_express | Air Express |
+| shipping_method | air_priority | Air Priority |
+| payment_method | bank_transfer | Bank Transfer |
+| order_status | pending_payment | Pending Payment |
+| order_status | pending_confirmation | Pending Confirmation |
+| order_status | pending_shipment | Pending Shipment |
+| order_status | pending_receipt | Pending Receipt |
+| order_status | completed | Completed |
+| order_status | cancelled | Cancelled |
+| publish_tab | all / published / unpublished | All / Published / Unpublished |
+
+### 6.3 数据更新与一致性
+
+| 数据类型 | 更新频率 / 规则 |
+|---------|----------------|
+| 2B 商品列表、采购价、库存 | 实时或近实时（与 App 一致）；Checkout 提交时后端再次校验 |
+| 运费、COD Handling Fee | 切换 Shipping Method 时实时试算 |
+| 订单状态 | 2B 确认收款、发货、签收由 2B 端驱动；2C Web 轮询或消息推送刷新 |
+| 铺货状态 | 一键上架成功后即时更新；列表 Published Tab 下次查询生效 |
+| BDT 格式、银行名称 | 运营后台配置，配置变更后新订单展示新配置 |
 
 ---
 
-## 九、非功能需求
+## 七、非功能性需求
 
-| 维度 | 要求 |
+### 7.1 性能要求
+
+| 指标 | 要求 |
 |------|------|
-| 语言 | 界面仅 **英语** |
-| 货币 | BDT，格式后台配置 |
-| 安全 | 收款账户防篡改；敏感信息登录后可见 |
-| 性能 | 列表首屏 < 2s；Checkout 运费重算 < 1s |
-| 兼容 | Seller 后台布局；最小宽度 1280px 优先 |
-| 审计 | Order & Pay、查看 Payment Details 记日志 |
+| 选品列表首屏加载 | ≤ 2 秒（常规数据量） |
+| Checkout 运费试算 | ≤ 1 秒 |
+| Order & Pay 提交响应 | ≤ 3 秒（P95） |
+| 凭证上传 | 单文件 ≤ 5MB 时 ≤ 10 秒 |
+| 并发 | 同店铺多子账号同时选品/下单不互相阻塞 |
+
+### 7.2 安全要求
+
+1. 数据权限、下单、上传凭证、一键上架必须在 **服务端** 校验 shop_id 与角色权限。
+2. Payment Details 收款账户信息防篡改，仅登录后可见；展示数据来源于服务端配置。
+3. 凭证文件存储需鉴权访问，禁止公开 URL 泄露。
+4. Order & Pay、查看 Payment Details、Publish to Store 记录操作审计日志。
+
+### 7.3 兼容性要求
+
+1. 浏览器：Chrome 90+、Safari 14+、Edge 90+。
+2. Seller 后台布局适配；PC 优先，最小宽度建议 1280px。
+3. 界面语言 **仅 English**。
+
+### 7.4 可用性要求
+
+1. 核心模块可用率 ≥ 99.9%。
+2. 接口异常展示友好英文错误提示（如 `Update failed. Please try again later.`）。
+3. 关键操作（Order & Pay、上传凭证、一键上架）均有 Loading 与失败 Retry 路径。
 
 ---
 
-## 十、接口依赖
+## 八、接口依赖清单
 
-| 接口 | 用途 |
-|------|------|
-| GET 2B 商品列表/详情 | M1、M2 |
-| POST 运费试算 | Checkout 切换 Shipping Method |
-| POST 创建采购订单 | Order & Pay |
-| GET 2B 固定收款账户 | Success、订单详情 |
-| POST 上传转账凭证 | Success、订单详情 |
-| GET/POST 地址 CRUD | Checkout 地址（复用已有） |
-| GET 采购订单列表/详情 | M6、M7 |
-| POST 一键上架 | M8 |
-| GET 推荐商品 | Success Recommend |
-| GET BDT/银行配置 | Payment Details 展示 |
+| 接口 | 用途 | 优先级 |
+|------|------|--------|
+| GET 2B 商品列表（含 SKU 铺货状态） | 选品列表 Tab | P0 |
+| GET 2B 商品详情 | 商品详情 | P0 |
+| POST 运费 / COD Fee 试算 | Checkout 切换 Shipping Method | P0 |
+| POST 创建采购订单 | Order & Pay | P0 |
+| GET 2B 固定收款账户 | Order Success、订单详情 Payment Details | P0 |
+| POST 上传转账凭证 | Order Success、订单详情 | P0 |
+| GET/POST 地址 CRUD | Checkout 地址（复用已有） | P0 |
+| GET 采购订单列表 / 详情 | Purchase Orders | P0 |
+| POST 一键上架 | Publish to Store | P0 |
+| GET 推荐商品 | Order Success Recommend | P0 |
+| GET BDT / 银行 / 安全文案配置 | 金额与 Payment Details 展示 | P0 |
 
 ---
 
-## 十一、验收标准
+## 九、验收标准
 
 | 用例 ID | 场景 | 期望结果 |
 |---------|------|---------|
-| AC-01 | Checkout 默认加载 | 地址按 BR-ADDR 带出；Shipping Method 默认 Standard |
-| AC-02 | 切换 Air Express | Shipping Fee、Grand Total 实时更新 |
+| AC-01 | Checkout 默认加载 | 地址按 BR-ADDR 规则带出；Shipping Method 默认 Standard |
+| AC-02 | 切换 Air Express | Shipping Fee、COD Handling Fee、Grand Total 实时更新 |
 | AC-03 | Order Summary | Subtotal + Shipping Fee + COD Handling Fee = Grand Total |
-| AC-04 | 安全提示 | Security Reminder 展示在按钮上方 |
-| AC-05 | Order & Pay 成功 | 跳转成功页，Grand Total 与 Checkout 一致 |
-| AC-06 | Payment Details | 展示 2B 固定账户，支持 Copy |
-| AC-07 | View Order List | 跳转 Purchase Orders List |
-| AC-08 | Recommend | 展示推荐商品，可点击进入详情 |
-| AC-09 | 上传凭证 | 成功页上传后订单详情可查看 |
+| AC-04 | Security Reminder | 展示于 Order & Pay 按钮上方 |
+| AC-05 | Order & Pay 成功 | 跳转 Order Success，Grand Total 与 Checkout 一致 |
+| AC-06 | Payment Details | 展示 2B 固定账户，Copy 可用 |
+| AC-07 | Upload Payment Proof | 成功页上传后详情可预览 |
+| AC-08 | View Order List | 跳转 Purchase Orders List |
+| AC-09 | Recommend | 展示推荐商品并可进入详情 |
 | AC-10 | 超卖下单 | 库存不足仍可 Order & Pay 成功 |
+| AC-11 | 2B 确认收款后 | 订单变 Pending Shipment；Publish to Store 可点击 |
+| AC-12 | 一键上架 | SKU 在 Published Tab 可见 |
+| AC-13 | 菜单区分 | Purchase Orders 与 Orders List 入口分离、命名正确 |
 
 ---
 
-## 十二、待确认项
+## 十、待确认项
 
 | ID | 问题 | 确认方 |
 |----|------|--------|
-| R1 | SPU 卡片部分 SKU 已发布时的 Tab 筛选展示 | 研发+设计 |
-| R2 | 子账号 RBAC 细项 | 研发+业务 |
-| R3 | 凭证格式、大小、张数（对齐 App） | App 产品 |
-| R4 | COD Handling Fee 在各 Shipping Method 下的计算规则 | 业务+2B |
-| R5 | Recommend 推荐算法是否与 App 同一套 | 产品+研发 |
+| R1 | SPU 卡片在部分 SKU 已发布时的列表展示与 Tab 筛选交互 | 研发 + 设计 |
+| R2 | 子账号 RBAC：采购、上传凭证、一键上架权限细项 | 研发 + 业务 |
+| R3 | 转账凭证格式、大小、张数（对齐 App） | App 产品 |
+| R4 | COD Handling Fee 在 Standard / Air Express / Air Priority 下的计算规则 | 业务 + 2B |
+| R5 | Recommend 推荐算法是否与 App 同一套 | 产品 + 研发 |
 
 ---
 
-## 附录 A：Checkout → Success 流程泳道图
+## 附录 A：界面英文文案速查
 
-```
-2C商家          Seller Web           交易中台           2B
-  │                │                    │                │
-  │─ Buy Now ─────►│                    │                │
-  │─ Checkout ────►│                    │                │
-  │─ Order&Pay ───►│─ 创建采购单 ──────►│                │
-  │                │◄─ orderId ────────│                │
-  │◄─ Success页 ──│                    │                │
-  │─ 线下转账 ──────────────────────────────────────────►│
-  │─ 上传凭证 ────►│─ 保存凭证 ────────►│                │
-  │                │                    │─ 待确认收款 ──►│
-  │                │                    │◄─ 确认收款 ────│
-  │◄─ 状态更新 ────│◄───────────────────│                │
-  │─ 一键上架 ────►│─ 铺货 SKU ────────►│                │
-```
-
----
-
-## 附录 B：界面文案速查（English）
-
-| 场景 | 文案 |
-|------|------|
-| Checkout 标题 | Checkout |
-| 配送 Standard | Standard |
-| 配送 Air Express | Air Express |
-| 配送 Air Priority | Air Priority |
-| 支付 | Bank Transfer |
-| 小计 | Subtotal |
-| 运费 | Shipping Fee |
-| COD 手续费 | COD Handling Fee |
-| 总计 | Grand Total |
-| 提交按钮 | Order & Pay |
-| 成功标题 | Order Submitted Successfully! |
-| 查看订单 | View Order List |
-| 推荐标题 | You May Also Like |
-| 上传凭证 | Upload Payment Proof |
-| 一键上架 | Publish to Store |
+| 场景 | English |
+|------|---------|
+| 选品中心 | Product Sourcing |
+| Checkout | Checkout |
+| Standard | Standard |
+| Air Express | Air Express |
+| Air Priority | Air Priority |
+| Bank Transfer | Bank Transfer |
+| Subtotal | Subtotal |
+| Shipping Fee | Shipping Fee |
+| COD Handling Fee | COD Handling Fee |
+| Grand Total | Grand Total |
+| Order & Pay | Order & Pay |
+| Order Submitted Successfully! | Order Submitted Successfully! |
+| Upload Payment Proof | Upload Payment Proof |
+| View Order List | View Order List |
+| You May Also Like | You May Also Like |
+| Purchase Orders | Purchase Orders |
+| Orders List | Orders List |
+| Publish to Store | Publish to Store |
+| Pending Payment | Pending Payment |
+| Pending Confirmation | Pending Confirmation |
+| Pending Shipment | Pending Shipment |
+| Pending Receipt | Pending Receipt |
+| Completed | Completed |
 
 ---
 
-*PRD v1.0 — 界面英语，文档中文。关联 Brainstorming v0.2。*
+*PRD V1.0.0 — 文档中文，界面 English。关联 Brainstorming v0.3。*
