@@ -1,7 +1,7 @@
 # Seller 后台 2C 店铺 — 选品中心（Product Sourcing）Brainstorming
 
 > **产品**：KickBazar Seller 后台（2C 商家端）  
-> **文档版本**：v0.2（业务规则已确认）  
+> **文档版本**：v0.3（Checkout / Success 字段补充，PRD v1.0 已输出）  
 > **目标市场**：孟加拉国（Bangladesh）  
 > **背景**：App 端已有选品→下单→转账→铺货闭环；本期在 **Seller Web 后台** 补齐 2C 商家选品与采购能力  
 > **方法**：Brainstorming（发散 → 归类 → 收敛）  
@@ -277,30 +277,57 @@ Seller 后台 — 2C 店铺
 | 小计预览 | 必备 | P0 |
 | 确认 → 进入结算页 | 必备 | P0 |
 
-#### D2. 结算页
+#### D2. 结算页（Checkout）
 
-| 发散点 | 类型 | 优先级 |
-|--------|------|--------|
-| 收货地址（见 BR-ADDR 规则） | 必备 | P0 |
-| 商品清单（只读） | 必备 | P0 |
-| 运费/配送方式（2B 规则） | 必备 | P0 |
-| 应付总额 BDT | 必备 | P0 |
-| 支付方式：**银行转账**（本期唯一或默认） | 必备 | P0 |
-| 备注 | 体验 | P1 |
-| 提交订单 | 必备 | P0 |
+**流程位置**：立即购买确认后 → **Checkout** → 点击 **Order & Pay** → 下单成功页。
 
-#### D3. 下单成功 / 待转账指引页
+**页面结构**：
 
-| 发散点 | 类型 | 优先级 |
-|--------|------|--------|
-| 订单号、创建时间、应付金额 | 必备 | P0 |
-| **2B 收款账户信息**（户名、银行、账号、Branch/SWIFT 如需要） | 必备 | P0 |
-| 转账说明：备注订单号、金额一致 | 必备 | P0 |
-| 复制按钮（账号、订单号、金额） | 必备 | P0 |
-| 状态提示：「待转账 / 待 2B 确认收款」 | 必备 | P0 |
-| 查看采购订单详情 | 必备 | P0 |
-| 上传转账凭证 | 必备 | P0 | 与 App 对齐 |
-| 继续选品 | 体验 | P0 |
+```
+[1] Shipping Address（地址：近期优先 / 店铺地址，可改选、新增、编辑、设默认）
+[2] Product Information（图、标题、SKU、单价、数量、行小计）
+[3] Shipping Method（Standard | Air Express | Air Priority）
+[4] Payment Method（Bank Transfer，本期唯一）
+[5] Order Summary（Subtotal、Shipping Fee、COD Handling Fee、Grand Total）
+[6] Security Reminder（安全信息提醒）
+[7] [ Order & Pay ]
+```
+
+| 区块 | 字段 / 选项 | 优先级 |
+|------|------------|--------|
+| Shipping Address | Recipient、Phone、行政区、Address、Change/Add/Edit/Default | P0 |
+| Product Information | Image、Title、SKU Attributes、Unit Price、Quantity、Line Subtotal | P0 |
+| Shipping Method | **Standard**（默认）、**Air Express**、**Air Priority**；切换重算运费与总价 | P0 |
+| Payment Method | **Bank Transfer**（唯一，默认选中） | P0 |
+| Order Summary | **Subtotal**、**Shipping Fee**、**COD Handling Fee**、**Grand Total** | P0 |
+| Security Reminder | 转账至官方账户、金额一致、备注订单号、防诈骗提示 | P0 |
+| 主按钮 | **Order & Pay** → 创建采购订单 | P0 |
+
+**费用公式**：`Grand Total = Subtotal + Shipping Fee + COD Handling Fee`
+
+#### D3. 下单成功页（Order Success）
+
+**流程位置**：Order & Pay 成功 → **结算成功页**。
+
+**页面结构**：
+
+```
+[Success Message] 成功话术 + 订单号 + Pending Payment
+[Grand Total] 总价（与 Checkout 一致）
+[Payment Details] 2B 固定账户、Amount to Pay、Copy
+[Upload Payment Proof] 上传转账凭证
+[View Order List] → Purchase Orders List
+[Recommend] 推荐商品（You May Also Like）
+```
+
+| 区块 | 元素 | 优先级 |
+|------|------|--------|
+| Success Message | 图标、主标题、副文案、Order No.、Status | P0 |
+| Grand Total | 总价 BDT；可选展开 Subtotal/Shipping/COD | P0 |
+| Payment Details | Bank Name、Account Name、Account Number、Branch/SWIFT、Amount to Pay、Transfer Note、Copy | P0 |
+| Upload Payment Proof | 与 App 对齐 | P0 |
+| View Order List | 跳转 Purchase Orders List | P0 |
+| Recommend | 推荐商品卡片，点击进入详情 | P0 |
 
 #### D4. 银行转账业务规则（已确认）
 
@@ -495,6 +522,8 @@ Seller 后台 — 2C 店铺
 | R1 | SPU 卡片在部分 SKU 已发布时的展示与 Tab 筛选交互细节 | 研发 + 设计 |
 | R2 | 子账号 RBAC 是否可采购 / 上传凭证 / 一键上架 | 研发 + 业务 |
 | R3 | 上传凭证的文件格式、大小、张数限制（对齐 App） | App 产品 |
+| R4 | COD Handling Fee 在各 Shipping Method 下的计算规则 | 业务 + 2B |
+| R5 | Recommend 推荐算法是否与 App 同一套 | 产品 + 研发 |
 
 ---
 
@@ -570,6 +599,7 @@ Seller 后台 — 2C 店铺
 | 4 | 与 2B 产品确认 **确认收款** 状态与接口 | 状态机定稿 | 你 |
 | 5 | 评审接口清单与 **Mock 排期** | 技术方案 | 研发 |
 | 6 | 撰写 **PRD v1.0**（中文）并排期 | PRD | 你 |
+| 7 | ~~撰写 PRD v1.0~~ | ✅ `seller-2c-product-sourcing-prd-v1.md` | — |
 
 ---
 
