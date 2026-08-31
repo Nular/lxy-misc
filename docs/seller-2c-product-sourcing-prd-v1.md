@@ -7,7 +7,7 @@
 | 版本号 | 修订日期 | 修订人 | 修订内容 | 审批状态 |
 |--------|---------|--------|---------|---------|
 | V1.0.0 | 2026-08-31 | — | 初始版本，完成项目概述、Checkout / Order Success 流程及核心功能需求定义 | 待审批 |
-| V1.0.1 | 2026-08-31 | — | 调整核心能力：选品列表移除铺货 Tab；采购订单 List/Detail 增加全部/已发布/未发布 Tab | 待审批 |
+| V1.0.2 | 2026-08-31 | — | 铺货改为 SPU 维度、采购保持 SKU 维度；采购订单仅 List 提供铺货 Tab，Detail 无 Tab | 待审批 |
 | V1.0.1 | - | - | - | - |
 | V1.1.0 | - | - | - | - |
 
@@ -32,7 +32,7 @@ KickBazar 平台采用 **2B 货源 + 2C 零售** 模式：2B 商铺提供货源�
 1. **补齐 Web 选品能力**：2C 商家可在 Seller 后台浏览绑定 **单一 2B 货源** 的商品，完成列表搜索、橱窗型详情查看与立即购买。
 2. **打通单笔采购闭环**：支持立即购买 → Checkout（地址、配送、支付、费用明细）→ Order & Pay → 下单成功页（Payment Details、上传凭证、推荐商品），**本期不做购物车**。
 3. **采购订单独立管理**：提供 **Purchase Orders List** 与详情，与面向消费者的 **Orders List** 菜单分离，状态与 App、2B 端对齐。
-4. **铺货与支付对齐 App**：支持转账凭证上传、2B 确认收款后 **一键上架（Publish to Store）**，业务规则与 App 保持一致。
+4. **铺货与支付对齐 App**：支持转账凭证上传、2B 确认收款后 **一键上架（Publish to Store）**；**铺货按 SPU 维度**，**采购可按 SKU 分单**。
 
 ### 2.3 项目范围
 
@@ -40,10 +40,15 @@ KickBazar 平台采用 **2B 货源 + 2C 零售** 模式：2B 商铺提供货源�
 
 **核心能力**：
 
-1. **选品浏览**：商品列表搜索、橱窗型商品详情、立即购买。
+1. **选品浏览**：商品列表、搜索、橱窗型商品详情、立即购买。
 2. **Checkout 结算**：Shipping Address、Product Information、Shipping Method（Standard / Air Express / Air Priority）、Payment Method（Bank Transfer）、Order Summary（Subtotal、Shipping Fee、COD Handling Fee、Grand Total）、Security Reminder、Order & Pay。
 3. **下单成功页**：成功话术、Grand Total、Payment Details、Upload Payment Proof、View Order List、Recommend。
-4. **采购订单页**：Purchase Orders List / Detail（Tab：全部 / 已发布 / 未发布），含物流、凭证、一键上架。
+4. **采购订单页**：Purchase Orders List / Detail；**仅 List** 提供 Tab（全部 / 已发布 / 未发布）；Detail 含物流、凭证、一键上架。
+
+**铺货与采购粒度**：
+
+- **采购（下单）**：按 **SKU** 维度选规格、数量并提交订单；同一 SPU 下不同 SKU 可分别采购。
+- **铺货（一键上架）**：按 **SPU** 维度；一键上架后该 **SPU** 在 2C 店铺发布，下属已采购 SKU 随 SPU 一并上架。
 
 **非本次迭代范围**：
 
@@ -86,16 +91,16 @@ KickBazar 平台采用 **2B 货源 + 2C 零售** 模式：2B 商铺提供货源�
 
 | 模块 | 功能点 | 优先级 | 简述 |
 |------|--------|--------|------|
-| 选品浏览 | 商品列表 | P0 | 展示绑定 2B 货源可售商品 |
+| 选品浏览 | 商品列表 | P0 | 展示绑定 2B 货源可售商品（SPU 卡片） |
 | 选品浏览 | 商品搜索 | P0 | 支持商品名称、货号/SKU 编码模糊搜索 |
 | 选品浏览 | 橱窗型商品详情 | P0 | 采购价、SKU 规格、库存、立即购买入口 |
-| 立即购买 | 规格/数量确认弹层 | P0 | 确认 SKU、数量后进入 Checkout；允许超卖 |
+| 立即购买 | 规格/数量确认弹层 | P0 | 按 **SKU** 选规格、数量后进入 Checkout；允许超卖 |
 | Checkout | 结算页完整流程 | P0 | 地址、商品、配送、支付、费用明细、安全提示、Order & Pay |
 | 下单成功 | Order Success 页 | P0 | 成功话术、总价、Payment Details、凭证、推荐 |
 | 支付 | 上传转账凭证 | P0 | 成功页与订单详情均可上传，对齐 App |
-| 采购订单 | Purchase Orders List | P0 | Tab：全部/已发布/未发布；与消费者 Orders List 分开 |
-| 采购订单 | Purchase Order Detail | P0 | Tab：全部/已发布/未发布；物流、凭证、一键上架 |
-| 铺货 | 一键上架（Publish to Store） | P0 | 严格依赖 2B 确认收款后，按 SKU 铺货 |
+| 采购订单 | Purchase Orders List | P0 | **仅 List** Tab：全部/已发布/未发布（**SPU** 铺货状态） |
+| 采购订单 | Purchase Order Detail | P0 | 无铺货 Tab；物流、凭证、一键上架（**SPU** 铺货） |
+| 铺货 | 一键上架（Publish to Store） | P0 | 严格依赖 2B 确认收款；**SPU** 维度铺货 |
 | 选品浏览 | 列表排序、类目筛选 | P1 | 与 App 对齐后排期 |
 | 采购订单 | 订单号搜索、再次购买 | P1 | 提升跟单与复购效率 |
 
@@ -146,7 +151,7 @@ KickBazar 平台采用 **2B 货源 + 2C 零售** 模式：2B 商铺提供货源�
 
 **功能描述**：独立菜单 **Purchase Orders List** 管理采购单全生命周期；订单详情支持查看物流、补充凭证；2B 确认收款且订单完成后可 **Publish to Store**。
 
-**业务规则**：一键上架 **严格依赖** 2B 已确认收款；铺货粒度为 **SKU**；成功后该 SKU 在采购订单 **Published** Tab 可见，商品详情铺货状态变为 Published。
+**业务规则**：一键上架 **严格依赖** 2B 已确认收款；**铺货按 SPU**；成功后该 **SPU** 在采购订单 List **Published** Tab 可见，商品详情铺货状态变为 Published。采购订单行仍按 **SKU** 记录采购明细。
 
 ### 4.2 功能总览
 
@@ -159,7 +164,7 @@ KickBazar 平台采用 **2B 货源 + 2C 零售** 模式：2B 商铺提供货源�
 | Checkout | `/seller/2c/sourcing/checkout` |
 | Order Success | `/seller/2c/sourcing/checkout/result?orderId={id}` |
 | Purchase Orders List | `/seller/2c/sourcing/orders?tab=all|published|unpublished` |
-| Purchase Order Detail | `/seller/2c/sourcing/orders/{id}?tab=all|published|unpublished` |
+| Purchase Order Detail | `/seller/2c/sourcing/orders/{id}` |
 
 **菜单命名（English）**：
 
@@ -177,13 +182,14 @@ KickBazar 平台采用 **2B 货源 + 2C 零售** 模式：2B 商铺提供货源�
 
 #### 5.1.1 商品列表
 
-**功能描述**：以商品卡片形式展示绑定 2B 货源的可售商品，支持分页；点击卡片进入橱窗型商品详情。本期列表 **不提供** 已发布/未发布 Tab（该 Tab 置于采购订单页，见 5.5）。
+**功能描述**：以 **SPU 商品卡片** 形式展示绑定 2B 货源的可售商品，支持分页；点击卡片进入橱窗型商品详情。列表 **不提供** 铺货 Tab（铺货 Tab 仅 Purchase Orders List，见 5.5.1）。
 
 **业务规则**：
 
 1. 数据源：当前 2C 店铺 **绑定单一 2B 店铺** 的可售商品；过滤 2B 侧已下架/不可售商品。
-2. 卡片展示采购价（BDT），无阶梯价/会员价。
-3. 列表不按铺货状态 Tab 筛选；铺货状态在 **商品详情** 按当前 SKU 展示 Published / Unpublished 标签。
+2. 列表以 **SPU** 为卡片粒度展示；卡片展示 SPU 主图、标题、代表采购价等。
+3. 列表不按铺货状态 Tab 筛选；**铺货状态（Published / Unpublished）在商品详情按 SPU 展示**。
+4. **采购**在详情页按 **SKU** 选择规格后下单，同一 SPU 下不同 SKU 可分别采购。
 
 **字段定义**：
 
@@ -216,13 +222,14 @@ KickBazar 平台采用 **2B 货源 + 2C 零售** 模式：2B 商铺提供货源�
 
 #### 5.1.3 橱窗型商品详情
 
-**功能描述**：以采购决策为导向的商品详情页，展示主图、采购价、SKU 规格、库存及图文详情，底栏提供 **Buy Now** 进入立即购买。
+**功能描述**：以采购决策为导向的橱窗型详情页，展示 SPU 级信息与下属 SKU 规格；底栏 **Buy Now** 进入立即购买（**按 SKU 采购**）。
 
 **业务规则**：
 
-1. 展示当前选中 SKU 的 **Published / Unpublished** 状态。
-2. 库存仅供参考；**允许超卖**，缺货 SKU 可不置灰（可提示库存风险）。
-3. 切换 SKU 时同步更新采购价、库存、铺货状态。
+1. 展示当前 **SPU** 的 **Published / Unpublished** 铺货状态（**SPU 维度**）。
+2. 用户选择 **SKU**（颜色、尺码等）后查看该 SKU 采购价、库存；库存仅供参考，**允许超卖**。
+3. 切换 SKU 时更新该 SKU 的采购价、库存；**铺货状态随 SPU 不变**（SPU 已发布则全部 SKU 行展示 Published）。
+4. 每次立即购买提交 **一个 SKU** 的采购数量；同一 SPU 下可对不同 SKU 分别多次购买。
 
 **字段定义**：
 
@@ -231,9 +238,9 @@ KickBazar 平台采用 **2B 货源 + 2C 零售** 模式：2B 商铺提供货源�
 | Product Images | — | ✅ |
 | Product Title | — | ✅ |
 | SKU Code | SKU Code | ✅ |
-| Publish Status | Published / Unpublished | ✅ |
-| Purchase Price | Purchase Price | ✅ |
-| Stock | Stock | ✅ |
+| Publish Status | Published / Unpublished | ✅ | **SPU 维度** |
+| Purchase Price | Purchase Price | ✅ | 当前选中 **SKU** 采购价 |
+| Stock | Stock | ✅ | 当前选中 **SKU** 库存 |
 | SKU Attributes | Color / Size 等 | 有则展示 |
 | Description | Description | ✅ 图文详情 Tab |
 
@@ -248,7 +255,7 @@ KickBazar 平台采用 **2B 货源 + 2C 零售** 模式：2B 商铺提供货源�
 
 #### 5.2.1 功能描述
 
-在下单前确认 SKU 与购买数量，预览行小计后进入 Checkout 页。
+在下单前按 **SKU** 确认规格与购买数量，预览行小计后进入 Checkout。
 
 #### 5.2.2 业务规则
 
@@ -495,36 +502,40 @@ Breadcrumb: Product Sourcing > Checkout
 
 #### 5.5.1 Purchase Orders List
 
-**功能描述**：独立菜单 **Purchase Orders**，列表化展示本店铺采购订单，支持按 **铺货状态 Tab** 筛选，与消费者 **Orders List** 分离。
+**功能描述**：独立菜单 **Purchase Orders**，列表化展示本店铺采购订单。**仅本页** 提供铺货状态 Tab（全部 / 已发布 / 未发布），与消费者 **Orders List** 分离。
 
 **业务规则**：
 
 1. **无**待转账超时自动取消。
 2. 列表默认按 **创建时间倒序**。
 3. 分页与 Seller 后台统一。
-4. Tab 按订单行 **SKU 铺货状态** 筛选（**SKU** 粒度，与 BR-03~05 一致）：
+4. **仅 Purchase Orders List** 提供铺货 Tab；**Purchase Order Detail 不提供 Tab**。
+5. Tab 按订单关联 **SPU 铺货状态** 筛选（**SPU 维度**）：
    - **All**：全部采购订单。
-   - **Published**：订单中 SKU 已在当前 2C 店铺铺货上架。
-   - **Unpublished**：订单中 SKU 尚未在 2C 店铺铺货上架。
-5. Tab 切换保留于 URL：`?tab=all|published|unpublished`。
+   - **Published**：订单关联 **SPU** 已在当前 2C 店铺铺货上架。
+   - **Unpublished**：订单关联 **SPU** 尚未在 2C 店铺铺货上架。
+6. Tab 切换保留于 URL：`?tab=all|published|unpublished`。
+7. 订单商品明细按 **SKU** 记录；同一 SPU 多次采购不同 SKU 生成独立订单或独立行（与交易中台一致）。
 
-**铺货状态 Tab**：
+**铺货状态 Tab（仅 List）**：
 
 | Tab | 英文界面 | 说明 |
 |-----|---------|------|
 | 全部 | All | 全部采购订单 |
-| 已发布 | Published | 关联 SKU 已铺货至 2C 店铺 |
-| 未发布 | Unpublished | 关联 SKU 尚未铺货 |
+| 已发布 | Published | 关联 **SPU** 已铺货至 2C 店铺 |
+| 未发布 | Unpublished | 关联 **SPU** 尚未铺货 |
 
 **列表卡片字段**：
 
 | 字段 | 英文界面 | 说明 |
 |------|---------|------|
 | orderNo | Order No. | 采购订单号 |
-| status | Status | 订单状态（Pending Payment 等，卡片展示，非 Tab 筛选） |
-| publishStatus | Published / Unpublished | 订单 SKU 铺货状态 |
-| productImage | — | 商品主图 |
-| itemCount | Items | 商品件数 |
+| status | Status | 订单状态（Pending Payment 等，卡片展示） |
+| publishStatus | Published / Unpublished | 关联 **SPU** 铺货状态 |
+| productImage | — | SPU 主图 |
+| spuTitle | — | SPU 商品标题 |
+| skuInfo | SKU Code / Attributes | 本单采购的 **SKU** 信息 |
+| itemCount | Items | 采购件数 |
 | grandTotal | Grand Total | 订单总额 BDT |
 | createdAt | Created Time | 创建时间 |
 | action | View Detail | 查看详情 |
@@ -537,21 +548,15 @@ Breadcrumb: Product Sourcing > Checkout
 
 #### 5.5.2 Purchase Order Detail
 
-**功能描述**：展示采购单完整信息；支持 **铺货状态 Tab**（与列表同步：All / Published / Unpublished，用于多 SKU 订单行筛选展示）；含状态时间轴、Payment Details、**物流**、**转账凭证**、**一键上架** 操作。
-
-**铺货状态 Tab（Detail）**：
-
-| Tab | 英文界面 | 说明 |
-|-----|---------|------|
-| 全部 | All | 展示订单全部商品行 |
-| 已发布 | Published | 仅展示已铺货的 SKU 行 |
-| 未发布 | Unpublished | 仅展示未铺货的 SKU 行 |
+**功能描述**：展示采购单完整信息，**不提供铺货 Tab**；含订单状态时间轴、Payment Details、**物流**、**转账凭证**、**一键上架（SPU 铺货）** 操作。
 
 **业务规则**：
 
-1. 单 SKU 订单：Tab 与列表 Tab 语义一致；默认展示对应铺货状态商品行。
-2. 多 SKU 订单：Tab 用于筛选订单内商品行；**Publish to Store** 按 SKU 行独立操作。
-3. 一键上架仅对 **Unpublished** 且满足 2B 已确认收款条件的 SKU 行展示。
+1. 详情页 **无** All / Published / Unpublished Tab；展示本单全部信息。
+2. 商品明细按 **SKU** 展示（图、SKU Attributes、SKU Code、单价、数量、小计）。
+3. **Publish to Store** 按 **SPU** 操作：一键上架将该订单关联 **SPU** 铺货至 2C 店铺（非单 SKU 独立铺货）。
+4. 若关联 SPU 已 Published，按钮置灰或隐藏。
+5. 须 2B 已确认收款且订单达到可上架状态（通常 Completed）方可一键上架。
 
 **信息区块**：
 
@@ -583,14 +588,15 @@ Breadcrumb: Product Sourcing > Checkout
 
 #### 5.6.1 功能描述
 
-2B 确认收款且采购订单完成后，2C 商家可将对应 **SKU** 一键铺货至当前 2C 店铺。
+2B 确认收款且采购订单完成后，2C 商家可对订单关联 **SPU** 执行 **Publish to Store**，将该 SPU 铺货至当前 2C 店铺。
 
 #### 5.6.2 业务规则
 
 1. **PUB-01**：操作前置条件 = 2B 已 **确认收款**（严格依赖，前端 + 后端双重校验）。
-2. **PUB-02**：铺货粒度 = **SKU**。
-3. **PUB-03**：成功后该 SKU 在采购订单 **Published** Tab 可见，商品详情铺货状态变为 Published。
-4. 若 SKU 已 Published，按钮置灰或隐藏。
+2. **PUB-02**：**铺货粒度 = SPU**；一次上架发布整个 SPU（下属 SKU 随 SPU 在 2C 店铺可售）。
+3. **PUB-03**：**采购粒度 = SKU**；下单、订单明细、Checkout 均按 SKU 记录，与铺货粒度分离。
+4. **PUB-04**：成功后该 **SPU** 在 Purchase Orders List **Published** Tab 可见，商品详情 SPU 铺货状态变为 Published。
+5. 若 SPU 已 Published，按钮置灰或隐藏。
 
 #### 5.6.3 交互说明
 
@@ -632,7 +638,7 @@ Order & Pay 提交
     → Pending Receipt（待收货）
     → [签收]
     → Completed（已完成）
-    → [Publish to Store] → SKU Published
+    → [Publish to Store] → SPU Published
 ```
 
 **关键对齐**：2C Web 状态名、颜色、按钮与 **App 采购订单** 一致；2B 确认收款为状态跃迁权威来源。
@@ -647,7 +653,7 @@ Order & Pay 提交
 |---------|------|---------|
 | **2C Shop（2C 店铺）** | 零售商家店铺 | shop_id, shop_name, bound_2b_supplier_id（绑定单一 2B 货源）, shop_address_id |
 | **2B Product / SKU** | 2B 货源商品 | sku_id, spu_id, supplier_id, sku_code, purchase_price, stock, attributes, sellable_status |
-| **2C Publish Record** | 2C 铺货记录 | publish_id, shop_id, sku_id, publish_status（published/unpublished） |
+| **2C Publish Record** | 2C 铺货记录（**SPU 维度**） | publish_id, shop_id, **spu_id**, publish_status（published/unpublished） |
 | **Shipping Address** | 收货地址 | address_id, shop_id, recipient_name, phone, division, district, upazila, address_line, is_default, last_used_at |
 | **Purchase Order（采购订单）** | 2C 向 2B 采购单 | order_id, order_no, shop_id, status, shipping_address_snapshot, shipping_method, payment_method, subtotal, shipping_fee, cod_handling_fee, grand_total, created_at |
 | **Purchase Order Line** | 采购订单行 | line_id, order_id, sku_id, unit_price, quantity, line_subtotal |
@@ -669,7 +675,7 @@ Order & Pay 提交
 | order_status | pending_receipt | Pending Receipt |
 | order_status | completed | Completed |
 | order_status | cancelled | Cancelled |
-| purchase_order_publish_tab | all / published / unpublished | All / Published / Unpublished（采购订单 List/Detail） |
+| purchase_order_list_tab | all / published / unpublished | All / Published / Unpublished（**仅 Purchase Orders List**） |
 
 ### 6.3 数据更新与一致性
 
@@ -678,7 +684,7 @@ Order & Pay 提交
 | 2B 商品列表、采购价、库存 | 实时或近实时（与 App 一致）；Checkout 提交时后端再次校验 |
 | 运费、COD Handling Fee | 切换 Shipping Method 时实时试算 |
 | 订单状态 | 2B 确认收款、发货、签收由 2B 端驱动；2C Web 轮询或消息推送刷新 |
-| 铺货状态 | 一键上架成功后即时更新；采购订单 Published Tab 下次查询生效 |
+| 铺货状态 | 一键上架成功后 **SPU** 状态即时更新；Purchase Orders List Published Tab 下次查询生效 |
 | BDT 格式、银行名称 | 运营后台配置，配置变更后新订单展示新配置 |
 
 ---
@@ -721,7 +727,7 @@ Order & Pay 提交
 | 接口 | 用途 | 优先级 |
 |------|------|--------|
 | GET 2B 商品列表 | 选品列表 | P0 |
-| GET 采购订单列表（含 SKU 铺货状态 Tab 筛选） | Purchase Orders List | P0 |
+| GET 采购订单列表（含 **SPU** 铺货状态 Tab 筛选，仅 List） | Purchase Orders List | P0 |
 | GET 2B 商品详情 | 商品详情 | P0 |
 | POST 运费 / COD Fee 试算 | Checkout 切换 Shipping Method | P0 |
 | POST 创建采购订单 | Order & Pay | P0 |
@@ -750,8 +756,10 @@ Order & Pay 提交
 | AC-09 | Recommend | 展示推荐商品并可进入详情 |
 | AC-10 | 超卖下单 | 库存不足仍可 Order & Pay 成功 |
 | AC-11 | 2B 确认收款后 | 订单变 Pending Shipment；Publish to Store 可点击 |
-| AC-12 | 一键上架 | SKU 在采购订单 Published Tab 可见 |
-| AC-14 | 采购订单 Tab | Unpublished Tab 仅展示未铺货订单/行；Published Tab 仅已铺货 |
+| AC-12 | 一键上架 | 关联 **SPU** 在 Purchase Orders List Published Tab 可见 |
+| AC-14 | 采购订单 List Tab | Unpublished 仅未铺货 SPU 订单；Published 仅已铺货 SPU 订单 |
+| AC-15 | 采购订单 Detail | 无铺货 Tab；SKU 明细完整展示 |
+| AC-16 | SPU 铺货 / SKU 采购 | 按 SKU 下单成功；一键上架后 SPU 变为 Published |
 | AC-13 | 菜单区分 | Purchase Orders 与 Orders List 入口分离、命名正确 |
 
 ---
@@ -760,7 +768,7 @@ Order & Pay 提交
 
 | ID | 问题 | 确认方 |
 |----|------|--------|
-| R1 | 多 SKU 采购订单在 Detail Tab 下的行筛选与一键上架交互 | 研发 + 设计 |
+| R1 | 同一 SPU 多 SKU 分次采购时，List Tab 与一键上架 SPU 级联规则 | 研发 + 业务 |
 | R2 | 子账号 RBAC：采购、上传凭证、一键上架权限细项 | 研发 + 业务 |
 | R3 | 转账凭证格式、大小、张数（对齐 App） | App 产品 |
 | R4 | COD Handling Fee 在 Standard / Air Express / Air Priority 下的计算规则 | 业务 + 2B |
