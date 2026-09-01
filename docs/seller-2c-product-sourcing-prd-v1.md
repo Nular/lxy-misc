@@ -4,12 +4,14 @@
 
 ## 一、文档信息
 
-| 版本号 | 修订日期 | 修订人 | 修订内容 | 审批状态 |
-|--------|---------|--------|---------|---------|
-| V1.0.0 | 2026-08-31 | — | 初始版本，完成项目概述、Checkout / Order Success 流程及核心功能需求定义 | 待审批 |
-| V1.0.2 | 2026-08-31 | — | 铺货改为 SPU 维度、采购保持 SKU 维度；采购订单仅 List 提供铺货 Tab，Detail 无 Tab | 待审批 |
-| V1.0.1 | - | - | - | - |
-| V1.1.0 | - | - | - | - |
+| 时间 | 版本号 | 变更人 | 主要变更内容 | 审批状态 |
+|------|--------|--------|-------------|---------|
+| 2026/08/31 | v1.0 | — | 首版 | 待审批 |
+| 2026/08/31 | v1.0.2 | — | SPU 铺货 / SKU 采购；铺货 Tab 仅 PO List | 待审批 |
+| 2026/08/31 | v1.0.3 | — | 三态 Tag（Partially Published）、Checkout 数量可改、PO List 字段对齐已有 b2bList 模块 | 待审批 |
+
+**关联设计文档**：`docs/seller-2c-product-sourcing-ui-design.md`  
+**交互线框 Canvas**：[Product Sourcing UI Wireframes](/cursor/stores/user/canvases/aa068846-18bf-467b-9b8b-a4ed878f404d/source.canvas.tsx)
 
 **关联文档**：`docs/seller-2c-product-sourcing-brainstorming.md` v0.3  
 **界面语言**：English（仅英语）  
@@ -47,8 +49,9 @@ KickBazar 平台采用 **2B 货源 + 2C 零售** 模式：2B 商铺提供货源�
 
 **铺货与采购粒度**：
 
+- **采购（浏览）**：按 **SPU** 维度浏览列表与详情。
 - **采购（下单）**：按 **SKU** 维度选规格、数量并提交订单；同一 SPU 下不同 SKU 可分别采购。
-- **铺货（一键上架）**：按 **SPU** 维度；一键上架后该 **SPU** 在 2C 店铺发布，下属已采购 SKU 随 SPU 一并上架。
+- **铺货（一键上架）**：按 **SPU** 维度；成功后 SPU 状态为 **Published**（全部 SKU 已上架）或 **Partially Published**（部分 SKU 已上架）。
 
 **非本次迭代范围**：
 
@@ -735,7 +738,7 @@ Order & Pay 提交
 | POST 上传转账凭证 | Order Success、订单详情 | P0 |
 | GET/POST 地址 CRUD | Checkout 地址（复用已有） | P0 |
 | GET 采购订单列表 / 详情 | Purchase Orders | P0 |
-| POST 一键上架 | Publish to Store | P0 |
+| POST 一键上架（SPU） | Publish to Store | P0 |
 | GET 推荐商品 | Order Success Recommend | P0 |
 | GET BDT / 银行 / 安全文案配置 | 金额与 Payment Details 展示 | P0 |
 
