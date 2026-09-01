@@ -152,7 +152,7 @@ KickBazar 平台采用 **2B 货源 + 2C 零售** 模式：2B 商铺提供货源�
 
 #### 4.1.4 采购订单与一键上架
 
-**功能描述**：独立菜单 **Purchase Orders List** 管理采购单全生命周期；订单详情支持查看物流、补充凭证；2B 确认收款且订单完成后可 **Publish to Store**。
+**功能描述**：**Product Sourcing** 下二级菜单 **Purchase Orders List** 管理采购单全生命周期；订单详情支持查看物流、补充凭证；2B 确认收款且订单完成后可 **Publish to Store**。
 
 **业务规则**：一键上架 **严格依赖** 2B 已确认收款；**铺货按 SPU**；成功后该 **SPU** 在采购订单 List **Published** Tab 可见，商品详情铺货状态变为 Published。采购订单行仍按 **SKU** 记录采购明细。
 
@@ -171,11 +171,12 @@ KickBazar 平台采用 **2B 货源 + 2C 零售** 模式：2B 商铺提供货源�
 
 **菜单命名（English）**：
 
-| 中文（PRD） | 界面 English |
-|------------|-------------|
-| 选品中心 | Product Sourcing |
-| 采购订单 | Purchase Orders |
-| 消费者订单 | Orders List |
+| 中文（PRD） | 界面 English | 层级 |
+|------------|-------------|------|
+| 选品中心 | Product Sourcing | 一级菜单 |
+| 商品发现 | Product Discovery | Product Sourcing 下二级菜单 |
+| 采购订单 | Purchase Orders List | Product Sourcing 下二级菜单 |
+| 消费者订单 | Orders List | 一级菜单（与采购订单分离） |
 
 ---
 
@@ -191,7 +192,10 @@ KickBazar 平台采用 **2B 货源 + 2C 零售** 模式：2B 商铺提供货源�
 
 1. 数据源：当前 2C 店铺 **绑定单一 2B 店铺** 的可售商品；过滤 2B 侧已下架/不可售商品。
 2. 列表以 **SPU** 为卡片粒度展示；卡片展示 SPU 主图、标题、代表采购价等。
-3. 列表不按铺货状态 Tab 筛选；**铺货状态（Published / Unpublished）在商品详情按 SPU 展示**。
+3. 列表不按铺货状态 Tab 筛选；SPU 铺货状态在列表卡片与详情展示：
+   - **Published**：该 SPU 下所有 SKU 均已上架
+   - **Partially Published**：该 SPU 下部分 SKU 已上架
+   - **Unpublished**：该 SPU 未上架
 4. **采购**在详情页按 **SKU** 选择规格后下单，同一 SPU 下不同 SKU 可分别采购。
 
 **字段定义**：
@@ -279,7 +283,7 @@ KickBazar 平台采用 **2B 货源 + 2C 零售** 模式：2B 商铺提供货源�
 
 1. **Confirm** → 跳转 Checkout，携带 `skuId`、`quantity` 等参数。
 2. **Cancel** → 关闭弹层，停留商品详情。
-3. 本期无购物车，Checkout 内商品数量 **只读**；修改数量需返回详情页。
+3. 本期无购物车；Checkout 内商品数量 **可编辑**（步进器），修改后实时重算 Subtotal / Grand Total。
 
 ---
 
@@ -331,7 +335,7 @@ Breadcrumb: Product Sourcing > Checkout
 | skuAttributes | — | 规格属性 |
 | skuCode | SKU Code | 货号 |
 | unitPrice | Unit Price | 采购单价 |
-| quantity | Quantity | 数量（只读） |
+| quantity | Quantity | 数量（**可编辑**） |
 | lineSubtotal | — | Unit Price × Quantity |
 
 本期默认 **单 SKU 单行**（立即购买路径，无购物车）。
@@ -505,7 +509,7 @@ Breadcrumb: Product Sourcing > Checkout
 
 #### 5.5.1 Purchase Orders List
 
-**功能描述**：独立菜单 **Purchase Orders**，列表化展示本店铺采购订单。**仅本页** 提供铺货状态 Tab（全部 / 已发布 / 未发布），与消费者 **Orders List** 分离。
+**功能描述**：**Product Sourcing** 下二级菜单 **Purchase Orders List**，列表化展示本店铺采购订单。**仅本页** 提供铺货状态 Tab（全部 / 已发布 / 未发布），与消费者 **Orders List** 分离。
 
 **业务规则**：
 
@@ -763,7 +767,7 @@ Order & Pay 提交
 | AC-14 | 采购订单 List Tab | Unpublished 仅未铺货 SPU 订单；Published 仅已铺货 SPU 订单 |
 | AC-15 | 采购订单 Detail | 无铺货 Tab；SKU 明细完整展示 |
 | AC-16 | SPU 铺货 / SKU 采购 | 按 SKU 下单成功；一键上架后 SPU 变为 Published |
-| AC-13 | 菜单区分 | Purchase Orders 与 Orders List 入口分离、命名正确 |
+| AC-13 | 菜单区分 | Product Sourcing 下 Purchase Orders List 与 Orders List 入口分离、命名正确 |
 
 ---
 
@@ -784,6 +788,8 @@ Order & Pay 提交
 | 场景 | English |
 |------|---------|
 | 选品中心 | Product Sourcing |
+| 商品发现 | Product Discovery |
+| 采购订单列表 | Purchase Orders List |
 | Checkout | Checkout |
 | Standard | Standard |
 | Air Express | Air Express |
@@ -798,7 +804,7 @@ Order & Pay 提交
 | Upload Payment Proof | Upload Payment Proof |
 | View Order List | View Order List |
 | You May Also Like | You May Also Like |
-| Purchase Orders | Purchase Orders |
+| Purchase Orders List | Purchase Orders List |
 | Orders List | Orders List |
 | Publish to Store | Publish to Store |
 | Pending Payment | Pending Payment |

@@ -31,26 +31,26 @@
 
 ```
 Seller 2C Sidebar
-├── Product Sourcing          ← 一级菜单（新增）
-│   ├── Product Discovery     ← 默认子页 / 列表
-│   ├── Product Detail        ← 详情
-│   ├── Checkout
-│   ├── Order Success
-│   └── Purchase Orders       ← 子菜单或列表右上角入口
+├── Product Sourcing              ← 一级菜单（新增）
+│   ├── Product Discovery         ← 二级菜单（商品列表，默认子页）
+│   │   ├── Product Detail
+│   │   ├── Checkout
+│   │   └── Order Success
+│   └── Purchase Orders List      ← 二级菜单（采购订单列表）
 │       └── Purchase Order Detail
-└── Orders List               ← 消费者订单（已有，分离）
+└── Orders List                   ← 消费者订单（已有，与采购订单分离）
 ```
 
 **面包屑规范**：
 
 | 页面 | Breadcrumb |
 |------|------------|
-| Product Discovery | Product Sourcing |
-| Product Detail | Product Sourcing > Product Detail |
-| Checkout | Product Sourcing > Checkout |
-| Order Success | Product Sourcing > Order Success |
-| Purchase Orders List | Product Sourcing > Purchase Orders |
-| Purchase Order Detail | Product Sourcing > Purchase Orders > {Order No.} |
+| Product Discovery | Product Sourcing > Product Discovery |
+| Product Detail | Product Sourcing > Product Discovery > Product Detail |
+| Checkout | Product Sourcing > Product Discovery > Checkout |
+| Order Success | Product Sourcing > Product Discovery > Order Success |
+| Purchase Orders List | Product Sourcing > Purchase Orders List |
+| Purchase Order Detail | Product Sourcing > Purchase Orders List > {Order No.} |
 
 ---
 
@@ -129,7 +129,6 @@ Seller 2C Sidebar
 │ │[Partial]│ │[Publish]│ │[Unpub.] │ │[Publish]│  SPU publish tag│
 │ └─────────┘ └─────────┘ └─────────┘ └─────────┘                 │
 │                        [ Pagination ]                             │
-│                                          [ Purchase Orders → ]    │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
@@ -143,8 +142,8 @@ Seller 2C Sidebar
 | 标题 | 最多 2 行 ellipsis |
 | 采购价 | `Purchase Price` 标签 + BDT 金额，千分位 |
 | Publish Tag | 卡片左上角或标题下 Pill；三态见 3.3 |
-| 空状态 | 插画 + `NO DATA` + CTA `Back to Product Sourcing` |
-| 右上角 | 文字链 `Purchase Orders` 进采购订单列表 |
+| 空状态 | 插画 + `NO DATA` + CTA `Back to Product Discovery` |
+| 侧栏导航 | Product Sourcing 下二级菜单 **Product Discovery**（当前页高亮） |
 
 #### 搜索态
 
@@ -301,13 +300,13 @@ Seller 2C Sidebar
 
 ### 4.6 Purchase Orders List
 
-**入口**：Product Sourcing > Purchase Orders（对齐已有 b2bList 模块风格）
+**入口**：Product Sourcing > Purchase Orders List（侧栏二级菜单；对齐已有 b2bList 模块风格）
 
 #### 布局
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│ Product Sourcing > Purchase Orders                                │
+│ Product Sourcing > Purchase Orders List                           │
 ├──────────────────────────────────────────────────────────────────┤
 │ [ All ] [ Published ] [ Unpublished ]     ← 仅 List 有 Tab       │
 ├──────────────────────────────────────────────────────────────────┤

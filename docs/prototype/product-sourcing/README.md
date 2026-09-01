@@ -11,6 +11,14 @@ python3 -m http.server 8080
 
 Open: http://localhost:8080/index.html
 
+## Navigation
+
+```
+Product Sourcing (main menu)
+├── Product Discovery      ← product list (index.html)
+└── Purchase Orders List   ← purchase orders (purchase-orders.html)
+```
+
 ## Pages
 
 | File | Page |

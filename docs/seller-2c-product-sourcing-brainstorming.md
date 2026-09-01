@@ -85,13 +85,14 @@ Seller 后台 — 2C 店铺
 ├── …（原有菜单）
 │
 ├── 选品中心（Product Sourcing）  ← 本期新增一级菜单
-│   ├── 商品列表 + 搜索（无铺货 Tab）
-│   │   └── 橱窗型详情 → 立即购买
-│   ├── 商品详情（橱窗型）
-│   │   └── 立即购买 → 规格/数量弹层
-│   ├── 结算（银行转账）
-│   │   └── 下单结果（待转账指引 + 2B 固定账户 + 上传凭证）
-│   └── 采购订单（Purchase Orders）
+│   ├── 商品发现（Product Discovery）  ← 二级菜单
+│   │   ├── 商品列表 + 搜索（无铺货 Tab）
+│   │   │   └── 橱窗型详情 → 立即购买
+│   │   ├── 商品详情（橱窗型）
+│   │   │   └── 立即购买 → 规格/数量弹层
+│   │   ├── 结算（银行转账）
+│   │   │   └── 下单结果（待转账指引 + 2B 固定账户 + 上传凭证）
+│   └── 采购订单列表（Purchase Orders List）  ← 二级菜单
 │       ├── 订单列表（Tab：全部 / 已发布 / 未发布，**仅 List，SPU 维度**）
 │       └── 订单详情（无 Tab；物流、凭证、一键上架 SPU 铺货）
 │
@@ -104,8 +105,9 @@ Seller 后台 — 2C 店铺
 
 | 端 | 菜单/入口命名建议 | 说明 |
 |----|------------------|------|
-| Seller Web 2C | **选品中心** / Product Sourcing | 与 App「选品」语义一致 |
-| 采购订单 | **Purchase Orders**（Purchase Orders List） | 与消费者订单 **分开**，独立菜单或选品中心下二级 |
+| Seller Web 2C | **选品中心** / Product Sourcing | 一级菜单，与 App「选品」语义一致 |
+| 商品列表 | **Product Discovery** | Product Sourcing 下二级菜单 |
+| 采购订单 | **Purchase Orders List** | Product Sourcing 下二级菜单，与消费者订单 **分开** |
 | 消费者订单 | **Orders List** | 原有菜单，命名与消费者侧订单区分 |
 | 2B Web | 订单确认、确认收款 | 不在本期 2C PRD 范围，但状态需对齐 |
 
@@ -188,7 +190,7 @@ Purchase Orders List → Tab「Unpublished」→ 查看未铺货 SPU 的采购�
 [搜索框：搜索 2B 商品名称/编码]
 [商品网格：卡片 × N]
 [分页器]
-[次级入口：采购订单 Purchase Orders]
+[次级入口：侧栏 Product Sourcing > Purchase Orders List]
 ```
 
 #### A4. 铺货状态 Tab 定义（已确认，**仅 Purchase Orders List**）
@@ -610,11 +612,12 @@ Purchase Orders List → Tab「Unpublished」→ 查看未铺货 SPU 的采购�
 | 中文（PRD） | English（界面） | 备注 |
 |------------|----------------|------|
 | 选品中心 | Product Sourcing | 一级菜单 |
+| 商品发现 | Product Discovery | Product Sourcing 下二级菜单 |
 | 全部 | All | Tab |
 | 已发布 | Published | SKU 已铺货至 2C |
 | 未发布 | Unpublished | SKU 未铺货 |
 | 立即购买 | Buy Now | CTA |
-| 采购订单 | Purchase Orders | 独立菜单，与消费者订单分开 |
+| 采购订单 | Purchase Orders List | Product Sourcing 下二级菜单，与消费者订单分开 |
 | 消费者订单 | Orders List | 原有菜单 |
 | 待转账 | Pending Payment | 订单状态 |
 | 待确认收款 | Pending Confirmation | 订单状态 |

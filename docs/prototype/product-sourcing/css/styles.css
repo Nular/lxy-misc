@@ -63,6 +63,23 @@ a:hover { text-decoration: underline; }
 
 .nav-section { padding: 8px 12px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; }
 
+.nav-group { margin-bottom: 4px; }
+
+.nav-parent {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  color: #e2e8f0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.nav-sub {
+  padding-left: 36px;
+  font-size: 13px;
+}
+
 .nav-item {
   display: flex;
   align-items: center;
