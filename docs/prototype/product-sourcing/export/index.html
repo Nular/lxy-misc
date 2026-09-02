@@ -433,6 +433,7 @@ tr:hover td { background: #fafbfc; }
           <button class="tab active" type="button" data-product-tab="all">All</button>
           <button class="tab" type="button" data-product-tab="published">Published</button>
           <button class="tab" type="button" data-product-tab="unpublished">Unpublished</button>
+          <button class="tab" type="button" data-product-tab="partial">Partially Published</button>
         </div>
 
         <div class="grid-4" id="productGrid">
@@ -579,9 +580,7 @@ function initCheckoutSummary() {
 
 function matchesProductTab(filter, publish) {
   if (filter === 'all') return true;
-  if (filter === 'published') return publish === 'published';
-  if (filter === 'unpublished') return publish === 'unpublished' || publish === 'partial';
-  return true;
+  return publish === filter;
 }
 
 function initProductTabs() {

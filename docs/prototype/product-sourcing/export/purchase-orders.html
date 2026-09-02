@@ -568,9 +568,7 @@ function initCheckoutSummary() {
 
 function matchesProductTab(filter, publish) {
   if (filter === 'all') return true;
-  if (filter === 'published') return publish === 'published';
-  if (filter === 'unpublished') return publish === 'unpublished' || publish === 'partial';
-  return true;
+  return publish === filter;
 }
 
 function initProductTabs() {
