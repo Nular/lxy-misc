@@ -11,6 +11,19 @@ python3 -m http.server 8080
 
 Open: http://localhost:8080/index.html
 
+## Standalone HTML export (download)
+
+Self-contained HTML files (CSS/JS inlined) for local preview without a server:
+
+- **ZIP**: `product-sourcing-html-export.zip` (in this folder)
+- **Folder**: `export/` (6 `.html` files)
+
+Download from GitHub:
+
+https://github.com/Nular/lxy-misc/raw/cursor/seller-2c-product-sourcing-brainstorming-d41a/docs/prototype/product-sourcing/product-sourcing-html-export.zip
+
+Or open any file in `export/` directly in your browser after cloning the repo.
+
 ## Navigation
 
 ```

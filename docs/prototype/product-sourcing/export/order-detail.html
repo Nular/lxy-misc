@@ -577,6 +577,40 @@ function initCheckoutSummary() {
   recalc();
 }
 
+function matchesProductTab(filter, publish) {
+  if (filter === 'all') return true;
+  if (filter === 'published') return publish === 'published';
+  if (filter === 'unpublished') return publish === 'unpublished' || publish === 'partial';
+  return true;
+}
+
+function initProductTabs() {
+  const grid = document.getElementById('productGrid');
+  const empty = document.getElementById('productEmpty');
+  if (!grid) return;
+
+  const cards = grid.querySelectorAll('[data-product-card]');
+
+  const applyFilter = (filter) => {
+    let visible = 0;
+    cards.forEach(card => {
+      const show = matchesProductTab(filter, card.dataset.publish);
+      card.style.display = show ? '' : 'none';
+      if (show) visible += 1;
+    });
+    if (empty) empty.style.display = visible === 0 ? '' : 'none';
+    grid.style.display = visible === 0 ? 'none' : '';
+  };
+
+  document.querySelectorAll('[data-product-tab]').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('[data-product-tab]').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      applyFilter(tab.dataset.productTab);
+    });
+  });
+}
+
 function initOrderTabs() {
   document.querySelectorAll('[data-po-tab]').forEach(tab => {
     tab.addEventListener('click', () => {
@@ -593,6 +627,7 @@ function initOrderTabs() {
 
 document.addEventListener('DOMContentLoaded', () => {
   initCheckoutSummary();
+  initProductTabs();
   initOrderTabs();
 
   document.querySelectorAll('[data-copy]').forEach(btn => {

@@ -122,6 +122,8 @@ Seller 2C Sidebar
 ├──────────────────────────────────────────────────────────────────┤
 │ [🔍 Search by product name, SKU code...          ] [Search] [×]  │
 ├──────────────────────────────────────────────────────────────────┤
+│ [ All ] [ Published ] [ Unpublished ]     ← SPU 铺货状态 Tab      │
+├──────────────────────────────────────────────────────────────────┤
 │ ┌─────────┐ ┌─────────┐ ┌─────────┐ ┌─────────┐                 │
 │ │ [img]   │ │ [img]   │ │ [img]   │ │ [img]   │   4-col grid    │
 │ │ Title   │ │ Title   │ │ Title   │ │ Title   │                 │
@@ -142,7 +144,8 @@ Seller 2C Sidebar
 | 标题 | 最多 2 行 ellipsis |
 | 采购价 | `Purchase Price` 标签 + BDT 金额，千分位 |
 | Publish Tag | 卡片左上角或标题下 Pill；三态见 3.3 |
-| 空状态 | 插画 + `NO DATA` + CTA `Back to Product Discovery` |
+| 铺货 Tab | **All / Published / Unpublished**（SPU 维度；Partially Published 归入 Unpublished） |
+| 空状态 | 插画 + `NO DATA` / `No records available` + CTA `Back to Product Discovery` |
 | 侧栏导航 | Product Sourcing 下二级菜单 **Product Discovery**（当前页高亮） |
 
 #### 搜索态

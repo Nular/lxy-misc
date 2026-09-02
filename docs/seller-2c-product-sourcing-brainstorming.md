@@ -1,7 +1,7 @@
 # Seller 后台 2C 店铺 — 选品中心（Product Sourcing）Brainstorming
 
 > **产品**：KickBazar Seller 后台（2C 商家端）  
-> **文档版本**：v0.4（SPU 铺货 / SKU 采购；铺货 Tab 仅 Purchase Orders List）  
+> **文档版本**：v0.5（Product Discovery 增加铺货 Tab：All / Published / Unpublished）  
 > **目标市场**：孟加拉国（Bangladesh）  
 > **背景**：App 端已有选品→下单→转账→铺货闭环；本期在 **Seller Web 后台** 补齐 2C 商家选品与采购能力  
 > **方法**：Brainstorming（发散 → 归类 → 收敛）  
@@ -86,7 +86,7 @@ Seller 后台 — 2C 店铺
 │
 ├── 选品中心（Product Sourcing）  ← 本期新增一级菜单
 │   ├── 商品发现（Product Discovery）  ← 二级菜单
-│   │   ├── 商品列表 + 搜索（无铺货 Tab）
+│   │   ├── 商品列表 + 搜索 + Tab（全部 / 已发布 / 未发布，SPU 维度）
 │   │   │   └── 橱窗型详情 → 立即购买
 │   │   ├── 商品详情（橱窗型）
 │   │   │   └── 立即购买 → 规格/数量弹层
@@ -163,7 +163,7 @@ Purchase Orders List → Tab「Unpublished」→ 查看未铺货 SPU 的采购�
 | 规则 ID | 规则 | 优先级 |
 |---------|------|--------|
 | BR-01 | 商品列表数据源 = **绑定单一 2B 店铺** 的可售商品（非多 2B 混合） | P0 |
-| BR-02 | 铺货状态 Tab **仅 Purchase Orders List**（全部 / 已发布 / 未发布）；Detail 无 Tab | P0 |
+| BR-02 | 铺货状态 Tab：**Product Discovery** 与 **Purchase Orders List** 均提供（全部 / 已发布 / 未发布，**SPU 维度**）；订单 Detail 无 Tab | P0 |
 | BR-03 | **铺货按 SPU 维度**；**采购按 SKU 维度**（可分 SKU 下单） | P0 |
 | BR-04 | 「已发布」= 该 **SPU** 已在当前 2C 店铺铺货上架 | P0 |
 | BR-05 | 「未发布」= 该 **SPU** 尚未在 2C 上架 | P0 |

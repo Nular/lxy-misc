@@ -36,8 +36,14 @@
           <button class="btn btn-primary" type="button">Search</button>
         </div>
 
-        <div class="grid-4">
-          <a class="product-card" href="product-detail.html" style="text-decoration:none;color:inherit">
+        <div class="tabs">
+          <button class="tab active" type="button" data-product-tab="all">All</button>
+          <button class="tab" type="button" data-product-tab="published">Published</button>
+          <button class="tab" type="button" data-product-tab="unpublished">Unpublished</button>
+        </div>
+
+        <div class="grid-4" id="productGrid">
+          <a class="product-card" data-product-card data-publish="published" href="product-detail.html" style="text-decoration:none;color:inherit">
             <div class="thumb">Product Image</div>
             <div class="info">
               <div class="title">Cotton T-Shirt Basic Fit</div>
@@ -45,7 +51,7 @@
               <span class="pill pill-published">Published</span>
             </div>
           </a>
-          <a class="product-card" href="product-detail.html" style="text-decoration:none;color:inherit">
+          <a class="product-card" data-product-card data-publish="partial" href="product-detail.html" style="text-decoration:none;color:inherit">
             <div class="thumb">Product Image</div>
             <div class="info">
               <div class="title">Denim Jacket Classic Blue</div>
@@ -53,7 +59,7 @@
               <span class="pill pill-partial">Partially Published</span>
             </div>
           </a>
-          <a class="product-card" href="product-detail.html" style="text-decoration:none;color:inherit">
+          <a class="product-card" data-product-card data-publish="unpublished" href="product-detail.html" style="text-decoration:none;color:inherit">
             <div class="thumb">Product Image</div>
             <div class="info">
               <div class="title">Summer Dress Floral Print</div>
@@ -61,7 +67,7 @@
               <span class="pill pill-unpublished">Unpublished</span>
             </div>
           </a>
-          <a class="product-card" href="product-detail.html" style="text-decoration:none;color:inherit">
+          <a class="product-card" data-product-card data-publish="published" href="product-detail.html" style="text-decoration:none;color:inherit">
             <div class="thumb">Product Image</div>
             <div class="info">
               <div class="title">Sports Sneakers Pro Run</div>
@@ -69,7 +75,25 @@
               <span class="pill pill-published">Published</span>
             </div>
           </a>
+          <a class="product-card" data-product-card data-publish="unpublished" href="product-detail.html" style="text-decoration:none;color:inherit">
+            <div class="thumb">Product Image</div>
+            <div class="info">
+              <div class="title">Linen Trousers Slim Fit</div>
+              <div class="price">Purchase Price: ৳ 720.00</div>
+              <span class="pill pill-unpublished">Unpublished</span>
+            </div>
+          </a>
+          <a class="product-card" data-product-card data-publish="partial" href="product-detail.html" style="text-decoration:none;color:inherit">
+            <div class="thumb">Product Image</div>
+            <div class="info">
+              <div class="title">Knit Sweater Winter Warm</div>
+              <div class="price">Purchase Price: ৳ 1,050.00</div>
+              <span class="pill pill-partial">Partially Published</span>
+            </div>
+          </a>
         </div>
+
+        <p class="empty" id="productEmpty" style="display:none">No records available</p>
 
         <div class="page-actions" style="margin-top:24px">
           <span style="font-size:13px;color:var(--text-secondary)">Page 1 of 12</span>
