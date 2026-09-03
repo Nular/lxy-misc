@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Purchase Orders — Product Sourcing</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">Kick<span>Bazar</span> Seller</div>
+      <div class="nav-section">Store</div>
+      <div class="nav-group">
+        <div class="nav-parent">Product Sourcing</div>
+        <a class="nav-item nav-sub" href="index.html">Product Discovery</a>
+        <a class="nav-item nav-sub active" href="purchase-orders.html">Purchase Orders List</a>
+      </div>
+      <a class="nav-item" href="#">Orders List</a>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <div class="breadcrumb">Product Sourcing &rsaquo; <strong>Purchase Orders List</strong></div>
+      </header>
+
+      <main class="content">
+        <h1 class="page-title">Purchase Orders List</h1>
+
+        <div class="tabs">
+          <button class="tab active" type="button" data-po-tab="all">All</button>
+          <button class="tab" type="button" data-po-tab="published">Published</button>
+          <button class="tab" type="button" data-po-tab="unpublished">Unpublished</button>
+        </div>
+
+        <div class="card">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Order No.</th>
+                  <th>Order Status</th>
+                  <th>Created At</th>
+                  <th>Item Count</th>
+                  <th>Published Items</th>
+                  <th>Publish Status</th>
+                  <th>Operate</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr data-po-row data-publish="unpublished">
+                  <td>PO202608310001</td>
+                  <td><span class="pill pill-info">Pending Payment</span></td>
+                  <td>2026/08/31 14:30:00</td>
+                  <td>1</td>
+                  <td>0/1</td>
+                  <td><span class="pill pill-unpublished">Unpublished</span></td>
+                  <td><a class="link-btn" href="order-detail.html?payment=unpaid">View</a></td>
+                </tr>
+                <tr data-po-row data-publish="unpublished">
+                  <td>PO202608300045</td>
+                  <td><span class="pill pill-neutral">Buyer Paid</span></td>
+                  <td>2026/08/30 11:20:15</td>
+                  <td>1</td>
+                  <td>0/1</td>
+                  <td><span class="pill pill-unpublished">Unpublished</span></td>
+                  <td><a class="link-btn" href="order-detail.html">View</a></td>
+                </tr>
+                <tr data-po-row data-publish="published">
+                  <td>PO202608280088</td>
+                  <td><span class="pill pill-published">Completed</span></td>
+                  <td>2026/08/28 09:15:22</td>
+                  <td>1</td>
+                  <td>1/1</td>
+                  <td><span class="pill pill-published">Published</span></td>
+                  <td><a class="link-btn" href="order-detail.html">View</a></td>
+                </tr>
+                <tr data-po-row data-publish="published">
+                  <td>PO202608250032</td>
+                  <td><span class="pill pill-info">Shipped</span></td>
+                  <td>2026/08/25 16:42:08</td>
+                  <td>1</td>
+                  <td>1/1</td>
+                  <td><span class="pill pill-published">Published</span></td>
+                  <td><a class="link-btn" href="order-detail.html">View</a></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <p style="font-size:13px;color:var(--text-muted);margin-top:16px">Empty state copy: No records available</p>
+      </main>
+    </div>
+  </div>
+  <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Checkout — Product Sourcing</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body data-unit-price="1250">
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">Kick<span>Bazar</span> Seller</div>
+      <div class="nav-section">Store</div>
+      <div class="nav-group">
+        <div class="nav-parent">Product Sourcing</div>
+        <a class="nav-item nav-sub active" href="index.html">Product Discovery</a>
+        <a class="nav-item nav-sub" href="purchase-orders.html">Purchase Orders List</a>
+      </div>
+      <a class="nav-item" href="#">Orders List</a>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <div class="breadcrumb">Product Sourcing &rsaquo; Product Discovery &rsaquo; <strong>Checkout</strong></div>
+      </header>
+
+      <main class="content">
+        <h1 class="page-title">Checkout</h1>
+
+        <div class="checkout-layout">
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div class="card">
+              <div class="card-header">1. Shipping Address</div>
+              <div class="card-body">
+                <div style="font-weight:600">Rahim Uddin · +880 1712 345678</div>
+                <div style="font-size:14px;color:var(--text-secondary);margin:6px 0">Dhaka, Dhaka Metro, Gulshan — House 12, Road 45</div>
+                <span class="pill pill-info" style="margin-right:8px">Default</span>
+                <a href="#">Change</a> · <a href="#">Edit</a> · <a href="#">Add a New Address</a>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">2. Product Information</div>
+              <div class="card-body">
+                <div style="display:flex;gap:14px;align-items:flex-start">
+                  <div style="width:72px;height:72px;background:var(--surface-2);border-radius:8px;flex-shrink:0"></div>
+                  <div style="flex:1">
+                    <div style="font-weight:600">Denim Jacket Classic Blue</div>
+                    <div style="font-size:13px;color:var(--text-secondary)">Blue / M · SKU KB-DJ-2026-001-M</div>
+                    <div style="font-size:13px;margin-top:4px">Unit Price: ৳ 1,250.00</div>
+                    <div style="display:flex;align-items:center;gap:12px;margin-top:10px">
+                      <span style="font-size:13px;font-weight:600">Quantity</span>
+                      <div class="qty-stepper" id="checkoutQtyStepper">
+                        <button type="button" data-minus>−</button>
+                        <input type="number" id="checkoutQty" value="2" min="1" />
+                        <button type="button" data-plus>+</button>
+                      </div>
+                      <span style="font-size:13px;color:var(--text-secondary)">Line: <strong class="line-subtotal">৳ 2,500.00</strong></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">3. Shipping Method</div>
+              <div class="card-body radio-group">
+                <div class="radio-item selected" data-shipping="standard">○ <strong>Standard</strong> <span style="color:var(--text-secondary);font-size:13px;margin-left:auto">Est. 5–7 days</span></div>
+                <div class="radio-item" data-shipping="air_express">○ <strong>Air Express</strong> <span style="color:var(--text-secondary);font-size:13px;margin-left:auto">Est. 2–3 days</span></div>
+                <div class="radio-item" data-shipping="air_priority">○ <strong>Air Priority</strong> <span style="color:var(--text-secondary);font-size:13px;margin-left:auto">Est. 1–2 days</span></div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">4. Payment Method</div>
+              <div class="card-body">
+                <div class="radio-item selected">● <strong>Bank Transfer</strong></div>
+                <p style="font-size:12px;color:var(--text-secondary);margin-top:8px">All data is encrypted.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="card summary-sticky">
+            <div class="card-header">Order Summary</div>
+            <div class="card-body">
+              <div class="field-row"><span>Subtotal</span><span id="subtotal">৳ 2,500.00</span></div>
+              <div class="field-row"><span>Shipping Fee</span><span id="shippingFee">৳ 50.00</span></div>
+              <div class="field-row"><span>COD Handling Fee</span><span id="codFee">৳ 10.00</span></div>
+              <div class="field-row total"><span>Grand Total</span><span id="grandTotal">৳ 2,560.00</span></div>
+
+              <div class="info-banner">
+                <strong>Security Reminder</strong>
+                <ul>
+                  <li>All information is secure and uncompromised</li>
+                  <li>All data is safeguarded</li>
+                  <li>KickBazar never sells your information</li>
+                </ul>
+              </div>
+
+              <a class="btn btn-primary btn-block" href="order-success.html" style="margin-top:12px">Order &amp; Pay</a>
+              <p class="legal-note">By submitting your order, you agree to Our Terms &amp; Conditions, including the mandatory arbitration provision therein, and Privacy Policy.</p>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script src="js/app.js"></script>
+</body>
+</html>

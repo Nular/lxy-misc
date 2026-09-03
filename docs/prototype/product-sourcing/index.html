@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Product Sourcing — Product Discovery</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">Kick<span>Bazar</span> Seller</div>
+      <div class="nav-section">Store</div>
+      <div class="nav-group">
+        <div class="nav-parent">Product Sourcing</div>
+        <a class="nav-item nav-sub active" href="index.html">Product Discovery</a>
+        <a class="nav-item nav-sub" href="purchase-orders.html">Purchase Orders List</a>
+      </div>
+      <a class="nav-item" href="#">Orders List</a>
+      <div class="nav-section">Settings</div>
+      <a class="nav-item" href="#">Addresses</a>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <div class="breadcrumb">Product Sourcing &rsaquo; <strong>Product Discovery</strong></div>
+      </header>
+
+      <main class="content">
+        <h1 class="page-title">Product Discovery</h1>
+
+        <div class="search-bar">
+          <input type="search" placeholder="Search by product name or SKU code" />
+          <button class="btn btn-primary" type="button">Search</button>
+        </div>
+
+        <div class="tabs">
+          <button class="tab active" type="button" data-product-tab="all">All</button>
+          <button class="tab" type="button" data-product-tab="published">Published</button>
+          <button class="tab" type="button" data-product-tab="unpublished">Unpublished</button>
+          <button class="tab" type="button" data-product-tab="partial">Partially Published</button>
+        </div>
+
+        <div class="grid-4" id="productGrid">
+          <a class="product-card" data-product-card data-publish="published" href="product-detail.html" style="text-decoration:none;color:inherit">
+            <div class="thumb">Product Image</div>
+            <div class="info">
+              <div class="title">Cotton T-Shirt Basic Fit</div>
+              <div class="price">Purchase Price: ৳ 450.00</div>
+              <span class="pill pill-published">Published</span>
+            </div>
+          </a>
+          <a class="product-card" data-product-card data-publish="partial" href="product-detail.html" style="text-decoration:none;color:inherit">
+            <div class="thumb">Product Image</div>
+            <div class="info">
+              <div class="title">Denim Jacket Classic Blue</div>
+              <div class="price">Purchase Price: ৳ 1,280.00</div>
+              <span class="pill pill-partial">Partially Published</span>
+            </div>
+          </a>
+          <a class="product-card" data-product-card data-publish="unpublished" href="product-detail.html" style="text-decoration:none;color:inherit">
+            <div class="thumb">Product Image</div>
+            <div class="info">
+              <div class="title">Summer Dress Floral Print</div>
+              <div class="price">Purchase Price: ৳ 890.00</div>
+              <span class="pill pill-unpublished">Unpublished</span>
+            </div>
+          </a>
+          <a class="product-card" data-product-card data-publish="published" href="product-detail.html" style="text-decoration:none;color:inherit">
+            <div class="thumb">Product Image</div>
+            <div class="info">
+              <div class="title">Sports Sneakers Pro Run</div>
+              <div class="price">Purchase Price: ৳ 2,100.00</div>
+              <span class="pill pill-published">Published</span>
+            </div>
+          </a>
+          <a class="product-card" data-product-card data-publish="unpublished" href="product-detail.html" style="text-decoration:none;color:inherit">
+            <div class="thumb">Product Image</div>
+            <div class="info">
+              <div class="title">Linen Trousers Slim Fit</div>
+              <div class="price">Purchase Price: ৳ 720.00</div>
+              <span class="pill pill-unpublished">Unpublished</span>
+            </div>
+          </a>
+          <a class="product-card" data-product-card data-publish="partial" href="product-detail.html" style="text-decoration:none;color:inherit">
+            <div class="thumb">Product Image</div>
+            <div class="info">
+              <div class="title">Knit Sweater Winter Warm</div>
+              <div class="price">Purchase Price: ৳ 1,050.00</div>
+              <span class="pill pill-partial">Partially Published</span>
+            </div>
+          </a>
+        </div>
+
+        <p class="empty" id="productEmpty" style="display:none">No records available</p>
+
+        <div class="page-actions" style="margin-top:24px">
+          <span style="font-size:13px;color:var(--text-secondary)">Page 1 of 12</span>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-secondary" disabled>Previous</button>
+            <button class="btn btn-secondary">Next</button>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+  <script src="js/app.js"></script>
+</body>
+</html>

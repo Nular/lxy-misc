@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Purchase Order Detail — Product Sourcing</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body data-order-payment="paid_unconfirmed">
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">Kick<span>Bazar</span> Seller</div>
+      <div class="nav-section">Store</div>
+      <div class="nav-group">
+        <div class="nav-parent">Product Sourcing</div>
+        <a class="nav-item nav-sub" href="index.html">Product Discovery</a>
+        <a class="nav-item nav-sub active" href="purchase-orders.html">Purchase Orders List</a>
+      </div>
+      <a class="nav-item" href="#">Orders List</a>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <div class="breadcrumb">Product Sourcing &rsaquo; Purchase Orders List &rsaquo; <strong>PO202608300045</strong></div>
+        <div class="topbar-actions">
+          <button class="btn btn-secondary" id="openCancelOrder" type="button">Cancel Order</button>
+        </div>
+      </header>
+
+      <main class="content">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px">
+          <div>
+            <h1 style="font-size:22px;font-weight:700">PO202608300045</h1>
+            <span class="pill pill-neutral" style="margin-top:8px">Pending Confirmation</span>
+          </div>
+        </div>
+
+        <div class="grid-2" style="margin-bottom:16px">
+          <div class="card">
+            <div class="card-header">Status Timeline</div>
+            <div class="card-body" style="font-size:13px;color:var(--text-secondary)">
+              <div>● Order placed — 2026/08/30 11:20</div>
+              <div style="margin-top:6px">● Buyer paid — 2026/08/30 15:40</div>
+              <div style="margin-top:6px">○ Pending platform confirmation</div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">Customer</div>
+            <div class="card-body" style="font-size:14px">2C Shop: Dhaka Fashion Hub</div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:16px">
+          <div class="card-header">Product Information</div>
+          <div class="card-body">
+            <div style="display:flex;gap:14px">
+              <div style="width:80px;height:80px;background:var(--surface-2);border-radius:8px"></div>
+              <div>
+                <div style="font-weight:600">Summer Dress Floral Print</div>
+                <div style="font-size:13px;color:var(--text-secondary)">Pink / S · KB-SD-2026-012-S</div>
+                <div style="font-size:13px;margin-top:6px">৳ 890.00 × 1 = <strong>৳ 890.00</strong></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2" style="margin-bottom:16px">
+          <div class="card">
+            <div class="card-header">Order Summary</div>
+            <div class="card-body">
+              <div class="field-row"><span>Subtotal</span><span>৳ 890.00</span></div>
+              <div class="field-row"><span>Shipping Fee</span><span>৳ 50.00</span></div>
+              <div class="field-row"><span>COD Handling Fee</span><span>৳ 10.00</span></div>
+              <div class="field-row total"><span>Grand Total</span><span>৳ 950.00</span></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">Shipping &amp; Payment</div>
+            <div class="card-body" style="font-size:14px">
+              <p><strong>Shipping Method:</strong> Standard</p>
+              <p style="margin-top:8px"><strong>Payment:</strong> Bank Transfer</p>
+              <p style="margin-top:12px;font-size:13px;color:var(--text-secondary)"><strong>Billing Address</strong><br>Same as shipping</p>
+              <p style="margin-top:8px;font-size:13px;color:var(--text-secondary)"><strong>Shipping Address</strong><br>Rahim Uddin, Gulshan, Dhaka</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="card">
+            <div class="card-header">Payment Proof</div>
+            <div class="card-body">
+              <div class="upload-zone" style="margin-bottom:10px">Receipt uploaded ✓</div>
+              <button class="btn btn-secondary" type="button">Upload Payment Proof</button>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">Logistics</div>
+            <div class="card-body" style="font-size:13px;color:var(--text-secondary)">
+              <p>Logistics information will appear after shipment.</p>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="cancelOrderModal">
+    <div class="modal modal-wide">
+      <div class="modal-header">
+        <span>Confirm Order Cancellation &amp; Refund</span>
+        <button class="btn btn-ghost" data-close-cancel-modal type="button">✕</button>
+      </div>
+      <div class="modal-body">
+        <p>Please confirm that you want to cancel this order. As our platform uses bank transfers for payments, the refund rules are as follows:</p>
+        <ul>
+          <li><strong>Unpaid Orders:</strong> The order will be closed immediately upon cancellation. No refund is required.</li>
+          <li><strong>Paid but Unconfirmed Orders:</strong> If funds have been transferred but not yet confirmed by the platform, the amount will be refunded to your original payment account within 1–7 business days after platform review.</li>
+        </ul>
+        <div id="refundAccountForm">
+          <label class="form-label" for="refundAccountInfo">Refund Account Information</label>
+          <textarea
+            class="refund-textarea"
+            id="refundAccountInfo"
+            placeholder="If your order is paid but unconfirmed, please provide your refund account details here:&#10;1. Account Name:&#10;2. Bank Account No.:&#10;3. Bank Name:&#10;4. Branch Name:&#10;Please ensure the information matches your original payment account to avoid refund failures."
+          ></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-close-cancel-modal type="button">Keep My Order</button>
+        <button class="btn btn-primary" id="confirmRefundBtn" type="button">Confirm Refund</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
