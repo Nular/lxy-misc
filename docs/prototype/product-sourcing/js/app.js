@@ -108,6 +108,43 @@ function initProductTabs() {
   });
 }
 
+function initCancelOrderModal() {
+  const modal = document.getElementById('cancelOrderModal');
+  const refundForm = document.getElementById('refundAccountForm');
+  if (!modal) return;
+
+  const paymentParam = new URLSearchParams(window.location.search).get('payment');
+  if (paymentParam) document.body.dataset.orderPayment = paymentParam;
+
+  const paymentStatus = document.body.dataset.orderPayment || 'unpaid';
+  if (paymentStatus === 'unpaid') {
+    const orderNo = 'PO202608310001';
+    const breadcrumbStrong = document.querySelector('.breadcrumb strong');
+    if (breadcrumbStrong) breadcrumbStrong.textContent = orderNo;
+    const title = document.querySelector('main h1');
+    if (title) title.textContent = orderNo;
+    const pill = document.querySelector('main .pill');
+    if (pill) {
+      pill.textContent = 'Pending Payment';
+      pill.className = 'pill pill-info';
+      pill.style.marginTop = '8px';
+    }
+  }
+  if (refundForm) {
+    refundForm.style.display = paymentStatus === 'unpaid' ? 'none' : '';
+  }
+
+  document.getElementById('openCancelOrder')?.addEventListener('click', () => modal.classList.add('open'));
+  document.querySelectorAll('[data-close-cancel-modal]').forEach(btn => {
+    btn.addEventListener('click', () => modal.classList.remove('open'));
+  });
+
+  document.getElementById('confirmRefundBtn')?.addEventListener('click', () => {
+    modal.classList.remove('open');
+    showToast(paymentStatus === 'unpaid' ? 'Order cancelled successfully.' : 'Cancellation submitted. Refund will be processed after review.');
+  });
+}
+
 function initOrderTabs() {
   document.querySelectorAll('[data-po-tab]').forEach(tab => {
     tab.addEventListener('click', () => {
@@ -125,6 +162,7 @@ function initOrderTabs() {
 document.addEventListener('DOMContentLoaded', () => {
   initCheckoutSummary();
   initProductTabs();
+  initCancelOrderModal();
   initOrderTabs();
 
   document.querySelectorAll('[data-copy]').forEach(btn => {

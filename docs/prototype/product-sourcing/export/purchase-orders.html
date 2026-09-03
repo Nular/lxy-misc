@@ -342,9 +342,30 @@ tr:hover td { background: #fafbfc; }
   box-shadow: 0 20px 50px rgba(15,23,42,0.2);
 }
 
-.modal-header { display: flex; justify-content: space-between; padding: 16px 18px; border-bottom: 1px solid var(--border); font-weight: 700; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; padding: 16px 18px; border-bottom: 1px solid var(--border); font-weight: 700; }
 .modal-body { padding: 18px; }
+.modal-body p { font-size: 14px; color: var(--text-secondary); line-height: 1.55; }
+.modal-body ul { margin: 12px 0 16px 20px; font-size: 14px; color: var(--text-secondary); line-height: 1.6; }
+.modal-wide { width: 520px; }
 .modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 18px; border-top: 1px solid var(--border); }
+
+.form-label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 8px; }
+.refund-textarea {
+  width: 100%;
+  min-height: 128px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-size: 13px;
+  font-family: var(--font);
+  line-height: 1.5;
+  color: var(--text);
+  resize: vertical;
+}
+.refund-textarea:focus { outline: 2px solid var(--primary-soft); border-color: var(--primary); }
+.refund-textarea::placeholder { color: var(--text-muted); }
+
+.topbar-actions { display: flex; gap: 10px; align-items: center; }
 
 .success-wrap { max-width: 640px; margin: 0 auto; text-align: center; }
 .success-icon {
@@ -449,7 +470,7 @@ tr:hover td { background: #fafbfc; }
                   <td>1</td>
                   <td>0/1</td>
                   <td><span class="pill pill-unpublished">Unpublished</span></td>
-                  <td><a class="link-btn" href="order-detail.html">View</a></td>
+                  <td><a class="link-btn" href="order-detail.html?payment=unpaid">View</a></td>
                 </tr>
                 <tr data-po-row data-publish="unpublished">
                   <td>PO202608300045</td>
@@ -598,6 +619,43 @@ function initProductTabs() {
   });
 }
 
+function initCancelOrderModal() {
+  const modal = document.getElementById('cancelOrderModal');
+  const refundForm = document.getElementById('refundAccountForm');
+  if (!modal) return;
+
+  const paymentParam = new URLSearchParams(window.location.search).get('payment');
+  if (paymentParam) document.body.dataset.orderPayment = paymentParam;
+
+  const paymentStatus = document.body.dataset.orderPayment || 'unpaid';
+  if (paymentStatus === 'unpaid') {
+    const orderNo = 'PO202608310001';
+    const breadcrumbStrong = document.querySelector('.breadcrumb strong');
+    if (breadcrumbStrong) breadcrumbStrong.textContent = orderNo;
+    const title = document.querySelector('main h1');
+    if (title) title.textContent = orderNo;
+    const pill = document.querySelector('main .pill');
+    if (pill) {
+      pill.textContent = 'Pending Payment';
+      pill.className = 'pill pill-info';
+      pill.style.marginTop = '8px';
+    }
+  }
+  if (refundForm) {
+    refundForm.style.display = paymentStatus === 'unpaid' ? 'none' : '';
+  }
+
+  document.getElementById('openCancelOrder')?.addEventListener('click', () => modal.classList.add('open'));
+  document.querySelectorAll('[data-close-cancel-modal]').forEach(btn => {
+    btn.addEventListener('click', () => modal.classList.remove('open'));
+  });
+
+  document.getElementById('confirmRefundBtn')?.addEventListener('click', () => {
+    modal.classList.remove('open');
+    showToast(paymentStatus === 'unpaid' ? 'Order cancelled successfully.' : 'Cancellation submitted. Refund will be processed after review.');
+  });
+}
+
 function initOrderTabs() {
   document.querySelectorAll('[data-po-tab]').forEach(tab => {
     tab.addEventListener('click', () => {
@@ -615,6 +673,7 @@ function initOrderTabs() {
 document.addEventListener('DOMContentLoaded', () => {
   initCheckoutSummary();
   initProductTabs();
+  initCancelOrderModal();
   initOrderTabs();
 
   document.querySelectorAll('[data-copy]').forEach(btn => {

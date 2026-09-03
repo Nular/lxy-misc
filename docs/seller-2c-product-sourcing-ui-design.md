@@ -359,7 +359,21 @@ Tab 筛选：**SKU 铺货状态**（本期每单 1 SKU）
 8. **Payment Details**（同 Success 页结构）
 9. **Payment Proof**：预览 + Upload
 10. **Logistics**：运单号 + 时间轴
-11. **Footer Action**：`Publish to Store`（Primary，条件满足时显示）
+11. **Footer Action**：`Publish to Store`（Primary，条件满足时显示）；`Cancel Order`（可取消态显示）
+
+**Cancel Order 显示条件**：
+
+- Order Status = 待转账（Pending Payment）或 待确认收款（Pending Confirmation / Buyer Paid 未平台确认）
+- 已完成、已发货等状态 **不显示**
+
+**取消订单 Modal — Confirm Order Cancellation & Refund**：
+
+| 区块 | 内容 |
+|------|------|
+| Title | Confirm Order Cancellation & Refund |
+| Body | 退款规则说明（未付款 / 已付款未确认两条 bullet） |
+| Form | **Refund Account Information** 多行输入；**未付款订单隐藏** |
+| Actions | `Keep My Order`（Secondary）· `Confirm Refund`（Primary） |
 
 **Publish to Store 显示条件**：
 

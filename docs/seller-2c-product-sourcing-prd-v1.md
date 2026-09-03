@@ -569,6 +569,11 @@ Breadcrumb: Product Sourcing > Checkout
 3. **Publish to Store** 按 **SPU** 操作：一键上架将该订单关联 **SPU** 铺货至 2C 店铺（非单 SKU 独立铺货）。
 4. 若关联 SPU 已 Published，按钮置灰或隐藏。
 5. 须 2B 已确认收款且订单达到可上架状态（通常 Completed）方可一键上架。
+6. **Cancel Order**：待转账、待确认收款状态可取消；点击后弹出 **Confirm Order Cancellation & Refund** Modal。
+7. Modal 规则：
+   - **未付款**：订单立即关闭，无需退款；**隐藏** Refund Account Information 表单区。
+   - **已付款未确认**：平台审核后 1–7 个工作日退款至原支付账户；须填写 Refund Account Information。
+8. Modal 按钮：`Keep My Order`（关闭弹层）、`Confirm Refund`（提交取消）。
 
 **信息区块**：
 
@@ -587,8 +592,8 @@ Breadcrumb: Product Sourcing > Checkout
 
 | 状态 | 英文 | 主操作 |
 |------|------|--------|
-| 待转账 | Pending Payment | Copy Payment Details、Upload Payment Proof |
-| 待确认收款 | Pending Confirmation | View / Supplement Payment Proof |
+| 待转账 | Pending Payment | Copy Payment Details、Upload Payment Proof、**Cancel Order** |
+| 待确认收款 | Pending Confirmation | View / Supplement Payment Proof、**Cancel Order** |
 | 待发货 | Pending Shipment | — |
 | 待收货 | Pending Receipt | View Logistics |
 | 已完成 | Completed | **Publish to Store**（须 2B 已确认收款） |
