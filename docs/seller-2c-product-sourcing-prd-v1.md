@@ -569,11 +569,12 @@ Breadcrumb: Product Sourcing > Checkout
 3. **Publish to Store** 按 **SPU** 操作：一键上架将该订单关联 **SPU** 铺货至 2C 店铺（非单 SKU 独立铺货）。
 4. 若关联 SPU 已 Published，按钮置灰或隐藏。
 5. 须 2B 已确认收款且订单达到可上架状态（通常 Completed）方可一键上架。
-6. **Cancel Order**：待转账、待确认收款状态可取消；点击后弹出 **Confirm Order Cancellation** Modal，用户确认后直接取消订单。
-7. Modal 规则：
-   - **所有可取消订单**：确认后订单立即关闭（状态 → Cancelled）。
-   - **已付款订单**：Modal 内展示提示——请联系业务员咨询后续退款流程，联系邮箱 **payment@kickbazar.com**；**不提供**退款账户表单。
-8. Modal 按钮：`Keep My Order`（关闭弹层）、`Confirm Cancellation`（确认取消）。
+6. **Cancel Order**：待转账、待确认收款状态可取消；2C 确认后订单状态直接变更为 **Cancelled**。
+7. **支付说明**：平台采用银行转账，资金不经平台系统流转；本期 **不做** 线上退款识别与处理，退款事宜均通过人工联络。
+8. **联系提醒**（仅一种场景展示）：
+   - 订单处于 **待确认收款**（2C 已转账/已付款，**2B 尚未确认收款**）时，取消弹窗内展示 Info Banner，提示联系平台邮箱 **payment@kickbazar.com**。
+   - **待转账**（尚未付款）取消时 **不展示** 该提醒。
+9. Modal 按钮：`Keep My Order`（关闭弹层）、`Confirm Cancellation`（确认取消，状态 → Cancelled）。
 
 **信息区块**：
 

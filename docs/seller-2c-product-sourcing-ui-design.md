@@ -371,11 +371,11 @@ Tab 筛选：**SKU 铺货状态**（本期每单 1 SKU）
 | 区块 | 内容 |
 |------|------|
 | Title | Confirm Order Cancellation |
-| Body | 确认取消提示；订单立即关闭 |
-| Paid Notice | **已付款订单** 展示 Info Banner：联系业务员咨询退款流程，邮箱 payment@kickbazar.com |
-| Actions | `Keep My Order`（Secondary）· `Confirm Cancellation`（Primary） |
+| Body | 确认取消；订单状态立即变更为 Cancelled |
+| Contact Notice | **仅待确认收款**（2C 已转账、2B 未确认）展示：联系平台 payment@kickbazar.com |
+| Actions | `Keep My Order` · `Confirm Cancellation` |
 
-**说明**：不提供退款账户表单；取消后退款由线下联系业务员处理。
+**说明**：支付走银行转账、不经平台；系统不识别/处理退款，取消后如需退款由 2C 人工联系平台。
 
 **Publish to Store 显示条件**：
 

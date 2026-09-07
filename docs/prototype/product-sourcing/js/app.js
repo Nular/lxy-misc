@@ -110,16 +110,15 @@ function initProductTabs() {
 
 function initCancelOrderModal() {
   const modal = document.getElementById('cancelOrderModal');
-  const paidNotice = document.getElementById('cancelPaidNotice');
+  const contactNotice = document.getElementById('cancelContactNotice');
   if (!modal) return;
 
-  const paymentParam = new URLSearchParams(window.location.search).get('payment');
-  if (paymentParam) document.body.dataset.orderPayment = paymentParam;
+  const noticeParam = new URLSearchParams(window.location.search).get('notice');
+  const showContactNotice = noticeParam === '0'
+    ? false
+    : document.body.dataset.showContactNotice === 'true';
 
-  const paymentStatus = document.body.dataset.orderPayment || 'unpaid';
-  const isPaid = paymentStatus !== 'unpaid';
-
-  if (paymentStatus === 'unpaid') {
+  if (noticeParam === '0') {
     const orderNo = 'PO202608310001';
     const breadcrumbStrong = document.querySelector('.breadcrumb strong');
     if (breadcrumbStrong) breadcrumbStrong.textContent = orderNo;
@@ -133,7 +132,7 @@ function initCancelOrderModal() {
     }
   }
 
-  if (paidNotice) paidNotice.style.display = isPaid ? '' : 'none';
+  if (contactNotice) contactNotice.style.display = showContactNotice ? '' : 'none';
 
   document.getElementById('openCancelOrder')?.addEventListener('click', () => modal.classList.add('open'));
   document.querySelectorAll('[data-close-cancel-modal]').forEach(btn => {
@@ -142,9 +141,7 @@ function initCancelOrderModal() {
 
   document.getElementById('confirmCancelBtn')?.addEventListener('click', () => {
     modal.classList.remove('open');
-    showToast(isPaid
-      ? 'Order cancelled. For refund inquiries, contact payment@kickbazar.com.'
-      : 'Order cancelled successfully.');
+    showToast('Order cancelled successfully.');
   });
 }
 
