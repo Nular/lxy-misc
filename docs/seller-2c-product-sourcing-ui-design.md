@@ -366,14 +366,16 @@ Tab 筛选：**SKU 铺货状态**（本期每单 1 SKU）
 - Order Status = 待转账（Pending Payment）或 待确认收款（Pending Confirmation / Buyer Paid 未平台确认）
 - 已完成、已发货等状态 **不显示**
 
-**取消订单 Modal — Confirm Order Cancellation & Refund**：
+**取消订单 Modal — Confirm Order Cancellation**：
 
 | 区块 | 内容 |
 |------|------|
-| Title | Confirm Order Cancellation & Refund |
-| Body | 退款规则说明（未付款 / 已付款未确认两条 bullet） |
-| Form | **Refund Account Information** 多行输入；**未付款订单隐藏** |
-| Actions | `Keep My Order`（Secondary）· `Confirm Refund`（Primary） |
+| Title | Confirm Order Cancellation |
+| Body | 确认取消提示；订单立即关闭 |
+| Paid Notice | **已付款订单** 展示 Info Banner：联系业务员咨询退款流程，邮箱 payment@kickbazar.com |
+| Actions | `Keep My Order`（Secondary）· `Confirm Cancellation`（Primary） |
+
+**说明**：不提供退款账户表单；取消后退款由线下联系业务员处理。
 
 **Publish to Store 显示条件**：
 

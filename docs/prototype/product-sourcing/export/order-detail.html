@@ -522,27 +522,19 @@ tr:hover td { background: #fafbfc; }
   <div class="modal-overlay" id="cancelOrderModal">
     <div class="modal modal-wide">
       <div class="modal-header">
-        <span>Confirm Order Cancellation &amp; Refund</span>
+        <span>Confirm Order Cancellation</span>
         <button class="btn btn-ghost" data-close-cancel-modal type="button">✕</button>
       </div>
       <div class="modal-body">
-        <p>Please confirm that you want to cancel this order. As our platform uses bank transfers for payments, the refund rules are as follows:</p>
-        <ul>
-          <li><strong>Unpaid Orders:</strong> The order will be closed immediately upon cancellation. No refund is required.</li>
-          <li><strong>Paid but Unconfirmed Orders:</strong> If funds have been transferred but not yet confirmed by the platform, the amount will be refunded to your original payment account within 1–7 business days after platform review.</li>
-        </ul>
-        <div id="refundAccountForm">
-          <label class="form-label" for="refundAccountInfo">Refund Account Information</label>
-          <textarea
-            class="refund-textarea"
-            id="refundAccountInfo"
-            placeholder="If your order is paid but unconfirmed, please provide your refund account details here:&#10;1. Account Name:&#10;2. Bank Account No.:&#10;3. Bank Name:&#10;4. Branch Name:&#10;Please ensure the information matches your original payment account to avoid refund failures."
-          ></textarea>
+        <p>Please confirm that you want to cancel this order. The order will be closed immediately upon cancellation.</p>
+        <div class="info-banner" id="cancelPaidNotice" style="display:none">
+          If you have already paid, please contact our sales representative for the refund process.<br>
+          Email: <a href="mailto:payment@kickbazar.com">payment@kickbazar.com</a>
         </div>
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" data-close-cancel-modal type="button">Keep My Order</button>
-        <button class="btn btn-primary" id="confirmRefundBtn" type="button">Confirm Refund</button>
+        <button class="btn btn-primary" id="confirmCancelBtn" type="button">Confirm Cancellation</button>
       </div>
     </div>
   </div>
@@ -659,13 +651,15 @@ function initProductTabs() {
 
 function initCancelOrderModal() {
   const modal = document.getElementById('cancelOrderModal');
-  const refundForm = document.getElementById('refundAccountForm');
+  const paidNotice = document.getElementById('cancelPaidNotice');
   if (!modal) return;
 
   const paymentParam = new URLSearchParams(window.location.search).get('payment');
   if (paymentParam) document.body.dataset.orderPayment = paymentParam;
 
   const paymentStatus = document.body.dataset.orderPayment || 'unpaid';
+  const isPaid = paymentStatus !== 'unpaid';
+
   if (paymentStatus === 'unpaid') {
     const orderNo = 'PO202608310001';
     const breadcrumbStrong = document.querySelector('.breadcrumb strong');
@@ -679,18 +673,19 @@ function initCancelOrderModal() {
       pill.style.marginTop = '8px';
     }
   }
-  if (refundForm) {
-    refundForm.style.display = paymentStatus === 'unpaid' ? 'none' : '';
-  }
+
+  if (paidNotice) paidNotice.style.display = isPaid ? '' : 'none';
 
   document.getElementById('openCancelOrder')?.addEventListener('click', () => modal.classList.add('open'));
   document.querySelectorAll('[data-close-cancel-modal]').forEach(btn => {
     btn.addEventListener('click', () => modal.classList.remove('open'));
   });
 
-  document.getElementById('confirmRefundBtn')?.addEventListener('click', () => {
+  document.getElementById('confirmCancelBtn')?.addEventListener('click', () => {
     modal.classList.remove('open');
-    showToast(paymentStatus === 'unpaid' ? 'Order cancelled successfully.' : 'Cancellation submitted. Refund will be processed after review.');
+    showToast(isPaid
+      ? 'Order cancelled. For refund inquiries, contact payment@kickbazar.com.'
+      : 'Order cancelled successfully.');
   });
 }
 
