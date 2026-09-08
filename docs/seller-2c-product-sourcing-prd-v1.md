@@ -378,18 +378,40 @@ Breadcrumb: Product Sourcing > Checkout
 
 ##### （6）Security Reminder
 
-**功能描述**：在 Order & Pay 按钮上方展示安全信息提醒，降低转账诈骗与操作错误风险。
+**功能描述**：在 Order & Pay 按钮上方展示安全信息提醒（Info Banner），含 4 个模块，每模块含 **小标题 + 正文**，面向 **2C 商铺（Merchant）** 表述。
 
-**建议文案要点（English）**：
+**展示结构**：
 
-| 要点 | 示例 |
-|------|------|
-| 官方账户 | Only transfer to the official bank account shown after order submission. |
-| 金额一致 | Ensure the transfer amount matches the Grand Total. |
-| 备注订单号 | Include your Order Number in the transfer reference/note. |
-| 防诈骗 | KickBazar will never ask you to transfer to a personal account via chat. |
+| # | 小标题（English） | 中文（PRD） | 正文要点（English） |
+|---|------------------|------------|---------------------|
+| 1 | **Fast Fulfillment** | 尽快发货 | 提交订单后 KickBazar 与供应商尽快处理；付款确认后安排发货 |
+| 2 | **Secure Your Payment** | 保障支付安全 | 银行转账；仅通过客服获取官方账户；金额与订单号一致；不向个人账户转账 |
+| 3 | **Security & Privacy** | 保护商户隐私 | 不出售商铺信息；尊重商户隐私；行业标准数据保护措施 |
+| 4 | **Customer Support** | 客服帮助 | 订单/付款/退款问题联系 payment@kickbazar.com |
 
-文案可由运营后台配置；展示形式为 Info Banner 或折叠说明区。
+**完整英文文案**：
+
+**Fast Fulfillment**  
+Once you submit your order, KickBazar and our supplier partners will process your purchase promptly. Your items will be prepared for shipment as soon as payment is confirmed.
+
+**Secure Your Payment**  
+KickBazar uses bank transfer for B2B sourcing payments. Official payment instructions are provided only through our customer support team—never via unofficial channels. Only transfer to the account details shared by KickBazar support, ensure the amount matches your Grand Total, and include your Order Number in the transfer note. KickBazar will never ask you to pay to a personal account.
+
+**Security & Privacy**  
+KickBazar never sells your shop's information. We respect the privacy of merchants on our platform and maintain industry-standard physical, technical, and administrative measures to protect your business data from unauthorized processing, use, or disclosure.
+
+**Customer Support**  
+If you have any questions about your order, payment, or refunds, please contact our Customer Support team at payment@kickbazar.com.
+
+**与竞品差异说明**：
+
+| 竞品（SHEIN 2C） | KickBazar（B2B 商铺） |
+|-----------------|----------------------|
+| PCIDSS / 银行卡加密 | 银行转账，付款信息由 **客服提供** 官方账户 |
+| 消费者个人信息 | **商铺（Merchant/Shop）** 商业数据 |
+| 网站在线客服平台 | 仅邮箱 **payment@kickbazar.com** |
+
+文案可由运营后台配置；展示形式为 Info Banner，4 段式小标题 + 正文。
 
 ##### （7）Order & Pay
 

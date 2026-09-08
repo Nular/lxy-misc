@@ -259,7 +259,7 @@ Seller 2C Sidebar
 | 地址操作 | Change、Add a New Address、Delete、Copy、Edit、Set as Default |
 | Payment 下 | 辅助文案 `All data is encrypted.` |
 | Grand Total 下 | 法务小字：Terms & Conditions + Privacy Policy 同意说明 |
-| Security Reminder | 3 条英文要点，Info Banner 样式 |
+| Security Reminder | 4 段式 Info Banner：Fast Fulfillment / Secure Your Payment / Security & Privacy / Customer Support |
 
 #### Mobile（<1024）
 

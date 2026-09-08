@@ -320,6 +320,11 @@ tr:hover td { background: #fafbfc; }
 }
 .info-banner ul { margin: 6px 0 0 18px; }
 
+.security-reminders { display: flex; flex-direction: column; gap: 12px; margin-top: 10px; }
+.security-item strong { display: block; font-size: 13px; color: #0369a1; margin-bottom: 4px; }
+.security-item p { font-size: 12px; color: #0369a1; line-height: 1.5; margin: 0; }
+.security-item a { color: #0284c7; font-weight: 600; }
+
 .qty-stepper { display: inline-flex; align-items: center; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
 .qty-stepper button { width: 32px; height: 32px; border: none; background: var(--surface-2); cursor: pointer; font-size: 16px; }
 .qty-stepper input { width: 48px; height: 32px; border: none; text-align: center; font-size: 14px; }
@@ -527,8 +532,8 @@ tr:hover td { background: #fafbfc; }
       </div>
       <div class="modal-body">
         <p>Please confirm that you want to cancel this order. The order will be closed immediately upon cancellation.</p>
-        <div class="info-banner" id="cancelPaidNotice" style="display:none">
-          If you have already paid, please contact our sales representative for the refund process.<br>
+        <div class="info-banner" id="cancelContactNotice" style="display:none">
+          You have already transferred payment, but the supplier has not yet confirmed receipt. Please contact the platform for further assistance.<br>
           Email: <a href="mailto:payment@kickbazar.com">payment@kickbazar.com</a>
         </div>
       </div>
