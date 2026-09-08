@@ -320,17 +320,58 @@ tr:hover td { background: #fafbfc; }
 }
 .info-banner ul { margin: 6px 0 0 18px; }
 
-.security-list {
-  list-style: none;
-  padding: 0;
-  margin: 8px 0 0;
+.security-modules {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+  margin-top: 10px;
 }
-.security-list li { font-size: 12px; line-height: 1.45; }
-.security-list strong { font-weight: 600; }
-.security-list a { color: #0284c7; font-weight: 600; }
+
+.security-module {
+  padding-top: 8px;
+  border-top: 1px solid #bae6fd;
+}
+
+.security-module:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+.security-module-title {
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 4px;
+  color: #0369a1;
+}
+
+.security-module ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.security-module li {
+  font-size: 11px;
+  line-height: 1.45;
+  color: #0369a1;
+  padding-left: 10px;
+  position: relative;
+}
+
+.security-module li::before {
+  content: "·";
+  position: absolute;
+  left: 0;
+  font-weight: 700;
+}
+
+.security-module a {
+  color: #0284c7;
+  font-weight: 600;
+}
 
 .qty-stepper { display: inline-flex; align-items: center; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
 .qty-stepper button { width: 32px; height: 32px; border: none; background: var(--surface-2); cursor: pointer; font-size: 16px; }
@@ -517,12 +558,45 @@ tr:hover td { background: #fafbfc; }
 
               <div class="info-banner">
                 <strong>Security Reminder</strong>
-                <ul class="security-list">
-                  <li><strong>Fast Fulfillment:</strong> Your order will be processed and shipped promptly after payment is confirmed.</li>
-                  <li><strong>Secure Your Payment:</strong> Pay only via bank transfer using account details provided by KickBazar support. Never pay to a personal account.</li>
-                  <li><strong>Security &amp; Privacy:</strong> KickBazar never sells your shop's information and protects your business data.</li>
-                  <li><strong>Customer Support:</strong> Questions? Email <a href="mailto:payment@kickbazar.com">payment@kickbazar.com</a></li>
-                </ul>
+                <div class="security-modules">
+
+                  <div class="security-module">
+                    <div class="security-module-title">Fast Fulfillment</div>
+                    <ul>
+                      <li>Your order is processed right after submission.</li>
+                      <li>Shipment starts once payment is confirmed.</li>
+                      <li>We work with suppliers to ship promptly.</li>
+                    </ul>
+                  </div>
+
+                  <div class="security-module">
+                    <div class="security-module-title">Secure Your Payment</div>
+                    <ul>
+                      <li>Payments are made by bank transfer only.</li>
+                      <li>Account details are shared by KickBazar support.</li>
+                      <li>Never transfer funds to a personal account.</li>
+                    </ul>
+                  </div>
+
+                  <div class="security-module">
+                    <div class="security-module-title">Security &amp; Privacy</div>
+                    <ul>
+                      <li>KickBazar never sells your shop's data.</li>
+                      <li>Your business information stays confidential.</li>
+                      <li>Industry-standard safeguards protect your data.</li>
+                    </ul>
+                  </div>
+
+                  <div class="security-module">
+                    <div class="security-module-title">Customer Support</div>
+                    <ul>
+                      <li>Questions about your order or payment?</li>
+                      <li>Refund assistance is available by email.</li>
+                      <li>Contact us at <a href="mailto:payment@kickbazar.com">payment@kickbazar.com</a></li>
+                    </ul>
+                  </div>
+
+                </div>
               </div>
 
               <a class="btn btn-primary btn-block" href="order-success.html" style="margin-top:12px">Order &amp; Pay</a>

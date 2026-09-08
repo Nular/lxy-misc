@@ -389,16 +389,29 @@ Breadcrumb: Product Sourcing > Checkout
 | 3 | **Security & Privacy** | 保护商户隐私 | 不出售商铺信息；尊重商户隐私；行业标准数据保护措施 |
 | 4 | **Customer Support** | 客服帮助 | 订单/付款/退款问题联系 payment@kickbazar.com |
 
-**完整英文文案（简短版，逐条换行）**：
+**展示形式**：Info Banner 内 **4 个独立模块**，每模块含 **小标题 + 3 条等长短句**（逐条换行）。
 
-| # | 展示行（English） |
-|---|------------------|
-| 1 | **Fast Fulfillment:** Your order will be processed and shipped promptly after payment is confirmed. |
-| 2 | **Secure Your Payment:** Pay only via bank transfer using account details provided by KickBazar support. Never pay to a personal account. |
-| 3 | **Security & Privacy:** KickBazar never sells your shop's information and protects your business data. |
-| 4 | **Customer Support:** Questions? Email payment@kickbazar.com |
+**完整英文文案**：
 
-**展示形式**：Info Banner 内逐条换行（`li` 列表，无长段落）。
+**Fast Fulfillment**
+- Your order is processed right after submission.
+- Shipment starts once payment is confirmed.
+- We work with suppliers to ship promptly.
+
+**Secure Your Payment**
+- Payments are made by bank transfer only.
+- Account details are shared by KickBazar support.
+- Never transfer funds to a personal account.
+
+**Security & Privacy**
+- KickBazar never sells your shop's data.
+- Your business information stays confidential.
+- Industry-standard safeguards protect your data.
+
+**Customer Support**
+- Questions about your order or payment?
+- Refund assistance is available by email.
+- Contact us at payment@kickbazar.com
 
 **与竞品差异说明**：
 
