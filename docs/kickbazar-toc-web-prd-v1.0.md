@@ -10,7 +10,7 @@
 | **文档编号** | PRD-KB-WEB-TOC-001 |
 | **产品名称** | KickBazar 消费者端网页商城 |
 | **域名** | kickbazar.com |
-| **文档版本** | v1.4 |
+| **文档版本** | v1.5 |
 | **文档状态** | 评审中 |
 | **产品负责人** | — |
 | **撰写人** | 产品经理 |
@@ -28,6 +28,7 @@
 | v1.2 | 2026-09-10 | 产品经理 | 第四章各模块新增 Feature List（FL 编号） |
 | v1.3 | 2026-09-10 | 产品经理 | 第四章重构：功能描述、业务规则、字段定义、交互说明分层书写 |
 | v1.4 | 2026-09-10 | 产品经理 | 新增官方客服模块：Header 固定入口 + 首页 Sticky 浮标 + 客服面板 |
+| v1.5 | 2026-09-10 | 产品经理 | 第四章全模块补充字段定义（中英名称 + 字段说明） |
 
 ### 1.2 术语说明
 
@@ -185,7 +186,7 @@ kickbazar.com
 | **功能描述** | — | 模块定位、用户场景、页面结构（叙述性说明） |
 | **功能清单** | Feature List | 编号（FL）、中英文名称、功能描述 |
 | **业务规则** | Business Rules | 计算逻辑、权限、边界条件、与 App 对齐规则 |
-| **字段定义** | Field Spec | 表单、URL 参数、接口关键字段（按需出现） |
+| **字段定义** | Field Spec | 字段名、中文名称、英文名称、类型、必填、字段说明（各模块按需出现） |
 | **交互说明** | BR Table | 编号（BR）、交互行为、状态、验收标准 |
 
 **编号体系**
@@ -259,6 +260,20 @@ kickbazar.com
 5. **滚动阈值**：建议 80px，具体以实现为准，需保证向上滚动可恢复。  
 6. **客服入口**：Header 含官方客服图标（FL132），与购物车、账户并列；点击行为同 **BR806**，详见 §4.4。
 
+#### 字段定义
+
+| 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
+|--------|---------|---------|------|------|---------|
+| logoUrl | Logo 图片 | Logo Image URL | string | 是 | 品牌 Logo 图片地址，点击跳转首页 |
+| assuranceTexts[] | 保障文案列表 | Assurance Text List | array | 是 | 保障条三项文案（Easy Return 等），支持 i18n |
+| appDownloadUrl | App 下载链接 | App Download URL | string | 是 | Get the Kickbazar APP 跳转地址 |
+| categoryId | 分类 ID | Category ID | string | 是 | 一级分类唯一标识，用于导航跳转 |
+| categoryName | 分类名称 | Category Name | string | 是 | 分类展示名称，支持 i18n |
+| categoryIconUrl | 分类图标 | Category Icon URL | string | 否 | 分类入口图标地址 |
+| cartItemCount | 购物车件数 | Cart Item Count | number | 是 | 购物车 SKU 总件数，用于角标展示；0 时可隐藏 |
+| activeNavKey | 当前导航标识 | Active Nav Key | string | 否 | 标识当前高亮模块，如 `home` / `cart` |
+| supportEntryVisible | 客服入口可见 | Support Entry Visible | boolean | 是 | 是否展示 Header 客服图标，默认 `true` |
+
 #### 交互说明
 
 | 编号 | 需求名称 | 触发条件 | 交互行为 | 状态 | 验收标准 |
@@ -302,6 +317,16 @@ kickbazar.com
 2. CMS 驱动时允许运营配置图标与链接；无配置时使用默认三项。  
 3. 与 BR103 联动：向下滚动时不挤压商品列表首行。
 
+#### 字段定义
+
+| 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
+|--------|---------|---------|------|------|---------|
+| trustItemId | 卖点项 ID | Trust Item ID | string | 是 | 信任卖点唯一标识 |
+| trustTitle | 卖点标题 | Trust Title | string | 是 | 如 Product Replace、Easy Return，支持 i18n |
+| trustIconUrl | 卖点图标 | Trust Icon URL | string | 是 | 卖点图标图片地址 |
+| trustLinkUrl | 卖点链接 | Trust Link URL | string | 否 | 点击跳转的政策页或帮助页地址 |
+| sortOrder | 排序 | Sort Order | number | 是 | 展示顺序，升序排列 |
+
 #### 交互说明
 
 | 编号 | 需求名称 | 触发条件 | 交互行为 | 状态 | 验收标准 |
@@ -339,6 +364,21 @@ kickbazar.com
 1. 所有外链 `target="_blank"`，并带 `rel="noopener"`。  
 2. 链接目标与 App 内政策页内容一致。  
 3. 移动端点击 App 下载时，按系统跳转 Google Play / App Store。
+
+#### 字段定义
+
+| 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
+|--------|---------|---------|------|------|---------|
+| privacyPolicyUrl | 隐私政策链接 | Privacy Policy URL | string | 是 | Privacy Policy 页面地址 |
+| termsUrl | 服务条款链接 | Terms of Service URL | string | 是 | Terms of Service 页面地址 |
+| returnsPolicyUrl | 退换货政策链接 | Returns Policy URL | string | 是 | Returns & Refunds Policy 页面地址 |
+| copyrightText | 版权声明 | Copyright Text | string | 是 | 版权文案，如 © 2026 KickBazar |
+| contactUsUrl | 联系我们链接 | Contact Us URL | string | 是 | Contact Us 页面地址 |
+| aboutUsUrl | 关于我们链接 | About Us URL | string | 是 | About Us 页面地址 |
+| iosAppStoreUrl | iOS 商店链接 | iOS App Store URL | string | 是 | App Store 下载地址 |
+| androidPlayStoreUrl | Android 商店链接 | Google Play URL | string | 是 | Google Play 下载地址 |
+| instagramUrl | Instagram 链接 | Instagram URL | string | 否 | 官方 Instagram 主页 |
+| facebookUrl | Facebook 链接 | Facebook URL | string | 否 | 官方 Facebook 主页 |
 
 #### 交互说明
 
@@ -399,16 +439,18 @@ kickbazar.com
 7. **无障碍**：客服图标与浮标需有 `aria-label`（如「联系官方客服」）。  
 8. **合规**：不嵌入第三方追踪型客服脚本；外链仅官方域名或 Contact Us 页面。
 
-#### 字段定义（客服配置）
+#### 字段定义
 
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| supportPhone | string | 是 | 官方客服电话，格式 `+880XXXXXXXXXX` |
-| supportEmail | string | 是 | 官方客服邮箱 |
-| serviceHours | string | 是 | 服务时段文案，如「24/7 Support」 |
-| contactPageUrl | string | 是 | Contact Us 页面路径，如 `/contact` |
-| stickyEnabled | boolean | 是 | 首页 Sticky 浮标是否启用，默认 `true` |
-| panelTitle | string | 否 | 面板标题（i18n），默认「Official Support」 |
+| 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
+|--------|---------|---------|------|------|---------|
+| supportPhone | 客服电话 | Support Phone | string | 是 | 官方客服电话，格式 `+880XXXXXXXXXX`；Mobile 支持 `tel:` 唤起 |
+| supportEmail | 客服邮箱 | Support Email | string | 是 | 官方客服邮箱；支持 `mailto:` 唤起 |
+| serviceHours | 服务时段 | Service Hours | string | 是 | 服务时段展示文案，如「24/7 Support」，支持 i18n |
+| contactPageUrl | 帮助页地址 | Contact Page URL | string | 是 | Contact Us 页面路径，如 `/contact` |
+| stickyEnabled | 首页浮标开关 | Sticky FAB Enabled | boolean | 是 | 是否启用首页 Sticky 客服浮标，默认 `true` |
+| panelTitle | 面板标题 | Panel Title | string | 否 | 客服面板标题，默认「Official Support」，支持 i18n |
+| fabPosition | 浮标位置 | FAB Position | string | 否 | 首页浮标位置，默认 `bottom-right` |
+| ariaLabel | 无障碍标签 | Aria Label | string | 否 | 客服入口无障碍文案，如「联系官方客服」 |
 
 #### 交互说明
 
@@ -473,15 +515,45 @@ kickbazar.com
 5. **空态**：推荐流为空时展示「去分类逛逛」CTA。  
 6. **Sticky 客服**：仅首页展示；交互见 **BR807–BR808**；与 Header 客服（BR806）唤起同一面板。
 
-##### 字段定义（首页区块配置）
+##### 字段定义
 
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| bannerId | string | 是 | Banner 唯一 ID |
-| imageUrl | string | 是 | 轮播图 URL |
-| linkType | enum | 是 | `topic` / `category` / `url` |
-| linkTarget | string | 是 | 专题 ID、分类 ID 或外链 |
-| sortOrder | number | 是 | 展示排序 |
+**Banner 配置**
+
+| 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
+|--------|---------|---------|------|------|---------|
+| bannerId | Banner ID | Banner ID | string | 是 | 轮播图唯一标识 |
+| imageUrl | 轮播图片 | Banner Image URL | string | 是 | 轮播图图片地址 |
+| linkType | 跳转类型 | Link Type | enum | 是 | 点击跳转类型：`topic` / `category` / `url` |
+| linkTarget | 跳转目标 | Link Target | string | 是 | 专题 ID、分类 ID 或外链 URL |
+| sortOrder | 排序 | Sort Order | number | 是 | Banner 展示顺序，升序 |
+
+**快捷入口配置**
+
+| 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
+|--------|---------|---------|------|------|---------|
+| entryId | 入口 ID | Entry ID | string | 是 | 快捷入口唯一标识 |
+| entryName | 入口名称 | Entry Name | string | 是 | 如秒杀、最新，支持 i18n |
+| entryIconUrl | 入口图标 | Entry Icon URL | string | 是 | 快捷入口图标地址 |
+| entryLinkType | 跳转类型 | Entry Link Type | enum | 是 | `topic` / `category` / `list` |
+| entryLinkTarget | 跳转目标 | Entry Link Target | string | 是 | 对应专题/分类/列表 ID |
+
+**活动专区配置**
+
+| 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
+|--------|---------|---------|------|------|---------|
+| zoneType | 专区类型 | Zone Type | enum | 是 | `brand` / `zone` / `global` / `featured` / `trending` |
+| zoneTitle | 专区标题 | Zone Title | string | 是 | 专区展示标题，支持 i18n |
+| zoneImageUrl | 专区封面 | Zone Image URL | string | 是 | 专区入口卡片图片 |
+| topicId | 专题 ID | Topic ID | string | 是 | 跳转专题页 ID |
+
+**SEO 配置**
+
+| 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
+|--------|---------|---------|------|------|---------|
+| pageTitle | 页面标题 | Page Title | string | 是 | 首页 `<title>`，支持 i18n |
+| pageDescription | 页面描述 | Page Description | string | 是 | 首页 meta description，支持 i18n |
+
+> 商品推荐流字段复用 **§4.8.3 通用商品卡字段**；Sticky 客服字段见 **§4.4**。
 
 ##### 交互说明
 
@@ -524,6 +596,16 @@ kickbazar.com
 1. 默认首访展示；关闭后同设备不再展示（清缓存可复现，频次可运营配置——见 OQ5）。  
 2. 文案与 App 服务介绍一致，支持双语。  
 3. 不得全屏阻断，区别于 App 欢迎页。
+
+##### 字段定义
+
+| 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
+|--------|---------|---------|------|------|---------|
+| introTitle | 介绍标题 | Intro Title | string | 是 | 服务介绍主标题，支持 i18n |
+| introItems[] | 卖点列表 | Intro Items | array | 是 | 卖点项数组，含图标与文案（Easy Return 等） |
+| ctaText | 按钮文案 | CTA Text | string | 是 | 「开始购物」按钮文案，支持 i18n |
+| dismissKey | 关闭存储键 | Dismiss Storage Key | string | 是 | localStorage 键名，记录是否已关闭 |
+| showOnFirstVisit | 首访展示 | Show on First Visit | boolean | 是 | 是否仅首访展示，默认 `true` |
 
 ##### 交互说明
 
@@ -583,21 +665,38 @@ kickbazar.com
 
 **URL 参数**
 
-| 参数 | 类型 | 必填 | 说明 | 示例 |
-|------|------|------|------|------|
-| q | string | 是 | 搜索关键词 | `dress` |
-| sort | enum | 否 | 排序方式 | `price_asc` |
-| page | number | 否 | 页码 | `1` |
+| 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
+|--------|---------|---------|------|------|---------|
+| q | 搜索关键词 | Search Keyword | string | 是 | URL 查询参数，搜索词，示例：`dress` |
+| sort | 排序方式 | Sort Type | enum | 否 | 排序枚举值，默认 `relevance` |
+| page | 页码 | Page Number | number | 否 | 分页页码，从 1 开始 |
 
-**sort 枚举**
+**sort 排序枚举**
 
-| 值 | 说明 |
-|----|------|
-| relevance | 综合（默认） |
-| sales | 销量 |
-| price_asc | 价格升序 |
-| price_desc | 价格降序 |
-| newest | 上新 |
+| 枚举值 | 中文名称 | 英文名称 | 字段说明 |
+|--------|---------|---------|---------|
+| relevance | 综合排序 | Relevance | 默认排序，综合匹配度 |
+| sales | 销量排序 | Sales | 按销量降序 |
+| price_asc | 价格升序 | Price Ascending | 价格从低到高 |
+| price_desc | 价格降序 | Price Descending | 价格从高到低 |
+| newest | 上新排序 | Newest | 按上架时间降序 |
+
+**搜索历史项**
+
+| 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
+|--------|---------|---------|------|------|---------|
+| keyword | 历史关键词 | History Keyword | string | 是 | 用户曾搜索的关键词 |
+| searchedAt | 搜索时间 | Searched At | datetime | 是 | 最近一次搜索时间，用于排序 |
+| source | 来源 | Source | enum | 是 | `local` 本地存储 / `cloud` 账号同步 |
+
+**搜索发现/热搜项**
+
+| 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
+|--------|---------|---------|------|------|---------|
+| suggestKeyword | 推荐词 | Suggest Keyword | string | 是 | 热搜或推荐搜索词展示文案 |
+| rank | 排序权重 | Rank | number | 否 | 热搜展示顺序 |
+
+> 搜索结果商品列表字段复用 **§4.8.3 通用商品卡字段**。
 
 #### 交互说明
 
@@ -661,13 +760,26 @@ kickbazar.com
 
 #### 字段定义
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| categoryId | string | 分类唯一 ID |
-| parentId | string | 父分类 ID，一级为空 |
-| name | string | 分类名称（i18n） |
-| iconUrl | string | 分类图标 |
-| bannerUrl | string | 可选运营 Banner |
+**分类节点**
+
+| 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
+|--------|---------|---------|------|------|---------|
+| categoryId | 分类 ID | Category ID | string | 是 | 分类唯一标识，用于路由 `/category/{id}` |
+| parentId | 父分类 ID | Parent Category ID | string | 否 | 父级分类 ID；一级分类为空 |
+| name | 分类名称 | Category Name | string | 是 | 分类展示名称，支持 i18n |
+| iconUrl | 分类图标 | Category Icon URL | string | 否 | 分类入口图标图片地址 |
+| bannerUrl | 分类 Banner | Category Banner URL | string | 否 | 分类页顶部运营头图，无则不展示 |
+| level | 分类层级 | Category Level | number | 是 | 分类层级：1 一级 / 2 二级 |
+| sortOrder | 排序 | Sort Order | number | 是 | 同级分类展示顺序 |
+
+**面包屑项**
+
+| 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
+|--------|---------|---------|------|------|---------|
+| breadcrumbLabel | 面包屑文案 | Breadcrumb Label | string | 是 | 面包屑展示名称 |
+| breadcrumbUrl | 面包屑链接 | Breadcrumb URL | string | 是 | 点击跳转路径 |
+
+> 分类商品列表字段复用 **§4.8.3 通用商品卡字段**。
 
 #### 交互说明
 
@@ -685,7 +797,7 @@ kickbazar.com
 
 ### 4.8 模块 D：商品（#16–#18）
 
-#### 4.7.1 商品详情页（#16）
+#### 4.8.1 商品详情页（#16）
 
 ##### 基本信息
 
@@ -725,18 +837,26 @@ kickbazar.com
 5. **评价 Tab**：无评价时展示评价空态，不隐藏 Tab。  
 6. **SEO**：title 含商品名；description 含价格与品类词。
 
-##### 字段定义（PDP 展示）
+##### 字段定义
 
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| productId | string | 是 | 商品 ID |
-| title | string | 是 | 商品标题（i18n） |
-| salePrice | number | 是 | 售价（BDT） |
-| originalPrice | number | 否 | 原价 |
-| discountRate | number | 否 | 折扣百分比 |
-| skus[] | array | 是 | SKU 列表，见规格选择器 |
-| images[] | string | 是 | 主图 URL 列表 |
-| stock | number | 是 | 当前 SKU 库存 |
+| 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
+|--------|---------|---------|------|------|---------|
+| productId | 商品 ID | Product ID | string | 是 | 商品唯一标识，路由 `/product/{id}` |
+| title | 商品标题 | Product Title | string | 是 | 商品名称，支持 i18n，用于 SEO 与展示 |
+| salePrice | 售价 | Sale Price | number | 是 | 当前售价，单位 BDT，千分位展示 |
+| originalPrice | 原价 | Original Price | number | 否 | 划线原价，无折扣时可不返回 |
+| discountRate | 折扣比例 | Discount Rate | number | 否 | 折扣百分比，如 20 表示 20% OFF |
+| images[] | 商品图片 | Product Images | array | 是 | 主图 URL 列表，支持多图轮播 |
+| videoUrl | 商品视频 | Product Video URL | string | 否 | 商品展示视频地址 |
+| skus[] | SKU 列表 | SKU List | array | 是 | 可选规格列表，结构见 §4.8.2 |
+| selectedSkuId | 已选 SKU | Selected SKU ID | string | 否 | 当前选中 SKU，未选时为空 |
+| stock | 可售库存 | Stock | number | 是 | 当前选中 SKU 的可售库存数量 |
+| deliveryInfo | 配送说明 | Delivery Info | string | 是 | 配送时效与运费说明文案，支持 i18n |
+| descriptionHtml | 详情图文 | Description HTML | string | 是 | 商品详情富文本内容 |
+| reviewCount | 评价数量 | Review Count | number | 否 | 商品评价总数 |
+| rating | 商品评分 | Rating | number | 否 | 商品平均评分，如 4.5 |
+| storeId | 店铺 ID | Store ID | string | 否 | 所属店铺 ID，用于跳转店铺页 |
+| status | 商品状态 | Product Status | enum | 是 | `on_sale` 在售 / `off_sale` 下架 / `not_found` 不存在 |
 
 ##### 交互说明
 
@@ -754,7 +874,7 @@ kickbazar.com
 | BR410 | 分享 | 点击 | 复制 URL | — | Toast BR801 |
 | BR411 | Mobile 底栏 | Mobile | Sticky 按钮 | — | 不挡内容 |
 
-#### 4.7.2 规格选择器（#17）
+#### 4.8.2 规格选择器（#17）
 
 ##### 功能描述
 
@@ -777,15 +897,18 @@ kickbazar.com
 3. 加购成功：关闭弹层 + Toast + 更新角标。  
 4. 购买：关闭弹层 → 已登录进结算；未登录走 BR619。
 
-##### 字段定义（SKU）
+##### 字段定义
 
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| skuId | string | 是 | SKU 唯一 ID |
-| attributes | object | 是 | 如 `{color:"Red", size:"M"}` |
-| salePrice | number | 是 | SKU 售价 |
-| stock | number | 是 | 可售库存 |
-| available | boolean | 是 | 是否可选 |
+| 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
+|--------|---------|---------|------|------|---------|
+| skuId | SKU ID | SKU ID | string | 是 | SKU 唯一标识 |
+| attributes | 规格属性 | Attributes | object | 是 | 规格键值对，如 `{color:"Red", size:"M"}` |
+| attributeName | 属性名 | Attribute Name | string | 是 | 属性维度名称，如颜色、尺码，支持 i18n |
+| attributeValue | 属性值 | Attribute Value | string | 是 | 属性具体值，如 Red、M，支持 i18n |
+| salePrice | SKU 售价 | SKU Sale Price | number | 是 | 该 SKU 售价，单位 BDT |
+| stock | SKU 库存 | SKU Stock | number | 是 | 该 SKU 可售库存 |
+| available | 是否可选 | Available | boolean | 是 | 是否可购买；缺货时为 `false` 并置灰 |
+| quantity | 购买数量 | Quantity | number | 是 | 用户选择数量，默认 1，范围 1~stock |
 
 ##### 交互说明
 
@@ -798,21 +921,56 @@ kickbazar.com
 | BR416 | 未选全 | 点确认 | Toast；不关层 | — | 指明缺项 |
 | BR417 | 确认 | 点确认 | 加购/购买 | 加载● 错误● | 购买 BR619 |
 
-#### 4.7.3 商品推荐组件（#18）
+#### 4.8.3 商品推荐组件（#18）
 
 ##### 功能描述
 
 可嵌入多页面的复用组件，由运营配置标题与召回逻辑（算法同 App，见 OQ7）。无数据时可隐藏区块。
 
-##### 功能清单 & 业务规则 & 交互
+##### 功能清单
 
-| FL | 功能 | 规则摘要 |
-|----|------|---------|
-| FL058 | 嵌入 | 宿主：首页/PDP/购物车/搜索空态/专题 |
-| FL059 | 布局 | PC 网格；Mobile 横滑 |
-| FL060 | 跳转 | 点击进 PDP |
+| 编号 | 功能名称（中文） | 功能名称（英文） | 功能描述 |
+|------|----------------|----------------|---------|
+| FL058 | 推荐组件嵌入 | Recommendation Widget Embed | 嵌入首页/PDP/购物车等 |
+| FL059 | 推荐布局适配 | Recommendation Layout | PC 网格；Mobile 横滑 |
+| FL060 | 推荐商品跳转 | Recommendation Navigation | 点击跳转 PDP |
 
-交互：BR418（嵌入）、BR419（布局）、BR420（跳转）；商品卡同 BR120。
+##### 业务规则
+
+1. 标题可运营配置（如 You May Like），支持 i18n。  
+2. 无推荐数据时可隐藏整个区块。  
+3. 商品卡样式与交互同 BR120。
+
+##### 字段定义
+
+**组件配置**
+
+| 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
+|--------|---------|---------|------|------|---------|
+| widgetTitle | 组件标题 | Widget Title | string | 是 | 推荐区标题，如「You May Like」，支持 i18n |
+| layoutType | 布局类型 | Layout Type | enum | 是 | `grid` 网格 / `carousel` 横滑 |
+| scene | 推荐场景 | Scene | enum | 是 | 召回场景：`home` / `pdp` / `cart` / `search_empty` / `topic` |
+| productIds[] | 推荐商品 | Recommended Products | array | 是 | 推荐商品 ID 列表，按展示顺序 |
+
+**通用商品卡字段（全站列表复用）**
+
+| 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
+|--------|---------|---------|------|------|---------|
+| productId | 商品 ID | Product ID | string | 是 | 商品唯一标识 |
+| title | 商品标题 | Product Title | string | 是 | 商品卡展示标题，支持 i18n |
+| imageUrl | 商品主图 | Product Image URL | string | 是 | 商品卡主图地址 |
+| salePrice | 售价 | Sale Price | number | 是 | 商品卡售价，BDT |
+| originalPrice | 原价 | Original Price | number | 否 | 划线原价，用于折扣展示 |
+| discountRate | 折扣比例 | Discount Rate | number | 否 | 折扣角标百分比 |
+| productUrl | 商品链接 | Product URL | string | 是 | 跳转 PDP 路径，如 `/product/{id}` |
+
+##### 交互说明
+
+| 编号 | 需求名称 | 触发条件 | 交互行为 | 状态 | 验收标准 |
+|------|---------|---------|---------|------|---------|
+| BR418 | 组件嵌入 | 宿主加载 | 统一卡片样式 | 加载● 空○ 错误○ | 标题可配置 |
+| BR419 | 布局适配 | 按屏宽 | PC 网格/Mobile 横滑 | — | 风格一致 |
+| BR420 | 推荐跳转 | 点击卡片 | 跳转 PDP | — | 不改变历史栈 |
 
 ---
 
@@ -833,6 +991,31 @@ FL061–FL067（见附录 A）
 3. 店内排序同搜索排序枚举。  
 4. 无商品：Tab 级空态，不隐藏 Tab。
 
+#### 字段定义
+
+**店铺信息**
+
+| 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
+|--------|---------|---------|------|------|---------|
+| storeId | 店铺 ID | Store ID | string | 是 | 店铺唯一标识，路由 `/store/{id}` |
+| storeName | 店铺名称 | Store Name | string | 是 | 店铺展示名称，支持 i18n |
+| storeLogoUrl | 店铺 Logo | Store Logo URL | string | 是 | 店铺 Logo 图片地址 |
+| storeBannerUrl | 店铺头图 | Store Banner URL | string | 否 | 店铺页顶部 Banner 图 |
+| rating | 店铺评分 | Store Rating | number | 否 | 店铺平均评分 |
+| followerCount | 粉丝数 | Follower Count | number | 否 | 店铺粉丝数量 |
+| description | 店铺简介 | Store Description | string | 否 | 店铺介绍长文，在介绍弹框中展示 |
+| status | 店铺状态 | Store Status | enum | 是 | `active` 正常 / `not_found` 不存在 |
+
+**店铺 Tab**
+
+| 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
+|--------|---------|---------|------|------|---------|
+| tabKey | Tab 标识 | Tab Key | string | 是 | Tab 唯一 key，如 `all` / `new` |
+| tabName | Tab 名称 | Tab Name | string | 是 | Tab 展示名称，支持 i18n |
+| isDefault | 是否默认 | Is Default | boolean | 是 | 是否为默认激活 Tab |
+
+> 店铺商品列表复用 **§4.8.3 通用商品卡字段**。
+
 #### 交互说明
 
 | 编号 | 页面 | 要点 |
@@ -845,7 +1028,7 @@ FL061–FL067（见附录 A）
 
 ### 4.10 模块 F：交易（#22–#30）
 
-#### 4.9.1 购物车（#22–#25）
+#### 4.10.1 购物车（#22–#25）
 
 ##### 功能描述
 
@@ -861,19 +1044,41 @@ FL061–FL067（见附录 A）
 4. **编辑模式**：批量删除需二次确认；删光回空态（BR612）。  
 5. **游客购物车**：与登录合并策略见 OQ1。
 
-##### 字段定义（购物车行）
+##### 字段定义
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| lineId | string | 购物车行 ID |
-| productId | string | 商品 ID |
-| skuId | string | SKU ID |
-| quantity | number | 数量 |
-| unitPrice | number | 单价（BDT） |
-| subtotal | number | 小计 |
-| selected | boolean | 是否勾选结算 |
-| status | enum | `valid` / `invalid`（失效） |
-| invalidReason | string | 失效原因：下架/缺货/变价 |
+**购物车行**
+
+| 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
+|--------|---------|---------|------|------|---------|
+| lineId | 购物车行 ID | Cart Line ID | string | 是 | 购物车商品行唯一标识 |
+| productId | 商品 ID | Product ID | string | 是 | 商品唯一标识 |
+| skuId | SKU ID | SKU ID | string | 是 | 所选 SKU 标识 |
+| productTitle | 商品标题 | Product Title | string | 是 | 购物车行展示的商品名称 |
+| skuLabel | 规格文案 | SKU Label | string | 是 | 已选规格展示，如「Red / M」 |
+| imageUrl | 商品图片 | Product Image URL | string | 是 | 购物车行商品缩略图 |
+| quantity | 数量 | Quantity | number | 是 | 购买数量，≥1 |
+| unitPrice | 单价 | Unit Price | number | 是 | 当前单价，单位 BDT |
+| subtotal | 小计 | Subtotal | number | 是 | 行小计 = 单价 × 数量 |
+| selected | 是否勾选 | Selected | boolean | 是 | 是否参与结算勾选 |
+| status | 行状态 | Line Status | enum | 是 | `valid` 有效 / `invalid` 失效 |
+| invalidReason | 失效原因 | Invalid Reason | string | 否 | 失效原因：下架/缺货/变价 |
+
+**购物车汇总**
+
+| 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
+|--------|---------|---------|------|------|---------|
+| totalQuantity | 商品总件数 | Total Quantity | number | 是 | 已勾选商品总件数，用于角标 |
+| merchandiseTotal | 商品总额 | Merchandise Total | number | 是 | 已勾选商品金额合计 |
+| discountTotal | 优惠总额 | Discount Total | number | 是 | 已优惠金额合计 |
+| payableTotal | 应付总额 | Payable Total | number | 是 | 去结算展示金额 |
+
+**折扣明细项**
+
+| 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
+|--------|---------|---------|------|------|---------|
+| promotionName | 优惠名称 | Promotion Name | string | 是 | 满减/优惠券/活动名称 |
+| promotionType | 优惠类型 | Promotion Type | enum | 是 | `coupon` / `full_reduction` / `activity` |
+| discountAmount | 抵扣金额 | Discount Amount | number | 是 | 该项优惠抵扣金额，BDT |
 
 ##### 交互说明（摘要）
 
@@ -884,7 +1089,7 @@ FL061–FL067（见附录 A）
 | #24 编辑 | BR614–BR616 | — |
 | #25 折扣 | BR617–BR618 | 金额同结算 |
 
-#### 4.9.2 结算与地址（#26–#30）
+#### 4.10.2 结算与地址（#26–#30）
 
 ##### 功能描述
 
@@ -901,28 +1106,65 @@ FL061–FL067（见附录 A）
 5. **支付**：方式与 App 一致；Web 跳转第三方支付后回结果页（#27）。  
 6. **结果页**：成功/支付中/失败三态；支付中轮询。
 
-##### 字段定义（收货地址）
+##### 字段定义
 
-| 字段 | 类型 | 必填 | 校验规则 | 说明 |
-|------|------|------|---------|------|
-| recipientName | string | 是 | 2–50 字符 | 收货人 |
-| phone | string | 是 | `+880` 开头，11 位 | 手机号 |
-| divisionId | string | 是 | 枚举 | 一级行政区 |
-| districtId | string | 是 | 枚举 | 二级 |
-| upazilaId | string | 是 | 枚举 | 三级 |
-| addressLine | string | 是 | 5–200 字符 | 详细地址 |
-| postalCode | string | 否 | — | 邮编 |
-| isDefault | boolean | 否 | — | 是否默认 |
+**收货地址**
 
-##### 字段定义（结算提交）
+| 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
+|--------|---------|---------|------|------|---------|
+| addressId | 地址 ID | Address ID | string | 是 | 收货地址唯一标识 |
+| recipientName | 收货人姓名 | Recipient Name | string | 是 | 收货人姓名，2–50 字符 |
+| phone | 手机号 | Phone Number | string | 是 | 孟加拉手机号，`+880` 开头共 11 位 |
+| divisionId | 一级行政区 ID | Division ID | string | 是 | Division 枚举 ID |
+| divisionName | 一级行政区名称 | Division Name | string | 是 | Division 展示名称，支持 i18n |
+| districtId | 二级行政区 ID | District ID | string | 是 | District 枚举 ID |
+| districtName | 二级行政区名称 | District Name | string | 是 | District 展示名称，支持 i18n |
+| upazilaId | 三级行政区 ID | Upazila ID | string | 是 | Upazila/Thana 枚举 ID |
+| upazilaName | 三级行政区名称 | Upazila Name | string | 是 | Upazila 展示名称，支持 i18n |
+| addressLine | 详细地址 | Address Line | string | 是 | 街道门牌等详细地址，5–200 字符 |
+| postalCode | 邮编 | Postal Code | string | 否 | 邮政编码 |
+| isDefault | 是否默认地址 | Is Default | boolean | 否 | 是否为默认收货地址 |
 
-| 字段 | 类型 | 必填 | 说明 |
-|------|------|------|------|
-| addressId | string | 是 | 收货地址 ID |
-| deliveryMethodId | string | 是 | 配送方式 |
-| paymentMethodId | string | 是 | 支付方式 |
-| cartLineIds[] | string | 是 | 勾选购物车行 |
-| acceptTerms | boolean | 是 | 须为 true |
+**配送方式**
+
+| 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
+|--------|---------|---------|------|------|---------|
+| deliveryMethodId | 配送方式 ID | Delivery Method ID | string | 是 | 配送服务唯一标识 |
+| deliveryMethodName | 配送方式名称 | Delivery Method Name | string | 是 | 如标准配送，支持 i18n |
+| shippingFee | 运费 | Shipping Fee | number | 是 | 运费金额，单位 BDT |
+| estimatedDays | 预计送达天数 | Estimated Days | string | 否 | 预计送达时效文案 |
+
+**支付方式**
+
+| 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
+|--------|---------|---------|------|------|---------|
+| paymentMethodId | 支付方式 ID | Payment Method ID | string | 是 | 支付方式唯一标识 |
+| paymentMethodName | 支付方式名称 | Payment Method Name | string | 是 | 如 bKash、Nagad，支持 i18n |
+| paymentIconUrl | 支付图标 | Payment Icon URL | string | 否 | 支付方式图标地址 |
+
+**结算提交**
+
+| 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
+|--------|---------|---------|------|------|---------|
+| addressId | 收货地址 ID | Address ID | string | 是 | 所选收货地址 ID |
+| deliveryMethodId | 配送方式 ID | Delivery Method ID | string | 是 | 所选配送方式 ID |
+| paymentMethodId | 支付方式 ID | Payment Method ID | string | 是 | 所选支付方式 ID |
+| cartLineIds[] | 购物车行列表 | Cart Line IDs | array | 是 | 待结算的购物车行 ID 数组 |
+| acceptTerms | 同意条款 | Accept Terms | boolean | 是 | 是否勾选服务条款，须为 `true` |
+| merchandiseAmount | 商品金额 | Merchandise Amount | number | 是 | 商品总额，BDT |
+| shippingAmount | 运费金额 | Shipping Amount | number | 是 | 运费，BDT |
+| discountAmount | 优惠金额 | Discount Amount | number | 是 | 优惠抵扣总额，BDT |
+| payableAmount | 实付金额 | Payable Amount | number | 是 | 最终应付金额，BDT |
+
+**订单结果页**
+
+| 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
+|--------|---------|---------|------|------|---------|
+| orderId | 订单号 | Order ID | string | 是 | 提交成功后生成的订单号 |
+| paymentStatus | 支付状态 | Payment Status | enum | 是 | `success` / `pending` / `failed` |
+| paidAmount | 实付金额 | Paid Amount | number | 是 | 实际支付金额，BDT |
+| estimatedDelivery | 预计送达 | Estimated Delivery | string | 否 | 预计送达时间文案 |
+| failureReason | 失败原因 | Failure Reason | string | 否 | 支付失败时的原因说明 |
 
 ##### 交互说明
 
@@ -950,16 +1192,50 @@ FL061–FL067（见附录 A）
 4. **物流**：「暂无节点」为空态（BR137），与「查询失败」（BR802）区分。  
 5. **发票**：暂未开票为空态；已开票可下载 PDF。
 
-#### 字段定义（订单卡片）
+#### 字段定义
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| orderId | string | 订单号 |
-| status | enum | `pending_payment` / `paid` / `shipped` / `delivered` / `completed` / `cancelled` |
-| totalAmount | number | 订单实付（BDT） |
-| createdAt | datetime | 下单时间 |
-| items[] | array | 商品缩略信息 |
-| paymentDeadline | datetime | 待付款截止时间 |
+**订单列表卡片**
+
+| 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
+|--------|---------|---------|------|------|---------|
+| orderId | 订单号 | Order ID | string | 是 | 订单唯一编号 |
+| status | 订单状态 | Order Status | enum | 是 | `pending_payment` 待付款 / `paid` 待发货 / `shipped` 待收货 / `completed` 已完成 / `cancelled` 已取消 |
+| statusLabel | 状态文案 | Status Label | string | 是 | 订单状态展示文案，支持 i18n |
+| totalAmount | 订单实付 | Total Amount | number | 是 | 订单实付金额，BDT |
+| createdAt | 下单时间 | Created At | datetime | 是 | 订单创建时间 |
+| paymentDeadline | 支付截止时间 | Payment Deadline | datetime | 否 | 待付款订单的支付倒计时截止时间 |
+| itemCount | 商品件数 | Item Count | number | 是 | 订单内商品总件数 |
+| coverImageUrl | 商品缩略图 | Cover Image URL | string | 是 | 订单卡片展示的首个商品图 |
+
+**订单详情**
+
+| 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
+|--------|---------|---------|------|------|---------|
+| orderItems[] | 订单商品列表 | Order Items | array | 是 | 订单商品明细，含标题、SKU、数量、单价 |
+| shippingAddress | 收货地址 | Shipping Address | object | 是 | 下单时收货地址快照 |
+| priceBreakdown | 金额明细 | Price Breakdown | object | 是 | 商品额、运费、优惠、实付明细 |
+| availableActions[] | 可用操作 | Available Actions | array | 是 | 当前状态可执行操作，如去支付、查看物流 |
+
+**物流信息**
+
+| 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
+|--------|---------|---------|------|------|---------|
+| carrierName | 物流公司 | Carrier Name | string | 是 | 物流公司名称 |
+| trackingNumber | 运单号 | Tracking Number | string | 是 | 物流运单编号，支持复制 |
+| trackingNodes[] | 物流节点 | Tracking Nodes | array | 是 | 物流轨迹节点列表，含时间与描述 |
+| nodeTime | 节点时间 | Node Time | datetime | 是 | 物流节点发生时间 |
+| nodeDescription | 节点描述 | Node Description | string | 是 | 物流节点状态描述，支持 i18n |
+
+**发票信息**
+
+| 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
+|--------|---------|---------|------|------|---------|
+| invoiceId | 发票 ID | Invoice ID | string | 否 | 发票唯一标识 |
+| invoiceType | 发票类型 | Invoice Type | string | 否 | 发票类型说明 |
+| invoiceTitle | 发票抬头 | Invoice Title | string | 否 | 发票抬头名称 |
+| invoiceAmount | 发票金额 | Invoice Amount | number | 否 | 开票金额，BDT |
+| invoiceStatus | 开票状态 | Invoice Status | enum | 否 | `pending` 未开票 / `issued` 已开票 |
+| invoicePdfUrl | 发票 PDF | Invoice PDF URL | string | 否 | 电子发票 PDF 下载地址 |
 
 #### 交互说明
 
@@ -985,15 +1261,19 @@ FL061–FL067（见附录 A）
 3. 专题下线或 ID 无效：同 BR409。  
 4. 分享：复制当前专题 URL。
 
-#### 字段定义（专题）
+#### 字段定义
 
-| 字段 | 类型 | 说明 |
-|------|------|------|
-| topicId | string | 专题 ID |
-| topicType | enum | `brand` / `country` / `featured` / `trending` |
-| title | string | 专题标题（i18n） |
-| bannerUrl | string | 头图 |
-| storyHtml | string | 品牌/国家故事（可选） |
+| 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
+|--------|---------|---------|------|------|---------|
+| topicId | 专题 ID | Topic ID | string | 是 | 专题唯一标识，用于路由 |
+| topicType | 专题类型 | Topic Type | enum | 是 | `brand` 品牌馆 / `country` 国家馆 / `featured` 精选 / `trending` 潮流 |
+| title | 专题标题 | Topic Title | string | 是 | 专题页标题，支持 i18n |
+| bannerUrl | 专题头图 | Topic Banner URL | string | 是 | 专题页顶部 Banner 图片 |
+| storyHtml | 专题故事 | Topic Story HTML | string | 否 | 品牌馆/国家馆故事富文本，无则不展示 |
+| shareUrl | 分享链接 | Share URL | string | 是 | 专题页完整 URL，用于分享复制 |
+| status | 专题状态 | Topic Status | enum | 是 | `active` 上线 / `offline` 下线 |
+
+> 专题商品列表复用 **§4.8.3 通用商品卡字段**。
 
 #### 交互说明
 
@@ -1018,6 +1298,21 @@ FL125–FL131（见附录 A）
 3. **骨架屏**：形状与真实布局一致。  
 4. **401**：Toast + 跳转登录（BR619）+ redirect。  
 5. **空态文案**：按 BR137 场景表配置。
+
+#### 字段定义
+
+**全局反馈状态**
+
+| 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
+|--------|---------|---------|------|------|---------|
+| toastMessage | 提示文案 | Toast Message | string | 是 | Toast 展示文案，支持 i18n |
+| toastType | 提示类型 | Toast Type | enum | 是 | `success` / `error` / `info` |
+| errorMessage | 错误文案 | Error Message | string | 是 | 网络/接口错误展示文案 |
+| retryVisible | 重试按钮 | Retry Visible | boolean | 是 | 是否展示重试按钮 |
+| emptyTitle | 空态标题 | Empty Title | string | 是 | 列表空态主标题 |
+| emptyDescription | 空态描述 | Empty Description | string | 否 | 空态补充说明 |
+| emptyCtaText | 空态按钮 | Empty CTA Text | string | 否 | 空态 CTA 按钮文案 |
+| emptyCtaUrl | 空态链接 | Empty CTA URL | string | 否 | 空态 CTA 跳转地址 |
 
 #### BR137 空态场景文案
 
@@ -1279,4 +1574,4 @@ FL125–FL131（见附录 A）
 
 ---
 
-*文档结束 — KickBazar ToC Web PRD v1.4*
+*文档结束 — KickBazar ToC Web PRD v1.5*
