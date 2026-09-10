@@ -10,7 +10,7 @@
 | **文档编号** | PRD-KB-WEB-TOC-001 |
 | **产品名称** | KickBazar 消费者端网页商城 |
 | **域名** | kickbazar.com |
-| **文档版本** | v1.5 |
+| **文档版本** | v1.6 |
 | **文档状态** | 评审中 |
 | **产品负责人** | — |
 | **撰写人** | 产品经理 |
@@ -29,6 +29,7 @@
 | v1.3 | 2026-09-10 | 产品经理 | 第四章重构：功能描述、业务规则、字段定义、交互说明分层书写 |
 | v1.4 | 2026-09-10 | 产品经理 | 新增官方客服模块：Header 固定入口 + 首页 Sticky 浮标 + 客服面板 |
 | v1.5 | 2026-09-10 | 产品经理 | 第四章全模块补充字段定义（中英名称 + 字段说明） |
+| v1.6 | 2026-09-10 | 产品经理 | 客服范围收窄：仅保留 Header / Footer / 首页 Sticky 入口；客服能力由他人 PRD 承接 |
 
 ### 1.2 术语说明
 
@@ -44,12 +45,12 @@
 
 ### 1.3 本文档范围
 
-**包含（#3–#39，共 37 项可交付 + 2 项本期不做）**
+**包含（#3–#38，共 36 项可交付 + 2 项本期不做）**
 
 | 模块 | 页面/组件 |
 |------|----------|
-| 全局 | 顶部导航、信任背书区、底部信息区、**官方客服（Header 入口 + 客服面板）** |
-| 首页 | 核心展示区、服务介绍、**Sticky 客服浮标** |
+| 全局 | 顶部导航（含**客服入口**）、信任背书区、底部信息区（含**客服入口**） |
+| 首页 | 核心展示区、服务介绍、**Sticky 客服入口** |
 | 搜索 | 搜索弹窗、结果列表、排序（Featured/过滤本期不做） |
 | 分类 | 一级/二级分类、分类商品列表 |
 | 商品 | 商品详情、规格选择器、推荐组件 |
@@ -63,6 +64,7 @@
 - Cookie 同意横幅
 - 登录页 / 注册页
 - 个人中心入口页及其子页面（个人信息、设置、语言等）
+- **官方客服能力页/面板（#39）**：本文档仅在 Header、Footer、首页 Sticky 定义入口与跳转；客服内容、渠道、交互由他人 PRD 承接
 
 ---
 
@@ -149,9 +151,8 @@ KickBazar Web 是 App 商城的浏览器版镜像，提供高密度商品货架�
 
 ```
 kickbazar.com
-├── 全局：Header（含官方客服入口）/ 信任背书条 / Footer
-├── 官方客服面板（Modal，由 Header / 首页浮标唤起）
-├── /  首页（核心展示 + 服务介绍 + Sticky 客服浮标）
+├── 全局：Header（含客服入口）/ 信任背书条 / Footer（含客服入口）
+├── /  首页（核心展示 + 服务介绍 + Sticky 客服入口）
 ├── /search  搜索弹窗 + /search?q= 结果页
 ├── /categories → /category/{id}  分类与商品列表
 ├── /product/{id}  商品详情 + 规格选择器
@@ -170,7 +171,7 @@ kickbazar.com
 | 购物车「去结算」 | 先校验登录；未登录按上条跳转 |
 | 规格选择器「立即购买」 | 未登录跳转登录，回跳后保留已选 SKU |
 | Header 账户入口 | 跳转他人负责的个人中心/登录模块 |
-| Header / 首页浮标 → 客服 | 唤起官方客服面板（#39）；不提供店铺客服入口 |
+| Header / Footer / 首页 Sticky → 客服 | 跳转至官方客服承接地址（`supportEntryUrl`，由他人 PRD 定义目标页/能力）；本文档不设计客服内容 |
 | 会话过期 | 接口 401 时 Toast 提示并跳转登录（回跳当前页） |
 
 ---
@@ -202,7 +203,7 @@ kickbazar.com
 | BR120 | 商品卡展示与跳转 PDP | 所有商品网格/列表 |
 | BR137 | 列表空态 | 各业务列表（文案按场景配置） |
 | BR138 | Tab 切换列表 | 店铺商品 Tab、订单 Tab |
-| BR201–BR202 | Modal 开/关 | 搜索、规格、店铺介绍、地址列表、官方客服面板 |
+| BR201–BR202 | Modal 开/关 | 搜索、规格、店铺介绍、地址列表 |
 | BR208 | 商品列表网格 | 搜索、分类、店铺、专题、首页 |
 | BR209 | 分页/无限滚动 | 搜索、首页、订单列表 |
 | BR211–BR213 | 排序控件 | 搜索、分类、店铺 |
@@ -223,16 +224,16 @@ kickbazar.com
 | 路由 | 全站全局组件，无独立路由 |
 | 类型 | 全局布局 |
 | 优先级 | P0 |
-| 关联模块 | #8 搜索弹窗、#22 购物车预览、#39 官方客服、他人负责的个人中心/登录 |
+| 关联模块 | #8 搜索弹窗、#22 购物车预览、他人负责的官方客服（#39）、个人中心/登录 |
 
 #### 功能描述
 
 顶部导航区是全站一级入口容器，承担品牌识别、信息检索、品类浏览与交易入口职责。页面结构自上而下分为两层：
 
 1. **保障提示条**：展示 Easy Return、24/7 Support、Get the Kickbazar APP，用于建立信任与引流 App。  
-2. **主导航栏**：Logo、全局搜索框、分类导航、**官方客服入口**、购物车（含角标）、账户入口。
+2. **主导航栏**：Logo、全局搜索框、分类导航、**客服入口**、购物车（含角标）、账户入口。
 
-官方客服入口为固定图标（建议耳机/对话气泡），全站可见；点击唤起 #39 官方客服面板。不提供店铺/商家客服入口。
+客服入口为固定图标（建议耳机/对话气泡），全站可见；点击跳转至官方客服承接地址（`supportEntryUrl`，由他人 PRD 定义）。本文档仅定义入口位置与跳转，不设计客服面板/页面内容。
 
 导航区采用**滚动感知**策略：用户向下滚动时收起保障条或压缩顶栏高度以让出内容区；向上滚动时恢复。除全屏 Modal 外，导航区在所有页面保持可见，确保用户随时可搜索、查看购物车或返回首页。
 
@@ -248,8 +249,7 @@ kickbazar.com
 | FL006 | 购物车角标 | Cart Badge | 实时展示购物车件数 |
 | FL007 | 账户入口 | Account Entry | 跳转个人中心/登录（他人 PRD） |
 | FL008 | 导航高亮 | Active Nav State | 当前模块在导航中高亮 |
-
-> Header 官方客服入口见 **§4.4（FL132）**。
+| FL132 | Header 客服入口 | Header Support Entry | 顶栏固定客服图标，跳转官方客服承接地址 |
 
 #### 业务规则
 
@@ -258,7 +258,7 @@ kickbazar.com
 3. **账户入口**：点击跳转他人负责模块；本文档不定义登录前后 UI，仅保证入口存在。  
 4. **分类数据**：与 App 一级分类树保持一致；数据未返回前展示骨架屏（同 BR803）。  
 5. **滚动阈值**：建议 80px，具体以实现为准，需保证向上滚动可恢复。  
-6. **客服入口**：Header 含官方客服图标（FL132），与购物车、账户并列；点击行为同 **BR806**，详见 §4.4。
+6. **客服入口**：Header 含客服图标（FL132），与购物车、账户并列；点击跳转 `supportEntryUrl`，行为同 **BR806**。
 
 #### 字段定义
 
@@ -273,6 +273,7 @@ kickbazar.com
 | cartItemCount | 购物车件数 | Cart Item Count | number | 是 | 购物车 SKU 总件数，用于角标展示；0 时可隐藏 |
 | activeNavKey | 当前导航标识 | Active Nav Key | string | 否 | 标识当前高亮模块，如 `home` / `cart` |
 | supportEntryVisible | 客服入口可见 | Support Entry Visible | boolean | 是 | 是否展示 Header 客服图标，默认 `true` |
+| supportEntryUrl | 客服承接地址 | Support Entry URL | string | 是 | 官方客服跳转目标，由他人 PRD/运营配置；Header/Footer/Sticky 三入口共用 |
 
 #### 交互说明
 
@@ -286,7 +287,7 @@ kickbazar.com
 | BR106 | 购物车角标 | 加购/删购 | 数字气泡更新 | 加载● 错误○ | 失败降级 |
 | BR107 | 账户入口 | 点击账户 | 跳转他人模块 | 未登录△ | 入口可用 |
 | BR108 | 导航高亮 | 路由匹配 | 高亮当前模块 | — | 切换同步 |
-| BR806 | Header 客服入口 | 点击客服图标 | 打开 #39 官方客服面板 | — | 全站可用；仅官方客服 |
+| BR806 | Header 客服入口 | 点击客服图标 | 跳转 `supportEntryUrl` | — | 全站可用；目标页由他人 PRD 定义 |
 
 ---
 
@@ -355,7 +356,7 @@ kickbazar.com
 | 编号 | 功能名称（中文） | 功能名称（英文） | 功能描述 |
 |------|----------------|----------------|---------|
 | FL011 | 法律合规链接 | Legal Links | Privacy、Terms、Returns、Copyright |
-| FL012 | 客户服务链接 | Customer Service Links | Contact Us、About Us |
+| FL012 | 客户服务链接 | Customer Service Links | Contact Us（兼作**客服入口**）、About Us |
 | FL013 | App 下载引导 | App Download CTA | 链至应用商店 |
 | FL014 | 社交媒体 | Social Media Links | Instagram、Facebook |
 
@@ -363,7 +364,8 @@ kickbazar.com
 
 1. 所有外链 `target="_blank"`，并带 `rel="noopener"`。  
 2. 链接目标与 App 内政策页内容一致。  
-3. 移动端点击 App 下载时，按系统跳转 Google Play / App Store。
+3. 移动端点击 App 下载时，按系统跳转 Google Play / App Store。  
+4. **Contact Us** 为 Footer 侧官方客服入口，跳转 `supportEntryUrl`（与 Header FL132、首页 Sticky FL133 目标一致）；客服页面内容由他人 PRD 承接。
 
 #### 字段定义
 
@@ -373,7 +375,7 @@ kickbazar.com
 | termsUrl | 服务条款链接 | Terms of Service URL | string | 是 | Terms of Service 页面地址 |
 | returnsPolicyUrl | 退换货政策链接 | Returns Policy URL | string | 是 | Returns & Refunds Policy 页面地址 |
 | copyrightText | 版权声明 | Copyright Text | string | 是 | 版权文案，如 © 2026 KickBazar |
-| contactUsUrl | 联系我们链接 | Contact Us URL | string | 是 | Contact Us 页面地址 |
+| contactUsUrl | 客服/联系链接 | Contact Us URL | string | 是 | Footer 客服入口地址，与 `supportEntryUrl` 一致 |
 | aboutUsUrl | 关于我们链接 | About Us URL | string | 是 | About Us 页面地址 |
 | iosAppStoreUrl | iOS 商店链接 | iOS App Store URL | string | 是 | App Store 下载地址 |
 | androidPlayStoreUrl | Android 商店链接 | Google Play URL | string | 是 | Google Play 下载地址 |
@@ -385,91 +387,15 @@ kickbazar.com
 | 编号 | 需求名称 | 触发条件 | 交互行为 | 状态 | 验收标准 |
 |------|---------|---------|---------|------|---------|
 | BR111 | 法律链接 | Footer 展示 | 新标签打开政策页 | — | 四项齐全 |
-| BR112 | 帮助链接 | 点击 | 跳转 Contact/About | — | 内容同 App |
+| BR112 | Footer 客服入口 | 点击 Contact Us | 跳转 `supportEntryUrl`；**同 BR806** 目标 | — | About Us 仍跳转 aboutUsUrl |
 | BR113 | App 下载 | 点击 | 链至商店/落地页 | — | 移动端识别系统 |
 | BR114 | 社交媒体 | 点击 | 外链官方账号 | — | 新标签打开 |
 
 ---
 
-### 4.4 模块 G3：官方客服（#39）
+### 4.4 模块 A：首页（#6–#7）
 
-#### 基本信息
-
-| 属性 | 内容 |
-|------|------|
-| 页面编号 | #39 |
-| 路由 | 无独立路由；Modal 组件 |
-| 类型 | 全局组件（Header 入口）+ 首页 Sticky 浮标 |
-| 优先级 | P0 |
-| 关联模块 | #3 Header（FL132）、#6 首页 Sticky（FL133）、#5 Footer Contact Us |
-
-#### 功能描述
-
-官方客服模块为用户提供**仅面向 KickBazar 平台**的咨询入口，不承担店铺/商家客服能力。用户可在任意页面通过 **Header 固定客服图标**发起咨询；在**首页**额外提供 **Sticky 浮标**，降低新客求助路径。
-
-点击 Header 图标或首页浮标后，打开**官方客服面板**（Modal，交互同 BR201–BR202）。面板内展示官方联系方式与服务说明，支持一键拨号（Mobile）、发送邮件、跳转 Contact Us 帮助页。本期不接入第三方在线聊天 Widget（如 Intercom），不加载非必要追踪脚本；若后续接入官方自建在线客服，需为 KickBazar 域名下服务。
-
-**触点分布**
-
-| 触点 | 范围 | 说明 |
-|------|------|------|
-| Header 客服图标 | 全站 | 固定在主导航栏，滚动感知时仍保留 |
-| 首页 Sticky 浮标 | 仅首页 `/` | 右下角悬浮按钮，滚动时常驻 |
-| 官方客服面板 | 全站 | 由上述两入口唤起，内容一致 |
-
-#### 功能清单
-
-| 编号 | 功能名称（中文） | 功能名称（英文） | 功能描述 |
-|------|----------------|----------------|---------|
-| FL132 | Header 客服入口 | Header Support Entry | 顶栏固定官方客服图标（见 §4.1） |
-| FL133 | 首页 Sticky 客服浮标 | Homepage Sticky Support FAB | 首页右下角悬浮客服按钮 |
-| FL134 | 官方客服面板 | Official Support Panel | Modal 展示官方联系方式与服务说明 |
-| FL135 | 电话咨询 | Phone Support | 展示官方客服电话，Mobile 可 `tel:` 唤起 |
-| FL136 | 邮件咨询 | Email Support | 展示官方邮箱，可 `mailto:` 唤起 |
-| FL137 | 帮助页跳转 | Help Page Link | 链至 Contact Us / 帮助中心 |
-
-#### 业务规则
-
-1. **仅官方客服**：面板内仅展示 KickBazar 平台客服信息；**不出现**店铺客服、商家 IM、第三方客服入口。  
-2. **双入口一致**：Header 图标与首页 Sticky 浮标唤起**同一**客服面板（FL134），文案与渠道配置一致。  
-3. **首页浮标范围**：Sticky 浮标**仅在首页**（`/`）展示；离开首页后隐藏，用户仍可通过 Header 入口联系客服。  
-4. **层级与遮挡**：浮标 `z-index` 低于 Modal/搜索弹窗；打开客服面板时浮标可隐藏或保持，以不遮挡面板为准。  
-5. **未登录可用**：咨询官方客服无需登录；面板内不强制要求登录。  
-6. **配置来源**：电话、邮箱、服务时段文案由运营/CMS 配置，与 App 官方客服信息一致。  
-7. **无障碍**：客服图标与浮标需有 `aria-label`（如「联系官方客服」）。  
-8. **合规**：不嵌入第三方追踪型客服脚本；外链仅官方域名或 Contact Us 页面。
-
-#### 字段定义
-
-| 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
-|--------|---------|---------|------|------|---------|
-| supportPhone | 客服电话 | Support Phone | string | 是 | 官方客服电话，格式 `+880XXXXXXXXXX`；Mobile 支持 `tel:` 唤起 |
-| supportEmail | 客服邮箱 | Support Email | string | 是 | 官方客服邮箱；支持 `mailto:` 唤起 |
-| serviceHours | 服务时段 | Service Hours | string | 是 | 服务时段展示文案，如「24/7 Support」，支持 i18n |
-| contactPageUrl | 帮助页地址 | Contact Page URL | string | 是 | Contact Us 页面路径，如 `/contact` |
-| stickyEnabled | 首页浮标开关 | Sticky FAB Enabled | boolean | 是 | 是否启用首页 Sticky 客服浮标，默认 `true` |
-| panelTitle | 面板标题 | Panel Title | string | 否 | 客服面板标题，默认「Official Support」，支持 i18n |
-| fabPosition | 浮标位置 | FAB Position | string | 否 | 首页浮标位置，默认 `bottom-right` |
-| ariaLabel | 无障碍标签 | Aria Label | string | 否 | 客服入口无障碍文案，如「联系官方客服」 |
-
-#### 交互说明
-
-| 编号 | 需求名称 | 触发条件 | 交互行为 | 状态 | 验收标准 |
-|------|---------|---------|---------|------|---------|
-| BR806 | Header 客服入口 | 点击 Header 图标 | 打开 FL134 面板；**同 BR201** 遮罩规则 | — | 全站任意页可用 |
-| BR807 | 首页 Sticky 浮标 | 进入首页 `/` | 右下角展示客服 FAB；滚动时常驻 | — | 非首页不展示 |
-| BR808 | Sticky 唤起面板 | 点击首页浮标 | 打开 FL134；**同 BR806** | — | 与 Header 面板一致 |
-| BR809 | 官方客服面板 | 面板打开 | Modal；展示标题、服务时段、电话、邮箱、帮助链接 | 加载● 错误● | 无店铺客服入口 |
-| BR810 | 电话咨询 | 点击电话 | Mobile：`tel:` 唤起；Desktop：展示号码可复制 | — | 号码同 App |
-| BR811 | 邮件咨询 | 点击邮箱 | `mailto:` 唤起邮件客户端 | — | 邮箱同 App |
-| BR812 | 帮助页跳转 | 点击「Contact Us」 | 新标签打开 `contactPageUrl` | — | 不中断当前页可返回 |
-| BR813 | 关闭面板 | ESC/遮罩/关闭钮 | **同 BR202** | — | 关闭后浮标恢复 |
-
----
-
-### 4.5 模块 A：首页（#6–#7）
-
-#### 4.5.1 首页 — 核心展示区（#6）
+#### 4.4.1 首页 — 核心展示区（#6）
 
 ##### 基本信息
 
@@ -489,7 +415,7 @@ kickbazar.com
 3. **活动专区**：Brand、Zone、Global、Featured、Trending 专题入口。  
 4. **商品推荐流**：无限滚动商品网格，承载主货架。
 
-除上述区块外，首页叠加 **Sticky 官方客服浮标**（#39 / FL133）：固定于视口右下角，方便新客咨询；点击唤起与 Header 相同的官方客服面板。
+除上述区块外，首页叠加 **Sticky 客服入口**（FL133）：固定于视口右下角；点击跳转 `supportEntryUrl`，与 Header（FL132）、Footer Contact Us（FL012）目标一致。客服页面内容由他人 PRD 承接。
 
 各区块**独立请求、独立渲染**：单块失败不阻断其他块，符合孟加拉弱网场景。首页需配置 SEO Meta，支持搜索引擎收录。
 
@@ -504,7 +430,7 @@ kickbazar.com
 | FL019 | 商品推荐流 | Product Feed | 推荐商品网格 |
 | FL020 | 商品卡 | Product Card | 全站统一商品卡 |
 | FL021 | 首页 SEO | Homepage SEO Meta | title/description |
-| FL133 | 首页 Sticky 客服浮标 | Homepage Sticky Support FAB | 右下角悬浮官方客服入口（详见 §4.4） |
+| FL133 | 首页 Sticky 客服入口 | Homepage Sticky Support FAB | 首页右下角悬浮客服按钮，跳转 `supportEntryUrl` |
 
 ##### 业务规则
 
@@ -513,7 +439,7 @@ kickbazar.com
 3. **商品卡**：价格 BDT 千分位；折扣标与 App 一致；点击跳转 `/product/{id}`。  
 4. **Banner**：无数据时隐藏或展示默认图，不留空白占位。  
 5. **空态**：推荐流为空时展示「去分类逛逛」CTA。  
-6. **Sticky 客服**：仅首页展示；交互见 **BR807–BR808**；与 Header 客服（BR806）唤起同一面板。
+6. **Sticky 客服入口**：仅在首页（`/`）展示；交互见 **BR807–BR808**；跳转目标与 Header（BR806）、Footer（BR112）一致。
 
 ##### 字段定义
 
@@ -553,7 +479,15 @@ kickbazar.com
 | pageTitle | 页面标题 | Page Title | string | 是 | 首页 `<title>`，支持 i18n |
 | pageDescription | 页面描述 | Page Description | string | 是 | 首页 meta description，支持 i18n |
 
-> 商品推荐流字段复用 **§4.8.3 通用商品卡字段**；Sticky 客服字段见 **§4.4**。
+**Sticky 客服入口**
+
+| 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
+|--------|---------|---------|------|------|---------|
+| stickyEnabled | 浮标开关 | Sticky FAB Enabled | boolean | 是 | 是否展示首页 Sticky 客服入口，默认 `true` |
+| fabPosition | 浮标位置 | FAB Position | string | 否 | 浮标位置，默认 `bottom-right` |
+| ariaLabel | 无障碍标签 | Aria Label | string | 否 | 浮标无障碍文案，如「联系客服」 |
+
+> 商品推荐流字段复用 **§4.7.3 通用商品卡字段**；`supportEntryUrl` 见 **§4.1**。
 
 ##### 交互说明
 
@@ -567,9 +501,9 @@ kickbazar.com
 | BR120 | 商品卡（基准） | 点击卡片 | 跳转 PDP；统一样式 | — | 全站一致 |
 | BR121 | SEO | 页面渲染 | 注入 meta | — | 可索引 |
 | BR807 | 首页 Sticky 浮标 | 进入 `/` | 展示右下角客服 FAB | — | 离开首页隐藏 |
-| BR808 | 浮标唤起面板 | 点击 FAB | **同 BR806** | — | 面板内容一致 |
+| BR808 | Sticky 跳转客服 | 点击 FAB | 跳转 `supportEntryUrl`；**同 BR806** | — | 三入口目标一致 |
 
-#### 4.5.2 首页 — 服务介绍（#7）
+#### 4.4.2 首页 — 服务介绍（#7）
 
 ##### 基本信息
 
@@ -617,7 +551,7 @@ kickbazar.com
 
 ---
 
-### 4.6 模块 B：搜索（#8–#12）
+### 4.5 模块 B：搜索（#8–#12）
 
 #### 基本信息
 
@@ -696,7 +630,7 @@ kickbazar.com
 | suggestKeyword | 推荐词 | Suggest Keyword | string | 是 | 热搜或推荐搜索词展示文案 |
 | rank | 排序权重 | Rank | number | 否 | 热搜展示顺序 |
 
-> 搜索结果商品列表字段复用 **§4.8.3 通用商品卡字段**。
+> 搜索结果商品列表字段复用 **§4.7.3 通用商品卡字段**。
 
 #### 交互说明
 
@@ -725,7 +659,7 @@ kickbazar.com
 
 ---
 
-### 4.7 模块 C：分类（#13–#15）
+### 4.6 模块 C：分类（#13–#15）
 
 #### 基本信息
 
@@ -779,7 +713,7 @@ kickbazar.com
 | breadcrumbLabel | 面包屑文案 | Breadcrumb Label | string | 是 | 面包屑展示名称 |
 | breadcrumbUrl | 面包屑链接 | Breadcrumb URL | string | 是 | 点击跳转路径 |
 
-> 分类商品列表字段复用 **§4.8.3 通用商品卡字段**。
+> 分类商品列表字段复用 **§4.7.3 通用商品卡字段**。
 
 #### 交互说明
 
@@ -795,9 +729,9 @@ kickbazar.com
 
 ---
 
-### 4.8 模块 D：商品（#16–#18）
+### 4.7 模块 D：商品（#16–#18）
 
-#### 4.8.1 商品详情页（#16）
+#### 4.7.1 商品详情页（#16）
 
 ##### 基本信息
 
@@ -848,7 +782,7 @@ kickbazar.com
 | discountRate | 折扣比例 | Discount Rate | number | 否 | 折扣百分比，如 20 表示 20% OFF |
 | images[] | 商品图片 | Product Images | array | 是 | 主图 URL 列表，支持多图轮播 |
 | videoUrl | 商品视频 | Product Video URL | string | 否 | 商品展示视频地址 |
-| skus[] | SKU 列表 | SKU List | array | 是 | 可选规格列表，结构见 §4.8.2 |
+| skus[] | SKU 列表 | SKU List | array | 是 | 可选规格列表，结构见 §4.7.2 |
 | selectedSkuId | 已选 SKU | Selected SKU ID | string | 否 | 当前选中 SKU，未选时为空 |
 | stock | 可售库存 | Stock | number | 是 | 当前选中 SKU 的可售库存数量 |
 | deliveryInfo | 配送说明 | Delivery Info | string | 是 | 配送时效与运费说明文案，支持 i18n |
@@ -874,7 +808,7 @@ kickbazar.com
 | BR410 | 分享 | 点击 | 复制 URL | — | Toast BR801 |
 | BR411 | Mobile 底栏 | Mobile | Sticky 按钮 | — | 不挡内容 |
 
-#### 4.8.2 规格选择器（#17）
+#### 4.7.2 规格选择器（#17）
 
 ##### 功能描述
 
@@ -921,7 +855,7 @@ kickbazar.com
 | BR416 | 未选全 | 点确认 | Toast；不关层 | — | 指明缺项 |
 | BR417 | 确认 | 点确认 | 加购/购买 | 加载● 错误● | 购买 BR619 |
 
-#### 4.8.3 商品推荐组件（#18）
+#### 4.7.3 商品推荐组件（#18）
 
 ##### 功能描述
 
@@ -974,7 +908,7 @@ kickbazar.com
 
 ---
 
-### 4.9 模块 E：店铺（#19–#21）
+### 4.8 模块 E：店铺（#19–#21）
 
 #### 功能描述
 
@@ -1014,7 +948,7 @@ FL061–FL067（见附录 A）
 | tabName | Tab 名称 | Tab Name | string | 是 | Tab 展示名称，支持 i18n |
 | isDefault | 是否默认 | Is Default | boolean | 是 | 是否为默认激活 Tab |
 
-> 店铺商品列表复用 **§4.8.3 通用商品卡字段**。
+> 店铺商品列表复用 **§4.7.3 通用商品卡字段**。
 
 #### 交互说明
 
@@ -1026,9 +960,9 @@ FL061–FL067（见附录 A）
 
 ---
 
-### 4.10 模块 F：交易（#22–#30）
+### 4.9 模块 F：交易（#22–#30）
 
-#### 4.10.1 购物车（#22–#25）
+#### 4.9.1 购物车（#22–#25）
 
 ##### 功能描述
 
@@ -1089,7 +1023,7 @@ FL061–FL067（见附录 A）
 | #24 编辑 | BR614–BR616 | — |
 | #25 折扣 | BR617–BR618 | 金额同结算 |
 
-#### 4.10.2 结算与地址（#26–#30）
+#### 4.9.2 结算与地址（#26–#30）
 
 ##### 功能描述
 
@@ -1178,7 +1112,7 @@ FL061–FL067（见附录 A）
 
 ---
 
-### 4.11 模块 H：订单（#31–#34）
+### 4.10 模块 H：订单（#31–#34）
 
 #### 功能描述
 
@@ -1248,7 +1182,7 @@ FL061–FL067（见附录 A）
 
 ---
 
-### 4.12 模块 I：专题（#35–#38）
+### 4.11 模块 I：专题（#35–#38）
 
 #### 功能描述
 
@@ -1273,7 +1207,7 @@ FL061–FL067（见附录 A）
 | shareUrl | 分享链接 | Share URL | string | 是 | 专题页完整 URL，用于分享复制 |
 | status | 专题状态 | Topic Status | enum | 是 | `active` 上线 / `offline` 下线 |
 
-> 专题商品列表复用 **§4.8.3 通用商品卡字段**。
+> 专题商品列表复用 **§4.7.3 通用商品卡字段**。
 
 #### 交互说明
 
@@ -1281,7 +1215,7 @@ BR701–BR705（头图、列表 BR208、品牌/国家专属、Deeplink、下线 
 
 ---
 
-### 4.13 全局状态与反馈
+### 4.12 全局状态与反馈
 
 #### 功能描述
 
@@ -1454,9 +1388,9 @@ FL125–FL131（见附录 A）
 ### 7.1 功能验收
 
 - [ ] 本文档范围内 36 项页面/模块均可访问且与 App 业务规则一致  
-- [ ] FL001–FL137 功能点全部实现  
-- [ ] BR101–BR813 全部通过测试用例  
-- [ ] 官方客服仅展示 KickBazar 平台渠道，无店铺客服入口  
+- [ ] FL001–FL133 功能点全部实现  
+- [ ] BR101–BR808 全部通过测试用例（BR809 及以后已移除，客服能力由他人 PRD 验收）  
+- [ ] Header / Footer / 首页 Sticky 三处客服入口均可跳转 `supportEntryUrl`  
 - [ ] 登录/注册/个人中心/Cookie 衔接符合第三章 3.5，不出现断链  
 
 ### 7.2 状态验收
@@ -1478,9 +1412,8 @@ FL125–FL131（见附录 A）
 | 模块 | 页面 | FL 范围 |
 |------|------|---------|
 | 全局 Header | #3 | FL001–FL008、FL132 |
-| 官方客服 | #39 | FL132–FL137 |
 | 信任背书 | #4 | FL009–FL010 |
-| Footer | #5 | FL011–FL014 |
+| Footer | #5 | FL011–FL014（Contact Us 兼客服入口） |
 | 首页核心 | #6 | FL015–FL021、FL133 |
 | 首页服务介绍 | #7 | FL022–FL024 |
 | 搜索弹窗 | #8 | FL025–FL029 |
@@ -1516,9 +1449,8 @@ FL125–FL131（见附录 A）
 | 模块 | BR 范围 | 基准 BR（优先阅读） |
 |------|---------|-------------------|
 | 全局 Header | BR101–BR108、BR806 | BR201、BR803 |
-| 官方客服 | BR806–BR813 | BR201–BR202 |
 | 信任背书 | BR109–BR110 | — |
-| Footer | BR111–BR114 | — |
+| Footer | BR111–BR114、BR112（客服入口） | BR806 |
 | 首页 | BR115–BR124、BR807–BR808 | BR208、BR209、BR418、BR806 |
 | 搜索 | BR201–BR213 | BR201–BR202、BR208、BR209、BR211–BR213 |
 | 分类 | BR301–BR307 | BR208、BR211–BR213、BR418 |
@@ -1537,8 +1469,8 @@ FL125–FL131（见附录 A）
 | BR120 | BR208、BR305、BR503、BR505、BR702、BR418 |
 | BR137 | BR203、BR210、BR302、BR413、BR507、BR604、BR612、BR633、BR641、BR650 |
 | BR138 (=BR504) | BR505、BR641、BR649（多包裹 Tab） |
-| BR201–BR202 | BR104、BR412、BR506、BR632、BR809、BR813 |
-| BR806 | BR808、FL132（Header） |
+| BR201–BR202 | BR104、BR412、BR506、BR632 |
+| BR806 | BR808、BR112、FL132（Header）、FL133（Sticky） |
 | BR208 | BR119、BR210、BR305、BR503、BR505、BR702 |
 | BR209 | BR119、BR644 |
 | BR211–BR213 | BR305、BR505、BR213（搜索内） |
@@ -1555,9 +1487,8 @@ FL125–FL131（见附录 A）
 | # | 页面 | Feature List | 交互说明 |
 |---|------|-------------|---------|
 | 3 | 顶部导航 | FL001–FL008、FL132 | BR101–BR108、BR806 |
-| 39 | 官方客服 | FL132–FL137 | BR806–BR813 |
 | 4 | 信任背书 | FL009–FL010 | BR109–BR110 |
-| 5 | 底部信息 | FL011–FL014 | BR111–BR114 |
+| 5 | 底部信息 | FL011–FL014 | BR111–BR114、BR112 |
 | 6 | 首页核心 | FL015–FL021、FL133 | BR115–BR121、BR807–BR808 |
 | 7 | 服务介绍 | FL022–FL024 | BR122–BR124 |
 | 8 | 搜索弹窗 | FL025–FL029 | BR201–BR206 |
@@ -1574,4 +1505,4 @@ FL125–FL131（见附录 A）
 
 ---
 
-*文档结束 — KickBazar ToC Web PRD v1.5*
+*文档结束 — KickBazar ToC Web PRD v1.6*
