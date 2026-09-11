@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KickBazar — ToC Web Prototype (PRD v1.11)</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="lang-overlay" class="lang-overlay hidden" aria-hidden="true">
+    <div class="lang-overlay__spinner"></div>
+    <p>Switching language…</p>
+  </div>
+
+  <div id="toast" class="toast hidden" role="status"></div>
+
+  <header class="trust-bar" id="trust-bar" aria-label="Service assurance">
+    <button type="button" class="trust-bar__item" data-trust="return">Easy Return</button>
+    <span class="trust-bar__sep">|</span>
+    <button type="button" class="trust-bar__item" data-trust="support">24/7 Support</button>
+    <span class="trust-bar__sep">|</span>
+    <button type="button" class="trust-bar__item" id="app-download-trigger">Get the Kickbazar APP</button>
+  </header>
+
+  <header class="site-header" id="site-header">
+    <!-- 主导航栏 -->
+    <div class="site-header__main">
+      <div class="site-header__inner">
+        <a href="#/" class="logo" data-nav aria-label="KickBazar Home">
+          <img src="assets/logo.png" alt="KickBazar" class="logo__img" />
+        </a>
+
+        <div class="search-wrap" id="search-wrap">
+          <button type="button" class="search-entry" id="search-entry" aria-expanded="false">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 20l-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <span data-i18n="searchPlaceholder">Search products</span>
+          </button>
+          <div class="search-dropdown hidden" id="search-dropdown">
+            <div class="search-dropdown__section" id="search-recent-section">
+              <p class="search-dropdown__label">Recent Searches</p>
+              <div class="search-dropdown__tags" id="search-recent"></div>
+            </div>
+            <div class="search-dropdown__section">
+              <p class="search-dropdown__label">Search Discovery</p>
+              <div class="search-dropdown__tags" id="search-discovery"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <div class="lang-switch" id="lang-switch">
+            <button type="button" class="icon-btn" id="lang-btn" aria-label="Language" title="Language">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 12h18M12 3c2.5 2.8 4 6 4 9s-1.5 6.2-4 9M12 3c-2.5 2.8-4 6-4 9s1.5 6.2 4 9" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+            </button>
+            <div class="dropdown hidden" id="lang-dropdown">
+              <button type="button" data-locale="en" class="dropdown__item active">English</button>
+              <button type="button" data-locale="bn" class="dropdown__item">বাংলা</button>
+            </div>
+          </div>
+
+          <button type="button" class="icon-btn" id="support-btn" aria-label="Support" title="Support">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14a8 8 0 0116 0v2a2 2 0 01-2 2h-1v-4h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><rect x="3" y="11" width="3" height="6" rx="1.5" fill="currentColor"/><rect x="18" y="11" width="3" height="6" rx="1.5" fill="currentColor"/></svg>
+          </button>
+
+          <div class="cart-wrap" id="cart-wrap">
+            <button type="button" class="icon-btn cart-btn" id="cart-btn" aria-label="Cart" title="Cart">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6h15l-1.5 9h-12z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="9" cy="20" r="1.5" fill="currentColor"/><circle cx="18" cy="20" r="1.5" fill="currentColor"/><path d="M6 6L5 3H2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+              <span class="badge" id="cart-badge">0</span>
+            </button>
+            <div class="cart-bubble hidden" id="cart-bubble">Added successfully</div>
+          </div>
+
+          <div class="account-wrap" id="account-wrap">
+            <button type="button" class="icon-btn account-btn" id="account-btn" aria-label="Account" aria-haspopup="true" title="Account">
+              <span class="avatar" id="account-avatar">
+                <svg class="icon icon--avatar" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+              </span>
+            </button>
+            <div class="dropdown account-dropdown hidden" id="account-dropdown"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 次导航栏 -->
+    <div class="site-header__sub">
+      <div class="site-header__sub-inner">
+        <div class="categories-wrap" id="categories-wrap">
+          <button type="button" class="sub-nav__categories" id="categories-btn" aria-expanded="false">
+            Categories
+            <svg class="sub-nav__arrow" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <nav class="sub-nav" id="sub-nav" aria-label="Primary categories"></nav>
+      </div>
+      <div class="category-mega hidden" id="category-mega" role="navigation" aria-label="Category menu">
+        <div class="category-mega__inner">
+          <div class="category-mega__col" id="cat-col-l1"><p class="category-mega__title">Level 1</p><ul class="category-mega__list" id="cat-l1"></ul></div>
+          <div class="category-mega__col" id="cat-col-l2"><p class="category-mega__title">Level 2</p><ul class="category-mega__list" id="cat-l2"></ul></div>
+          <div class="category-mega__col category-mega__col--wide" id="cat-col-l3"><p class="category-mega__title">Level 3 & Recommendations</p><div class="category-mega__l3-wrap"><ul class="category-mega__list" id="cat-l3"></ul><div class="category-mega__rec" id="cat-rec"></div></div></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="app"></main>
+
+  <footer class="site-footer">
+    <div class="site-footer__grid">
+      <div>
+        <h4>Legal</h4>
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Service</a>
+        <a href="#">Returns & Refunds</a>
+      </div>
+      <div>
+        <h4>Customer Service</h4>
+        <a href="#" id="footer-support">Contact Us</a>
+        <a href="#">About Us</a>
+      </div>
+      <div>
+        <h4>Download App</h4>
+        <button type="button" class="footer-link-btn" id="footer-app-download">Get the App</button>
+      </div>
+      <div>
+        <h4>Follow Us</h4>
+        <a href="#">Instagram</a>
+        <a href="#">Facebook</a>
+      </div>
+    </div>
+    <p class="site-footer__copy">© 2026 KickBazar · Prototype based on PRD v1.11</p>
+  </footer>
+
+  <button type="button" class="sticky-fab hidden" id="sticky-fab" aria-label="Support">
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14a8 8 0 0116 0v2a2 2 0 01-2 2h-1v-4h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><rect x="3" y="11" width="3" height="6" rx="1.5" fill="currentColor"/><rect x="18" y="11" width="3" height="6" rx="1.5" fill="currentColor"/></svg>
+  </button>
+
+  <div class="modal hidden" id="modal" role="dialog" aria-modal="true">
+    <div class="modal__backdrop" data-close-modal></div>
+    <div class="modal__panel" id="modal-panel"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
