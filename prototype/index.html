@@ -19,47 +19,77 @@
     <span class="trust-bar__sep">|</span>
     <button type="button" class="trust-bar__item" data-trust="support">24/7 Support</button>
     <span class="trust-bar__sep">|</span>
-    <a href="#" class="trust-bar__item">Get the Kickbazar APP</a>
+    <button type="button" class="trust-bar__item" id="app-download-trigger">Get the Kickbazar APP</button>
   </header>
 
   <header class="site-header" id="site-header">
-    <div class="site-header__inner">
-      <a href="#/" class="logo" data-nav>KB</a>
+    <!-- 主导航栏 -->
+    <div class="site-header__main">
+      <div class="site-header__inner">
+        <a href="#/" class="logo" data-nav aria-label="KickBazar Home">
+          <img src="assets/logo.png" alt="KickBazar" class="logo__img" />
+        </a>
 
-      <div class="lang-switch" id="lang-switch">
-        <button type="button" class="lang-switch__btn" id="lang-btn" aria-haspopup="true">EN</button>
-        <div class="dropdown hidden" id="lang-dropdown">
-          <button type="button" data-locale="en" class="dropdown__item active">English</button>
-          <button type="button" data-locale="bn" class="dropdown__item">বাংলা</button>
+        <div class="search-wrap" id="search-wrap">
+          <button type="button" class="search-entry" id="search-entry" aria-expanded="false">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M20 20l-4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <span data-i18n="searchPlaceholder">Search products</span>
+          </button>
+          <div class="search-dropdown hidden" id="search-dropdown">
+            <div class="search-dropdown__section" id="search-recent-section">
+              <p class="search-dropdown__label">Recent Searches</p>
+              <div class="search-dropdown__tags" id="search-recent"></div>
+            </div>
+            <div class="search-dropdown__section">
+              <p class="search-dropdown__label">Search Discovery</p>
+              <div class="search-dropdown__tags" id="search-discovery"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <div class="lang-switch" id="lang-switch">
+            <button type="button" class="icon-btn" id="lang-btn" aria-label="Language" title="Language">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 12h18M12 3c2.5 2.8 4 6 4 9s-1.5 6.2-4 9M12 3c-2.5 2.8-4 6-4 9s1.5 6.2 4 9" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>
+            </button>
+            <div class="dropdown hidden" id="lang-dropdown">
+              <button type="button" data-locale="en" class="dropdown__item active">English</button>
+              <button type="button" data-locale="bn" class="dropdown__item">বাংলা</button>
+            </div>
+          </div>
+
+          <button type="button" class="icon-btn" id="support-btn" aria-label="Support" title="Support">
+            <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14a8 8 0 0116 0v2a2 2 0 01-2 2h-1v-4h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><rect x="3" y="11" width="3" height="6" rx="1.5" fill="currentColor"/><rect x="18" y="11" width="3" height="6" rx="1.5" fill="currentColor"/></svg>
+          </button>
+
+          <div class="cart-wrap" id="cart-wrap">
+            <button type="button" class="icon-btn cart-btn" id="cart-btn" aria-label="Cart" title="Cart">
+              <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6h15l-1.5 9h-12z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="9" cy="20" r="1.5" fill="currentColor"/><circle cx="18" cy="20" r="1.5" fill="currentColor"/><path d="M6 6L5 3H2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+              <span class="badge" id="cart-badge">0</span>
+            </button>
+            <div class="cart-bubble hidden" id="cart-bubble">Added successfully</div>
+          </div>
+
+          <div class="account-wrap" id="account-wrap">
+            <button type="button" class="icon-btn account-btn" id="account-btn" aria-label="Account" aria-haspopup="true" title="Account">
+              <span class="avatar" id="account-avatar">
+                <svg class="icon icon--avatar" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+              </span>
+            </button>
+            <div class="dropdown account-dropdown hidden" id="account-dropdown"></div>
+          </div>
         </div>
       </div>
+    </div>
 
-      <button type="button" class="search-entry" id="search-entry">
-        <span class="search-entry__icon">⌕</span>
-        <span data-i18n="searchPlaceholder">Search products</span>
-      </button>
-
-      <div class="categories-wrap" id="categories-wrap">
-        <button type="button" class="nav-link" id="categories-btn">Categories</button>
-        <div class="category-drawer hidden" id="category-drawer"></div>
-      </div>
-
-      <button type="button" class="icon-btn" id="support-btn" title="Support">Support</button>
-
-      <div class="cart-wrap" id="cart-wrap">
-        <button type="button" class="icon-btn cart-btn" id="cart-btn">
-          Cart
-          <span class="badge" id="cart-badge">0</span>
-        </button>
-        <div class="cart-preview hidden" id="cart-preview"></div>
-      </div>
-
-      <div class="account-wrap" id="account-wrap">
-        <button type="button" class="account-btn" id="account-btn" aria-haspopup="true">
-          <span class="avatar" id="account-avatar">○</span>
-          <span class="account-label" id="account-label"></span>
-        </button>
-        <div class="dropdown account-dropdown hidden" id="account-dropdown"></div>
+    <!-- 次导航栏 -->
+    <div class="site-header__sub">
+      <div class="site-header__sub-inner">
+        <div class="categories-wrap" id="categories-wrap">
+          <button type="button" class="sub-nav__categories" id="categories-btn">Categories</button>
+          <div class="category-drawer hidden" id="category-drawer"></div>
+        </div>
+        <nav class="sub-nav" id="sub-nav" aria-label="Primary categories"></nav>
       </div>
     </div>
   </header>
@@ -81,8 +111,7 @@
       </div>
       <div>
         <h4>Download App</h4>
-        <a href="#">App Store</a>
-        <a href="#">Google Play</a>
+        <button type="button" class="footer-link-btn" id="footer-app-download">Get the App</button>
       </div>
       <div>
         <h4>Follow Us</h4>
@@ -93,7 +122,9 @@
     <p class="site-footer__copy">© 2026 KickBazar · Prototype based on PRD v1.10</p>
   </footer>
 
-  <button type="button" class="sticky-fab hidden" id="sticky-fab">Support</button>
+  <button type="button" class="sticky-fab hidden" id="sticky-fab" aria-label="Support">
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 14a8 8 0 0116 0v2a2 2 0 01-2 2h-1v-4h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><rect x="3" y="11" width="3" height="6" rx="1.5" fill="currentColor"/><rect x="18" y="11" width="3" height="6" rx="1.5" fill="currentColor"/></svg>
+  </button>
 
   <div class="modal hidden" id="modal" role="dialog" aria-modal="true">
     <div class="modal__backdrop" data-close-modal></div>

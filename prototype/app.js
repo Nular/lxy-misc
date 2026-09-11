@@ -8,8 +8,9 @@ const CATEGORIES = [
   { id: "home", name: "Home", icon: "H" },
   { id: "electronics", name: "Electronics", icon: "E" },
   { id: "sports", name: "Sports", icon: "S" },
-  { id: "more", name: "More", icon: "+" },
 ];
+
+const SEARCH_DISCOVERY = ["dress", "sneakers", "phone case", "handbag", "skincare", "jeans", "watch", "t-shirt"];
 
 const ZONES = [
   { id: "brand", title: "Brand Zone", route: "#/topic/brand" },
@@ -36,7 +37,7 @@ const I18N = {
     buyNow: "Buy Now",
     checkout: "Checkout",
     viewMore: "View More",
-    homeEmpty: "Browse categories to discover more",
+    addedSuccess: "Added successfully",
   },
   bn: {
     searchPlaceholder: "পণ্য খুঁজুন",
@@ -44,7 +45,7 @@ const I18N = {
     buyNow: "এখনই কিনুন",
     checkout: "চেকআউট",
     viewMore: "আরও দেখুন",
-    homeEmpty: "আরও আবিষ্কার করতে ক্যাটাগরি ব্রাউজ করুন",
+    addedSuccess: "Added successfully",
   },
 };
 
@@ -55,18 +56,18 @@ const TRUST_CONTENT = {
 
 const state = {
   locale: "en",
-  auth: "guest", // resolving | guest | logged_in
+  auth: "guest",
   user: { name: "Rahul Ahmed", avatar: "" },
   cart: [],
   feedRows: 2,
   route: parseRoute(),
-  searchQuery: "",
-  selectedProduct: null,
-  skuModal: null,
+  recentSearches: ["jeans", "dress"],
+  cartEditMode: false,
+  appliedCoupon: 50,
 };
 
 function formatBDT(n) {
-  return "৳" + n.toLocaleString("en-BD");
+  return "৳" + Math.round(n).toLocaleString("en-BD");
 }
 
 function parseRoute() {
@@ -89,16 +90,26 @@ function showToast(msg) {
 }
 
 function openModal(html, className = "") {
-  const modal = document.getElementById("modal");
   const panel = document.getElementById("modal-panel");
   panel.className = "modal__panel " + className;
   panel.innerHTML = html;
-  modal.classList.remove("hidden");
+  document.getElementById("modal").classList.remove("hidden");
 }
 
 function closeModal() {
   document.getElementById("modal").classList.add("hidden");
-  state.skuModal = null;
+}
+
+function openAppDownloadModal() {
+  openModal(
+    `<div class="modal__head"><h2>Get the Kickbazar APP</h2><button type="button" class="modal__close" data-close-modal>×</button></div>
+    <p>Shop faster with exclusive app deals, order tracking, and push notifications.</p>
+    <div class="app-download-modal__stores">
+      <a href="#" class="app-download-modal__store">App Store</a>
+      <a href="#" class="app-download-modal__store">Google Play</a>
+    </div>
+    <div class="modal__foot"><button type="button" class="btn" data-close-modal>Maybe Later</button></div>`
+  );
 }
 
 function t(key) {
@@ -106,15 +117,39 @@ function t(key) {
 }
 
 function cartCount() {
-  return state.cart.reduce((s, l) => s + l.qty, 0);
+  return state.cart.filter((l) => l.valid).reduce((s, l) => s + l.qty, 0);
 }
 
-function cartSelectedTotal() {
-  return state.cart.filter((l) => l.selected && l.valid).reduce((s, l) => s + l.price * l.qty, 0);
+function getSelectedCartLines() {
+  return state.cart.filter((l) => l.valid && l.selected);
+}
+
+function computeOrderSummary(lines) {
+  const selected = lines || getSelectedCartLines();
+  if (!selected.length) {
+    return { subtotal: 0, promotion: 0, coupon: 0, shipping: 0, codFee: 0, payable: 0 };
+  }
+  const subtotal = selected.reduce((s, l) => s + (l.orig || l.price) * l.qty, 0);
+  const merchandise = selected.reduce((s, l) => s + l.price * l.qty, 0);
+  const promotion = Math.max(0, subtotal - merchandise);
+  const coupon = state.appliedCoupon;
+  const shipping = 60;
+  const codFee = 0;
+  const payable = merchandise - coupon + shipping + codFee;
+  return { subtotal, promotion, coupon, shipping, codFee, payable };
+}
+
+function orderSummaryHTML(summary, { showPayableLabel = true, totalLabel = "Payable" } = {}) {
+  return `
+    <div class="summary-row"><span>Subtotal <small title="VAT included">(?)</small></span><span>${formatBDT(summary.subtotal)}</span></div>
+    <div class="summary-row"><span>Promotion</span><span>-${formatBDT(summary.promotion)}</span></div>
+    <div class="summary-row"><span>Coupon</span><span>-${formatBDT(summary.coupon)}</span></div>
+    <div class="summary-row"><span>Shipping</span><span>${formatBDT(summary.shipping)}</span></div>
+    <div class="summary-row"><span>COD Fee</span><span>${summary.codFee === 0 ? "Free" : formatBDT(summary.codFee)}</span></div>
+    <div class="summary-row total"><span>${totalLabel}</span><span>${formatBDT(summary.payable)}</span></div>`;
 }
 
 function productCard(p) {
-  const disc = p.orig ? Math.round((1 - p.price / p.orig) * 100) : 0;
   return `
     <article class="product-card" data-product="${p.id}">
       <div class="product-card__img">
@@ -128,6 +163,24 @@ function productCard(p) {
     </article>`;
 }
 
+function showCartBubble() {
+  const bubble = document.getElementById("cart-bubble");
+  bubble.textContent = t("addedSuccess");
+  bubble.classList.remove("hidden");
+  void bubble.offsetWidth;
+  bubble.style.animation = "none";
+  void bubble.offsetWidth;
+  bubble.style.animation = "";
+  clearTimeout(showCartBubble._t);
+  showCartBubble._t = setTimeout(() => bubble.classList.add("hidden"), 2000);
+}
+
+function animateCartBadge() {
+  const badge = document.getElementById("cart-badge");
+  badge.classList.add("badge--pop");
+  setTimeout(() => badge.classList.remove("badge--pop"), 400);
+}
+
 function renderHeader() {
   const badge = document.getElementById("cart-badge");
   const count = cartCount();
@@ -135,25 +188,21 @@ function renderHeader() {
   badge.dataset.zero = count === 0 ? "true" : "false";
 
   const avatar = document.getElementById("account-avatar");
-  const label = document.getElementById("account-label");
   const btn = document.getElementById("account-btn");
 
   if (state.auth === "resolving") {
-    avatar.textContent = "…";
+    avatar.innerHTML = `<span style="font-size:12px">…</span>`;
     avatar.classList.remove("logged");
-    label.textContent = "";
     btn.disabled = true;
   } else if (state.auth === "logged_in") {
     avatar.innerHTML = state.user.avatar
       ? `<img src="${state.user.avatar}" alt="">`
-      : "R";
+      : `<span style="font-weight:700;font-size:12px">R</span>`;
     avatar.classList.add("logged");
-    label.textContent = "Hi, " + state.user.name.split(" ")[0];
     btn.disabled = false;
   } else {
-    avatar.textContent = "○";
+    avatar.innerHTML = `<svg class="icon icon--avatar" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>`;
     avatar.classList.remove("logged");
-    label.textContent = "";
     btn.disabled = false;
   }
 
@@ -165,7 +214,59 @@ function renderHeader() {
   document.querySelectorAll("#lang-dropdown [data-locale]").forEach((b) => {
     b.classList.toggle("active", b.dataset.locale === state.locale);
   });
-  document.getElementById("lang-btn").textContent = state.locale === "bn" ? "BN" : "EN";
+
+  const path = state.route?.path || "/";
+  const catId = path.startsWith("/category/") ? path.split("/")[2] : null;
+  document.querySelectorAll(".sub-nav__link").forEach((a) => {
+    a.classList.toggle("active", a.dataset.cat === catId);
+  });
+}
+
+function renderSubNav() {
+  document.getElementById("sub-nav").innerHTML = CATEGORIES.map(
+    (c) => `<a href="#/category/${c.id}" class="sub-nav__link" data-nav data-cat="${c.id}">${c.name}</a>`
+  ).join("");
+}
+
+function renderCategoryDrawer() {
+  document.getElementById("category-drawer").innerHTML = CATEGORIES.map(
+    (c) => `<a href="#/category/${c.id}" data-nav>${c.name}</a>`
+  ).join("");
+}
+
+function renderSearchDropdown() {
+  const recentEl = document.getElementById("search-recent");
+  const recentSection = document.getElementById("search-recent-section");
+  if (state.recentSearches.length) {
+    recentSection.classList.remove("hidden");
+    recentEl.innerHTML = state.recentSearches
+      .map((k) => `<button type="button" class="search-tag" data-search="${k}">${k}</button>`)
+      .join("");
+  } else {
+    recentSection.classList.add("hidden");
+  }
+  document.getElementById("search-discovery").innerHTML = SEARCH_DISCOVERY.map(
+    (k) => `<button type="button" class="search-tag" data-search="${k}">${k}</button>`
+  ).join("");
+}
+
+function performSearch(keyword) {
+  const q = keyword.trim();
+  if (!q) return;
+  state.recentSearches = [q, ...state.recentSearches.filter((r) => r !== q)].slice(0, 8);
+  closeSearchDropdown();
+  navigate("/search?q=" + encodeURIComponent(q));
+}
+
+function openSearchDropdown() {
+  renderSearchDropdown();
+  document.getElementById("search-dropdown").classList.remove("hidden");
+  document.getElementById("search-entry").setAttribute("aria-expanded", "true");
+}
+
+function closeSearchDropdown() {
+  document.getElementById("search-dropdown").classList.add("hidden");
+  document.getElementById("search-entry").setAttribute("aria-expanded", "false");
 }
 
 function renderAccountDropdown() {
@@ -189,42 +290,14 @@ function renderAccountDropdown() {
   }
 }
 
-function renderCategoryDrawer() {
-  document.getElementById("category-drawer").innerHTML = CATEGORIES.map(
-    (c) => `<a href="#/category/${c.id}" data-nav>${c.name}</a>`
-  ).join("");
-}
-
-function renderCartPreview() {
-  const preview = document.getElementById("cart-preview");
-  if (!state.cart.length) {
-    preview.innerHTML = `<p style="color:#888;font-size:13px">Your cart is empty</p>`;
-    return;
-  }
-  preview.innerHTML =
-    state.cart
-      .slice(0, 3)
-      .map(
-        (l) =>
-          `<div style="display:flex;gap:8px;margin-bottom:8px;font-size:12px">
-            <div style="width:48px;height:60px;background:#e8e8e8;border-radius:2px"></div>
-            <div><strong>${l.title}</strong><br>${formatBDT(l.price)} × ${l.qty}</div>
-          </div>`
-      )
-      .join("") +
-    `<a href="#/cart" class="btn btn--primary btn--block" style="margin-top:8px" data-nav>View Cart</a>`;
-}
-
 function renderHome() {
   const rows = state.feedRows;
   const items = PRODUCTS.slice(0, rows * 4);
-  const app = document.getElementById("app");
-  app.innerHTML = `
+  document.getElementById("app").innerHTML = `
     <div class="banner">
       <span class="banner__label">Summer Sale — Up to 50% OFF</span>
       <div class="banner__dots"><span class="banner__dot active"></span><span class="banner__dot"></span><span class="banner__dot"></span></div>
     </div>
-
     <p class="section-label">Quick Access — App L1 Categories</p>
     <div class="quick-grid">
       ${CATEGORIES.map(
@@ -234,12 +307,10 @@ function renderHome() {
           </a>`
       ).join("")}
     </div>
-
     <p class="section-label">Campaign Zones</p>
     <div class="zone-grid">
       ${ZONES.map((z) => `<a href="${z.route}" class="zone-card" data-nav>${z.title}</a>`).join("")}
     </div>
-
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
       <h2 style="margin:0;font-size:18px">Recommended For You</h2>
     </div>
@@ -249,7 +320,6 @@ function renderHome() {
         ? `<div class="view-more-wrap"><button type="button" class="btn" id="view-more">${t("viewMore")} (+10 rows)</button></div>`
         : ""
     }
-
     <div class="service-cards">
       <button type="button" class="service-card" data-service="Easy Return"><strong>Easy Return</strong><span>30-day hassle-free returns</span></button>
       <button type="button" class="service-card" data-service="24/7 Support"><strong>24/7 Support</strong><span>Always here to help</span></button>
@@ -257,25 +327,23 @@ function renderHome() {
     </div>`;
 
   document.getElementById("sticky-fab").classList.remove("hidden");
-
   document.getElementById("view-more")?.addEventListener("click", () => {
     state.feedRows += 1;
     render();
-    showToast("Loaded 10 more rows");
   });
-
   bindProductCards();
   bindServiceCards();
 }
 
 function renderSearch() {
-  const q = state.route.params.get("q") || state.searchQuery || "dress";
+  const q = state.route.params.get("q") || "dress";
   document.getElementById("sticky-fab").classList.add("hidden");
   document.getElementById("app").innerHTML = `
+    <nav class="breadcrumb"><a href="#/" data-nav>Home</a> › Search</nav>
     <h1 class="page-title">Search: "${q}"</h1>
     <div class="search-toolbar">
-      <select id="sort-select"><option>Best Match</option><option>Price: Low to High</option><option>Price: High to Low</option><option>Newest</option></select>
-      <select><option>Filter</option><option>Category</option></select>
+      <select><option>Best Match</option><option>Price: Low to High</option><option>Newest</option></select>
+      <select><option>Filter</option></select>
       <span class="result-count">128 results</span>
     </div>
     <div class="product-grid">${PRODUCTS.map(productCard).join("")}</div>`;
@@ -286,6 +354,7 @@ function renderCategory(id) {
   const cat = CATEGORIES.find((c) => c.id === id) || { name: id };
   document.getElementById("sticky-fab").classList.add("hidden");
   document.getElementById("app").innerHTML = `
+    <nav class="breadcrumb"><a href="#/" data-nav>Home</a> › ${cat.name}</nav>
     <h1 class="page-title">${cat.name}</h1>
     <div class="search-toolbar">
       <select><option>Best Match</option><option>Price</option><option>Newest</option></select>
@@ -294,11 +363,21 @@ function renderCategory(id) {
   bindProductCards();
 }
 
+function getPdpSelections() {
+  const colorBtn = document.querySelector('.pdp-info [data-sku="color"] .sku-opt.active:not(.disabled)');
+  const sizeBtn = document.querySelector('.pdp-info [data-sku="size"] .sku-opt.active:not(.disabled)');
+  const qty = parseInt(document.getElementById("pdp-qty")?.textContent || "1", 10);
+  return {
+    color: colorBtn?.textContent?.trim() || "",
+    size: sizeBtn?.textContent?.trim() || "",
+    qty: Math.max(1, qty),
+  };
+}
+
 function renderPDP(id) {
   const p = PRODUCTS.find((x) => x.id === id) || PRODUCTS[0];
-  state.selectedProduct = p;
-  document.getElementById("sticky-fab").classList.add("hidden");
   const disc = p.orig ? Math.round((1 - p.price / p.orig) * 100) : 0;
+  document.getElementById("sticky-fab").classList.add("hidden");
   document.getElementById("app").innerHTML = `
     <nav class="breadcrumb"><a href="#/" data-nav>Home</a> › <a href="#/category/women" data-nav>Women</a> › ${p.title}</nav>
     <div class="pdp-layout">
@@ -311,8 +390,7 @@ function renderPDP(id) {
         </div>
         <p class="pdp-meta" style="margin-top:16px"><a href="#/store/s1" data-nav>Visit ${p.store} ›</a></p>
         <div class="form-block" style="margin-top:16px"><h3>Additional Information</h3><p style="font-size:13px;color:#555">Material: Cotton blend · Origin: Imported</p></div>
-        <div class="form-block"><h3>Description</h3><p style="font-size:13px;color:#555">Comfortable everyday wear with modern fit. Machine washable.</p></div>
-        <p class="pdp-meta">24/7 Support · Product Replace</p>
+        <div class="form-block"><h3>Description</h3><p style="font-size:13px;color:#555">Comfortable everyday wear with modern fit.</p></div>
       </div>
       <div class="pdp-info">
         <h1>${p.title}</h1>
@@ -322,9 +400,9 @@ function renderPDP(id) {
           ${disc ? `<span class="discount-pill">-${disc}%</span>` : ""}
         </div>
         ${p.tag === "Brand Zone" ? `<div class="authentic">100% Authentic Guarantee</div>` : p.tag ? `<div class="authentic">${p.tag}</div>` : ""}
-        <div class="sku-group"><label>Color</label><div class="sku-options"><button type="button" class="sku-opt active">Red</button><button type="button" class="sku-opt">Blue</button><button type="button" class="sku-opt disabled">Green</button></div></div>
-        <div class="sku-group"><label>Size</label><div class="sku-options"><button type="button" class="sku-opt">S</button><button type="button" class="sku-opt active">M</button><button type="button" class="sku-opt">L</button></div></div>
-        <div class="sku-group"><label>Quantity</label><div class="qty-stepper"><button type="button" data-qty="-1">−</button><span id="pdp-qty">1</span><button type="button" data-qty="1">+</button></div></div>
+        <div class="sku-group" data-sku="color"><label>Color</label><div class="sku-options"><button type="button" class="sku-opt active">Red</button><button type="button" class="sku-opt">Blue</button><button type="button" class="sku-opt disabled">Green</button></div></div>
+        <div class="sku-group" data-sku="size"><label>Size</label><div class="sku-options"><button type="button" class="sku-opt">S</button><button type="button" class="sku-opt active">M</button><button type="button" class="sku-opt">L</button></div></div>
+        <div class="sku-group"><label>Quantity</label><div class="qty-stepper"><button type="button" id="pdp-qty-minus">−</button><span id="pdp-qty">1</span><button type="button" id="pdp-qty-plus">+</button></div></div>
         <p class="pdp-meta">Delivery: Local · 3–5 business days · Shipping from ৳60</p>
         <div class="pdp-actions">
           <button type="button" class="btn btn--primary" id="pdp-add">${t("addToCart")}</button>
@@ -335,73 +413,54 @@ function renderPDP(id) {
     <h2 style="margin-top:40px;font-size:18px">You May Also Like</h2>
     <div class="product-grid" style="margin-top:12px">${PRODUCTS.slice(0, 4).map(productCard).join("")}</div>`;
 
-  document.getElementById("pdp-add").addEventListener("click", () => openSkuModal(p, "cart"));
-  document.getElementById("pdp-buy").addEventListener("click", () => openSkuModal(p, "buy"));
+  document.getElementById("pdp-add").addEventListener("click", () => {
+    const sel = getPdpSelections();
+    if (!sel.color || !sel.size) {
+      showToast("Please select all options");
+      return;
+    }
+    addToCart(p, sel.color, sel.size, sel.qty, { animate: true });
+  });
+
+  document.getElementById("pdp-buy").addEventListener("click", () => {
+    const sel = getPdpSelections();
+    if (!sel.color || !sel.size) {
+      showToast("Please select all options");
+      return;
+    }
+    addToCart(p, sel.color, sel.size, sel.qty);
+    if (state.auth !== "logged_in") {
+      showToast("Sign in required — redirect to /login?redirect=/checkout");
+      return;
+    }
+    navigate("/checkout");
+  });
+
+  document.getElementById("pdp-qty-minus")?.addEventListener("click", () => {
+    const el = document.getElementById("pdp-qty");
+    el.textContent = Math.max(1, parseInt(el.textContent, 10) - 1);
+  });
+  document.getElementById("pdp-qty-plus")?.addEventListener("click", () => {
+    const el = document.getElementById("pdp-qty");
+    el.textContent = Math.min(5, parseInt(el.textContent, 10) + 1);
+  });
+
   bindProductCards();
   bindSkuOptions();
 }
 
-function openSkuModal(product, mode) {
-  state.skuModal = { product, mode, color: "Red", size: "M", qty: 1 };
-  const modal = document.getElementById("modal");
-  modal.classList.add("sku-sheet");
-  openModal(
-    `<div class="modal__head"><h2>Select Options</h2><button type="button" class="modal__close" data-close-modal>×</button></div>
-    <p><strong>${product.title}</strong></p>
-    <p style="color:#e6531a;font-weight:700;font-size:18px">${formatBDT(product.price)}</p>
-    <div class="sku-group"><label>Color</label><div class="sku-options" id="modal-colors"><button type="button" class="sku-opt active" data-v="Red">Red</button><button type="button" class="sku-opt" data-v="Blue">Blue</button></div></div>
-    <div class="sku-group"><label>Size</label><div class="sku-options" id="modal-sizes"><button type="button" class="sku-opt" data-v="S">S</button><button type="button" class="sku-opt active" data-v="M">M</button><button type="button" class="sku-opt" data-v="L">L</button></div></div>
-    <div class="sku-group"><label>Quantity</label><div class="qty-stepper"><button type="button" id="mq-minus">−</button><span id="mq-val">1</span><button type="button" id="mq-plus">+</button></div></div>
-    <button type="button" class="btn btn--accent btn--block" id="sku-confirm">${mode === "buy" ? t("buyNow") : t("addToCart")}</button>`,
-    "wide"
-  );
-
-  const syncQty = (n) => {
-    state.skuModal.qty = Math.max(1, Math.min(5, n));
-    document.getElementById("mq-val").textContent = state.skuModal.qty;
-  };
-  document.getElementById("mq-minus").onclick = () => syncQty(state.skuModal.qty - 1);
-  document.getElementById("mq-plus").onclick = () => syncQty(state.skuModal.qty + 1);
-
-  document.querySelectorAll("#modal-colors .sku-opt, #modal-sizes .sku-opt").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      btn.parentElement.querySelectorAll(".sku-opt").forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-      if (btn.parentElement.id === "modal-colors") state.skuModal.color = btn.dataset.v;
-      else state.skuModal.size = btn.dataset.v;
-    });
-  });
-
-  document.getElementById("sku-confirm").onclick = () => {
-    const { product, mode, color, size, qty } = state.skuModal;
-    if (!color || !size) {
-      showToast("Please select all options");
-      return;
-    }
-    addToCart(product, color, size, qty);
-    closeModal();
-    modal.classList.remove("sku-sheet");
-    showToast(mode === "buy" ? "Added — redirecting to checkout" : "Added to cart");
-    if (mode === "buy") {
-      if (state.auth !== "logged_in") {
-        showToast("Please sign in to checkout");
-        state.auth = "guest";
-        renderHeader();
-      } else navigate("/checkout");
-    } else {
-      renderHeader();
-    }
-  };
-}
-
-function addToCart(product, color, size, qty) {
-  const existing = state.cart.find((l) => l.id === product.id && l.color === color && l.size === size);
+function addToCart(product, color, size, qty, { animate = false } = {}) {
+  const key = `${product.id}-${color}-${size}`;
+  const existing = state.cart.find((l) => l.key === key && l.valid);
   if (existing) existing.qty += qty;
   else
     state.cart.push({
+      key,
       id: product.id,
       title: product.title,
       price: product.price,
+      orig: product.orig || product.price,
+      tag: product.tag || "",
       color,
       size,
       qty,
@@ -409,12 +468,27 @@ function addToCart(product, color, size, qty) {
       valid: true,
     });
   renderHeader();
-  renderCartPreview();
+  if (animate) {
+    showCartBubble();
+    animateCartBadge();
+  }
+}
+
+function deleteCartLine(index) {
+  state.cart.splice(index, 1);
+  render();
+}
+
+function deleteSelectedCartLines() {
+  state.cart = state.cart.filter((l) => !l.selected || !l.valid);
+  state.cartEditMode = false;
+  render();
 }
 
 function renderCart() {
   document.getElementById("sticky-fab").classList.add("hidden");
-  if (!state.cart.length) {
+  const validLines = state.cart.filter((l) => l.valid);
+  if (!validLines.length) {
     document.getElementById("app").innerHTML = `
       <div class="empty-state">
         <h2>Your cart is empty</h2>
@@ -423,52 +497,83 @@ function renderCart() {
       </div>`;
     return;
   }
-  const total = cartSelectedTotal();
+
+  const summary = computeOrderSummary();
+  const allSelected = validLines.every((l) => l.selected);
+
   document.getElementById("app").innerHTML = `
     <h1 class="page-title">Shopping Cart</h1>
     <div class="cart-layout">
       <div>
         <div class="cart-toolbar">
-          <label><input type="checkbox" id="select-all" checked> Select All</label>
-          <button type="button" class="btn" id="edit-mode">Edit</button>
+          <label><input type="checkbox" id="select-all" ${allSelected ? "checked" : ""}> Select All</label>
+          <button type="button" class="btn" id="edit-mode">${state.cartEditMode ? "Done" : "Edit"}</button>
+          ${state.cartEditMode ? `<button type="button" class="btn btn--danger" id="delete-selected">Delete Selected</button>` : ""}
         </div>
         ${state.cart
-          .map(
-            (l, i) => `
-          <div class="cart-line ${l.valid ? "" : "invalid"}">
+          .map((l, i) => {
+            if (!l.valid) return "";
+            return `
+          <div class="cart-line" data-line-index="${i}">
             <input type="checkbox" ${l.selected ? "checked" : ""} data-line="${i}" class="line-check">
             <div class="cart-line__thumb"></div>
             <div>
+              ${l.tag ? `<span class="cart-line__tag">${l.tag}</span>` : ""}
               <strong>${l.title}</strong>
               <p style="font-size:12px;color:#888;margin:4px 0">${l.color} / ${l.size}</p>
-              <p style="font-weight:700;color:#e6531a">${formatBDT(l.price)}</p>
+              <p style="font-weight:700;color:var(--brand)">${formatBDT(l.price)}</p>
             </div>
             <div class="qty-stepper"><button type="button" data-line-qty="${i}" data-d="-1">−</button><span>${l.qty}</span><button type="button" data-line-qty="${i}" data-d="1">+</button></div>
-          </div>`
-          )
+            <button type="button" class="cart-line__delete" data-delete-line="${i}" title="Remove">Remove</button>
+          </div>`;
+          })
           .join("")}
         <div class="cart-line invalid" style="margin-top:16px">
           <input type="checkbox" disabled>
           <div class="cart-line__thumb"></div>
           <div><strong>Sold Out Item (demo)</strong><p style="font-size:12px;color:#888">Unavailable</p></div>
-          <button type="button" class="btn" style="font-size:12px">Delete</button>
+          <button type="button" class="cart-line__delete" disabled>Remove</button>
         </div>
       </div>
       <div class="summary-card">
-        <div class="summary-row"><span>Merchandise</span><span>${formatBDT(total)}</span></div>
-        <div class="summary-row"><span>Discount</span><span>-৳0</span></div>
-        <div class="summary-row total"><span>Total</span><span>${formatBDT(total)}</span></div>
+        <h3 style="margin:0 0 12px">Order Summary</h3>
+        ${orderSummaryHTML(summary, { totalLabel: "Payable" })}
         <button type="button" class="btn btn--accent btn--block" style="margin-top:16px" id="go-checkout">${t("checkout")}</button>
       </div>
     </div>`;
 
-  document.getElementById("go-checkout").onclick = () => {
-    if (state.auth !== "logged_in") {
-      showToast("Sign in required — redirect to /login?redirect=/checkout");
+  document.getElementById("select-all").onchange = (e) => {
+    const checked = e.target.checked;
+    state.cart.forEach((l) => {
+      if (l.valid) l.selected = checked;
+    });
+    render();
+  };
+
+  document.querySelectorAll(".line-check").forEach((cb) => {
+    cb.onchange = () => {
+      state.cart[+cb.dataset.line].selected = cb.checked;
+      render();
+    };
+  });
+
+  document.getElementById("edit-mode").onclick = () => {
+    state.cartEditMode = !state.cartEditMode;
+    render();
+  };
+
+  document.getElementById("delete-selected")?.addEventListener("click", () => {
+    const n = getSelectedCartLines().length;
+    if (!n) {
+      showToast("No items selected");
       return;
     }
-    navigate("/checkout");
-  };
+    if (confirm(`Delete ${n} selected item(s)?`)) deleteSelectedCartLines();
+  });
+
+  document.querySelectorAll("[data-delete-line]").forEach((btn) => {
+    btn.onclick = () => deleteCartLine(+btn.dataset.deleteLine);
+  });
 
   document.querySelectorAll("[data-line-qty]").forEach((btn) => {
     btn.onclick = () => {
@@ -478,6 +583,18 @@ function renderCart() {
       render();
     };
   });
+
+  document.getElementById("go-checkout").onclick = () => {
+    if (!getSelectedCartLines().length) {
+      showToast("Please select at least one item");
+      return;
+    }
+    if (state.auth !== "logged_in") {
+      showToast("Sign in required — redirect to /login?redirect=/checkout");
+      return;
+    }
+    navigate("/checkout");
+  };
 }
 
 function renderCheckout() {
@@ -485,7 +602,7 @@ function renderCheckout() {
     document.getElementById("app").innerHTML = `
       <div class="empty-state">
         <h2>Login Required (BR619)</h2>
-        <p>Checkout requires sign in. Redirect: /login?redirect=/checkout</p>
+        <p>Checkout requires sign in.</p>
         <button type="button" class="btn btn--primary" id="demo-login">Demo: Sign In</button>
       </div>`;
     document.getElementById("demo-login").onclick = () => {
@@ -496,7 +613,7 @@ function renderCheckout() {
     return;
   }
 
-  const subtotal = cartSelectedTotal() || 1299;
+  const summary = computeOrderSummary();
   document.getElementById("sticky-fab").classList.add("hidden");
   document.getElementById("app").innerHTML = `
     <h1 class="page-title">Checkout</h1>
@@ -516,42 +633,27 @@ function renderCheckout() {
           </div>
         </div>
         <div class="form-block"><h3>Delivery</h3><p><strong>Local Delivery</strong> · Shipping Fee: ৳60 (fixed)</p></div>
-        <div class="form-block"><h3>Order Items</h3><p style="font-size:13px"><strong>Fashion Hub</strong> — Cotton Blend Dress × 1</p><label style="font-size:12px;margin-top:8px;display:block">Remark (per seller)</label><input placeholder="Optional note for seller" style="width:100%;padding:8px;border:1px solid #e8e8e8;margin-top:4px"></div>
-        <div class="form-block"><h3>Payment</h3><div class="payment-option"><input type="radio" checked> Cash on Delivery (COD) — Web P0 only</div></div>
+        <div class="form-block"><h3>Order Items</h3><p style="font-size:13px"><strong>Fashion Hub</strong> — Cotton Blend Dress × 1</p></div>
+        <div class="form-block"><h3>Payment</h3><div class="payment-option"><input type="radio" checked> Cash on Delivery (COD)</div></div>
       </div>
       <div class="summary-card">
         <h3 style="margin:0 0 12px">Coupon & Code</h3>
         <div class="coupon-row"><input placeholder="Enter coupon code"><button type="button" class="btn">Apply</button></div>
         <button type="button" class="btn btn--block" id="open-coupons" style="margin-bottom:16px">Select from My Coupons</button>
-        <div class="summary-row"><span>Subtotal <small title="VAT included">(?)</small></span><span>${formatBDT(subtotal)}</span></div>
-        <div class="summary-row"><span>Promotion</span><span>-৳100</span></div>
-        <div class="summary-row"><span>Coupon</span><span>-৳50</span></div>
-        <div class="summary-row"><span>Shipping</span><span>৳60</span></div>
-        <div class="summary-row"><span>COD Fee</span><span>Free</span></div>
-        <div class="summary-row total"><span>Payable</span><span>${formatBDT(subtotal - 150 + 60)}</span></div>
+        ${orderSummaryHTML(summary)}
         <button type="button" class="btn btn--accent btn--block" style="margin-top:16px" id="place-order">Place Order</button>
       </div>
     </div>`;
 
   document.getElementById("change-addr").onclick = () =>
-    openModal(
-      `<div class="modal__head"><h2>Saved Addresses</h2><button type="button" class="modal__close" data-close-modal>×</button></div>
-      <p style="padding:12px;border:1px solid #111;border-radius:4px;margin-bottom:8px"><strong>Default</strong><br>Gulshan, Dhaka</p>
-      <p style="padding:12px;border:1px solid #e8e8e8;border-radius:4px">Uttara, Dhaka</p>
-      <button type="button" class="btn btn--block" data-close-modal style="margin-top:12px">Close</button>`
-    );
+    openModal(`<div class="modal__head"><h2>Saved Addresses</h2><button type="button" class="modal__close" data-close-modal>×</button></div>
+      <p style="padding:12px;border:1px solid #111;border-radius:4px">Gulshan, Dhaka (Default)</p>
+      <button type="button" class="btn btn--block" data-close-modal style="margin-top:12px">Close</button>`);
 
   document.getElementById("open-coupons").onclick = () =>
-    openModal(
-      `<div class="modal__head"><h2>My Coupons</h2><button type="button" class="modal__close" data-close-modal>×</button></div>
-      <p style="font-size:12px;color:#888;margin-bottom:12px">Single select only · Default: max discount</p>
-      <p style="font-weight:600;margin-bottom:8px">Available</p>
-      <label style="display:block;padding:12px;border:2px solid #111;border-radius:4px;margin-bottom:8px"><input type="radio" name="c" checked> SAVE50 — ৳50 off (selected)</label>
-      <label style="display:block;padding:12px;border:1px solid #e8e8e8;border-radius:4px;margin-bottom:8px"><input type="radio" name="c"> WELCOME20 — ৳20 off</label>
-      <p style="font-weight:600;margin:16px 0 8px;color:#888">Not Available</p>
-      <div style="padding:12px;background:#f5f5f5;border-radius:4px;opacity:0.6;margin-bottom:8px">MIN500 — Minimum spend not met</div>
-      <button type="button" class="btn btn--primary btn--block" data-close-modal>Confirm</button>`
-    );
+    openModal(`<div class="modal__head"><h2>My Coupons</h2><button type="button" class="modal__close" data-close-modal>×</button></div>
+      <label style="display:block;padding:12px;border:2px solid #111;border-radius:4px;margin-bottom:8px"><input type="radio" checked> SAVE50 — ৳50 off</label>
+      <button type="button" class="btn btn--primary btn--block" data-close-modal>Confirm</button>`);
 
   document.getElementById("place-order").onclick = () => {
     document.getElementById("lang-overlay").classList.remove("hidden");
@@ -563,11 +665,11 @@ function renderCheckout() {
 }
 
 function renderCheckoutResult() {
+  const summary = computeOrderSummary();
   document.getElementById("app").innerHTML = `
     <div class="empty-state" style="padding:64px 16px">
-      <div style="width:64px;height:64px;border-radius:50%;background:#0a7a3e;color:#fff;display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 16px">✓</div>
       <h2>Order Placed Successfully</h2>
-      <p>Order #KB20260911001 · COD ৳${(cartSelectedTotal() || 1299) - 150 + 60}</p>
+      <p>Order #KB20260911001 · COD ${formatBDT(summary.payable || 1299)}</p>
       <button type="button" class="btn btn--primary" style="margin-top:16px">View Order List</button>
       <a href="#/" class="btn" style="margin-top:8px;display:inline-flex" data-nav>Continue Shopping</a>
     </div>`;
@@ -577,26 +679,11 @@ function renderStore() {
   document.getElementById("sticky-fab").classList.add("hidden");
   document.getElementById("app").innerHTML = `
     <div class="store-header">
-      <div class="store-logo" id="store-info" title="Store info"></div>
-      <div><h1 style="margin:0;font-size:20px">Fashion Hub</h1><p style="color:#888;margin:4px 0 0">★ 4.8 · 12.5k followers</p></div>
+      <div class="store-logo" id="store-info"></div>
+      <div><h1 style="margin:0;font-size:20px">Fashion Hub</h1><p style="color:#888">★ 4.8</p></div>
     </div>
-    <div class="tabs"><button type="button" class="tab active" data-tab="home">Home</button><button type="button" class="tab" data-tab="items">Items</button></div>
-    <div id="store-content">
-      <div class="banner" style="height:140px;margin-bottom:20px"><span class="banner__label">Store Banner</span></div>
-      <h3>Featured Products</h3>
-      <div class="product-grid" style="margin:12px 0 24px">${PRODUCTS.slice(0, 4).map(productCard).join("")}</div>
-      <h3>Recommend</h3>
-      <div class="product-grid">${PRODUCTS.map(productCard).join("")}</div>
-      <div class="view-more-wrap"><button type="button" class="btn">${t("viewMore")}</button></div>
-    </div>`;
-
-  document.getElementById("store-info").onclick = () =>
-    openModal(
-      `<div class="modal__head"><h2>Fashion Hub</h2><button type="button" class="modal__close" data-close-modal>×</button></div>
-      <p>Premium fashion retailer based in Dhaka. Authentic products with fast local delivery.</p>
-      <button type="button" class="btn btn--block" data-close-modal style="margin-top:16px">Close</button>`
-    );
-
+    <div class="tabs"><button type="button" class="tab active">Home</button><button type="button" class="tab">Items</button></div>
+    <div class="product-grid">${PRODUCTS.map(productCard).join("")}</div>`;
   bindProductCards();
 }
 
@@ -604,36 +691,10 @@ function renderTopic(id) {
   const titles = { brand: "Brand Zone", global: "Global", featured: "Featured", trending: "Trending" };
   document.getElementById("sticky-fab").classList.add("hidden");
   document.getElementById("app").innerHTML = `
-    <h1 class="page-title">${titles[id] || id} Topic</h1>
-    <div class="banner" style="height:160px;margin-bottom:24px"><span class="banner__label">${titles[id] || id}</span></div>
+    <nav class="breadcrumb"><a href="#/" data-nav>Home</a> › ${titles[id] || id}</nav>
+    <h1 class="page-title">${titles[id] || id}</h1>
     <div class="product-grid">${PRODUCTS.map(productCard).join("")}</div>`;
   bindProductCards();
-}
-
-function openSearchModal() {
-  openModal(
-    `<div class="modal__head"><h2>Search</h2><button type="button" class="modal__close" data-close-modal>×</button></div>
-    <input id="search-input" placeholder="${t("searchPlaceholder")}" style="width:100%;padding:12px;border:1px solid #e8e8e8;border-radius:4px;font-size:16px" autofocus>
-    <p style="font-size:12px;color:#888;margin:16px 0 8px">Hot Searches</p>
-    <div style="display:flex;flex-wrap:wrap;gap:8px">${["dress", "shoes", "phone", "bag"].map((k) => `<button type="button" class="btn" data-hot="${k}">${k}</button>`).join("")}</div>
-    <p style="font-size:12px;color:#888;margin:16px 0 8px">Recent</p>
-    <button type="button" class="dropdown__item" style="width:100%;text-align:left;border:1px solid #e8e8e8;border-radius:4px" data-hot="jeans">jeans</button>`,
-    "wide"
-  );
-  const input = document.getElementById("search-input");
-  input.focus();
-  input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && input.value.trim()) {
-      closeModal();
-      navigate("/search?q=" + encodeURIComponent(input.value.trim()));
-    }
-  });
-  document.querySelectorAll("[data-hot]").forEach((b) => {
-    b.onclick = () => {
-      closeModal();
-      navigate("/search?q=" + encodeURIComponent(b.dataset.hot));
-    };
-  });
 }
 
 function bindProductCards() {
@@ -647,7 +708,7 @@ function bindServiceCards() {
     btn.onclick = () =>
       openModal(
         `<div class="modal__head"><h2>${btn.dataset.service}</h2><button type="button" class="modal__close" data-close-modal>×</button></div>
-        <p>${btn.querySelector("span")?.textContent || "Service details aligned with App."}</p>
+        <p>${btn.querySelector("span")?.textContent || ""}</p>
         <div class="modal__foot"><button type="button" class="btn" data-close-modal>Close</button></div>`
       );
   });
@@ -668,8 +729,8 @@ function render() {
   state.route = parseRoute();
   const { path } = state.route;
   renderHeader();
+  renderSubNav();
   renderCategoryDrawer();
-  renderCartPreview();
 
   if (path === "/" || path === "") renderHome();
   else if (path.startsWith("/search")) renderSearch();
@@ -693,13 +754,28 @@ function render() {
 function initEvents() {
   window.addEventListener("hashchange", render);
 
-  document.getElementById("search-entry").onclick = openSearchModal;
+  renderSubNav();
+  renderSearchDropdown();
+
+  document.getElementById("search-entry").onclick = (e) => {
+    e.stopPropagation();
+    const open = !document.getElementById("search-dropdown").classList.contains("hidden");
+    if (open) closeSearchDropdown();
+    else {
+      closeDropdowns(["search-dropdown"]);
+      openSearchDropdown();
+    }
+  };
+
+  document.getElementById("search-dropdown").addEventListener("click", (e) => {
+    const tag = e.target.closest("[data-search]");
+    if (tag) performSearch(tag.dataset.search);
+  });
 
   document.getElementById("lang-btn").onclick = (e) => {
     e.stopPropagation();
-    document.getElementById("lang-dropdown").classList.toggle("hidden");
     closeDropdowns(["lang-dropdown"]);
-    document.getElementById("lang-dropdown").classList.remove("hidden");
+    document.getElementById("lang-dropdown").classList.toggle("hidden");
   };
 
   document.querySelectorAll("#lang-dropdown [data-locale]").forEach((btn) => {
@@ -710,7 +786,7 @@ function initEvents() {
         state.locale = btn.dataset.locale;
         document.getElementById("lang-overlay").classList.add("hidden");
         render();
-        showToast(state.locale === "bn" ? "ভাষা পরিবর্তন হয়েছে" : "Language updated");
+        showToast("Language updated");
       }, 900);
     };
   });
@@ -725,6 +801,7 @@ function initEvents() {
   document.getElementById("account-btn").onmouseenter = () => {
     if (state.auth === "resolving") return;
     renderAccountDropdown();
+    closeDropdowns(["account-dropdown"]);
     document.getElementById("account-dropdown").classList.remove("hidden");
   };
   document.getElementById("account-wrap").onmouseleave = () => {
@@ -738,25 +815,25 @@ function initEvents() {
     if (action === "login") showToast("Redirect → /login");
     else if (action === "logout") {
       state.auth = "guest";
-      showToast("Signed out → /login");
       renderHeader();
-    } else if (action === "orders" || action === "coupons" || action === "account") {
-      if (state.auth !== "logged_in") showToast("BR619: Sign in required");
+      showToast("Signed out");
+    } else if (["orders", "coupons", "account"].includes(action)) {
+      if (state.auth !== "logged_in") showToast("Sign in required");
       else showToast("Redirect → /account/" + action);
     }
   };
 
-  document.getElementById("cart-btn").onmouseenter = () => {
-    renderCartPreview();
-    document.getElementById("cart-preview").classList.remove("hidden");
-  };
-  document.getElementById("cart-wrap").onmouseleave = () => {
-    document.getElementById("cart-preview").classList.add("hidden");
-  };
   document.getElementById("cart-btn").onclick = () => navigate("/cart");
 
   ["support-btn", "footer-support", "sticky-fab"].forEach((id) => {
-    document.getElementById(id)?.addEventListener("click", () => showToast("Redirect → supportEntryUrl (他人 PRD)"));
+    document.getElementById(id)?.addEventListener("click", () => showToast("Redirect → supportEntryUrl"));
+  });
+
+  ["app-download-trigger", "footer-app-download"].forEach((id) => {
+    document.getElementById(id)?.addEventListener("click", (e) => {
+      e.preventDefault();
+      openAppDownloadModal();
+    });
   });
 
   document.querySelectorAll(".trust-bar__item[data-trust]").forEach((btn) => {
@@ -769,10 +846,7 @@ function initEvents() {
   });
 
   document.getElementById("modal").addEventListener("click", (e) => {
-    if (e.target.matches("[data-close-modal]") || e.target.classList.contains("modal__backdrop")) {
-      closeModal();
-      document.getElementById("modal").classList.remove("sku-sheet");
-    }
+    if (e.target.matches("[data-close-modal]") || e.target.classList.contains("modal__backdrop")) closeModal();
   });
 
   document.addEventListener("keydown", (e) => {
@@ -782,27 +856,20 @@ function initEvents() {
     }
   });
 
-  document.addEventListener("click", () => closeDropdowns());
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest("#search-wrap")) closeSearchDropdown();
+    if (!e.target.closest("#lang-switch")) document.getElementById("lang-dropdown").classList.add("hidden");
+    if (!e.target.closest("#account-wrap")) document.getElementById("account-dropdown").classList.add("hidden");
+    if (!e.target.closest("#categories-wrap")) document.getElementById("category-drawer").classList.add("hidden");
+  });
 
-  let lastScroll = 0;
   window.addEventListener(
     "scroll",
     () => {
-      const y = window.scrollY;
-      document.getElementById("trust-bar").classList.toggle("collapsed", y > 80);
-      document.getElementById("site-header").classList.toggle("compact", y > 80 && y > lastScroll);
-      lastScroll = y;
+      document.getElementById("trust-bar").classList.toggle("collapsed", window.scrollY > 80);
     },
     { passive: true }
   );
-
-  // Demo: add sample cart item & resolve auth
-  setTimeout(() => {
-    state.auth = "guest";
-    addToCart(PRODUCTS[0], "Red", "M", 1);
-    addToCart(PRODUCTS[1], "Blue", "32", 2);
-    render();
-  }, 400);
 
   document.getElementById("account-wrap").addEventListener("dblclick", () => {
     state.auth = state.auth === "logged_in" ? "guest" : "logged_in";
@@ -812,9 +879,10 @@ function initEvents() {
 }
 
 function closeDropdowns(except = []) {
-  ["lang-dropdown", "account-dropdown", "category-drawer", "cart-preview"].forEach((id) => {
-    if (!except.includes(id)) document.getElementById(id)?.classList.add("hidden");
-  });
+  if (!except.includes("search-dropdown")) closeSearchDropdown();
+  if (!except.includes("lang-dropdown")) document.getElementById("lang-dropdown")?.classList.add("hidden");
+  if (!except.includes("account-dropdown")) document.getElementById("account-dropdown")?.classList.add("hidden");
+  if (!except.includes("category-drawer")) document.getElementById("category-drawer")?.classList.add("hidden");
 }
 
 initEvents();
