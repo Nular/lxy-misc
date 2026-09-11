@@ -1,4 +1,4 @@
-/* KickBazar ToC Web Prototype — PRD v1.10 */
+/* KickBazar ToC Web Prototype — PRD v1.11 */
 
 const CATEGORIES = [
   { id: "women", name: "Women", icon: "W" },
@@ -9,6 +9,64 @@ const CATEGORIES = [
   { id: "electronics", name: "Electronics", icon: "E" },
   { id: "sports", name: "Sports", icon: "S" },
 ];
+
+const CATEGORY_TREE = {
+  women: {
+    children: {
+      dresses: { name: "Dresses", l3: ["Midi Dresses", "Maxi Dresses", "Party Dresses", "Casual Dresses", "Work Dresses"] },
+      tops: { name: "Tops & Blouses", l3: ["Blouses", "T-Shirts", "Tank Tops", "Shirts"] },
+      bottoms: { name: "Bottoms", l3: ["Jeans", "Skirts", "Shorts", "Trousers"] },
+    },
+  },
+  men: {
+    children: {
+      shirts: { name: "Shirts", l3: ["Formal Shirts", "Casual Shirts", "Polo Shirts"] },
+      pants: { name: "Pants", l3: ["Jeans", "Chinos", "Joggers"] },
+      outerwear: { name: "Outerwear", l3: ["Jackets", "Hoodies", "Coats"] },
+    },
+  },
+  kids: {
+    children: {
+      girls: { name: "Girls", l3: ["Dresses", "Tops", "Sets"] },
+      boys: { name: "Boys", l3: ["T-Shirts", "Shorts", "Sets"] },
+      baby: { name: "Baby", l3: ["Onesies", "Rompers", "Accessories"] },
+    },
+  },
+  beauty: {
+    children: {
+      skincare: { name: "Skincare", l3: ["Serum", "Moisturizer", "Cleanser", "Sunscreen"] },
+      makeup: { name: "Makeup", l3: ["Lipstick", "Foundation", "Mascara"] },
+    },
+  },
+  home: {
+    children: {
+      kitchen: { name: "Kitchen", l3: ["Cookware", "Storage", "Utensils"] },
+      decor: { name: "Decor", l3: ["Wall Art", "Candles", "Rugs"] },
+    },
+  },
+  electronics: {
+    children: {
+      audio: { name: "Audio", l3: ["Earbuds", "Headphones", "Speakers"] },
+      mobile: { name: "Mobile", l3: ["Cases", "Chargers", "Cables"] },
+    },
+  },
+  sports: {
+    children: {
+      footwear: { name: "Footwear", l3: ["Running", "Training", "Casual"] },
+      apparel: { name: "Apparel", l3: ["Tops", "Shorts", "Tracksuits"] },
+    },
+  },
+};
+
+const STORES = {
+  "Fashion Hub": { id: "s1", abbr: "FH", color: "#E53E3E", rating: 4.8, followers: "12.5k" },
+  "Denim Co": { id: "s2", abbr: "DC", color: "#3182CE", rating: 4.6, followers: "8.2k" },
+  "Tech Store": { id: "s3", abbr: "TS", color: "#805AD5", rating: 4.9, followers: "20k" },
+  "Sports BD": { id: "s4", abbr: "SB", color: "#38A169", rating: 4.7, followers: "5.1k" },
+  "Bag World": { id: "s5", abbr: "BW", color: "#DD6B20", rating: 4.5, followers: "3.8k" },
+  "Kids Zone": { id: "s6", abbr: "KZ", color: "#D53F8C", rating: 4.8, followers: "6.4k" },
+  "Beauty Plus": { id: "s7", abbr: "BP", color: "#319795", rating: 4.9, followers: "9.9k" },
+};
 
 const SEARCH_DISCOVERY = ["dress", "sneakers", "phone case", "handbag", "skincare", "jeans", "watch", "t-shirt"];
 
@@ -50,7 +108,7 @@ const I18N = {
 };
 
 const TRUST_CONTENT = {
-  replace: { title: "Product Replace", body: "Easy product replacement within the return window. Same as App policy." },
+  return: { title: "Easy Return", body: "30-day hassle-free returns on eligible items. Same policy as the KickBazar App." },
   support: { title: "24/7 Support", body: "Our support team is available around the clock via chat and phone." },
 };
 
@@ -64,6 +122,8 @@ const state = {
   recentSearches: ["jeans", "dress"],
   cartEditMode: false,
   appliedCoupon: 50,
+  megaL1: CATEGORIES[0]?.id || "women",
+  megaL2: null,
 };
 
 function formatBDT(n) {
@@ -228,10 +288,78 @@ function renderSubNav() {
   ).join("");
 }
 
-function renderCategoryDrawer() {
-  document.getElementById("category-drawer").innerHTML = CATEGORIES.map(
-    (c) => `<a href="#/category/${c.id}" data-nav>${c.name}</a>`
+function openCategoryMega() {
+  if (!state.megaL2) {
+    const first = CATEGORY_TREE[state.megaL1];
+    state.megaL2 = first ? Object.keys(first.children)[0] : null;
+  }
+  renderCategoryMega();
+  document.getElementById("category-mega").classList.remove("hidden");
+  document.getElementById("categories-btn").setAttribute("aria-expanded", "true");
+}
+
+function closeCategoryMega() {
+  document.getElementById("category-mega").classList.add("hidden");
+  document.getElementById("categories-btn").setAttribute("aria-expanded", "false");
+}
+
+function renderCategoryMega() {
+  const l1El = document.getElementById("cat-l1");
+  const l2El = document.getElementById("cat-l2");
+  const l3El = document.getElementById("cat-l3");
+  const recEl = document.getElementById("cat-rec");
+  if (!l1El) return;
+
+  l1El.innerHTML = CATEGORIES.map(
+    (c) =>
+      `<li><button type="button" class="${c.id === state.megaL1 ? "active" : ""}" data-l1="${c.id}">${c.name}</button></li>`
   ).join("");
+
+  const l2Map = CATEGORY_TREE[state.megaL1]?.children || {};
+  const l2Keys = Object.keys(l2Map);
+  if (!state.megaL2 || !l2Map[state.megaL2]) state.megaL2 = l2Keys[0] || null;
+
+  l2El.innerHTML = l2Keys
+    .map(
+      (k) =>
+        `<li><button type="button" class="${k === state.megaL2 ? "active" : ""}" data-l2="${k}">${l2Map[k].name}</button></li>`
+    )
+    .join("");
+
+  const l3List = state.megaL2 ? l2Map[state.megaL2]?.l3 || [] : [];
+  l3El.innerHTML = l3List.map((n) => `<li><a href="#/category/${state.megaL1}" data-nav>${n}</a></li>`).join("");
+
+  const recProducts = PRODUCTS.slice(0, 10);
+  recEl.innerHTML = recProducts
+    .map(
+      (p) =>
+        `<div class="category-mega__rec-item" data-product="${p.id}">
+          <div class="category-mega__rec-thumb"></div>
+          <div class="category-mega__rec-title">${p.title}</div>
+          <div class="category-mega__rec-price">${formatBDT(p.price)}</div>
+        </div>`
+    )
+    .join("");
+
+  l1El.querySelectorAll("[data-l1]").forEach((btn) => {
+    btn.onmouseenter = btn.onclick = () => {
+      state.megaL1 = btn.dataset.l1;
+      state.megaL2 = Object.keys(CATEGORY_TREE[state.megaL1]?.children || {})[0] || null;
+      renderCategoryMega();
+    };
+  });
+  l2El.querySelectorAll("[data-l2]").forEach((btn) => {
+    btn.onmouseenter = btn.onclick = () => {
+      state.megaL2 = btn.dataset.l2;
+      renderCategoryMega();
+    };
+  });
+  recEl.querySelectorAll("[data-product]").forEach((el) => {
+    el.onclick = () => {
+      closeCategoryMega();
+      navigate("/product/" + el.dataset.product);
+    };
+  });
 }
 
 function renderSearchDropdown() {
@@ -363,6 +491,26 @@ function renderCategory(id) {
   bindProductCards();
 }
 
+function storeEntryHTML(storeName) {
+  const s = STORES[storeName] || {
+    id: "s0",
+    abbr: storeName.slice(0, 2).toUpperCase(),
+    color: "#718096",
+    rating: 4.5,
+    followers: "—",
+  };
+  return `
+    <a href="#/store/${s.id}" class="store-entry" data-nav>
+      <span class="store-entry__logo" style="background:linear-gradient(135deg,${s.color},${s.color}cc)">${s.abbr}</span>
+      <span class="store-entry__info">
+        <span class="store-entry__label">Sold by</span>
+        <span class="store-entry__name">${storeName}</span>
+        <span class="store-entry__meta">★ ${s.rating} · ${s.followers} followers</span>
+      </span>
+      <span class="store-entry__chevron">›</span>
+    </a>`;
+}
+
 function getPdpSelections() {
   const colorBtn = document.querySelector('.pdp-info [data-sku="color"] .sku-opt.active:not(.disabled)');
   const sizeBtn = document.querySelector('.pdp-info [data-sku="size"] .sku-opt.active:not(.disabled)');
@@ -388,7 +536,7 @@ function renderPDP(id) {
           <div class="gallery__thumb"></div>
           <div class="gallery__thumb"></div>
         </div>
-        <p class="pdp-meta" style="margin-top:16px"><a href="#/store/s1" data-nav>Visit ${p.store} ›</a></p>
+        ${storeEntryHTML(p.store)}
         <div class="form-block" style="margin-top:16px"><h3>Additional Information</h3><p style="font-size:13px;color:#555">Material: Cotton blend · Origin: Imported</p></div>
         <div class="form-block"><h3>Description</h3><p style="font-size:13px;color:#555">Comfortable everyday wear with modern fit.</p></div>
       </div>
@@ -730,7 +878,6 @@ function render() {
   const { path } = state.route;
   renderHeader();
   renderSubNav();
-  renderCategoryDrawer();
 
   if (path === "/" || path === "") renderHome();
   else if (path.startsWith("/search")) renderSearch();
@@ -791,12 +938,10 @@ function initEvents() {
     };
   });
 
-  document.getElementById("categories-btn").onmouseenter = () => {
-    document.getElementById("category-drawer").classList.remove("hidden");
-  };
-  document.getElementById("categories-wrap").onmouseleave = () => {
-    document.getElementById("category-drawer").classList.add("hidden");
-  };
+  const subNav = document.querySelector(".site-header__sub");
+  subNav?.addEventListener("mouseleave", closeCategoryMega);
+  document.getElementById("categories-wrap")?.addEventListener("mouseenter", openCategoryMega);
+  document.getElementById("category-mega")?.addEventListener("mouseenter", openCategoryMega);
 
   document.getElementById("account-btn").onmouseenter = () => {
     if (state.auth === "resolving") return;
@@ -860,7 +1005,6 @@ function initEvents() {
     if (!e.target.closest("#search-wrap")) closeSearchDropdown();
     if (!e.target.closest("#lang-switch")) document.getElementById("lang-dropdown").classList.add("hidden");
     if (!e.target.closest("#account-wrap")) document.getElementById("account-dropdown").classList.add("hidden");
-    if (!e.target.closest("#categories-wrap")) document.getElementById("category-drawer").classList.add("hidden");
   });
 
   window.addEventListener(
@@ -882,7 +1026,6 @@ function closeDropdowns(except = []) {
   if (!except.includes("search-dropdown")) closeSearchDropdown();
   if (!except.includes("lang-dropdown")) document.getElementById("lang-dropdown")?.classList.add("hidden");
   if (!except.includes("account-dropdown")) document.getElementById("account-dropdown")?.classList.add("hidden");
-  if (!except.includes("category-drawer")) document.getElementById("category-drawer")?.classList.add("hidden");
 }
 
 initEvents();

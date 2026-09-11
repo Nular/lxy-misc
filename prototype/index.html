@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>KickBazar — ToC Web Prototype (PRD v1.10)</title>
+  <title>KickBazar — ToC Web Prototype (PRD v1.11)</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -14,8 +14,8 @@
 
   <div id="toast" class="toast hidden" role="status"></div>
 
-  <header class="trust-bar" id="trust-bar">
-    <button type="button" class="trust-bar__item" data-trust="replace">Product Replace</button>
+  <header class="trust-bar" id="trust-bar" aria-label="Service assurance">
+    <button type="button" class="trust-bar__item" data-trust="return">Easy Return</button>
     <span class="trust-bar__sep">|</span>
     <button type="button" class="trust-bar__item" data-trust="support">24/7 Support</button>
     <span class="trust-bar__sep">|</span>
@@ -86,10 +86,19 @@
     <div class="site-header__sub">
       <div class="site-header__sub-inner">
         <div class="categories-wrap" id="categories-wrap">
-          <button type="button" class="sub-nav__categories" id="categories-btn">Categories</button>
-          <div class="category-drawer hidden" id="category-drawer"></div>
+          <button type="button" class="sub-nav__categories" id="categories-btn" aria-expanded="false">
+            Categories
+            <svg class="sub-nav__arrow" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 4l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          </button>
         </div>
         <nav class="sub-nav" id="sub-nav" aria-label="Primary categories"></nav>
+      </div>
+      <div class="category-mega hidden" id="category-mega" role="navigation" aria-label="Category menu">
+        <div class="category-mega__inner">
+          <div class="category-mega__col" id="cat-col-l1"><p class="category-mega__title">Level 1</p><ul class="category-mega__list" id="cat-l1"></ul></div>
+          <div class="category-mega__col" id="cat-col-l2"><p class="category-mega__title">Level 2</p><ul class="category-mega__list" id="cat-l2"></ul></div>
+          <div class="category-mega__col category-mega__col--wide" id="cat-col-l3"><p class="category-mega__title">Level 3 & Recommendations</p><div class="category-mega__l3-wrap"><ul class="category-mega__list" id="cat-l3"></ul><div class="category-mega__rec" id="cat-rec"></div></div></div>
+        </div>
       </div>
     </div>
   </header>
