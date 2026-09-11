@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KickBazar — ToC Web Prototype (PRD v1.10)</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="lang-overlay" class="lang-overlay hidden" aria-hidden="true">
+    <div class="lang-overlay__spinner"></div>
+    <p>Switching language…</p>
+  </div>
+
+  <div id="toast" class="toast hidden" role="status"></div>
+
+  <header class="trust-bar" id="trust-bar">
+    <button type="button" class="trust-bar__item" data-trust="replace">Product Replace</button>
+    <span class="trust-bar__sep">|</span>
+    <button type="button" class="trust-bar__item" data-trust="support">24/7 Support</button>
+    <span class="trust-bar__sep">|</span>
+    <a href="#" class="trust-bar__item">Get the Kickbazar APP</a>
+  </header>
+
+  <header class="site-header" id="site-header">
+    <div class="site-header__inner">
+      <a href="#/" class="logo" data-nav>KB</a>
+
+      <div class="lang-switch" id="lang-switch">
+        <button type="button" class="lang-switch__btn" id="lang-btn" aria-haspopup="true">EN</button>
+        <div class="dropdown hidden" id="lang-dropdown">
+          <button type="button" data-locale="en" class="dropdown__item active">English</button>
+          <button type="button" data-locale="bn" class="dropdown__item">বাংলা</button>
+        </div>
+      </div>
+
+      <button type="button" class="search-entry" id="search-entry">
+        <span class="search-entry__icon">⌕</span>
+        <span data-i18n="searchPlaceholder">Search products</span>
+      </button>
+
+      <div class="categories-wrap" id="categories-wrap">
+        <button type="button" class="nav-link" id="categories-btn">Categories</button>
+        <div class="category-drawer hidden" id="category-drawer"></div>
+      </div>
+
+      <button type="button" class="icon-btn" id="support-btn" title="Support">Support</button>
+
+      <div class="cart-wrap" id="cart-wrap">
+        <button type="button" class="icon-btn cart-btn" id="cart-btn">
+          Cart
+          <span class="badge" id="cart-badge">0</span>
+        </button>
+        <div class="cart-preview hidden" id="cart-preview"></div>
+      </div>
+
+      <div class="account-wrap" id="account-wrap">
+        <button type="button" class="account-btn" id="account-btn" aria-haspopup="true">
+          <span class="avatar" id="account-avatar">○</span>
+          <span class="account-label" id="account-label"></span>
+        </button>
+        <div class="dropdown account-dropdown hidden" id="account-dropdown"></div>
+      </div>
+    </div>
+  </header>
+
+  <main id="app"></main>
+
+  <footer class="site-footer">
+    <div class="site-footer__grid">
+      <div>
+        <h4>Legal</h4>
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Service</a>
+        <a href="#">Returns & Refunds</a>
+      </div>
+      <div>
+        <h4>Customer Service</h4>
+        <a href="#" id="footer-support">Contact Us</a>
+        <a href="#">About Us</a>
+      </div>
+      <div>
+        <h4>Download App</h4>
+        <a href="#">App Store</a>
+        <a href="#">Google Play</a>
+      </div>
+      <div>
+        <h4>Follow Us</h4>
+        <a href="#">Instagram</a>
+        <a href="#">Facebook</a>
+      </div>
+    </div>
+    <p class="site-footer__copy">© 2026 KickBazar · Prototype based on PRD v1.10</p>
+  </footer>
+
+  <button type="button" class="sticky-fab hidden" id="sticky-fab">Support</button>
+
+  <div class="modal hidden" id="modal" role="dialog" aria-modal="true">
+    <div class="modal__backdrop" data-close-modal></div>
+    <div class="modal__panel" id="modal-panel"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
