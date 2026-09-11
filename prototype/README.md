@@ -11,6 +11,24 @@ python3 -m http.server 8765
 
 Open http://localhost:8765/
 
+## Export (standalone interactive HTML)
+
+Generate a **single self-contained HTML file** (CSS + JS + logo inlined; double-click or open in browser, fully interactive):
+
+```bash
+cd prototype
+python3 build-export.py
+```
+
+Outputs:
+
+| File | Description |
+|------|-------------|
+| `export/kickbazar-toc-prototype-v1.11.html` | Single-file prototype — no server required |
+| `export/kickbazar-toc-prototype-v1.11.zip` | Multi-file folder + assets (alternative) |
+
+Copy is also written to `/opt/cursor/artifacts/` when built in Cloud Agent.
+
 ## Covered pages (PRD scope)
 
 | Page | Route | PRD |
