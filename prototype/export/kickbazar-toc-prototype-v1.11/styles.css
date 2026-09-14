@@ -260,7 +260,7 @@ img { max-width: 100%; display: block; }
   padding: 16px;
   overflow-y: auto;
 }
-.category-mega__col--wide { border-right: none; }
+.category-mega__col--rec { border-right: none; }
 .category-mega__title {
   font-size: 11px;
   font-weight: 600;
@@ -291,11 +291,6 @@ img { max-width: 100%; display: block; }
   background: var(--gray-100);
   color: var(--black);
   font-weight: 600;
-}
-.category-mega__l3-wrap {
-  display: grid;
-  grid-template-columns: 160px 1fr;
-  gap: 16px;
 }
 .category-mega__rec {
   display: grid;
@@ -842,6 +837,57 @@ main {
 .coupon-row { display: flex; gap: 8px; margin-bottom: 12px; }
 .coupon-row input { flex: 1; padding: 10px; border: 1px solid var(--gray-200); border-radius: 2px; }
 
+/* Category page with L3 filter */
+.category-layout {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+.category-layout--no-filter {
+  grid-template-columns: 1fr;
+}
+.category-filter {
+  border: 1px solid var(--gray-200);
+  border-radius: 4px;
+  padding: 16px;
+  position: sticky;
+  top: calc(var(--header-h) + 16px);
+}
+.category-filter__title {
+  margin: 0 0 16px;
+  font-size: 16px;
+}
+.category-filter__label {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--gray-500);
+}
+.category-filter__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.category-filter__item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--gray-700);
+}
+.category-filter__item:hover,
+.category-filter__item.active {
+  background: var(--gray-100);
+  color: var(--black);
+  font-weight: 600;
+}
+.category-main { min-width: 0; }
+
 /* Search */
 .search-toolbar {
   display: flex;
@@ -1017,7 +1063,8 @@ main {
 @media (max-width: 900px) {
   .quick-grid { grid-template-columns: repeat(4, 1fr); }
   .zone-grid, .product-grid { grid-template-columns: repeat(2, 1fr); }
-  .pdp-layout, .cart-layout, .checkout-layout { grid-template-columns: 1fr; }
+  .pdp-layout, .cart-layout, .checkout-layout, .category-layout { grid-template-columns: 1fr; }
+  .category-filter { position: static; }
   .site-footer__grid { grid-template-columns: repeat(2, 1fr); }
   .search-entry span[data-i18n] { display: none; }
   .sub-nav__link { padding: 8px 10px; font-size: 12px; }

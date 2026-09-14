@@ -267,7 +267,7 @@ img { max-width: 100%; display: block; }
   padding: 16px;
   overflow-y: auto;
 }
-.category-mega__col--wide { border-right: none; }
+.category-mega__col--rec { border-right: none; }
 .category-mega__title {
   font-size: 11px;
   font-weight: 600;
@@ -298,11 +298,6 @@ img { max-width: 100%; display: block; }
   background: var(--gray-100);
   color: var(--black);
   font-weight: 600;
-}
-.category-mega__l3-wrap {
-  display: grid;
-  grid-template-columns: 160px 1fr;
-  gap: 16px;
 }
 .category-mega__rec {
   display: grid;
@@ -849,6 +844,57 @@ main {
 .coupon-row { display: flex; gap: 8px; margin-bottom: 12px; }
 .coupon-row input { flex: 1; padding: 10px; border: 1px solid var(--gray-200); border-radius: 2px; }
 
+/* Category page with L3 filter */
+.category-layout {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 24px;
+  align-items: start;
+}
+.category-layout--no-filter {
+  grid-template-columns: 1fr;
+}
+.category-filter {
+  border: 1px solid var(--gray-200);
+  border-radius: 4px;
+  padding: 16px;
+  position: sticky;
+  top: calc(var(--header-h) + 16px);
+}
+.category-filter__title {
+  margin: 0 0 16px;
+  font-size: 16px;
+}
+.category-filter__label {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--gray-500);
+}
+.category-filter__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.category-filter__item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--gray-700);
+}
+.category-filter__item:hover,
+.category-filter__item.active {
+  background: var(--gray-100);
+  color: var(--black);
+  font-weight: 600;
+}
+.category-main { min-width: 0; }
+
 /* Search */
 .search-toolbar {
   display: flex;
@@ -1024,7 +1070,8 @@ main {
 @media (max-width: 900px) {
   .quick-grid { grid-template-columns: repeat(4, 1fr); }
   .zone-grid, .product-grid { grid-template-columns: repeat(2, 1fr); }
-  .pdp-layout, .cart-layout, .checkout-layout { grid-template-columns: 1fr; }
+  .pdp-layout, .cart-layout, .checkout-layout, .category-layout { grid-template-columns: 1fr; }
+  .category-filter { position: static; }
   .site-footer__grid { grid-template-columns: repeat(2, 1fr); }
   .search-entry span[data-i18n] { display: none; }
   .sub-nav__link { padding: 8px 10px; font-size: 12px; }
@@ -1123,7 +1170,7 @@ main {
         <div class="category-mega__inner">
           <div class="category-mega__col" id="cat-col-l1"><p class="category-mega__title">Level 1</p><ul class="category-mega__list" id="cat-l1"></ul></div>
           <div class="category-mega__col" id="cat-col-l2"><p class="category-mega__title">Level 2</p><ul class="category-mega__list" id="cat-l2"></ul></div>
-          <div class="category-mega__col category-mega__col--wide" id="cat-col-l3"><p class="category-mega__title">Level 3 & Recommendations</p><div class="category-mega__l3-wrap"><ul class="category-mega__list" id="cat-l3"></ul><div class="category-mega__rec" id="cat-rec"></div></div></div>
+          <div class="category-mega__col category-mega__col--rec" id="cat-col-rec"><p class="category-mega__title">Recommendations</p><div class="category-mega__rec" id="cat-rec"></div></div>
         </div>
       </div>
     </div>
@@ -1182,47 +1229,108 @@ const CATEGORIES = [
 const CATEGORY_TREE = {
   women: {
     children: {
-      dresses: { name: "Dresses", l3: ["Midi Dresses", "Maxi Dresses", "Party Dresses", "Casual Dresses", "Work Dresses"] },
-      tops: { name: "Tops & Blouses", l3: ["Blouses", "T-Shirts", "Tank Tops", "Shirts"] },
-      bottoms: { name: "Bottoms", l3: ["Jeans", "Skirts", "Shorts", "Trousers"] },
+      dresses: {
+        name: "Dresses",
+        l3: [
+          { id: "midi-dresses", name: "Midi Dresses" },
+          { id: "maxi-dresses", name: "Maxi Dresses" },
+          { id: "party-dresses", name: "Party Dresses" },
+          { id: "casual-dresses", name: "Casual Dresses" },
+          { id: "work-dresses", name: "Work Dresses" },
+        ],
+      },
+      tops: {
+        name: "Tops & Blouses",
+        l3: [
+          { id: "blouses", name: "Blouses" },
+          { id: "t-shirts", name: "T-Shirts" },
+          { id: "tank-tops", name: "Tank Tops" },
+          { id: "shirts", name: "Shirts" },
+        ],
+      },
+      bottoms: {
+        name: "Bottoms",
+        l3: [
+          { id: "jeans", name: "Jeans" },
+          { id: "skirts", name: "Skirts" },
+          { id: "shorts", name: "Shorts" },
+          { id: "trousers", name: "Trousers" },
+        ],
+      },
     },
   },
   men: {
     children: {
-      shirts: { name: "Shirts", l3: ["Formal Shirts", "Casual Shirts", "Polo Shirts"] },
-      pants: { name: "Pants", l3: ["Jeans", "Chinos", "Joggers"] },
-      outerwear: { name: "Outerwear", l3: ["Jackets", "Hoodies", "Coats"] },
+      shirts: {
+        name: "Shirts",
+        l3: [
+          { id: "formal-shirts", name: "Formal Shirts" },
+          { id: "casual-shirts", name: "Casual Shirts" },
+          { id: "polo-shirts", name: "Polo Shirts" },
+        ],
+      },
+      pants: {
+        name: "Pants",
+        l3: [
+          { id: "jeans", name: "Jeans" },
+          { id: "chinos", name: "Chinos" },
+          { id: "joggers", name: "Joggers" },
+        ],
+      },
+      outerwear: {
+        name: "Outerwear",
+        l3: [
+          { id: "jackets", name: "Jackets" },
+          { id: "hoodies", name: "Hoodies" },
+          { id: "coats", name: "Coats" },
+        ],
+      },
     },
   },
   kids: {
     children: {
-      girls: { name: "Girls", l3: ["Dresses", "Tops", "Sets"] },
-      boys: { name: "Boys", l3: ["T-Shirts", "Shorts", "Sets"] },
-      baby: { name: "Baby", l3: ["Onesies", "Rompers", "Accessories"] },
+      girls: { name: "Girls", l3: [{ id: "dresses", name: "Dresses" }, { id: "tops", name: "Tops" }, { id: "sets", name: "Sets" }] },
+      boys: { name: "Boys", l3: [{ id: "t-shirts", name: "T-Shirts" }, { id: "shorts", name: "Shorts" }, { id: "sets", name: "Sets" }] },
+      baby: { name: "Baby", l3: [{ id: "onesies", name: "Onesies" }, { id: "rompers", name: "Rompers" }, { id: "accessories", name: "Accessories" }] },
     },
   },
   beauty: {
     children: {
-      skincare: { name: "Skincare", l3: ["Serum", "Moisturizer", "Cleanser", "Sunscreen"] },
-      makeup: { name: "Makeup", l3: ["Lipstick", "Foundation", "Mascara"] },
+      skincare: {
+        name: "Skincare",
+        l3: [
+          { id: "serum", name: "Serum" },
+          { id: "moisturizer", name: "Moisturizer" },
+          { id: "cleanser", name: "Cleanser" },
+          { id: "sunscreen", name: "Sunscreen" },
+        ],
+      },
+      makeup: {
+        name: "Makeup",
+        l3: [
+          { id: "lipstick", name: "Lipstick" },
+          { id: "foundation", name: "Foundation" },
+          { id: "mascara", name: "Mascara" },
+        ],
+      },
     },
   },
   home: {
     children: {
-      kitchen: { name: "Kitchen", l3: ["Cookware", "Storage", "Utensils"] },
-      decor: { name: "Decor", l3: ["Wall Art", "Candles", "Rugs"] },
+      kitchen: { name: "Kitchen", l3: [{ id: "cookware", name: "Cookware" }, { id: "storage", name: "Storage" }, { id: "utensils", name: "Utensils" }] },
+      decor: { name: "Decor", l3: [{ id: "wall-art", name: "Wall Art" }, { id: "candles", name: "Candles" }, { id: "rugs", name: "Rugs" }] },
     },
   },
   electronics: {
     children: {
-      audio: { name: "Audio", l3: ["Earbuds", "Headphones", "Speakers"] },
-      mobile: { name: "Mobile", l3: ["Cases", "Chargers", "Cables"] },
+      audio: { name: "Audio", l3: [{ id: "earbuds", name: "Earbuds" }, { id: "headphones", name: "Headphones" }, { id: "speakers", name: "Speakers" }] },
+      mobile: { name: "Mobile", l3: [{ id: "cases", name: "Cases" }, { id: "chargers", name: "Chargers" }, { id: "cables", name: "Cables" }] },
     },
   },
   sports: {
     children: {
-      footwear: { name: "Footwear", l3: ["Running", "Training", "Casual"] },
-      apparel: { name: "Apparel", l3: ["Tops", "Shorts", "Tracksuits"] },
+      footwear: { name: "Footwear", l3: [{ id: "running", name: "Running" }, { id: "training", name: "Training" }, { id: "casual", name: "Casual" }] },
+      apparel: { name: "Apparel", l3: [{ id: "tops", name: "Tops" }, { id: "shorts", name: "Shorts" }, { id: "tracksuits", name: "Tracksuits" }] },
     },
   },
 };
@@ -1299,6 +1407,33 @@ function formatBDT(n) {
   return "৳" + Math.round(n).toLocaleString("en-BD");
 }
 
+function getL1(id) {
+  return CATEGORIES.find((c) => c.id === id) || { id, name: id };
+}
+
+function getL2(l1Id, l2Id) {
+  const node = CATEGORY_TREE[l1Id]?.children?.[l2Id];
+  if (!node) return null;
+  return { id: l2Id, name: node.name, l3: node.l3 || [] };
+}
+
+function getL3List(l1Id, l2Id) {
+  return getL2(l1Id, l2Id)?.l3 || [];
+}
+
+function categoryL2Path(l1Id, l2Id, l3Id) {
+  let path = `/category/${l1Id}/${l2Id}`;
+  if (l3Id) path += `?l3=${encodeURIComponent(l3Id)}`;
+  return path;
+}
+
+function filterProductsByL3(products, l3Id, l3List) {
+  if (!l3Id || !l3List.length) return products;
+  const idx = l3List.findIndex((item) => item.id === l3Id);
+  if (idx < 0) return products;
+  return products.filter((_, i) => i % l3List.length === idx);
+}
+
 function parseRoute() {
   const hash = location.hash.slice(1) || "/";
   const [path, qs] = hash.split("?");
@@ -1307,7 +1442,18 @@ function parseRoute() {
 }
 
 function navigate(path) {
-  location.hash = path;
+  const route = path.startsWith("/") ? path : `/${path}`;
+  location.hash = route;
+}
+
+function resolveNavHref(href) {
+  if (!href) return "/";
+  const hashIdx = href.indexOf("#");
+  if (hashIdx >= 0) {
+    const route = href.slice(hashIdx + 1);
+    return route || "/";
+  }
+  return href.startsWith("/") ? href : `/${href}`;
 }
 
 function showToast(msg) {
@@ -1445,7 +1591,11 @@ function renderHeader() {
   });
 
   const path = state.route?.path || "/";
-  const catId = path.startsWith("/category/") ? path.split("/")[2] : null;
+  let catId = null;
+  if (path.startsWith("/category/")) {
+    const parts = path.split("/").filter(Boolean);
+    catId = parts[1] || null;
+  }
   document.querySelectorAll(".sub-nav__link").forEach((a) => {
     a.classList.toggle("active", a.dataset.cat === catId);
   });
@@ -1475,7 +1625,6 @@ function closeCategoryMega() {
 function renderCategoryMega() {
   const l1El = document.getElementById("cat-l1");
   const l2El = document.getElementById("cat-l2");
-  const l3El = document.getElementById("cat-l3");
   const recEl = document.getElementById("cat-rec");
   if (!l1El) return;
 
@@ -1491,12 +1640,9 @@ function renderCategoryMega() {
   l2El.innerHTML = l2Keys
     .map(
       (k) =>
-        `<li><button type="button" class="${k === state.megaL2 ? "active" : ""}" data-l2="${k}">${l2Map[k].name}</button></li>`
+        `<li><a href="#/category/${state.megaL1}/${k}" class="${k === state.megaL2 ? "active" : ""}" data-nav data-l2="${k}">${l2Map[k].name}</a></li>`
     )
     .join("");
-
-  const l3List = state.megaL2 ? l2Map[state.megaL2]?.l3 || [] : [];
-  l3El.innerHTML = l3List.map((n) => `<li><a href="#/category/${state.megaL1}" data-nav>${n}</a></li>`).join("");
 
   const recProducts = PRODUCTS.slice(0, 10);
   recEl.innerHTML = recProducts
@@ -1511,16 +1657,23 @@ function renderCategoryMega() {
     .join("");
 
   l1El.querySelectorAll("[data-l1]").forEach((btn) => {
-    btn.onmouseenter = btn.onclick = () => {
+    btn.onmouseenter = () => {
       state.megaL1 = btn.dataset.l1;
       state.megaL2 = Object.keys(CATEGORY_TREE[state.megaL1]?.children || {})[0] || null;
       renderCategoryMega();
     };
   });
-  l2El.querySelectorAll("[data-l2]").forEach((btn) => {
-    btn.onmouseenter = btn.onclick = () => {
-      state.megaL2 = btn.dataset.l2;
+  l2El.querySelectorAll("[data-l2]").forEach((el) => {
+    el.onmouseenter = () => {
+      state.megaL2 = el.dataset.l2;
       renderCategoryMega();
+    };
+  });
+  l2El.querySelectorAll("[data-nav]").forEach((a) => {
+    a.onclick = (e) => {
+      e.preventDefault();
+      closeCategoryMega();
+      navigate(resolveNavHref(a.getAttribute("href")));
     };
   });
   recEl.querySelectorAll("[data-product]").forEach((el) => {
@@ -1647,8 +1800,8 @@ function renderSearch() {
   bindProductCards();
 }
 
-function renderCategory(id) {
-  const cat = CATEGORIES.find((c) => c.id === id) || { name: id };
+function renderCategoryL1(l1Id) {
+  const cat = getL1(l1Id);
   document.getElementById("sticky-fab").classList.add("hidden");
   document.getElementById("app").innerHTML = `
     <nav class="breadcrumb"><a href="#/" data-nav>Home</a> › ${cat.name}</nav>
@@ -1657,6 +1810,61 @@ function renderCategory(id) {
       <select><option>Best Match</option><option>Price</option><option>Newest</option></select>
     </div>
     <div class="product-grid">${PRODUCTS.map(productCard).join("")}</div>`;
+  bindProductCards();
+}
+
+function renderCategoryL2(l1Id, l2Id) {
+  const l1 = getL1(l1Id);
+  const l2 = getL2(l1Id, l2Id) || { id: l2Id, name: l2Id, l3: [] };
+  const l3List = l2.l3 || [];
+  const selectedL3 = state.route.params.get("l3") || "";
+  const filtered = filterProductsByL3(PRODUCTS, selectedL3, l3List);
+  const hasL3Filter = l3List.length > 0;
+
+  document.getElementById("sticky-fab").classList.add("hidden");
+  document.getElementById("app").innerHTML = `
+    <nav class="breadcrumb">
+      <a href="#/" data-nav>Home</a> ›
+      <a href="#/category/${l1.id}" data-nav>${l1.name}</a> ›
+      ${l2.name}
+    </nav>
+    <h1 class="page-title">${l2.name}</h1>
+    <div class="category-layout${hasL3Filter ? "" : " category-layout--no-filter"}">
+      ${
+        hasL3Filter
+          ? `<aside class="category-filter" aria-label="Filters">
+        <h3 class="category-filter__title">Filter</h3>
+        <div class="category-filter__group">
+          <p class="category-filter__label">Categories</p>
+          <ul class="category-filter__list">
+            <li>
+              <button type="button" class="category-filter__item${!selectedL3 ? " active" : ""}" data-l3="">
+                All
+              </button>
+            </li>
+            ${l3List
+              .map(
+                (item) =>
+                  `<li><button type="button" class="category-filter__item${selectedL3 === item.id ? " active" : ""}" data-l3="${item.id}">${item.name}</button></li>`
+              )
+              .join("")}
+          </ul>
+        </div>
+      </aside>`
+          : ""
+      }
+      <div class="category-main">
+        <div class="search-toolbar">
+          <select><option>Best Match</option><option>Price: Low to High</option><option>Newest</option></select>
+          <span class="result-count">${filtered.length} results</span>
+        </div>
+        <div class="product-grid">${filtered.map(productCard).join("")}</div>
+      </div>
+    </div>`;
+
+  document.querySelectorAll(".category-filter__item").forEach((btn) => {
+    btn.onclick = () => navigate(categoryL2Path(l1Id, l2Id, btn.dataset.l3 || null));
+  });
   bindProductCards();
 }
 
@@ -2050,7 +2258,11 @@ function render() {
 
   if (path === "/" || path === "") renderHome();
   else if (path.startsWith("/search")) renderSearch();
-  else if (path.startsWith("/category/")) renderCategory(path.split("/")[2]);
+  else if (path.startsWith("/category/")) {
+    const parts = path.split("/").filter(Boolean);
+    if (parts.length >= 3) renderCategoryL2(parts[1], parts[2]);
+    else renderCategoryL1(parts[1] || "women");
+  }
   else if (path.startsWith("/product/")) renderPDP(path.split("/")[2]);
   else if (path === "/cart") renderCart();
   else if (path === "/checkout") renderCheckout();
@@ -2062,7 +2274,7 @@ function render() {
   document.querySelectorAll("[data-nav]").forEach((a) => {
     a.onclick = (e) => {
       e.preventDefault();
-      navigate(a.getAttribute("href").slice(1));
+      navigate(resolveNavHref(a.getAttribute("href")));
     };
   });
 }
