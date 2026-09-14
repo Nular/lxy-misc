@@ -168,6 +168,10 @@ const I18N = {
   },
 };
 
+const MEGA_REC_COLS = 5;
+const MEGA_REC_ROWS = 2;
+const MEGA_REC_SLOTS = MEGA_REC_COLS * MEGA_REC_ROWS - 1;
+
 const TRUST_CONTENT = {
   return: { title: "Easy Return", body: "30-day hassle-free returns on eligible items. Same policy as the KickBazar App." },
   support: { title: "24/7 Support", body: "Our support team is available around the clock via chat and phone." },
@@ -185,6 +189,7 @@ const state = {
   appliedCoupon: 50,
   megaL1: CATEGORIES[0]?.id || "women",
   megaL2: null,
+  catFilterExpandedL2: null,
 };
 
 function formatBDT(n) {
@@ -216,6 +221,86 @@ function filterProductsByL3(products, l3Id, l3List) {
   const idx = l3List.findIndex((item) => item.id === l3Id);
   if (idx < 0) return products;
   return products.filter((_, i) => i % l3List.length === idx);
+}
+
+function categoryFilterL1HTML(l1Id) {
+  const l2Map = CATEGORY_TREE[l1Id]?.children || {};
+  const l2Keys = Object.keys(l2Map);
+  return `
+    <aside class="category-filter" aria-label="Filters">
+      <h3 class="category-filter__title">Filter</h3>
+      <div class="category-filter__group">
+        <p class="category-filter__label">Categories</p>
+        <ul class="category-filter__accordion">
+          ${l2Keys
+            .map((l2Id) => {
+              const l2 = l2Map[l2Id];
+              const expanded = state.catFilterExpandedL2 === l2Id;
+              const l3List = l2.l3 || [];
+              return `
+            <li class="category-filter__l2">
+              <div class="category-filter__l2-row">
+                <button type="button" class="category-filter__expand${expanded ? " expanded" : ""}" data-expand-l2="${l2Id}" aria-label="Expand ${l2.name}">▾</button>
+                <a href="#/category/${l1Id}/${l2Id}" class="category-filter__l2-link" data-nav>${l2.name}</a>
+              </div>
+              ${
+                l3List.length
+                  ? `<ul class="category-filter__l3-list${expanded ? "" : " hidden"}">
+                ${l3List
+                  .map(
+                    (item) =>
+                      `<li><a href="#/category/${l1Id}/${l2Id}?l3=${item.id}" class="category-filter__l3-link" data-nav>${item.name}</a></li>`
+                  )
+                  .join("")}
+              </ul>`
+                  : ""
+              }
+            </li>`;
+            })
+            .join("")}
+        </ul>
+      </div>
+    </aside>`;
+}
+
+function categoryFilterL2HTML(l1Id, l2Id, selectedL3) {
+  const l3List = getL3List(l1Id, l2Id);
+  if (!l3List.length) return "";
+  return `
+    <aside class="category-filter" aria-label="Filters">
+      <h3 class="category-filter__title">Filter</h3>
+      <div class="category-filter__group">
+        <p class="category-filter__label">Categories</p>
+        <ul class="category-filter__list">
+          <li>
+            <button type="button" class="category-filter__item${!selectedL3 ? " active" : ""}" data-l3="">All</button>
+          </li>
+          ${l3List
+            .map(
+              (item) =>
+                `<li><button type="button" class="category-filter__item${selectedL3 === item.id ? " active" : ""}" data-l3="${item.id}">${item.name}</button></li>`
+            )
+            .join("")}
+        </ul>
+      </div>
+    </aside>`;
+}
+
+function bindCategoryFilterL1() {
+  document.querySelectorAll("[data-expand-l2]").forEach((btn) => {
+    btn.onclick = (e) => {
+      e.preventDefault();
+      const id = btn.dataset.expandL2;
+      state.catFilterExpandedL2 = state.catFilterExpandedL2 === id ? null : id;
+      render();
+    };
+  });
+}
+
+function bindCategoryFilterL2(l1Id, l2Id) {
+  document.querySelectorAll(".category-filter__item").forEach((btn) => {
+    btn.onclick = () => navigate(categoryL2Path(l1Id, l2Id, btn.dataset.l3 || null));
+  });
 }
 
 function parseRoute() {
@@ -428,17 +513,23 @@ function renderCategoryMega() {
     )
     .join("");
 
-  const recProducts = PRODUCTS.slice(0, 10);
-  recEl.innerHTML = recProducts
-    .map(
-      (p) =>
-        `<div class="category-mega__rec-item" data-product="${p.id}">
+  const recProducts = PRODUCTS.slice(0, MEGA_REC_SLOTS);
+  const viewMoreHref = `#/category/${state.megaL1}/${state.megaL2}`;
+  recEl.innerHTML =
+    recProducts
+      .map(
+        (p) =>
+          `<div class="category-mega__rec-item" data-product="${p.id}">
           <div class="category-mega__rec-thumb"></div>
           <div class="category-mega__rec-title">${p.title}</div>
           <div class="category-mega__rec-price">${formatBDT(p.price)}</div>
         </div>`
-    )
-    .join("");
+      )
+      .join("") +
+    `<a href="${viewMoreHref}" class="category-mega__rec-item category-mega__rec-viewmore" data-viewmore data-nav>
+      <div class="category-mega__rec-thumb category-mega__rec-thumb--vm">${t("viewMore")}</div>
+      <div class="category-mega__rec-title">See all in ${l2Map[state.megaL2]?.name || "category"}</div>
+    </a>`;
 
   l1El.querySelectorAll("[data-l1]").forEach((btn) => {
     btn.onmouseenter = () => {
@@ -464,6 +555,13 @@ function renderCategoryMega() {
     el.onclick = () => {
       closeCategoryMega();
       navigate("/product/" + el.dataset.product);
+    };
+  });
+  recEl.querySelectorAll("[data-viewmore]").forEach((a) => {
+    a.onclick = (e) => {
+      e.preventDefault();
+      closeCategoryMega();
+      navigate(resolveNavHref(a.getAttribute("href")));
     };
   });
 }
@@ -590,10 +688,17 @@ function renderCategoryL1(l1Id) {
   document.getElementById("app").innerHTML = `
     <nav class="breadcrumb"><a href="#/" data-nav>Home</a> › ${cat.name}</nav>
     <h1 class="page-title">${cat.name}</h1>
-    <div class="search-toolbar">
-      <select><option>Best Match</option><option>Price</option><option>Newest</option></select>
-    </div>
-    <div class="product-grid">${PRODUCTS.map(productCard).join("")}</div>`;
+    <div class="category-layout">
+      ${categoryFilterL1HTML(l1Id)}
+      <div class="category-main">
+        <div class="search-toolbar">
+          <select><option>Best Match</option><option>Price</option><option>Newest</option></select>
+          <span class="result-count">${PRODUCTS.length} results</span>
+        </div>
+        <div class="product-grid">${PRODUCTS.map(productCard).join("")}</div>
+      </div>
+    </div>`;
+  bindCategoryFilterL1();
   bindProductCards();
 }
 
@@ -603,7 +708,7 @@ function renderCategoryL2(l1Id, l2Id) {
   const l3List = l2.l3 || [];
   const selectedL3 = state.route.params.get("l3") || "";
   const filtered = filterProductsByL3(PRODUCTS, selectedL3, l3List);
-  const hasL3Filter = l3List.length > 0;
+  const filterHTML = categoryFilterL2HTML(l1Id, l2Id, selectedL3);
 
   document.getElementById("sticky-fab").classList.add("hidden");
   document.getElementById("app").innerHTML = `
@@ -613,30 +718,8 @@ function renderCategoryL2(l1Id, l2Id) {
       ${l2.name}
     </nav>
     <h1 class="page-title">${l2.name}</h1>
-    <div class="category-layout${hasL3Filter ? "" : " category-layout--no-filter"}">
-      ${
-        hasL3Filter
-          ? `<aside class="category-filter" aria-label="Filters">
-        <h3 class="category-filter__title">Filter</h3>
-        <div class="category-filter__group">
-          <p class="category-filter__label">Categories</p>
-          <ul class="category-filter__list">
-            <li>
-              <button type="button" class="category-filter__item${!selectedL3 ? " active" : ""}" data-l3="">
-                All
-              </button>
-            </li>
-            ${l3List
-              .map(
-                (item) =>
-                  `<li><button type="button" class="category-filter__item${selectedL3 === item.id ? " active" : ""}" data-l3="${item.id}">${item.name}</button></li>`
-              )
-              .join("")}
-          </ul>
-        </div>
-      </aside>`
-          : ""
-      }
+    <div class="category-layout${filterHTML ? "" : " category-layout--no-filter"}">
+      ${filterHTML}
       <div class="category-main">
         <div class="search-toolbar">
           <select><option>Best Match</option><option>Price: Low to High</option><option>Newest</option></select>
@@ -646,9 +729,7 @@ function renderCategoryL2(l1Id, l2Id) {
       </div>
     </div>`;
 
-  document.querySelectorAll(".category-filter__item").forEach((btn) => {
-    btn.onclick = () => navigate(categoryL2Path(l1Id, l2Id, btn.dataset.l3 || null));
-  });
+  bindCategoryFilterL2(l1Id, l2Id);
   bindProductCards();
 }
 
