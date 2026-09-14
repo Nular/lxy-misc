@@ -189,7 +189,7 @@ const state = {
   appliedCoupon: 50,
   megaL1: CATEGORIES[0]?.id || "women",
   megaL2: null,
-  catFilterExpandedL2: null,
+  l1FilterExpanded: {},
 };
 
 function formatBDT(n) {
@@ -223,41 +223,84 @@ function filterProductsByL3(products, l3Id, l3List) {
   return products.filter((_, i) => i % l3List.length === idx);
 }
 
-function categoryFilterL1HTML(l1Id) {
+function categoryL2Path(l1Id, l2Id, l3Id) {
+  let path = `/category/${l1Id}/${l2Id}`;
+  if (l3Id) path += `?l3=${encodeURIComponent(l3Id)}`;
+  return path;
+}
+
+function categoryL1Path(l1Id, l2Id, l3Id) {
+  const params = new URLSearchParams();
+  if (l2Id) params.set("l2", l2Id);
+  if (l3Id) params.set("l3", l3Id);
+  const qs = params.toString();
+  return qs ? `/category/${l1Id}?${qs}` : `/category/${l1Id}`;
+}
+
+function getL2Keys(l1Id) {
+  return Object.keys(CATEGORY_TREE[l1Id]?.children || {});
+}
+
+function filterProductsForL1(products, l1Id, l2Id, l3Id) {
+  if (!l2Id) return products;
+  const l2Keys = getL2Keys(l1Id);
+  const l2Idx = l2Keys.indexOf(l2Id);
+  if (l2Idx < 0) return products;
+  const l3List = getL3List(l1Id, l2Id);
+  if (l3Id && l3List.length) return filterProductsByL3(products, l3Id, l3List);
+  return products.filter((_, i) => i % l2Keys.length === l2Idx);
+}
+
+function categoryFilterL1HTML(l1Id, selectedL2, selectedL3) {
   const l2Map = CATEGORY_TREE[l1Id]?.children || {};
   const l2Keys = Object.keys(l2Map);
+  if (!l2Keys.length) return "";
+
+  if (selectedL2) state.l1FilterExpanded[selectedL2] = true;
+
+  const groups = l2Keys
+    .map((l2Id) => {
+      const l2 = l2Map[l2Id];
+      const l3List = l2.l3 || [];
+      const expanded = !!state.l1FilterExpanded[l2Id];
+      const l2Active = selectedL2 === l2Id && !selectedL3;
+      const hasL3 = l3List.length > 0;
+      return `
+        <li class="category-filter__l2">
+          <div class="category-filter__l2-row">
+            ${
+              hasL3
+                ? `<button type="button" class="category-filter__expand${expanded ? " expanded" : ""}" data-expand-l2="${l2Id}" aria-expanded="${expanded}" aria-label="Expand ${l2.name}">▾</button>`
+                : `<span class="category-filter__expand-spacer"></span>`
+            }
+            <button type="button" class="category-filter__item category-filter__item--l2${l2Active ? " active" : ""}" data-l2="${l2Id}">${l2.name}</button>
+          </div>
+          ${
+            hasL3
+              ? `<ul class="category-filter__l3-list${expanded ? "" : " hidden"}">
+              ${l3List
+                .map(
+                  (item) =>
+                    `<li><button type="button" class="category-filter__item category-filter__item--l3${selectedL2 === l2Id && selectedL3 === item.id ? " active" : ""}" data-l2="${l2Id}" data-l3="${item.id}">${item.name}</button></li>`
+                )
+                .join("")}
+            </ul>`
+              : ""
+          }
+        </li>`;
+    })
+    .join("");
+
   return `
     <aside class="category-filter" aria-label="Filters">
       <h3 class="category-filter__title">Filter</h3>
       <div class="category-filter__group">
         <p class="category-filter__label">Categories</p>
         <ul class="category-filter__accordion">
-          ${l2Keys
-            .map((l2Id) => {
-              const l2 = l2Map[l2Id];
-              const expanded = state.catFilterExpandedL2 === l2Id;
-              const l3List = l2.l3 || [];
-              return `
-            <li class="category-filter__l2">
-              <div class="category-filter__l2-row">
-                <button type="button" class="category-filter__expand${expanded ? " expanded" : ""}" data-expand-l2="${l2Id}" aria-label="Expand ${l2.name}">▾</button>
-                <a href="#/category/${l1Id}/${l2Id}" class="category-filter__l2-link" data-nav>${l2.name}</a>
-              </div>
-              ${
-                l3List.length
-                  ? `<ul class="category-filter__l3-list${expanded ? "" : " hidden"}">
-                ${l3List
-                  .map(
-                    (item) =>
-                      `<li><a href="#/category/${l1Id}/${l2Id}?l3=${item.id}" class="category-filter__l3-link" data-nav>${item.name}</a></li>`
-                  )
-                  .join("")}
-              </ul>`
-                  : ""
-              }
-            </li>`;
-            })
-            .join("")}
+          <li>
+            <button type="button" class="category-filter__item${!selectedL2 ? " active" : ""}" data-l2="">All</button>
+          </li>
+          ${groups}
         </ul>
       </div>
     </aside>`;
@@ -286,13 +329,22 @@ function categoryFilterL2HTML(l1Id, l2Id, selectedL3) {
     </aside>`;
 }
 
-function bindCategoryFilterL1() {
+function bindCategoryFilterL1(l1Id) {
   document.querySelectorAll("[data-expand-l2]").forEach((btn) => {
     btn.onclick = (e) => {
-      e.preventDefault();
+      e.stopPropagation();
       const id = btn.dataset.expandL2;
-      state.catFilterExpandedL2 = state.catFilterExpandedL2 === id ? null : id;
+      state.l1FilterExpanded[id] = !state.l1FilterExpanded[id];
       render();
+    };
+  });
+
+  document.querySelectorAll(".category-filter__item[data-l2]").forEach((btn) => {
+    btn.onclick = () => {
+      const l2 = btn.dataset.l2 || null;
+      const l3 = btn.dataset.l3 || null;
+      if (l2) state.l1FilterExpanded[l2] = true;
+      navigate(categoryL1Path(l1Id, l2, l3));
     };
   });
 }
@@ -684,21 +736,26 @@ function renderSearch() {
 
 function renderCategoryL1(l1Id) {
   const cat = getL1(l1Id);
+  const selectedL2 = state.route.params.get("l2") || "";
+  const selectedL3 = state.route.params.get("l3") || "";
+  const filtered = filterProductsForL1(PRODUCTS, l1Id, selectedL2, selectedL3);
+  const filterHTML = categoryFilterL1HTML(l1Id, selectedL2, selectedL3);
+
   document.getElementById("sticky-fab").classList.add("hidden");
   document.getElementById("app").innerHTML = `
     <nav class="breadcrumb"><a href="#/" data-nav>Home</a> › ${cat.name}</nav>
     <h1 class="page-title">${cat.name}</h1>
-    <div class="category-layout">
-      ${categoryFilterL1HTML(l1Id)}
+    <div class="category-layout${filterHTML ? "" : " category-layout--no-filter"}">
+      ${filterHTML}
       <div class="category-main">
         <div class="search-toolbar">
           <select><option>Best Match</option><option>Price</option><option>Newest</option></select>
-          <span class="result-count">${PRODUCTS.length} results</span>
+          <span class="result-count">${filtered.length} results</span>
         </div>
-        <div class="product-grid">${PRODUCTS.map(productCard).join("")}</div>
+        <div class="product-grid">${filtered.map(productCard).join("")}</div>
       </div>
     </div>`;
-  bindCategoryFilterL1();
+  bindCategoryFilterL1(l1Id);
   bindProductCards();
 }
 
