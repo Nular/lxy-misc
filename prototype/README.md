@@ -47,7 +47,8 @@ Copy is also written to `/opt/cursor/artifacts/` when built in Cloud Agent.
 - **Trust bar** (all pages): Easy Return / 24/7 Support / Get the Kickbazar APP — Modal or app-download dialog; collapses on scroll (BR103)
 - **Main nav**: Logo, search dropdown (Recent + Discovery), language / support / cart / account icons
 - **Sub nav**: Categories ▾ (hover → L1 / L2 / 9 rec + View More) + L1 category links
-- **Category L1 page**: left Filter accordion (L2 expand → L3 links); breadcrumb `Home › L1`
+- **Sub nav**: Categories ▾ (hover → L1 / L2 / 9 rec + View More) + L1 category links
+- **Category L1 page**: left Filter with expandable L2 → L3; filters in-page via `?l2=&l3=`
 - **Category L2 page**: left Filter L3 only; breadcrumb `Home › L1 › L2`; `?l3=` filter
 - **Add to cart**: badge +1 + “Added successfully” bubble (no cart preview drawer)
 
