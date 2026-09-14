@@ -156,6 +156,7 @@ const I18N = {
     buyNow: "Buy Now",
     checkout: "Checkout",
     viewMore: "View More",
+    viewAll: "View All",
     addedSuccess: "Added successfully",
   },
   bn: {
@@ -164,13 +165,14 @@ const I18N = {
     buyNow: "এখনই কিনুন",
     checkout: "চেকআউট",
     viewMore: "আরও দেখুন",
+    viewAll: "View All",
     addedSuccess: "Added successfully",
   },
 };
 
 const MEGA_REC_COLS = 5;
 const MEGA_REC_ROWS = 2;
-const MEGA_REC_SLOTS = MEGA_REC_COLS * MEGA_REC_ROWS - 1;
+const MEGA_REC_SLOTS = MEGA_REC_COLS * MEGA_REC_ROWS;
 
 const TRUST_CONTENT = {
   return: { title: "Easy Return", body: "30-day hassle-free returns on eligible items. Same policy as the KickBazar App." },
@@ -558,30 +560,26 @@ function renderCategoryMega() {
   const l2Keys = Object.keys(l2Map);
   if (!state.megaL2 || !l2Map[state.megaL2]) state.megaL2 = l2Keys[0] || null;
 
-  l2El.innerHTML = l2Keys
-    .map(
-      (k) =>
-        `<li><a href="#/category/${state.megaL1}/${k}" class="${k === state.megaL2 ? "active" : ""}" data-nav data-l2="${k}">${l2Map[k].name}</a></li>`
-    )
-    .join("");
+  l2El.innerHTML =
+    `<li><a href="#/category/${state.megaL1}" class="category-mega__view-all" data-nav>${t("viewAll")}</a></li>` +
+    l2Keys
+      .map(
+        (k) =>
+          `<li><a href="#/category/${state.megaL1}/${k}" class="${k === state.megaL2 ? "active" : ""}" data-nav data-l2="${k}">${l2Map[k].name}</a></li>`
+      )
+      .join("");
 
   const recProducts = PRODUCTS.slice(0, MEGA_REC_SLOTS);
-  const viewMoreHref = `#/category/${state.megaL1}/${state.megaL2}`;
-  recEl.innerHTML =
-    recProducts
-      .map(
-        (p) =>
-          `<div class="category-mega__rec-item" data-product="${p.id}">
+  recEl.innerHTML = recProducts
+    .map(
+      (p) =>
+        `<div class="category-mega__rec-item" data-product="${p.id}">
           <div class="category-mega__rec-thumb"></div>
           <div class="category-mega__rec-title">${p.title}</div>
           <div class="category-mega__rec-price">${formatBDT(p.price)}</div>
         </div>`
-      )
-      .join("") +
-    `<a href="${viewMoreHref}" class="category-mega__rec-item category-mega__rec-viewmore" data-viewmore data-nav>
-      <div class="category-mega__rec-thumb category-mega__rec-thumb--vm">${t("viewMore")}</div>
-      <div class="category-mega__rec-title">See all in ${l2Map[state.megaL2]?.name || "category"}</div>
-    </a>`;
+    )
+    .join("");
 
   l1El.querySelectorAll("[data-l1]").forEach((btn) => {
     btn.onmouseenter = () => {
@@ -607,13 +605,6 @@ function renderCategoryMega() {
     el.onclick = () => {
       closeCategoryMega();
       navigate("/product/" + el.dataset.product);
-    };
-  });
-  recEl.querySelectorAll("[data-viewmore]").forEach((a) => {
-    a.onclick = (e) => {
-      e.preventDefault();
-      closeCategoryMega();
-      navigate(resolveNavHref(a.getAttribute("href")));
     };
   });
 }
