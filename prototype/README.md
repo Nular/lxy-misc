@@ -25,6 +25,7 @@ Outputs:
 | File | Description |
 |------|-------------|
 | `export/kickbazar-toc-prototype-v1.11.html` | Single-file prototype — no server required |
+| `export/kickbazar-toc-interactive.html` | Same single-file copy (easier name) |
 | `export/kickbazar-toc-prototype-v1.11.zip` | Multi-file folder + assets (alternative) |
 
 Copy is also written to `/opt/cursor/artifacts/` when built in Cloud Agent.

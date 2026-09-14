@@ -12,6 +12,7 @@ ROOT = Path(__file__).resolve().parent
 EXPORT_DIR = ROOT / "export"
 ARTIFACTS_DIR = Path("/opt/cursor/artifacts")
 OUTPUT_NAME = "kickbazar-toc-prototype-v1.11.html"
+OUTPUT_ALIAS = "kickbazar-toc-interactive.html"
 ZIP_NAME = "kickbazar-toc-prototype-v1.11.zip"
 
 
@@ -63,6 +64,8 @@ def main() -> None:
     standalone = build_standalone_html()
     standalone_path = EXPORT_DIR / OUTPUT_NAME
     standalone_path.write_text(standalone, encoding="utf-8")
+    alias_path = EXPORT_DIR / OUTPUT_ALIAS
+    alias_path.write_text(standalone, encoding="utf-8")
 
     folder = build_folder_export()
     zip_path = EXPORT_DIR / ZIP_NAME
@@ -72,10 +75,12 @@ def main() -> None:
                 zf.write(file, file.relative_to(folder.parent))
 
     shutil.copy2(standalone_path, ARTIFACTS_DIR / OUTPUT_NAME)
+    shutil.copy2(alias_path, ARTIFACTS_DIR / OUTPUT_ALIAS)
     shutil.copy2(zip_path, ARTIFACTS_DIR / ZIP_NAME)
 
     size_kb = standalone_path.stat().st_size / 1024
     print(f"Standalone HTML: {standalone_path} ({size_kb:.1f} KB)")
+    print(f"Alias copy:      {alias_path}")
     print(f"Folder + zip:    {folder}")
     print(f"Zip archive:     {zip_path}")
     print(f"Artifacts:       {ARTIFACTS_DIR / OUTPUT_NAME}")
