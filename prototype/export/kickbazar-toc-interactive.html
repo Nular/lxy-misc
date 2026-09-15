@@ -864,6 +864,128 @@ main {
 }
 .coupon-row { display: flex; gap: 8px; margin-bottom: 12px; }
 .coupon-row input { flex: 1; padding: 10px; border: 1px solid var(--gray-200); border-radius: 2px; }
+.coupon-applied {
+  font-size: 13px;
+  color: var(--success, #276749);
+  background: #f0fff4;
+  border: 1px solid #9ae6b4;
+  border-radius: 4px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+}
+.address-card {
+  border: 1px solid var(--gray-200);
+  border-radius: 4px;
+  padding: 16px;
+  background: var(--gray-100);
+}
+.address-card__name { margin: 0 0 6px; font-weight: 700; }
+.address-card__region,
+.address-card__line { margin: 0 0 4px; font-size: 14px; color: var(--gray-700); }
+.address-empty {
+  border: 1px dashed var(--gray-200);
+  border-radius: 4px;
+  padding: 20px;
+  text-align: center;
+  color: var(--gray-500);
+}
+.address-empty p { margin: 0 0 12px; }
+
+/* Coupon drawer */
+.drawer {
+  position: fixed;
+  inset: 0;
+  z-index: 350;
+  display: flex;
+  justify-content: flex-end;
+}
+.drawer__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+}
+.drawer__panel {
+  position: relative;
+  width: min(420px, 100%);
+  height: 100%;
+  background: var(--white);
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  animation: drawerIn 0.2s ease;
+}
+@keyframes drawerIn {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+.drawer__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid var(--gray-200);
+}
+.drawer__head h2 { margin: 0; font-size: 18px; }
+.drawer__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+}
+.drawer__foot {
+  padding: 16px 20px;
+  border-top: 1px solid var(--gray-200);
+  display: flex;
+  gap: 8px;
+}
+.drawer__foot .btn { flex: 1; }
+.coupon-section { margin-bottom: 20px; }
+.coupon-section__title {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--gray-500);
+}
+.coupon-card {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 2px solid var(--gray-200);
+  border-radius: 4px;
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  background: var(--white);
+  transition: border-color 0.15s, background 0.15s;
+}
+.coupon-card:hover:not(.coupon-card--disabled) { border-color: var(--gray-500); }
+.coupon-card.selected {
+  border-color: var(--black);
+  background: var(--gray-100);
+}
+.coupon-card--disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  background: var(--gray-100);
+}
+.coupon-card__amount { font-size: 18px; font-weight: 800; color: var(--brand); }
+.coupon-card__code { font-size: 13px; font-weight: 600; margin-top: 4px; }
+.coupon-card__meta { font-size: 12px; color: var(--gray-500); margin-top: 4px; }
+.coupon-card__reason { font-size: 12px; color: var(--danger, #c53030); margin-top: 6px; }
+.saved-address-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 1px solid var(--gray-200);
+  border-radius: 4px;
+  padding: 12px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  background: var(--white);
+}
+.saved-address-item:hover,
+.saved-address-item.active { border-color: var(--black); background: var(--gray-100); }
 
 /* Category page with L3 filter */
 .category-layout {
@@ -1297,6 +1419,11 @@ main {
     <div class="modal__panel" id="modal-panel"></div>
   </div>
 
+  <div class="drawer hidden" id="drawer" role="dialog" aria-modal="true">
+    <div class="drawer__backdrop" data-close-drawer></div>
+    <div class="drawer__panel" id="drawer-panel"></div>
+  </div>
+
   <script>
 /* KickBazar ToC Web Prototype — PRD v1.11 */
 
@@ -1479,6 +1606,15 @@ const TRUST_CONTENT = {
   support: { title: "24/7 Support", body: "Our support team is available around the clock via chat and phone." },
 };
 
+const USER_COUPONS = [
+  { id: "c_save50", code: "SAVE50", amount: 50, minSpend: 500 },
+  { id: "c_save100", code: "SAVE100", amount: 100, minSpend: 1500 },
+  { id: "c_vip200", code: "VIP200", amount: 200, minSpend: 3000 },
+  { id: "c_beauty", code: "BEAUTY20", amount: 20, minSpend: 200, requiredTags: ["Featured", "Brand Zone"] },
+  { id: "c_mega", code: "MEGA500", amount: 500, minSpend: 50000 },
+  { id: "c_expired", code: "EXPIRED10", amount: 10, minSpend: 0, simulateExpiredOnConfirm: true },
+];
+
 const state = {
   locale: "en",
   auth: "guest",
@@ -1488,7 +1624,12 @@ const state = {
   route: parseRoute(),
   recentSearches: ["jeans", "dress"],
   cartEditMode: false,
-  appliedCoupon: 50,
+  appliedCoupon: null,
+  shippingAddress: null,
+  savedAddresses: [],
+  drawerCouponSelection: null,
+  expiredCouponIds: new Set(),
+  modalDismissible: true,
   megaL1: CATEGORIES[0]?.id || "women",
   megaL2: null,
   l1FilterExpanded: {},
@@ -1687,15 +1828,30 @@ function showToast(msg) {
   showToast._t = setTimeout(() => el.classList.add("hidden"), 2800);
 }
 
-function openModal(html, className = "") {
+function openModal(html, options = {}) {
+  const opts = typeof options === "string" ? { className: options } : options;
+  const { className = "", dismissible = true } = opts;
   const panel = document.getElementById("modal-panel");
   panel.className = "modal__panel " + className;
   panel.innerHTML = html;
+  state.modalDismissible = dismissible;
   document.getElementById("modal").classList.remove("hidden");
 }
 
-function closeModal() {
+function closeModal(force = false) {
+  if (!force && state.modalDismissible === false) return;
   document.getElementById("modal").classList.add("hidden");
+  state.modalDismissible = true;
+}
+
+function openDrawer(html) {
+  document.getElementById("drawer-panel").innerHTML = html;
+  document.getElementById("drawer").classList.remove("hidden");
+}
+
+function closeDrawer() {
+  document.getElementById("drawer").classList.add("hidden");
+  state.drawerCouponSelection = null;
 }
 
 function openAppDownloadModal() {
@@ -1730,7 +1886,7 @@ function computeOrderSummary(lines) {
   const subtotal = selected.reduce((s, l) => s + (l.orig || l.price) * l.qty, 0);
   const merchandise = selected.reduce((s, l) => s + l.price * l.qty, 0);
   const promotion = Math.max(0, subtotal - merchandise);
-  const coupon = state.appliedCoupon;
+  const coupon = state.appliedCoupon?.amount || 0;
   const shipping = 60;
   const codFee = 0;
   const payable = merchandise - coupon + shipping + codFee;
@@ -1745,6 +1901,331 @@ function orderSummaryHTML(summary, { showPayableLabel = true, totalLabel = "Paya
     <div class="summary-row"><span>Shipping</span><span>${formatBDT(summary.shipping)}</span></div>
     <div class="summary-row"><span>COD Fee</span><span>${summary.codFee === 0 ? "Free" : formatBDT(summary.codFee)}</span></div>
     <div class="summary-row total"><span>${totalLabel}</span><span>${formatBDT(summary.payable)}</span></div>`;
+}
+
+function getOrderContext() {
+  const lines = getSelectedCartLines();
+  const merchandise = lines.reduce((s, l) => s + l.price * l.qty, 0);
+  const tags = new Set(lines.map((l) => l.tag).filter(Boolean));
+  return { merchandise, tags, lines };
+}
+
+function evaluateCoupon(coupon) {
+  if (state.expiredCouponIds.has(coupon.id)) {
+    return { status: "unavailable", reason: "Coupon expired" };
+  }
+  const { merchandise, tags } = getOrderContext();
+  if (merchandise < coupon.minSpend) {
+    return { status: "unavailable", reason: "Minimum spend not met" };
+  }
+  if (coupon.requiredTags?.length) {
+    const ok = coupon.requiredTags.some((t) => tags.has(t));
+    if (!ok) return { status: "unavailable", reason: "Not applicable to current items" };
+  }
+  return { status: "available" };
+}
+
+function getCouponsWithStatus() {
+  return USER_COUPONS.map((c) => ({ ...c, ...evaluateCoupon(c) }));
+}
+
+function pickBestAvailableCouponId() {
+  const available = getCouponsWithStatus().filter((c) => c.status === "available");
+  if (!available.length) return null;
+  return available.reduce((best, c) => (c.amount > best.amount ? c : best)).id;
+}
+
+function validateAddressForm(data) {
+  const errors = [];
+  if (!data.recipientName?.trim()) errors.push("Name is required");
+  if (!data.phone?.trim()) errors.push("Phone is required");
+  else if (!/^01[0-9]{9}$/.test(data.phone.replace(/\s/g, ""))) errors.push("Invalid Bangladesh phone number");
+  if (!data.regionCityDistrict?.trim()) errors.push("Region / City / District is required");
+  if (!data.addressLine?.trim()) errors.push("Address is required");
+  return errors;
+}
+
+function saveShippingAddress(data) {
+  const addressId = data.addressId || `addr_${Date.now()}`;
+  const saved = {
+    addressId,
+    recipientName: data.recipientName.trim(),
+    phone: data.phone.trim(),
+    regionCityDistrict: data.regionCityDistrict.trim(),
+    addressLine: data.addressLine.trim(),
+    isDefault: true,
+  };
+  state.shippingAddress = saved;
+  const idx = state.savedAddresses.findIndex((a) => a.addressId === addressId);
+  if (idx >= 0) state.savedAddresses[idx] = saved;
+  else state.savedAddresses.unshift(saved);
+  return saved;
+}
+
+function addressFormHTML(values = {}, { title = "Add Shipping Address", showClose = true } = {}) {
+  const v = {
+    recipientName: values.recipientName || "",
+    phone: values.phone || "",
+    regionCityDistrict: values.regionCityDistrict || "",
+    addressLine: values.addressLine || "",
+  };
+  return `
+    <div class="modal__head">
+      <h2>${title}</h2>
+      ${showClose ? `<button type="button" class="modal__close" data-close-modal>×</button>` : ""}
+    </div>
+    <p style="font-size:13px;color:#666;margin:0 0 16px">Fill in your delivery address. It will be saved to your account.</p>
+    <div class="form-grid">
+      <div class="form-field"><label>Name</label><input id="addr-name" value="${v.recipientName}"></div>
+      <div class="form-field"><label>Phone (+880)</label><input id="addr-phone" value="${v.phone}" placeholder="01XXXXXXXXX"></div>
+      <div class="form-field full"><label>Region / City / District</label><input id="addr-region" value="${v.regionCityDistrict}"></div>
+      <div class="form-field full"><label>Address</label><textarea id="addr-line" rows="2">${v.addressLine}</textarea></div>
+    </div>
+    <div class="modal__foot">
+      <button type="button" class="btn btn--primary btn--block" id="addr-save">Save</button>
+    </div>`;
+}
+
+function bindAddressFormSave(onSaved) {
+  document.getElementById("addr-save").onclick = () => {
+    const data = {
+      addressId: state.shippingAddress?.addressId,
+      recipientName: document.getElementById("addr-name").value,
+      phone: document.getElementById("addr-phone").value,
+      regionCityDistrict: document.getElementById("addr-region").value,
+      addressLine: document.getElementById("addr-line").value,
+    };
+    const errors = validateAddressForm(data);
+    if (errors.length) {
+      showToast(errors[0]);
+      return;
+    }
+    saveShippingAddress(data);
+    closeModal(true);
+    onSaved?.();
+    render();
+  };
+}
+
+function openAddressModal({ required = false, edit = false } = {}) {
+  const values = edit && state.shippingAddress ? state.shippingAddress : {};
+  openModal(
+    addressFormHTML(values, {
+      title: required ? "Add Shipping Address" : edit ? "Edit Address" : "Add Address",
+      showClose: !required,
+    }),
+    { dismissible: !required, className: "wide" }
+  );
+  bindAddressFormSave();
+}
+
+function openSavedAddressesModal() {
+  const list =
+    state.savedAddresses.length > 0
+      ? state.savedAddresses
+          .map(
+            (a) => `
+        <button type="button" class="saved-address-item${state.shippingAddress?.addressId === a.addressId ? " active" : ""}" data-pick-addr="${a.addressId}">
+          <strong>${a.recipientName}</strong> · ${a.phone}<br>
+          <span style="font-size:13px;color:#666">${a.regionCityDistrict}<br>${a.addressLine}</span>
+        </button>`
+          )
+          .join("")
+      : `<p style="color:#888">No saved addresses yet.</p>`;
+
+  openModal(
+    `<div class="modal__head"><h2>Saved Addresses</h2><button type="button" class="modal__close" data-close-modal>×</button></div>
+    ${list}
+    <button type="button" class="btn btn--block" id="addr-add-new" style="margin-top:12px">Add New Address</button>`,
+    "wide"
+  );
+
+  document.querySelectorAll("[data-pick-addr]").forEach((btn) => {
+    btn.onclick = () => {
+      const addr = state.savedAddresses.find((a) => a.addressId === btn.dataset.pickAddr);
+      if (addr) {
+        state.shippingAddress = { ...addr };
+        closeModal(true);
+        render();
+      }
+    };
+  });
+  document.getElementById("addr-add-new").onclick = () => {
+    closeModal(true);
+    openAddressModal();
+  };
+}
+
+function renderShippingAddressBlock() {
+  if (!state.shippingAddress) {
+    return `
+      <div class="address-empty">
+        <p>No shipping address yet. Please add your delivery address to continue.</p>
+        <button type="button" class="btn btn--primary" id="add-address">Add Address</button>
+      </div>`;
+  }
+  const a = state.shippingAddress;
+  return `
+    <div class="address-card">
+      <p class="address-card__name">${a.recipientName} · ${a.phone}</p>
+      <p class="address-card__region">${a.regionCityDistrict}</p>
+      <p class="address-card__line">${a.addressLine}</p>
+    </div>
+    <div style="margin-top:12px;display:flex;gap:8px">
+      <button type="button" class="btn" id="change-addr">Change / Edit Address</button>
+    </div>`;
+}
+
+function couponCardHTML(coupon, { selectable = true } = {}) {
+  const disabled = coupon.status === "unavailable";
+  const selected = selectable && state.drawerCouponSelection === coupon.id;
+  return `
+    <button type="button"
+      class="coupon-card${selected ? " selected" : ""}${disabled ? " coupon-card--disabled" : ""}"
+      data-coupon-id="${coupon.id}"
+      ${disabled || !selectable ? "disabled" : ""}>
+      <div class="coupon-card__amount">${formatBDT(coupon.amount)} OFF</div>
+      <div class="coupon-card__code">${coupon.code}</div>
+      <div class="coupon-card__meta">Min. spend ${formatBDT(coupon.minSpend)}</div>
+      ${disabled ? `<div class="coupon-card__reason">${coupon.reason}</div>` : ""}
+    </button>`;
+}
+
+function renderCouponDrawerContent() {
+  const coupons = getCouponsWithStatus();
+  const available = coupons.filter((c) => c.status === "available");
+  const unavailable = coupons.filter((c) => c.status === "unavailable");
+
+  openDrawer(`
+    <div class="drawer__head">
+      <h2>My Coupons</h2>
+      <button type="button" class="modal__close" data-close-drawer aria-label="Close">×</button>
+    </div>
+    <div class="drawer__body">
+      <div class="coupon-section">
+        <p class="coupon-section__title">Available</p>
+        ${available.length ? available.map((c) => couponCardHTML(c)).join("") : `<p style="color:#888;font-size:13px">No available coupons for this order.</p>`}
+      </div>
+      <div class="coupon-section">
+        <p class="coupon-section__title">Not Available</p>
+        ${unavailable.length ? unavailable.map((c) => couponCardHTML(c, { selectable: false })).join("") : `<p style="color:#888;font-size:13px">None</p>`}
+      </div>
+    </div>
+    <div class="drawer__foot">
+      <button type="button" class="btn" data-close-drawer>Close</button>
+      <button type="button" class="btn btn--primary" id="coupon-confirm">Confirm</button>
+    </div>`);
+
+  document.querySelectorAll(".coupon-card:not(.coupon-card--disabled)").forEach((btn) => {
+    btn.onclick = () => {
+      const id = btn.dataset.couponId;
+      state.drawerCouponSelection = state.drawerCouponSelection === id ? null : id;
+      renderCouponDrawerContent();
+    };
+  });
+
+  document.querySelectorAll("[data-close-drawer]").forEach((el) => {
+    el.onclick = () => closeDrawer();
+  });
+
+  document.getElementById("coupon-confirm").onclick = () => confirmCouponSelection();
+}
+
+function openCouponDrawer() {
+  if (state.appliedCoupon?.id && evaluateCoupon(USER_COUPONS.find((c) => c.id === state.appliedCoupon.id)).status === "available") {
+    state.drawerCouponSelection = state.appliedCoupon.id;
+  } else {
+    state.drawerCouponSelection = pickBestAvailableCouponId();
+  }
+  renderCouponDrawerContent();
+}
+
+function confirmCouponSelection() {
+  if (!state.drawerCouponSelection) {
+    state.appliedCoupon = null;
+    closeDrawer();
+    render();
+    return;
+  }
+  const coupon = USER_COUPONS.find((c) => c.id === state.drawerCouponSelection);
+  if (!coupon) return;
+
+  if (coupon.simulateExpiredOnConfirm) {
+    state.expiredCouponIds.add(coupon.id);
+    showToast("Coupon expired or invalid. Please select another.");
+    state.drawerCouponSelection = pickBestAvailableCouponId();
+    renderCouponDrawerContent();
+    return;
+  }
+
+  const ev = evaluateCoupon(coupon);
+  if (ev.status !== "available") {
+    showToast(ev.reason || "Coupon unavailable");
+    renderCouponDrawerContent();
+    return;
+  }
+
+  state.appliedCoupon = { id: coupon.id, code: coupon.code, amount: coupon.amount };
+  closeDrawer();
+  showToast(`Coupon ${coupon.code} applied`);
+  render();
+}
+
+function applyCouponCode(rawCode) {
+  const code = rawCode.trim().toUpperCase();
+  if (!code) {
+    showToast("Please enter a coupon code");
+    return;
+  }
+  const coupon = USER_COUPONS.find((c) => c.code === code);
+  if (!coupon) {
+    showToast("Invalid coupon code");
+    return;
+  }
+  if (state.expiredCouponIds.has(coupon.id)) {
+    showToast("Coupon expired or invalid");
+    return;
+  }
+  const ev = evaluateCoupon(coupon);
+  if (ev.status !== "available") {
+    showToast(ev.reason || "Coupon unavailable");
+    return;
+  }
+  state.appliedCoupon = { id: coupon.id, code: coupon.code, amount: coupon.amount };
+  showToast(`Coupon ${coupon.code} applied`);
+  render();
+}
+
+function bindCheckoutPageEvents() {
+  document.getElementById("add-address")?.addEventListener("click", () => openAddressModal({ required: true }));
+  document.getElementById("change-addr")?.addEventListener("click", () => openSavedAddressesModal());
+
+  document.getElementById("apply-coupon-code")?.addEventListener("click", () => {
+    applyCouponCode(document.getElementById("coupon-code-input").value);
+  });
+  document.getElementById("coupon-code-input")?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") applyCouponCode(e.target.value);
+  });
+
+  document.getElementById("open-coupons")?.addEventListener("click", openCouponDrawer);
+
+  document.getElementById("place-order")?.addEventListener("click", () => {
+    if (!state.shippingAddress) {
+      showToast("Please add a shipping address");
+      openAddressModal({ required: true });
+      return;
+    }
+    if (!getSelectedCartLines().length) {
+      showToast("No items to checkout");
+      navigate("/cart");
+      return;
+    }
+    document.getElementById("lang-overlay").classList.remove("hidden");
+    setTimeout(() => {
+      document.getElementById("lang-overlay").classList.add("hidden");
+      navigate("/checkout/result");
+    }, 1200);
+  });
 }
 
 function productCard(p) {
@@ -2199,6 +2680,7 @@ function addToCart(product, color, size, qty, { animate = false } = {}) {
       price: product.price,
       orig: product.orig || product.price,
       tag: product.tag || "",
+      store: product.store || "",
       color,
       size,
       qty,
@@ -2352,6 +2834,21 @@ function renderCheckout() {
   }
 
   const summary = computeOrderSummary();
+  const selectedLines = getSelectedCartLines();
+
+  if (state.appliedCoupon) {
+    const couponDef = USER_COUPONS.find((c) => c.id === state.appliedCoupon.id);
+    if (!couponDef || evaluateCoupon(couponDef).status !== "available") {
+      state.appliedCoupon = null;
+    }
+  }
+
+  const orderItemsHTML = selectedLines.length
+    ? selectedLines
+        .map((l) => `<p style="font-size:13px;margin:0 0 8px"><strong>${l.store || "Seller"}</strong> — ${l.title} × ${l.qty}</p>`)
+        .join("")
+    : `<p style="font-size:13px;color:#888">No items selected. <a href="#/cart" data-nav>Return to cart</a></p>`;
+
   document.getElementById("sticky-fab").classList.add("hidden");
   document.getElementById("app").innerHTML = `
     <h1 class="page-title">Checkout</h1>
@@ -2359,47 +2856,34 @@ function renderCheckout() {
       <div>
         <div class="form-block">
           <h3>Shipping Address</h3>
-          <div class="form-grid">
-            <div class="form-field"><label>Name</label><input value="Rahul Ahmed"></div>
-            <div class="form-field"><label>Phone (+880)</label><input value="01712345678"></div>
-            <div class="form-field full"><label>Region / City / District</label><input value="Dhaka · Dhaka · Gulshan"></div>
-            <div class="form-field full"><label>Address</label><textarea rows="2">Road 12, Block C, Apt 4B</textarea></div>
-          </div>
-          <div style="margin-top:12px;display:flex;gap:8px">
-            <button type="button" class="btn btn--primary">Save</button>
-            <button type="button" class="btn" id="change-addr">Change / Edit Address</button>
-          </div>
+          ${renderShippingAddressBlock()}
         </div>
         <div class="form-block"><h3>Delivery</h3><p><strong>Local Delivery</strong> · Shipping Fee: ৳60 (fixed)</p></div>
-        <div class="form-block"><h3>Order Items</h3><p style="font-size:13px"><strong>Fashion Hub</strong> — Cotton Blend Dress × 1</p></div>
-        <div class="form-block"><h3>Payment</h3><div class="payment-option"><input type="radio" checked> Cash on Delivery (COD)</div></div>
+        <div class="form-block"><h3>Order Items</h3>${orderItemsHTML}</div>
+        <div class="form-block"><h3>Payment</h3><div class="payment-option"><input type="radio" checked disabled> Cash on Delivery (COD)</div></div>
       </div>
       <div class="summary-card">
         <h3 style="margin:0 0 12px">Coupon & Code</h3>
-        <div class="coupon-row"><input placeholder="Enter coupon code"><button type="button" class="btn">Apply</button></div>
+        ${
+          state.appliedCoupon
+            ? `<p class="coupon-applied">Applied: <strong>${state.appliedCoupon.code}</strong> (−${formatBDT(state.appliedCoupon.amount)})</p>`
+            : ""
+        }
+        <div class="coupon-row">
+          <input id="coupon-code-input" placeholder="Enter coupon code" value="${state.appliedCoupon?.code || ""}">
+          <button type="button" class="btn" id="apply-coupon-code">Apply</button>
+        </div>
         <button type="button" class="btn btn--block" id="open-coupons" style="margin-bottom:16px">Select from My Coupons</button>
         ${orderSummaryHTML(summary)}
         <button type="button" class="btn btn--accent btn--block" style="margin-top:16px" id="place-order">Place Order</button>
       </div>
     </div>`;
 
-  document.getElementById("change-addr").onclick = () =>
-    openModal(`<div class="modal__head"><h2>Saved Addresses</h2><button type="button" class="modal__close" data-close-modal>×</button></div>
-      <p style="padding:12px;border:1px solid #111;border-radius:4px">Gulshan, Dhaka (Default)</p>
-      <button type="button" class="btn btn--block" data-close-modal style="margin-top:12px">Close</button>`);
+  bindCheckoutPageEvents();
 
-  document.getElementById("open-coupons").onclick = () =>
-    openModal(`<div class="modal__head"><h2>My Coupons</h2><button type="button" class="modal__close" data-close-modal>×</button></div>
-      <label style="display:block;padding:12px;border:2px solid #111;border-radius:4px;margin-bottom:8px"><input type="radio" checked> SAVE50 — ৳50 off</label>
-      <button type="button" class="btn btn--primary btn--block" data-close-modal>Confirm</button>`);
-
-  document.getElementById("place-order").onclick = () => {
-    document.getElementById("lang-overlay").classList.remove("hidden");
-    setTimeout(() => {
-      document.getElementById("lang-overlay").classList.add("hidden");
-      navigate("/checkout/result");
-    }, 1200);
-  };
+  if (!state.shippingAddress) {
+    setTimeout(() => openAddressModal({ required: true }), 0);
+  }
 }
 
 function renderCheckoutResult() {
@@ -2585,12 +3069,18 @@ function initEvents() {
   });
 
   document.getElementById("modal").addEventListener("click", (e) => {
-    if (e.target.matches("[data-close-modal]") || e.target.classList.contains("modal__backdrop")) closeModal();
+    if (state.modalDismissible === false) return;
+    if (e.target.matches("[data-close-modal]") || e.target.classList.contains("modal__backdrop")) closeModal(true);
+  });
+
+  document.getElementById("drawer").addEventListener("click", (e) => {
+    if (e.target.matches("[data-close-drawer]") || e.target.classList.contains("drawer__backdrop")) closeDrawer();
   });
 
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
-      closeModal();
+      if (!document.getElementById("drawer").classList.contains("hidden")) closeDrawer();
+      else closeModal(true);
       closeDropdowns();
     }
   });
