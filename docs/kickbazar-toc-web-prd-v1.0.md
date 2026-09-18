@@ -10,19 +10,20 @@
 | **文档编号** | PRD-KB-WEB-TOC-001 |
 | **产品名称** | KickBazar 消费者端网页商城 |
 | **域名** | kickbazar.com |
-| **文档版本** | v1.13 |
+| **文档版本** | v1.14 |
 | **文档状态** | 评审中 |
 | **产品负责人** | — |
 | **撰写人** | 产品经理 |
 | **目标读者** | UI/UX、前端、后端、测试、运营 |
 | **关联文档** | 《KickBazar ToC 网页端 Brainstorming 梳理文档 v0.2》；App 功能对照包；竞品参考（SHEIN Web）；仓库 HTML 交互原型（流程参考框架）；**高保真交互原型以 Axure 为准** |
 | **创建日期** | 2026-09-09 |
-| **最后更新** | 2026-09-16 |
+| **最后更新** | 2026-09-18 |
 
 ### 1.1 版本记录
 
 | 版本 | 日期 | 作者 | 变更说明 |
 |------|------|------|---------|
+| v1.14 | 2026-09-18 | 产品经理 | **领导评审修订**：Sort By 去 A-Z、对齐 App 六档排序；Recommend 模块统一称 **Recommended**（随机展示）；运费按 Standard/Air Express/Air Priority 与 App 一致；结算地址改手动添加+双列 Change；优惠券本期不做；COD 展示划线原价；结果页增加查看订单详情；新增全站右侧 Sticky 快捷导航与回顶部 |
 | v1.13 | 2026-09-16 | 产品经理 | **一致性审阅闭环**：Featured Tab + 类目 Filter（L1–L3）纳入本期；明确多维 Filter 仅指价格/属性；支付与 App 对齐为 COD；地址统一 Division/District/Area/Address；Buy Now 双步骤条且不进购物车；游客购物车登录合并；退出登录跳转首页；四专题馆 P0；新增 §4.9.0 交易进度条与 BR825/BR837/BR836/BR620a |
 | v1.12 | 2026-09-11 | 产品经理 | **原型迭代补遗**：统一主/次导航与 Icon 规范；搜索下拉（非 Modal）BR 编号修正；分类改为 Hover 分类抽屉（同 App 分类树）；PDP 加购不唤起规格 Modal（仅 Buy Now）；附录/旅程/范围表与 §4.1–§4.9 对齐 |
 | v1.11 | 2026-09-11 | 产品经理 | **原型对齐迭代**：Header 拆为主/次导航；保障提示条全站全局；搜索改为下拉（Recent + Discovery）；加购无抽屉+Added successfully 气泡；购物车 Tag/删除/Order Summary 同结算 |
@@ -57,13 +58,13 @@
 
 | 模块 | 页面/组件 |
 |------|----------|
-| 全局 | 保障提示条（全站）+ Header **主栏**（Logo/搜索/语言·客服·购物车·账户 Icon）+ **次栏**（Categories + 一级分类）；Footer |
+| 全局 | 保障提示条 + Header 主/次栏 + Footer + **右侧 Sticky 快捷导航**（Home/客服/Cart）+ **回顶部** |
 | 首页 | 核心展示区、服务介绍、**Sticky 客服入口** |
 | 搜索 | 搜索**下拉**、结果列表、排序、**Featured Tab**、类目 Filter（L1–L3）；价格/属性多维 Filter 本期不做 |
 | 分类 | Hover **分类抽屉**（App 分类树）、一级分类落地页（面包屑 `Home › {一级名}`）、商品列表 |
 | 商品 | 商品详情（PDP 内选 SKU 直接加购）、规格选择器（**仅 Buy Now**）、推荐组件 |
 | 店铺 | 店铺页、商品列表 Tab、店铺介绍弹框 |
-| 交易 | 加购成功气泡（BR832）、购物车页/编辑/Order Summary（同结算）、结算、结果页、地址弹框；**#22 购物车预览本期不做** |
+| 交易 | 加购成功气泡、购物车/结算/结果页；运费档位 Standard/Air Express/Air Priority；地址手动添加；**优惠券本期不做**；**#22 购物车预览本期不做** |
 | 专题 | 品牌馆、国家馆、精选、潮流（**四馆均为本期 P0**） |
 
 **不包含（由其他 PRD 承接，本文仅写衔接）**
@@ -165,7 +166,7 @@ Header 账户菜单 → 我的订单（他人模块） → 再次购买 → 购�
 
 ```
 kickbazar.com
-├── 全局：保障提示条（全站）/ Header 主栏+次栏 / Footer
+├── 全局：保障提示条（全站）/ Header 主栏+次栏 / Footer / 右侧 Sticky 快捷导航（Home·客服·Cart）+ 回顶部
 ├── /  首页（核心展示 + 服务介绍 + Sticky 客服入口）
 ├── /search  搜索下拉 + /search?q= 结果页
 ├── /categories → /category/{id}  分类抽屉 + 一级落地页（Home › 一级名）
@@ -192,7 +193,7 @@ kickbazar.com
 | PDP 加购 | 须在 PDP 购买区选全 SKU 后方可 Add to Cart；走购物车路径；不唤起 #17 Modal（BR832） |
 | PDP 立即购买 | Buy Now 直达 `/checkout`，不经购物车；Cart 页不展示该 SKU |
 | Buy Now 步骤条 | 仅 2 步：Checkout → Order Complete；不可通过步骤条进入 `/cart` |
-| 登录后 redirect 回 checkout | 若仍无地址，触发 BR620a |
+| 登录后 redirect 回 checkout | 无地址时展示空态 + Add New Address；不自动弹窗 |
 | 退出登录 | 清除会话；Header 未登录态；跳转首页 `/` |
 
 ---
@@ -583,7 +584,7 @@ Header 账户区须区分**未登录态**、**已登录态**、**登录态加载
 
 1. **快捷功能区**：数据与 App **一级分类（Category L1）**完全一致，不允许 Web 独有入口。  
 2. **活动专区**：固定四个入口——Brand Zone、Country Pavilion、Featured、Trending；对应专题页 #35–#38（Global 对应国家馆/全球购专题，以 App 映射为准）。  
-3. **推荐流**：首屏默认展示若干行；点击 **View More** 每次追加 **10 行**；**页面刷新后重置**为首屏状态；排序按商品 `updatedAt` **倒序**，与 App 一致。  
+3. **Recommended 推荐流**：首屏默认展示若干行；View More 每次 **10 行**；刷新重置；展示顺序为 **随机排序**（`recommended`），与 App **Recommended** 模块一致（**非** Sort By 的 `recommend`）。  
 4. **商品卡**：价格 BDT 千分位；折扣标与 App 一致；点击跳转 `/product/{id}`；若商品属于某专题，展示对应 **专题 Tag**（见 §4.10）。  
 5. **Banner**：无数据时隐藏或展示默认图，不留空白占位。  
 6. **空态**：推荐流为空时展示「去分类逛逛」CTA。  
@@ -625,7 +626,7 @@ Header 账户区须区分**未登录态**、**已登录态**、**登录态加载
 |--------|---------|---------|------|------|---------|
 | feedPageSize | 每次加载行数 | Feed Page Size | number | 是 | View More 每次加载行数，固定 **10** |
 | feedLoadedRows | 已加载行数 | Loaded Rows | number | 是 | 当前已展示行数；刷新页面重置 |
-| updatedAt | 商品更新时间 | Updated At | datetime | 是 | 推荐排序字段，倒序 |
+| displayMode | 展示模式 | Display Mode | enum | 是 | 固定 `recommended`：随机展示，与 App Recommended 模块一致 |
 | viewMoreVisible | View More 可见 | View More Visible | boolean | 是 | 是否还有更多商品可加载 |
 
 **Sticky 客服入口**
@@ -732,7 +733,7 @@ Header 账户区须区分**未登录态**、**已登录态**、**登录态加载
 | FL031 | 搜索结果列表 | Result List | 商品网格 |
 | FL032 | 结果 View More | Result View More | 首屏 10 行 + View More 加载 |
 | FL033 | 无结果推荐 | No-result Rec | 空结果推荐 |
-| FL034 | 结果排序 | Result Sort | Recommend/New Arrival/A-Z/价格 |
+| FL034 | 结果排序 | Result Sort | Recommend / New Arrival / Price / Sales（无 A-Z） |
 | FL035 | 排序 URL 同步 | Sort in URL | sort 参数 |
 | FL139 | 结果类目筛选 | Category Filter | 搜索结果页 Filter：categories L1–L3 可展开；与分类页 Filter 场景独立 |
 
@@ -740,7 +741,7 @@ Header 账户区须区分**未登录态**、**已登录态**、**登录态加载
 
 1. **历史存储**：游客仅 localStorage；登录用户与账号同步（云端优先）。  
 2. **提交搜索**：trim 后空关键词不提交；写入历史上限建议 20 条。  
-3. **结果排序**：默认 **Recommend**（`sort=recommend`）；逻辑见 sort 枚举表。  
+3. **结果排序**：默认 **Recommend**（`sort=recommend`）；搜索/分类/店铺 Items Tab 全站复用（BR211–BR213）；**不含** A-Z / Z-A。  
 4. **结果分页**：首屏展示 **10 行**商品；点击 **View More** 再加载 **10 行**，以此类推；**刷新页面后重新从首屏展示**（同 BR825）。  
 5. **无结果**：展示空态+推荐组件，不展示 0 结果网格。  
 6. **类目 Filter（本期做）**：展示 categories 一级～三级类目树，支持展开/折叠；选择后刷新列表并同步 URL `filter` 参数；无结果展示空态（BR137）；支持 Clear All。  
@@ -758,15 +759,18 @@ Header 账户区须区分**未登录态**、**已登录态**、**登录态加载
 | filter | 筛选参数 | Filter Params | string | 否 | 类目筛选序列化参数（L1/L2/L3 categoryId 组合，编码由前后端约定，OQ8 已关闭） |
 | loadedRows | 已加载行数 | Loaded Rows | number | 否 | View More 已加载行数；刷新重置 |
 
-**sort 排序枚举**
+**sort 排序枚举（Sort By，全站复用）**
 
 | 枚举值 | 中文名称 | 英文名称 | 字段说明 |
 |--------|---------|---------|---------|
-| recommend | 推荐排序 | Recommend | **默认**；销量从高到低；销量相同则 Product Name A→Z |
-| new_arrival | 上新 | New Arrival | 按商品 update 时间倒序 |
-| name_asc | 名称 A-Z | From A-Z | 按 Product Name 字母升序 |
-| price_asc | 价格升序 | Price Low to High | 价格从低到高 |
-| price_desc | 价格降序 | Price High to Low | 价格从高到低 |
+| recommend | 推荐排序 | Recommend | **默认**。一级平台序 → 二级商家序 → 三级商品更改时间（`update`）倒序；与 App 一致 |
+| new_arrival | 上新 | New Arrival | 按商品更改时间倒序 |
+| price_asc | 价格从低到高 | Price Low to High | 按售价升序 |
+| price_desc | 价格从高到低 | Price High to Low | 按售价降序 |
+| sales_desc | 销量从高到低 | Sales High to Low | 按销量降序 |
+| sales_asc | 销量从低到高 | Sales Low to Low | 按销量升序 |
+
+> **本期不做**：`name_asc` / `name_desc`（A-Z / Z-A）。
 
 **搜索历史项**
 
@@ -805,7 +809,7 @@ Header 账户区须区分**未登录态**、**已登录态**、**登录态加载
 | BR208 | 商品列表（基准） | 有数据 | 网格；卡同 BR120 | 加载● 空● 错误● | 骨架 BR803 |
 | BR209 | 分页（基准） | — | 搜索结果页改用 **BR825** View More；其他场景可复用 BR825 | — | — |
 | BR210 | 无结果推荐 | 结果空 | 同 BR418–BR420 | 空● | 空态 BR137 |
-| BR211 | 排序（基准） | 点击排序 | 下拉刷新列表；默认 Recommend | 加载● | 五档排序 |
+| BR211 | 排序（基准） | 点击 Sort By | 6 档：Recommend/New Arrival/Price↑↓/销量↑↓；默认 Recommend | 加载● | 无 A-Z |
 | BR828 | 结果类目 Filter | 打开/应用筛选 | 展示 L1–L3 类目树，可展开；写入 filter 参数 | 加载● | 与分类页 Filter 场景独立 |
 | BR837 | Featured Tab | 点击 Tab/Pill | 按四大馆筛选结果；无数据 Tab 隐藏 | 加载● | 可与类目 Filter 叠加 |
 | BR212 | URL 同步（基准） | 切换排序 | 写 `sort=` | — | 刷新保持 |
@@ -918,7 +922,7 @@ Header 账户区须区分**未登录态**、**已登录态**、**登录态加载
 |------|------|
 | **左侧** | 面包屑、**店铺入口卡片**（圆形头像 + Sold by + 店名 + 评分 + 箭头）、轮播图、主图、Additional Information、Description、安全保证（24/7 Support、Product Replace） |
 | **右侧** | Product Name、现价、原价（若有）、折扣 Tag（若有）、活动专区标识 Tag（若有）、**100% 正品保证**（若活动专区为品牌馆 Brand Zone）、SKU 选择、数量选择、加入购物车 / Buy Now 按钮 |
-| **底侧** | Recommend 推荐区；顺序与逻辑**同 App 端** |
+| **底侧** | Recommended 推荐区；顺序与逻辑**同 App 端** |
 
 游客可加购；立即购买需登录（门禁 BR619）。商品下架或不存在时展示独立不可用页（BR409），不提供购买操作。
 
@@ -933,7 +937,7 @@ Header 账户区须区分**未登录态**、**已登录态**、**登录态加载
 | FL046 | 安全保证 | Safety Assurance | 24/7 Support、Product Replace |
 | FL047 | 加入购物车 | Add to Cart | PDP 内选 SKU 后直接加购（不唤起 #17 Modal） |
 | FL048 | 立即购买 | Buy Now | 校验 SKU 后进入结算（可走 #17 Modal） |
-| FL049 | 底部推荐 | Recommendations | 底侧 Recommend，逻辑同 App |
+| FL049 | 底部 Recommended | Recommended Widget | 底侧 Recommend，逻辑同 App |
 | FL050 | 下架处理 | Unavailable | 404/下架页 |
 | FL051 | 商品 SEO | PDP SEO Meta | 本期唯一 SEO 注入页面 |
 | FL052 | 面包屑/店铺 | Breadcrumb & Store | 面包屑与强化店铺入口卡片（含店铺头像） |
@@ -988,7 +992,7 @@ Header 账户区须区分**未登录态**、**已登录态**、**登录态加载
 | BR405 | 安全保证 | 左侧底部 | 24/7 Support、Product Replace | — | 固定两项 |
 | BR406 | 加购 | 点击 Add to Cart | PDP 已选 SKU → 直接加购；触发 **BR832**；**不唤起 #17** | 错误● | 游客可用 |
 | BR407 | 立即购买 | 点击 Buy Now | 校验 SKU → 结算（可走 BR417 Modal） | 未登录△ | 门禁 BR619 |
-| BR408 | 底侧推荐 | 页面底部 | Recommend；顺序逻辑同 App | — | — |
+| BR408 | 底侧 Recommended | 页面底部 | Recommended 组件；`recommended` 随机展示 | — | 非 Sort By |
 | BR409 | 不可用（基准） | 404/下架 | 独立页+推荐 | 错误● | 无购买按钮 |
 | BR830 | 品牌正品保证 | 品牌馆商品 | 右侧展示 100% 正品保证 | — | 仅 Brand Zone |
 | BR831 | 店铺入口 | 点击店铺卡片 | 跳转 `/store/{storeId}` | — | 展示头像+Sold by+评分 |
@@ -1046,7 +1050,7 @@ Header 账户区须区分**未登录态**、**已登录态**、**登录态加载
 
 ##### 功能描述
 
-可嵌入多页面的复用组件，由运营配置标题与召回逻辑（算法同 App，见 OQ7）。无数据时可隐藏区块。
+可嵌入多页面的 **Recommended** 复用组件（首页流、PDP 底栏、购物车凑单、搜索无结果等），召回逻辑同 App（见 OQ7）。展示顺序为 **随机排序**（`recommended`），与 App **Recommended** 模块一致；**区别于**列表 Sort By 的 `recommend`。无数据时可隐藏。
 
 ##### 功能清单
 
@@ -1058,9 +1062,11 @@ Header 账户区须区分**未登录态**、**已登录态**、**登录态加载
 
 ##### 业务规则
 
-1. 标题可运营配置（如 You May Like），支持 i18n。  
-2. 无推荐数据时可隐藏整个区块。  
-3. 商品卡样式与交互同 BR120。
+1. 模块命名统一为 **Recommended**（非 Sort By 的 Recommend）。  
+2. 标题可运营配置（如 You May Like），支持 i18n。  
+3. 无推荐数据时可隐藏整个区块。  
+4. 商品卡样式与交互同 BR120。  
+5. **展示排序**：`recommended` 随机顺序，与 App 一致。
 
 ##### 字段定义
 
@@ -1071,7 +1077,7 @@ Header 账户区须区分**未登录态**、**已登录态**、**登录态加载
 | widgetTitle | 组件标题 | Widget Title | string | 是 | 推荐区标题，如「You May Like」，支持 i18n |
 | layoutType | 布局类型 | Layout Type | enum | 是 | `grid` 网格 / `carousel` 横滑 |
 | scene | 推荐场景 | Scene | enum | 是 | 召回场景：`home` / `pdp` / `cart` / `search_empty` / `topic` |
-| productIds[] | 推荐商品 | Recommended Products | array | 是 | 推荐商品 ID 列表，按展示顺序 |
+| productIds[] | Recommended 商品 | Recommended Products | array | 是 | 召回 ID 列表；前端按 `recommended` 随机顺序展示 |
 
 **通用商品卡字段（全站列表复用）**
 
@@ -1106,7 +1112,7 @@ Header 账户区须区分**未登录态**、**已登录态**、**登录态加载
 
 - **Banner**：可选上传；无 Banner 时不展示占位。商家在 **Seller 端须有两个 Banner 上传渠道**（需在 Seller PRD 中定义，本文档标注依赖）。  
 - **Featured Products**：精选商品展示。  
-- **Recommend + View More**：推荐商品区，支持 View More 加载（同 BR825）。
+- **Recommended + View More**：推荐商品区，支持 View More 加载（同 BR825）。
 
 **Items Tab**
 
@@ -1123,7 +1129,7 @@ Header 账户区须区分**未登录态**、**已登录态**、**登录态加载
 | FL063 | 店铺信息 Modal | Store Info Modal | 点击头像展示店铺信息 |
 | FL064 | 店铺 Banner | Store Banner | 可选 Banner；Seller 双渠道上传 |
 | FL065 | Featured Products | Featured Products | Home Tab 精选商品 |
-| FL066 | 店铺 Recommend | Store Recommend | Home Tab 推荐 + View More |
+| FL066 | 店铺 Recommended | Store Recommended | Home Tab 推荐 + View More |
 | FL067 | 店铺商品列表 | Store Product List | Items Tab 10 行 + View More |
 
 #### 业务规则
@@ -1223,7 +1229,7 @@ Header 账户区须区分**未登录态**、**已登录态**、**登录态加载
 
 购物车模块包含：**加购成功反馈**（Header 角标 + **Added successfully** 气泡，BR832）、**购物车页**（#23）、**编辑模式**（#24）、**Order Summary 折扣明细**（#25）。**本期不做 Header 购物车下拉预览（#22）**；点击 Header 购物车 Icon **直接跳转** `/cart`。
 
-购物车页展示有效商品与失效商品分区。失效商品不可勾选、置底灰色展示。每行展示**活动专区 Tag**（若有 `topicTag`）。支持单行 **Remove** 删除；编辑模式支持批量删除（二次确认）。**Order Summary** 字段与结算页完全一致：Subtotal、Promotion、Coupon、Shipping Fee、COD Handling Fee、Payable（见 §4.9.2 规则 12–13）。
+购物车页展示有效商品与失效商品分区。失效商品不可勾选、置底灰色展示。每行展示**活动专区 Tag**（若有 `topicTag`）。支持单行 **Remove** 删除；编辑模式支持批量删除（二次确认）。**Order Summary** 字段与结算页一致：Subtotal、Promotion、Shipping Fee（按运费档位）、COD、Payable（见 §4.9.2）；**本期不含 Coupon**。
 
 游客可使用购物车；**去结算**须登录（BR619）。
 
@@ -1235,11 +1241,12 @@ Header 账户区须区分**未登录态**、**已登录态**、**登录态加载
 4. **编辑模式**：批量删除需二次确认；删光回空态（BR612）。  
 5. **单行删除**：非编辑模式下每行提供 Remove，即时删除该行。  
 6. **专题 Tag**：属于活动专区的商品行展示对应 Tag（同 §4.10）。  
-7. **Order Summary**：Subtotal / Promotion / Coupon / Shipping / COD Fee / Payable 计算规则**同结算页** §4.9.2。  
+7. **Order Summary**：Subtotal / Promotion / Shipping（按档位）/ Payable 计算规则**同结算页** §4.9.2；**不含 Coupon**。  
 8. **加购反馈**：Add to Cart 成功后 Header 角标 +1，并展示 **Added successfully** 英文气泡（BR832）；**不展开购物车预览抽屉**。  
 9. **游客购物车合并**：游客购物车存 localStorage；登录成功后自动与账号购物车合并（去重/叠加由后端定义）；合并失败 Toast，不阻断登录；Header 角标同步。
 10. **步骤条**：购物车有有效商品时展示路径 A 步骤条（§4.9.0）；空态不展示（BR612）。
 11. **去结算**：须通过 Order Summary Checkout 按钮进入 Step 2，不可点击步骤条 Step 2/3。
+12. **运费档位**：购物车 Order Summary 运费计算与 App 一致，按商品/订单适用的 **Standard / Air Express / Air Priority** 档位汇总展示（非仅 Local 固定价）；改量后实时重算。
 
 ##### 字段定义
 
@@ -1294,9 +1301,9 @@ Header 账户区须区分**未登录态**、**已登录态**、**登录态加载
 结算页是交易闭环核心，**必须登录**进入。页面采用**左侧主内容 + 右侧 Sticky 汇总区**布局。
 
 **左侧主内容**：收货地址、发货方式、订单商品（按商户分组，支持 **Remark 备注**）、支付方式。  
-**右侧 Sticky**：Coupon & Code、Order Summary、安全提示。
+**右侧 Sticky**：Order Summary、安全提示（**本期无 Coupon 入口**）。
 
-流程：填写/选择地址 → 确认商品与备注 → 选择优惠券 → 确认金额 → 提交订单 → 跳转结果页。
+流程：选择/添加地址 → 选择运费档位 → 确认商品与备注 → 确认金额 → 提交订单 → 跳转结果页。
 
 ##### 业务规则
 
@@ -1304,48 +1311,49 @@ Header 账户区须区分**未登录态**、**已登录态**、**登录态加载
 
 **地址规则**
 
-1. 首次进入结算页且 `addressId` 为空：自动弹出地址 Modal（**BR620a**）；不可遮罩关闭；Save 或取消返回上一页。  
-2. 已有地址：只读地址卡片 + Change / Edit Address（BR621）；不再自动弹首次 Modal。  
-3. 结算页**不提供内联可编辑表单**；新增/编辑/切换统一走 Modal（BR620a/b/c、BR621、BR632、BR635、BR638）。  
-4. Save 成功后写入地址库，绑定 `addressId`，Order Summary 可继续操作。
+1. **不自动弹窗**：首次进入结算页且无 `addressId` 时，Shipping Address 区展示**空态 + Add New Address 按钮**；**不**自动弹出地址 Modal。  
+2. **Add New Address**：点击按钮打开新增地址 Modal（BR635）；用户可关闭 Modal（遮罩/关闭按钮/ESC）**留在当前 checkout 页**，不返回上一页。  
+3. **已有地址**：展示**只读地址确认卡片**（两列信息布局：左列姓名/电话，右列 Division·District·Area + 详细地址；同历史 ToB 地址确认样式）。提供 **Change Address**（BR632，地址列表 Modal **双列**卡片可选）与 **Edit Address**（BR638）。  
+4. **下单门禁**：无 `addressId` 时点击 Place Order → Toast 提示 + 不提交（BR620c）；可再次点击 Add New Address。  
+5. Save 成功后写入地址库，绑定 `addressId`，Order Summary 可继续操作。
 
 **结算商品来源**
 
 - `checkoutEntrySource=cart`：商品来自已勾选 `cartLineIds[]`。  
 - `checkoutEntrySource=buy_now`：商品来自 `buyNowItem`（productId + skuId + quantity）；不读购物车。
 
-**发货方式**
+**发货方式 / 运费档位（与 App 一致）**
 
-3. 本期仅支持**本地发货**；发货方式固定为 **Local Delivery**，运费固定 **৳60**。  
+3. 运费计算与 App 一致，按商品/订单适用档位汇总，不限于单一 Local 固定价。支持档位：  
+   - **Standard**（标准）  
+   - **Air Express**（空运快线）  
+   - **Air Priority**（空运优先）  
+4. 购物车与结算页 Order Summary 均展示按档位计算的 **Shipping Fee**；切换地址或商品可能影响运费，实时重算。
 
 **支付方式**
 
-4. 本期仅支持 **Cash on Delivery（COD）** 一种支付方式。  
+5. 本期仅支持 **Cash on Delivery（COD）**。  
 
 **订单备注**
 
-5. 订单内可按**不同商户（Seller）**分别填写 **Remark** 备注。  
+6. 订单内可按**不同商户（Seller）**分别填写 **Remark** 备注。  
 
-**优惠券（Coupon & Code）**
+**优惠券**
 
-6. 支持 **Coupon Code 输入**，或从用户已有优惠券列表打开**抽屉（Drawer）**选择。  
-7. 抽屉分 **Available** / **Not Available** 两个列表；有明确**关闭按钮**和**确认（Confirm）**按钮；支持点击遮罩或关闭按钮收起。  
-8. 打开抽屉时**默认勾选**当前订单可抵扣金额**最大**的一张可用券；**严禁多券叠加**，仅可**单选**一张。  
-9. 再次点击已选券可**取消勾选**；点击 **Confirm** 后收起抽屉，将选中 `couponId` 回传结算页并**重新计算**订单总价。  
-10. **不可用券**：整卡置灰不可点击/勾选，展示原因：**未达到使用门槛**、**不适用当前商品**。  
-11. **二次校验**：用户停留期间券可能被核销或过期；Confirm 后后端须二次校验；失败则 Toast 提示并**刷新抽屉列表**。计算规则**同 App 端**。  
+> **本期不做**：结算页/购物车 **不提供 Coupon & Code 入口**；Order Summary **不展示 Coupon 行**；提交不传 `couponId`（优惠券能力见 P1 / 他人 PRD）。
 
 **Order Summary**
 
-12. 金额构成：**Subtotal**（hover 小问号提示「VAT 包含在内」）+ **Promotion** + **Coupon** + **Shipping Fee**（本期固定 60）+ **COD Handling Fee**（本期免费，展示为 0 或「Free」）。  
-13. **Subtotal** = 商品**原价**小计；**Promotion** = 现价小计 − 原价小计；**Coupon** = 优惠券抵扣金额。  
+7. 金额构成：**Subtotal**（hover「VAT 包含在内」）+ **Promotion** + **Shipping Fee**（按 Standard/Air Express/Air Priority 档位计算）+ **COD** 实付区。  
+8. **Subtotal** = 商品原价小计；**Promotion** = 现价小计 − 原价小计。  
+9. **COD 价格展示**：支付方式区与 Order Summary 须同时展示 **现价（实付）** 与 **原价（划线）**（有折扣时）；与 App 一致。
 
 **提交与结果**
 
-14. **门禁**：未登录统一跳转 `/login?redirect={checkoutUrl}`。  
-15. **提交**：按钮 Loading 防重复；后端校验库存/价格/优惠券；**加载中**全站蒙版不可操作。  
-16. **成功**：跳转成功结果页；**失败**：Toast 提示失败，建议重新提交订单。  
-17. **结果页**：成功态提供 **View Order List** 按钮，跳转订单列表（`ordersUrl`，他人 PRD）。
+10. **门禁**：未登录跳转 `/login?redirect={checkoutUrl}`。  
+11. **提交**：Loading 防重复；校验库存/价格/地址/运费；全站蒙版。  
+12. **成功**：跳转 Order Complete 结果页。  
+13. **结果页（Order Complete）**：成功态展示订单号、实付金额；提供 **View Order Details** 按钮跳转订单详情（`orderDetailUrl`，他人 PRD #32）；另提供 **Continue Shopping** 回首页。
 
 ##### 字段定义
 
@@ -1362,14 +1370,15 @@ Header 账户区须区分**未登录态**、**已登录态**、**登录态加载
 | addressLine | 详细地址 | Address | string | 是 | 街道门牌等详细地址 |
 | isDefault | 是否默认 | Is Default | boolean | 否 | Save 后同步账户地址库 |
 
-**发货与支付（本期固定）**
+**发货与支付**
 
 | 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
 |--------|---------|---------|------|------|---------|
-| deliveryMethod | 发货方式 | Delivery Method | string | 是 | 固定 `Local Delivery` |
-| shippingFee | 运费 | Shipping Fee | number | 是 | 固定 **60** BDT |
+| shippingTier | 运费档位 | Shipping Tier | enum | 是 | `standard` / `air_express` / `air_priority`；计算规则同 App |
+| shippingFee | 运费 | Shipping Fee | number | 是 | 按档位与商品规则计算，BDT |
 | paymentMethod | 支付方式 | Payment Method | string | 是 | 固定 `Cash on Delivery` |
-| codHandlingFee | COD 手续费 | COD Handling Fee | number | 是 | 本期固定 **0**（免费） |
+| codPayableAmount | COD 实付 | COD Payable Amount | number | 是 | 货到付款实付金额 |
+| codOriginalAmount | COD 原价 | COD Original Amount | number | 否 | 有折扣时展示并划线 |
 
 **商户备注**
 
@@ -1378,25 +1387,15 @@ Header 账户区须区分**未登录态**、**已登录态**、**登录态加载
 | sellerId | 商户 ID | Seller ID | string | 是 | 商户唯一标识 |
 | orderRemark | 订单备注 | Order Remark | string | 否 | 该商户下商品的分单备注 |
 
-**优惠券**
-
-| 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
-|--------|---------|---------|------|------|---------|
-| couponCode | 优惠券码 | Coupon Code | string | 否 | 用户输入的 Coupon Code |
-| couponId | 已选优惠券 ID | Selected Coupon ID | string | 否 | Confirm 后回传；单选 |
-| couponAmount | 优惠券抵扣 | Coupon Amount | number | 否 | 抵扣金额，BDT |
-| couponStatus | 券可用状态 | Coupon Status | enum | 是 | `available` / `unavailable` |
-| unavailableReason | 不可用原因 | Unavailable Reason | enum | 否 | `min_spend` 未达门槛 / `not_applicable` 不适用商品 |
-
 **Order Summary**
 
 | 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
 |--------|---------|---------|------|------|---------|
 | subtotal | 商品原价小计 | Subtotal | number | 是 | 商品原价合计；hover 提示 VAT 已含 |
 | promotion | 促销优惠 | Promotion | number | 是 | 现价小计 − 原价小计 |
-| coupon | 优惠券抵扣 | Coupon Discount | number | 是 | 优惠券抵扣金额 |
-| shippingFee | 运费 | Shipping Fee | number | 是 | 固定 60 |
-| codHandlingFee | COD 手续费 | COD Handling Fee | number | 是 | 本期 0 |
+| shippingFee | 运费 | Shipping Fee | number | 是 | 按档位计算 |
+| codPayableAmount | COD 实付 | COD Payable | number | 是 | 实付金额 |
+| codOriginalAmount | COD 原价 | COD Original | number | 否 | 划线原价 |
 | payableAmount | 应付总额 | Payable Amount | number | 是 | 最终应付金额 |
 
 **结算提交**
@@ -1407,7 +1406,6 @@ Header 账户区须区分**未登录态**、**已登录态**、**登录态加载
 | checkoutEntrySource | 结算来源 | Checkout Entry Source | enum | 是 | cart / buy_now |
 | cartLineIds[] | 购物车行列表 | Cart Line IDs | array | 条件必填 | checkoutEntrySource=cart 时必填 |
 | buyNowItem | 立即购买商品 | Buy Now Item | object | 条件必填 | buy_now 时必填；含 productId、skuId、quantity |
-| couponId | 优惠券 ID | Coupon ID | string | 否 | 单选优惠券；可为空 |
 | orderRemarks[] | 商户备注列表 | Order Remarks | array | 否 | 按 sellerId 的备注数组 |
 | payableAmount | 实付金额 | Payable Amount | number | 是 | 提交时应付金额 |
 
@@ -1418,7 +1416,8 @@ Header 账户区须区分**未登录态**、**已登录态**、**登录态加载
 | orderId | 订单号 | Order ID | string | 是 | 提交成功后订单号 |
 | orderStatus | 订单状态 | Order Status | enum | 是 | `success` / `failed` |
 | paidAmount | 实付金额 | Paid Amount | number | 是 | 实际应付金额，BDT |
-| ordersListUrl | 订单列表地址 | Orders List URL | string | 是 | View Order List 跳转地址 |
+| orderDetailUrl | 订单详情地址 | Order Detail URL | string | 是 | View Order Details 跳转地址（他人 PRD） |
+| ordersListUrl | 订单列表地址 | Orders List URL | string | 否 | 可选次要入口 |
 
 ##### 交互说明
 
@@ -1426,21 +1425,20 @@ Header 账户区须区分**未登录态**、**已登录态**、**登录态加载
 |------|---------|---------|---------|------|---------|
 | BR619 | 结算门禁（基准） | 未登录进入结算 | 跳转 `/login?redirect=` | 未登录● | — |
 | BR621 | 地址 Modal | Change/Edit | Modal 选择/编辑地址（BR201） | — | Save 同步地址库 |
-| BR622 | 本地配送 | 结算页 | 固定 Local Delivery；运费 60 | — | 不可切换 |
-| BR623 | COD 支付 | 结算页 | 固定 Cash on Delivery | — | 不可切换 |
+| BR622 | 运费档位 | 结算页 | Standard / Air Express / Air Priority；计算同 App | 加载● | 实时重算 |
+| BR623 | COD 支付 | 结算页 | COD；展示实付价 + 划线原价（有折扣时） | — | 同 App |
 | BR624 | 商户备注 | 按商户分组 | 每商户可填 Remark | — | 随单提交 |
-| BR625 | 优惠券抽屉 | 打开 Coupon 区 | Available/Not Available；默认选最大抵扣券 | 加载● 错误● | 单选 |
-| BR626 | 优惠券 Confirm | 点击 Confirm | 回传 couponId；重算总价；二次校验 | 错误● | 失败 Toast+刷新 |
 | BR627 | 提交订单 | 点击 Place Order | 全局 Loading 蒙版；成功跳结果页；失败 Toast | 加载● 错误● | 防重复提交 |
-| BR628 | 结果页成功 | 下单成功 | 展示成功态 + **View Order List** → `ordersListUrl` | — | 跳转订单列表 |
+| BR628 | 结果页成功 | 下单成功 | Order Complete；**View Order Details** → `orderDetailUrl`；Continue Shopping | — | 主 CTA 为订单详情 |
 | BR629 | 结果页失败 | 下单失败 | Toast 提示；建议重新提交 | 错误● | — |
-| BR632 | 地址列表 Modal | Change Address | Modal 展示地址列表（BR201） | — | 可选已有地址 |
+| BR632 | 地址列表 Modal | Change Address | 双列地址卡片列表；选中后回填（BR201） | — | 同 ToB 双列样式 |
 | BR635 | 新增地址 Modal | Add Address | Modal 内新增（字段同上） | 错误● | Save 同步地址库 |
 | BR638 | 编辑地址 Modal | Edit Address | Modal 内编辑 | 错误● | Save 同步地址库 |
 
-| BR620a | 首次地址 Modal | 首次进入 checkout 且无 addressId | 自动弹 Modal；不可 dismiss；字段 Division/District/Area/Address | — | 与 App 一致 |
-| BR620b | 地址展示态 | Save / 选择已有地址 | 结算页只读地址卡片 | — | 字段与 Modal 一致 |
-| BR620c | 下单门禁 | Place Order 且地址为空 | Toast + 再次打开地址 Modal | 错误● | 不可提交 |
+| BR620a | 地址空态 | 无 addressId | 展示空态 + **Add New Address** 按钮；不自动弹窗 | — | 停留 checkout |
+| BR620b | 地址确认展示 | 已选地址 | 两列只读卡片：姓名/电话 | 地区+详细地址 | 同 ToB 确认样式 |
+| BR620c | 下单门禁 | Place Order 且无地址 | Toast；不提交；引导 Add New Address | 错误● | 不跳上一页 |
+| BR620d | 关闭地址 Modal | 新增/编辑 Modal 点关闭 | 关闭 Modal；**停留 checkout**；不返回 PDP/购物车 | — | 仅关闭浮层 |
 
 ---
 
@@ -1484,6 +1482,48 @@ Header 账户区须区分**未登录态**、**已登录态**、**登录态加载
 | BR703 | 专题商品列表 | 有数据 | 列表 BR208；BR825 分页 | — | 含 topicTag |
 | BR704 | 专题 Tag 展示 | 商品属于专题 | 全站列表/PDP 展示 Tag | — | 标识一致 |
 | BR705 | 专题下线 | ID 无效/下线 | 同 BR409 | 错误● | — |
+
+---
+
+
+### 4.12 模块 G3：全局 — 右侧 Sticky 快捷导航（#40）
+
+#### 基本信息
+
+| 属性 | 内容 |
+|------|------|
+| 页面编号 | #40 |
+| 类型 | 全站全局组件 |
+| 优先级 | P0 |
+
+#### 功能描述
+
+全站（除全屏 Modal 遮挡时）右侧固定 **Sticky 快捷导航条**，与用户翻页后出现的 **回顶部** 按钮为**两个独立小块**：
+
+1. **快捷导航条**（常驻右侧中部偏下）：纵向排列 **Home**、**客服**、**Cart** 三个 Icon 入口；滚动后保持可见（可随 Header 策略微调位置，但不消失）。  
+2. **回顶部**（Back to Top）：用户向下滚动超过阈值（建议与 Header BR103 同为 80px）后，在快捷导航条**上方或旁侧**单独展示一小块；点击平滑回顶；回顶后隐藏。
+
+> 与首页 Sticky 客服 FAB（FL133）关系：全站右侧条中的「客服」与 Header/Footer 同源 `supportEntryUrl`（BR806）；首页可同时保留 FL133 或仅保留全站条（以 UI 稿为准，入口目标一致）。
+
+#### 功能清单
+
+| 编号 | 功能名称（中文） | 功能名称（英文） | 功能描述 |
+| FL140 | 右侧 Sticky 快捷导航 | Right Sticky Quick Nav | Home / 客服 / Cart 三入口 |
+| FL141 | 回顶部 | Back to Top | 滚动后显示独立小块 |
+
+#### 业务规则
+
+1. **Home**：跳转 `/`。  
+2. **客服**：跳转 `supportEntryUrl`（同 BR806）。  
+3. **Cart**：跳转 `/cart`；角标与 Header BR106 同步。  
+4. **回顶部**：滚动超阈值显示；点击回顶；不遮挡主 CTA。  
+5. z-index：低于全屏 Modal，高于页面内容。
+
+#### 交互说明
+
+| 编号 | 需求名称 | 触发条件 | 交互行为 | 状态 | 验收标准 |
+| BR840 | Sticky 快捷导航 | 全站页面 | 展示 Home/客服/Cart；点击跳转 | — | 三入口可用 |
+| BR841 | 回顶部 | 下滚超阈值 | 独立小块显示；点击回顶 | — | 回顶后隐藏 |
 
 ---
 
@@ -1614,6 +1654,7 @@ FL125–FL131（见附录 A）
 | 项目 | 说明 | 计划阶段 |
 |------|------|---------|
 | 价格/属性多维 Filter | 颜色、尺码、品牌、价格区间等 | P1 |
+| 优惠券 Coupon & Code | 结算页券码/抽屉选券 | P1 |
 | 在线钱包支付 | bKash、Nagad、Rocket 等 | P1 |
 | 发票（#34） | 发票详情、电子发票 PDF 下载等 | **下一期（P1）** |
 | Cookie CMP 集成 | Cookiebot/OneTrust 等 | 合规驱动时 |
@@ -1660,7 +1701,7 @@ FL125–FL131（见附录 A）
 ### 7.1 功能验收
 
 - [ ] 本文档范围内 32 项页面/模块均可访问且与 App 业务规则一致  
-- [ ] FL001–FL140 功能点全部实现（订单系 FL107–FL119 由他人 PRD 验收）  
+- [ ] FL001–FL141 功能点全部实现（订单系 FL107–FL119 由他人 PRD 验收）  
 - [ ] BR101–BR844、BR832 全部通过测试用例（#22 购物车预览本期不做；交易步骤条 BR639–644；订单列表/详情由他人 PRD 验收）  
 - [ ] Header / Footer / 首页 Sticky 三处客服入口均可跳转 `supportEntryUrl`  
 - [ ] Header 账户区三态（加载中/未登录/已登录）视觉与菜单正确切换  
@@ -1674,7 +1715,13 @@ FL125–FL131（见附录 A）
 - [ ] 退出登录跳转首页 `/`，非登录页
 - [ ] 四专题馆均为 P0 可访问
 - [ ] 登录后游客购物车自动合并，角标与列表同步
-  
+- [ ] Sort By 仅 6 档（Recommend/New Arrival/Price↑↓/销量↑↓），无 A-Z / Z-A
+- [ ] Recommended 模块为 `recommended` 随机展示，与 Sort By 的 `recommend` 区分
+- [ ] 购物车/结算运费按 Standard / Air Express / Air Priority 计算，非 Local 固定价
+- [ ] 结算无地址不自动弹窗；关闭地址 Modal 停留 checkout；Change Address 双列列表
+- [ ] 结算/购物车无 Coupon 入口与 Coupon 行
+- [ ] COD 展示实付价 + 划线原价；结果页提供 View Order Details
+- [ ] 全站右侧 Sticky 快捷导航（Home/客服/Cart）与独立回顶部块可用
 
 ### 7.2 状态验收
 
@@ -1718,6 +1765,7 @@ FL125–FL131（见附录 A）
 | 地址新增 | #29 | FL102–FL104 |
 | 地址编辑 | #30 | FL105–FL106 |
 | 专题页 | #35–#38 | FL120–FL124 |
+| 右侧 Sticky 导航 | #40 | FL140–FL141 |
 | 全局状态 | 跨页面 | FL125–FL131 |
 
 ## 附录 B：BR 编号索引（按模块）
@@ -1732,7 +1780,8 @@ FL125–FL131（见附录 A）
 | 商品 | BR401–BR420、BR830–**BR831**、BR121 | BR120、BR409、BR418–BR420、BR619 |
 | 店铺 | BR501–BR506 | BR201–BR202、BR208、BR409、BR504、BR825 |
 | 购物车 | BR605–BR618、**BR832** | BR137、BR418、BR619、BR801 |
-| 结算/地址/结果 | BR619–BR629、BR632–BR638、BR620a–BR620c、BR639–BR644 | BR619、BR201–BR202、BR625–BR626 |
+| 结算/地址/结果 | BR619–BR629、BR632–BR638、BR620a–BR620d、BR639–BR644 | BR619、BR201–BR202 |
+| 右侧 Sticky 导航 | BR840–BR841 | BR806、BR106 |
 | 专题 | BR701–BR705 | BR208、BR825、BR409 |
 | 首页 | BR115–BR124、BR807–BR808、BR825–BR826 | BR208、BR418、BR806 |
 | 全局状态 | BR137–BR138、BR801–BR805 | BR137、BR138、BR801–BR803 |
@@ -1782,4 +1831,4 @@ FL125–FL131（见附录 A）
 
 ---
 
-*文档结束 — KickBazar ToC Web PRD v1.13*
+*文档结束 — KickBazar ToC Web PRD v1.14*
