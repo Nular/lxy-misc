@@ -23,7 +23,7 @@
 
 | 版本 | 日期 | 作者 | 变更说明 |
 |------|------|------|---------|
-| v1.15 | 2026-09-18 | 产品经理 | **结构优化**：Recommended 推荐组件独立为 §4.4 全章书写；购物车 Order Summary 仅保留 Subtotal/Promotion/Grand Total（不含运费与 COD） |
+| v1.15 | 2026-09-18 | 产品经理 | **结构优化**：Recommended 推荐组件独立为 §4.4 全章书写；购物车 Order Summary 仅保留 Subtotal/Promotion/Grand Total（不含运费与 COD）；§4.12 右侧 Sticky 快捷导航补全功能描述/字段定义/交互说明（BR840–BR846） |
 | v1.14 | 2026-09-18 | 产品经理 | **领导评审修订**：Sort By 去 A-Z、对齐 App 六档排序；Recommend 模块统一称 **Recommended**（随机展示）；运费按 Standard/Air Express/Air Priority 与 App 一致；结算地址改手动添加+双列 Change；优惠券本期不做；COD 展示划线原价；结果页增加查看订单详情；新增全站右侧 Sticky 快捷导航与回顶部 |
 | v1.13 | 2026-09-16 | 产品经理 | **一致性审阅闭环**：Featured Tab + 类目 Filter（L1–L3）纳入本期；明确多维 Filter 仅指价格/属性；支付与 App 对齐为 COD；地址统一 Division/District/Area/Address；Buy Now 双步骤条且不进购物车；游客购物车登录合并；退出登录跳转首页；四专题馆 P0；新增 §4.10.0 交易进度条与 BR825/BR837/BR836/BR620a |
 | v1.12 | 2026-09-11 | 产品经理 | **原型迭代补遗**：统一主/次导航与 Icon 规范；搜索下拉（非 Modal）BR 编号修正；分类改为 Hover 分类抽屉（同 App 分类树）；PDP 加购不唤起规格 Modal（仅 Buy Now）；附录/旅程/范围表与 §4.1–§4.10 对齐 |
@@ -1249,7 +1249,7 @@ Header 账户区须区分**未登录态**、**已登录态**、**登录态加载
 
 ##### 功能描述
 
-购物车模块包含：**加购成功反馈**（Header 角标 + **Added successfully** 气泡，BR832）、**购物车页**（#23）、**编辑模式**（#24）、**Order Summary 折扣明细**（#25）。**本期不做 Header 购物车下拉预览（#22）**；点击 Header 购物车 Icon **直接跳转** `/cart`。
+购物车模块包含：**加购成功反馈**（Header 角标 + **Added successfully** 气泡，BR832）、**购物车页**（#23）、**编辑模式**（#24）、**Order Summary 金额汇总**（#25）。**本期不做 Header 购物车下拉预览（#22）**；点击 Header 购物车 Icon **直接跳转** `/cart`。
 
 购物车页展示有效商品与失效商品分区。失效商品不可勾选、置底灰色展示。每行展示**活动专区 Tag**（若有 `topicTag`）。支持单行 **Remove** 删除；编辑模式支持批量删除（二次确认）。**Order Summary**（#25）仅展示 **Subtotal**、**Promotion**、**Grand Total** 三项；**不含** Shipping Fee、COD、Coupon（运费与 COD 在结算页 §4.10.2 计算）。
 
@@ -1511,37 +1511,132 @@ Header 账户区须区分**未登录态**、**已登录态**、**登录态加载
 | 属性 | 内容 |
 |------|------|
 | 页面编号 | #40 |
-| 类型 | 全站全局组件 |
+| 路由 | 全站全局组件，无独立路由 |
+| 类型 | 全局布局 / 悬浮组件 |
 | 优先级 | P0 |
+| 关联模块 | #3 Header（BR106 购物车角标、BR806 客服）、#23 购物车页、#39 官方客服（他人 PRD）、首页 FL133 Sticky 客服 FAB |
 
 #### 功能描述
 
-全站（除全屏 Modal 遮挡时）右侧固定 **Sticky 快捷导航条**，与用户翻页后出现的 **回顶部** 按钮为**两个独立小块**：
+右侧 Sticky 快捷导航为全站常驻的**辅助导航层**，固定在视口右侧，为用户提供高频路径的快捷入口，并配合独立的**回顶部**控件，降低长页滚动后的返回成本。
 
-1. **快捷导航条**（常驻右侧中部偏下）：纵向排列 **Home**、**客服**、**Cart** 三个 Icon 入口；滚动后保持可见（可随 Header 策略微调位置，但不消失）。  
-2. **回顶部**（Back to Top）：用户向下滚动超过阈值（建议与 Header BR103 同为 80px）后，在快捷导航条**上方或旁侧**单独展示一小块；点击平滑回顶；回顶后隐藏。
+**组件构成（两个独立小块）**
 
-> 与首页 Sticky 客服 FAB（FL133）关系：全站右侧条中的「客服」与 Header/Footer 同源 `supportEntryUrl`（BR806）；首页可同时保留 FL133 或仅保留全站条（以 UI 稿为准，入口目标一致）。
+```
+视口右侧（fixed）
+┌─────────────┐
+│  ↑ 回顶部    │  ← 块 B：Back to Top（滚动超阈值后出现，独立小块）
+├─────────────┤
+│  🏠 Home     │
+│  💬 客服      │  ← 块 A：快捷导航条（常驻，纵向 Icon 列表）
+│  🛒 Cart (n) │
+└─────────────┘
+```
+
+1. **块 A — 快捷导航条**（FL140）：常驻于视口**右侧中部偏下**（具体 `offsetBottom` 以 UI 稿为准，须避开 Footer 与页面主 CTA）。纵向排列 **Home**、**客服**、**Cart** 三个 Icon 入口；页面滚动时**保持 fixed 可见**，不因 BR103 顶栏收起而消失。  
+2. **块 B — 回顶部**（FL141）：与块 A **物理分离**的独立小块；用户向下滚动超过阈值（默认与 BR103 同为 **80px**）后，在块 A **上方**（或 UI 稿定义的旁侧）淡入展示；点击后**平滑滚动**至页面顶部；`scrollY ≤ 阈值` 时自动隐藏。
+
+**展示范围**
+
+| 场景 | 块 A 快捷导航 | 块 B 回顶部 |
+|------|--------------|------------|
+| 全站正文页（首页/搜索/分类/PDP/店铺/购物车/结算/专题等） | 展示 | 超阈值后展示 |
+| 全屏 Modal 打开（地址/规格/信任背书等） | **隐藏**（避免与 Modal 叠层冲突） | **隐藏** |
+| 订单结果页 `/checkout/result` | 展示 | 超阈值后展示 |
+| 他人 PRD 页面（登录/个人中心/订单详情等） | 展示（若该页复用全站 Layout） | 超阈值后展示 |
+
+**与首页 Sticky 客服 FAB（FL133）关系**
+
+- 全站条「客服」与 Header（FL132）、Footer Contact Us（BR112）**同源** `supportEntryUrl`（BR806）。  
+- 首页（`/`）可同时保留 FL133 右下角 FAB，或仅保留全站右侧条「客服」入口；**以 UI 稿为准**，跳转目标须一致。  
+- 若并存，须避免两块客服入口在视觉上重叠遮挡（z-index 与 `offsetBottom` 由设计稿统一）。
+
+**用户场景**
+
+| 场景 | 用户行为 | 系统响应 |
+|------|---------|---------|
+| 浏览长列表后想回首页 | 点击 Home | 跳转 `/` |
+| 任意页面需联系客服 | 点击客服 | 跳转 `supportEntryUrl`（同 BR806） |
+| 加购后快速去结算 | 点击 Cart（见角标） | 跳转 `/cart`；角标与 Header BR106 同步 |
+| 长页阅读后回顶 | 下滚超阈值 → 点击回顶部 | 平滑回顶；回顶后块 B 隐藏 |
 
 #### 功能清单
 
 | 编号 | 功能名称（中文） | 功能名称（英文） | 功能描述 |
-| FL140 | 右侧 Sticky 快捷导航 | Right Sticky Quick Nav | Home / 客服 / Cart 三入口 |
-| FL141 | 回顶部 | Back to Top | 滚动后显示独立小块 |
+|------|----------------|----------------|---------|
+| FL140 | 右侧 Sticky 快捷导航 | Right Sticky Quick Nav | 常驻 Home / 客服 / Cart 三 Icon 入口 |
+| FL141 | 回顶部 | Back to Top | 滚动超阈值后独立小块展示；点击平滑回顶 |
 
 #### 业务规则
 
-1. **Home**：跳转 `/`。  
-2. **客服**：跳转 `supportEntryUrl`（同 BR806）。  
-3. **Cart**：跳转 `/cart`；角标与 Header BR106 同步。  
-4. **回顶部**：滚动超阈值显示；点击回顶；不遮挡主 CTA。  
-5. z-index：低于全屏 Modal，高于页面内容。
+1. **常驻性**：块 A 在全站 Layout 挂载后即展示（`stickyQuickNavEnabled=true` 时）；路由切换不卸载，仅更新角标等动态字段。  
+2. **Home**：点击跳转 `/`；当前已在首页时点击可刷新首页或保持（以实现为准，须无报错）。  
+3. **客服**：点击跳转 `supportEntryUrl`；交互目标**同 BR806**，不展开客服内容面板（内容由他人 PRD #39 承接）。  
+4. **Cart**：点击跳转 `/cart`；角标数字与 Header **BR106** 同源 `cartBadgeCount`；`cartBadgeCount=0` 时可隐藏角标或展示 0（与 Header 策略一致）。  
+5. **回顶部阈值**：`scrollThresholdPx` 默认 **80**，与 BR103 建议值一致；可配置但全站统一。  
+6. **回顶部动画**：出现/消失使用淡入淡出（建议 200ms）；点击后 `behavior: smooth` 滚动至 `scrollY=0`。  
+7. **层级**：`zIndexQuickNav`、`zIndexBackToTop` 均**低于**全屏 Modal（BR201 等），**高于**页面正文与 Footer；不得遮挡结算页 Place Order 等主 CTA（Mobile 须校验安全区）。  
+8. **全屏 Modal 互斥**：任意全屏/居中 Modal 打开时，块 A 与块 B **同时隐藏**；Modal 关闭后恢复展示。  
+9. **i18n**：Icon 可配 Hover Tooltip（Home / Support / Cart / Back to Top），文案随 `currentLocale` 切换（`en` / `bn`）。  
+10. **无障碍**：各入口须具备 `aria-label`；回顶部须支持键盘聚焦与 Enter 触发（NFR019）。
+
+#### 字段定义
+
+**组件总开关与布局**
+
+| 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
+|--------|---------|---------|------|------|---------|
+| stickyQuickNavEnabled | 快捷导航开关 | Sticky Quick Nav Enabled | boolean | 是 | 是否展示块 A；默认 `true` |
+| backToTopEnabled | 回顶部开关 | Back to Top Enabled | boolean | 是 | 是否启用块 B；默认 `true` |
+| scrollThresholdPx | 回顶展示阈值 | Scroll Threshold Px | number | 是 | 向下滚动超过该像素后展示块 B；默认 `80` |
+| fixedPosition | 固定方位 | Fixed Position | enum | 是 | 固定 `right`；贴视口右侧 |
+| offsetRight | 右侧边距 | Offset Right | number | 否 | 与视口右边缘距离（px），以 UI 稿为准 |
+| offsetBottom | 底部边距 | Offset Bottom | number | 否 | 块 A 距视口底边距离（px），避开 Footer/CTA |
+| backToTopGap | 回顶与导航间距 | Back to Top Gap | number | 否 | 块 B 与块 A 之间的垂直间距（px） |
+| zIndexQuickNav | 快捷导航层级 | Quick Nav Z-Index | number | 是 | 块 A z-index；低于全屏 Modal |
+| zIndexBackToTop | 回顶层级 | Back to Top Z-Index | number | 是 | 块 B z-index；可略高于块 A，仍低于 Modal |
+| layoutMode | 布局模式 | Layout Mode | enum | 是 | `desktop` / `mobile`；Icon 尺寸与间距按断点适配 |
+
+**快捷导航项（`quickNavItems[]`）**
+
+| 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
+|--------|---------|---------|------|------|---------|
+| navItemKey | 入口标识 | Nav Item Key | enum | 是 | `home` / `support` / `cart` |
+| navItemLabel | 入口文案 | Nav Item Label | string | 是 | Tooltip / aria-label 文案，支持 i18n |
+| navItemIcon | 入口图标 | Nav Item Icon | string | 是 | Icon 资源 key 或 URL |
+| navTargetUrl | 跳转地址 | Nav Target URL | string | 是 | `home`→`/`；`support`→`supportEntryUrl`；`cart`→`/cart` |
+| navItemVisible | 是否展示 | Nav Item Visible | boolean | 是 | 默认 `true`；运营可关单项 |
+| navItemOrder | 展示顺序 | Nav Item Order | number | 是 | 纵向排序：`home`=1，`support`=2，`cart`=3 |
+| cartBadgeCount | 购物车角标 | Cart Badge Count | number | 否 | 仅 `navItemKey=cart`；与 Header BR106 同源 |
+| cartBadgeVisible | 角标是否展示 | Cart Badge Visible | boolean | 否 | `cartBadgeCount>0` 时展示；0 时策略与 Header 一致 |
+
+**回顶部状态**
+
+| 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
+|--------|---------|---------|------|------|---------|
+| backToTopVisible | 回顶是否可见 | Back to Top Visible | boolean | 是 | 由 `scrollY > scrollThresholdPx` 计算 |
+| scrollY | 当前滚动位置 | Scroll Y | number | 是 | 页面 `window.scrollY` 或容器滚动值 |
+| smoothScrollEnabled | 平滑滚动 | Smooth Scroll Enabled | boolean | 是 | 点击回顶是否平滑滚动；默认 `true` |
+
+**与全站复用字段**
+
+| 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
+|--------|---------|---------|------|------|---------|
+| supportEntryUrl | 客服承接地址 | Support Entry URL | string | 是 | 与 Header/Footer 共用；`navItemKey=support` 跳转目标 |
+| currentLocale | 当前语言 | Current Locale | enum | 是 | `en` / `bn`；影响 Tooltip 文案 |
+| isFullScreenModalOpen | 全屏 Modal 态 | Full Screen Modal Open | boolean | 是 | `true` 时块 A/B 均隐藏 |
 
 #### 交互说明
 
 | 编号 | 需求名称 | 触发条件 | 交互行为 | 状态 | 验收标准 |
-| BR840 | Sticky 快捷导航 | 全站页面 | 展示 Home/客服/Cart；点击跳转 | — | 三入口可用 |
-| BR841 | 回顶部 | 下滚超阈值 | 独立小块显示；点击回顶 | — | 回顶后隐藏 |
+|------|---------|---------|---------|------|---------|
+| BR840 | 快捷导航常驻 | 进入全站 Layout 页 | 块 A 固定右侧展示 Home/客服/Cart；路由切换保持 | — | 三入口可见 |
+| BR841 | 回顶部显隐 | 滚动页面 | `scrollY > scrollThresholdPx` 展示块 B；否则隐藏 | — | 与块 A 独立 |
+| BR842 | Home 快捷入口 | 点击 Home Icon | 跳转 `/` | — | 当前页为首页时不报错 |
+| BR843 | 客服快捷入口 | 点击客服 Icon | 跳转 `supportEntryUrl`；**同 BR806** | — | 目标与 Header 一致 |
+| BR844 | Cart 快捷入口 | 点击 Cart Icon | 跳转 `/cart`；角标同 **BR106** | 加载● | 角标实时同步 |
+| BR845 | 回顶点击 | 点击块 B | 平滑滚动至顶部；到达后块 B 隐藏 | — | 不遮挡主 CTA |
+| BR846 | Modal 互斥隐藏 | 全屏 Modal 打开 | 块 A/B 隐藏；关闭后恢复 | — | 无叠层冲突 |
 
 ---
 
@@ -1720,7 +1815,7 @@ FL125–FL131（见附录 A）
 
 - [ ] 本文档范围内 32 项页面/模块均可访问且与 App 业务规则一致  
 - [ ] FL001–FL141 功能点全部实现（订单系 FL107–FL119 由他人 PRD 验收）  
-- [ ] BR101–BR844、BR832 全部通过测试用例（#22 购物车预览本期不做；交易步骤条 BR639–644；订单列表/详情由他人 PRD 验收）  
+- [ ] BR101–BR846、BR832 全部通过测试用例（#22 购物车预览本期不做；交易步骤条 BR639–644；订单列表/详情由他人 PRD 验收）  
 - [ ] Header / Footer / 首页 Sticky 三处客服入口均可跳转 `supportEntryUrl`  
 - [ ] Header 账户区三态（加载中/未登录/已登录）视觉与菜单正确切换  
 - [ ] Header 账户聚合入口：PC Hover / Mobile 点击可展开菜单，登录/订单/优惠券/退出跳转正确  
@@ -1739,7 +1834,7 @@ FL125–FL131（见附录 A）
 - [ ] 结算无地址不自动弹窗；关闭地址 Modal 停留 checkout；Change Address 双列列表
 - [ ] 结算/购物车无 Coupon 入口与 Coupon 行
 - [ ] COD 展示实付价 + 划线原价；结果页提供 View Order Details
-- [ ] 全站右侧 Sticky 快捷导航（Home/客服/Cart）与独立回顶部块可用
+- [ ] 全站右侧 Sticky：块 A 常驻 Home/客服/Cart；块 B 超 80px 独立回顶；全屏 Modal 时隐藏（BR840–BR846）
 
 ### 7.2 状态验收
 
@@ -1800,7 +1895,7 @@ FL125–FL131（见附录 A）
 | 店铺 | BR501–BR506 | BR201–BR202、BR208、BR409、BR504、BR825 |
 | 购物车 | BR605–BR618、**BR832** | BR137、BR418、BR619、BR801 |
 | 结算/地址/结果 | BR619–BR629、BR632–BR638、BR620a–BR620d、BR639–BR644 | BR619、BR201–BR202 |
-| 右侧 Sticky 导航 | BR840–BR841 | BR806、BR106 |
+| 右侧 Sticky 导航 | BR840–BR846 | BR806、BR106 |
 | 专题 | BR701–BR705 | BR208、BR825、BR409 |
 | 首页 | BR115–BR118、BR120、BR807–BR808、BR825–BR826 | BR208、BR418、BR806 |
 | 全局状态 | BR137–BR138、BR801–BR805 | BR137、BR138、BR801–BR803 |
@@ -1814,7 +1909,8 @@ FL125–FL131（见附录 A）
 | BR138 | BR505（店铺 Tab，同 BR138 基准） |
 | BR201–BR202 | BR412、BR506、BR632、BR824、BR826 |
 | BR833–BR834 | BR104（搜索下拉，非 Modal） |
-| BR806 | BR808、BR112、FL132（Header）、FL133（Sticky） |
+| BR806 | BR808、BR112、BR843、FL132（Header）、FL133（Sticky） |
+| BR106 | BR844（Sticky Cart 角标） |
 | BR208 | BR119、BR210、BR305、BR503、BR505、BR702 |
 | BR209 | BR119 |
 | BR211–BR213 | BR305、BR505、BR213（搜索内） |
@@ -1847,6 +1943,7 @@ FL125–FL131（见附录 A）
 | 23–25 | 购物车页/编辑/Summary | FL072–FL085 | BR605–BR618、**BR832** |
 | 26–30 | 结算/地址 | FL086–FL106 | BR619–BR629、BR632–BR638 |
 | 35–38 | 专题 | FL120–FL124 | BR701–BR705 |
+| 40 | 右侧 Sticky 导航 | FL140–FL141 | BR840–BR846 |
 | — | 全局状态 | FL125–FL131 | BR801–BR805、BR137–BR138 |
 
 ---
