@@ -20,6 +20,7 @@
 | 9 | 全局右侧 Sticky 快捷导航 + 回顶部 | §4.12（新增模块 G3） | 已新增 |
 | 10 | 商品卡 Feature Tag 跳转专题页 | §4.4、§4.7.11、§4.10、BR120/BR847 | 增补 |
 | 11 | 搜索结果页、分类页去掉 Filter 与 Featured | §1.2、§2.4、§4.5、§4.6、§7.1、NFR007 | 删除 |
+| 12 | 购物车最多 50 SKU，超限建议删除 | §3.4、§4.7、§4.9.1、§7.1、BR406、BR848–851 | 增补 |
 
 ---
 
@@ -29,6 +30,7 @@
 |------|--------|--------|-------------|
 | 2026/09/09 | v1.0 | 廖炫尧 | 首版 |
 | 2026/09/20 | v1.1 | — | ① Sort By 四档规则对齐 App；② 购物车 Checkout 按钮展示已选商品件数；③ 运费档位 Standard / Air Express / Air Priority，计算与 App 一致；④ 结算页地址不自动弹窗，空态 + Add New Address；⑤ 地址确认/Change 两列布局；⑥ 优惠券移下一期；⑦ COD Fee 划线展示 Free；⑧ 结果页增加 View Order Details；⑨ 全局右侧 Sticky 导航 + 回顶部；⑩ 商品卡 Feature Tag 跳转专题页；⑪ 搜索/分类页移除 Filter 与 Featured Tab |
+| 2026/09/20 | v1.1.1 | — | ⑫ 购物车 SKU 上限 50：超限拦截加购、页内提示与删除引导（英文文案见 §12） |
 
 ---
 
@@ -398,9 +400,120 @@ COD Handling Fee 展示规则（本期免费但须显式露出）：
 
 ---
 
+## 12. 购物车 50 SKU 上限（粘贴至 §4.9.1、§4.7、§3.4、§7.1）
+
+### 规则摘要
+
+| 维度 | 定义 |
+|------|------|
+| 上限 | **50 个 SKU**（= 50 条有效购物车行，每条对应唯一 `skuId`） |
+| 不计入 | 同一 SKU **改数量**不新增 SKU 名额；Header 角标仍为**总件数**（与 SKU 数口径不同） |
+| 拦截 | `cartSkuCount >= 50` 且本次为**新 skuId** 时，**禁止加购**（Buy Now 不受影响） |
+| 允许 | 已有 SKU 加数量（受库存/moq 约束）；删除/批量删除释放名额 |
+| 登录合并 | 合并后若 > 50 SKU，与 App 一致：保留最近加购的 50 条，其余丢弃并 Toast |
+
+### §4.9.1 功能描述 — 增补段落
+
+```
+购物车 SKU 上限（与 App 一致）：
+  - 单个购物车最多容纳 50 个不同 SKU（50 条有效行，每条唯一 skuId）；
+  - 页头可选展示 SKU 计数「{cartSkuCount}/50 items」（与 Header 件数角标并存，角标仍为 quantity 合计）；
+  - 达到 50 时：禁止将新 SKU 加入购物车；须删除已有商品后方可继续加购；
+  - 对已在购物车中的 SKU，仅允许调整数量，不占用新名额；
+  - 失效商品区行仍占用 SKU 名额，建议用户 Remove 释放名额（见页内提示）。
+```
+
+### §4.9.1 业务规则 — 新增
+
+```
+13. SKU 上限：cartSkuLimit = 50（可配置常量，默认 50）。cartSkuCount = status=valid 的购物车行数（每行唯一 skuId）。
+14. 加购拦截：Add to Cart 提交前校验；若 cartSkuCount >= 50 且目标 skuId 不在当前购物车 → 拒绝请求，不更新角标，触发 BR848。
+15. 接近上限：cartSkuCount >= 45 且 < 50 时，购物车页展示信息条 BR850（Almost full）。
+16. 达到上限：cartSkuCount = 50 时，购物车页展示警告条 BR849（Cart full）；编辑模式顶部可复用同文案。
+17. 登录合并：游客 cart 与账号 cart 合并后若 sku 总数 > 50，按 App/后端策略保留 50 条（默认：最近加购优先），丢弃其余并 BR851 Toast；Header 角标与列表同步刷新。
+18. Buy Now 不写入购物车，不受 SKU 上限约束。
+```
+
+### §3.4 跨模块 — 增补行
+
+| 场景 | 规则 |
+|------|------|
+| PDP Add to Cart | 选全 SKU 后提交；若购物车已满 50 SKU 且为新品 → BR848 拦截；已有 SKU 仅改量 |
+| 登录合并购物车 | 合并后超过 50 SKU → 截断至 50 + BR851 Toast |
+
+### §4.7 PDP 业务规则 — 增补（原规则 3 后插入）
+
+```
+3a. 购物车 SKU 上限：加购前校验 cartSkuCount；满 50 且为新 skuId 时不发起加购 API，走 BR848；同 SKU 加量不受限（仍受库存约束）。
+```
+
+### 功能清单 — 新增 FL
+
+| 编号 | 功能名称（中文） | 功能名称（英文） | 功能描述 |
+|------|----------------|----------------|---------|
+| FL086 | 购物车 SKU 上限 | Cart SKU Limit | 最多 50 SKU；超限拦截加购并引导删除 |
+| FL087 | 购物车容量提示 | Cart Capacity Notice | 45+ 预警条、50 满额条、SKU 计数展示 |
+
+### 字段定义 — 增补（§4.9.3）
+
+| 字段名 | 中文名称 | 英文名称 | 类型 | 必填 | 字段说明 |
+|--------|---------|---------|------|------|---------|
+| cartSkuCount | 购物车 SKU 数 | Cart SKU Count | number | 是 | 有效行数，≤ cartSkuLimit |
+| cartSkuLimit | SKU 上限 | Cart SKU Limit | number | 是 | 固定 50 |
+| cartNearLimitThreshold | 接近上限阈值 | Near Limit Threshold | number | 是 | 默认 45，用于 BR850 |
+
+### 交互说明 — 新增 BR（§4.9.4）
+
+| 编号 | 需求名称 | 触发条件 | 交互行为 | 状态 | 验收标准 |
+|------|---------|---------|---------|------|---------|
+| BR848 | 加购超限拦截 | Add to Cart；cartSkuCount≥50 且新 skuId | Toast（见英文文案表）；不调用加购成功逻辑；不触发 BR832 | 错误● | 同 SKU 加量仍成功 |
+| BR849 | 购物车满额提示 | 进入 /cart；cartSkuCount=50 | 列表顶部警告条 + 可选 SKU 计数「50/50 items」；引导 Remove / Edit | — | 英文文案一致 |
+| BR850 | 购物车接近上限 | 进入 /cart；45≤count<50 | 列表顶部信息条「{n}/50 items」 | — | n 实时准确 |
+| BR851 | 合并截断提示 | 登录合并后 sku>50 | 列表刷新为 50 条；Toast 说明已移除超出部分 | — | 与 App 策略一致 |
+
+### BR406 验收标准 — 增补
+
+```
+加购成功 → BR832；满 50 SKU 且新 skuId → BR848，不加购、无 Added successfully 气泡。
+```
+
+---
+
+## 12.1 英文页面提示词（English Copy — 可直接给设计/ i18n）
+
+> 默认展示语言为 **English**；孟加拉语（bn）下一期与全站 i18n 一并翻译。下列 key 供 CMS / 语言包引用。
+
+| Key | 场景 | English Copy |
+|-----|------|--------------|
+| `cart.limit.toast_blocked` | PDP/全局：加购新 SKU 被拦截（BR848） | **Cart limit reached (50 items). Remove an item to add more.** |
+| `cart.limit.banner_full` | 购物车页：已满 50（BR849） | **You've reached the cart limit (50 items). Remove items to add new products.** |
+| `cart.limit.banner_almost` | 购物车页：45–49（BR850） | **Your cart is almost full ({count}/50 items).** |
+| `cart.limit.counter` | 购物车页标题区/列表顶 | **{count}/50 items** |
+| `cart.limit.modal_title` | 可选：连续加购失败时弹窗标题 | **Cart Full** |
+| `cart.limit.modal_body` | 可选弹窗正文 | **Your cart holds up to 50 different items. Remove one or more items to add new products.** |
+| `cart.limit.modal_primary` | 弹窗主按钮 → /cart?mode=edit | **Manage Cart** |
+| `cart.limit.modal_secondary` | 弹窗次按钮 | **Continue Shopping** |
+| `cart.limit.edit_hint` | 编辑模式顶部辅助文案 | **Remove items you no longer need to free up space.** |
+| `cart.limit.merge_toast` | 登录合并截断（BR851） | **Some items were removed. Your cart holds up to 50 items.** |
+| `cart.limit.invalid_hint` | 失效区有占用名额的行 | **Remove unavailable items to free up space in your cart.** |
+
+**交互选用说明（建议默认方案）：**
+
+| 优先级 | 场景 | 组件 | 文案 Key |
+|--------|------|------|----------|
+| P0 | 加购失败 | Toast 3s，不遮挡 PDP 主按钮 | `cart.limit.toast_blocked` |
+| P0 | 购物车已满 | 列表顶 **warning banner**（可关闭，关闭后会话内不再显示） | `cart.limit.banner_full` |
+| P1 | 45–49 件 | 列表顶 **info banner** | `cart.limit.banner_almost` |
+| P1 | 满额后用户 2 次加购失败 | 居中 Modal（BR201）+ Manage Cart | `modal_*` 系列 |
+| P0 | 编辑模式 | 同 banner 或 `edit_hint` | `cart.limit.edit_hint` |
+
+---
+
 ## 附录索引增补
 
 - **FL140–FL141**：§4.12 右侧 Sticky / 回顶部  
+- **FL086–FL087**：购物车 SKU 上限 / 容量提示  
 - **BR840–BR846**：Sticky 交互  
 - **BR847**：Feature Tag 跳转专题  
+- **BR848–851**：购物车 SKU 上限  
 - **删除/下期**：BR828、BR836、BR837（Filter/Featured）；BR625–626（优惠券 P1）

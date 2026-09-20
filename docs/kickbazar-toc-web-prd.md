@@ -4,6 +4,7 @@
 |------|--------|--------|-------------|
 | 2026/09/09 | v1.0 | 廖炫尧 | 首版 |
 | 2026/09/20 | v1.1 | — | Sort By 四档；Checkout 数量；运费三档；地址空态不弹窗+两列；优惠券下期；COD 划线 Free；结果页订单详情；Sticky 导航；Tag 跳专题；搜索/分类去 Filter&Featured |
+| 2026/09/20 | v1.1.1 | — | 购物车 SKU 上限 50；超限拦截加购 + 删除引导（英文文案见 changes §12） |
 
 > **v1.1 变更对照与可复制段落**：见 [`kickbazar-toc-web-prd-v1.1-changes.md`](./kickbazar-toc-web-prd-v1.1-changes.md)
 
@@ -67,7 +68,8 @@
 | 会话过期 | 接口 401 时 Toast 提示并跳转登录（回跳当前页） |
 | 商品卡 | 固定尺寸；**点击 topicTag 跳转专题页（BR847）** |
 | 分类一级收敛入口 | 次导航 L1、抽屉 L1、L2 View All 均跳转 /category/{l1Id}；页面结构 **Banner + 商品列表**（无 Filter） |
-| PDP 加购 | 须在 PDP 购买区选全 SKU 后方可 Add to Cart；成功后 Header 角标更新（BR832） |
+| PDP 加购 | 须选全 SKU 后 Add to Cart；成功 → BR832；**满 50 SKU 且为新 skuId → BR848 拦截**；同 SKU 仅改量 |
+| 登录合并购物车 | 合并后 > 50 SKU → 截断至 50 + BR851 Toast（与 App 一致） |
 | PDP 立即购买 | Buy Now 直达 /checkout；Cart 页不展示该 SKU |
 | Buy Now 步骤条 | 仅 Checkout → Order Complete 两步 |
 | **登录后 redirect 回 checkout** | 若仍无 addressId，Shipping Address 展示**空态 + Add New Address**，**不自动弹 Modal** |
@@ -158,9 +160,23 @@
 - `selectedQuantity` = 已勾选且 valid 的行 quantity 之和。
 - 实时随勾选/改量更新；无有效勾选时 disabled。
 
+**SKU 上限（v1.1.1，与 App 一致）：**
+
+- 上限 **50 个 SKU**（50 条有效行，每行唯一 `skuId`）。
+- Header 角标仍为**总件数**（quantity 合计），与 SKU 数不同。
+- 页内可展示 `{cartSkuCount}/50 items`。
+- `cartSkuCount >= 50` 且加购**新 skuId** → 拒绝，Toast（BR848）。
+- 已在车中的 SKU **改数量**不受限（受库存/moq 约束）。
+- `45 ≤ cartSkuCount < 50` → 信息条（BR850）；`= 50` → 警告条（BR849）。
+- 登录合并超 50 → 保留 50 条 + Toast（BR851）。Buy Now 不受限。
+
 | 编号 | 需求名称 | 交互行为 | 验收标准 |
 |------|---------|---------|---------|
 | BR618 | 去结算 | Checkout ({selectedQuantity})；Grand Total 进结算 | 数量联动；BR619 门禁 |
+| BR848 | 加购超限 | Toast: Cart limit reached (50 items)... | 新 SKU 失败；同 SKU 加量 OK |
+| BR849 | 满额提示 | Warning banner + 50/50 items | 英文文案见 changes §12.1 |
+| BR850 | 接近上限 | Info banner: almost full (n/50) | n 准确 |
+| BR851 | 合并截断 | Toast: Some items were removed... | 列表 ≤50 SKU |
 
 #### 4.9.6 结算与地址 — v1.1 核心修订
 
@@ -261,6 +277,7 @@
 - [ ] 右侧 Sticky Home/客服/Cart + 回顶部
 - [ ] 商品卡 topicTag 跳转专题页
 - [ ] **搜索/分类页无 Filter、无 Featured Tab**
+- [ ] **购物车 ≤50 SKU；新 SKU 加购拦截 + 删除引导；英文 Toast/Banner 文案一致**
 
 ---
 
