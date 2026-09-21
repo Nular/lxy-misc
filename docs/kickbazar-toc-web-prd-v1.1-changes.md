@@ -21,7 +21,7 @@
 | 10 | 商品卡 Feature Tag 跳转专题页 | §4.4、§4.7.11、§4.10、BR120/BR847 | 增补 |
 | 11 | 搜索结果页、分类页去掉 Filter 与 Featured | §1.2、§2.4、§4.5、§4.6、§7.1、NFR007 | 删除 |
 | 12 | 购物车最多 50 SKU，超限建议删除 | §3.4、§4.7、§4.9.1、§7.1、BR406、BR848–851 | 增补 |
-| 13 | 购物车页仅登录可进 | §2.4、§3.4、§4.1、§4.9.0–§4.9.1、§4.12、BR619、BR852 | 修订 |
+| 13 | 购物车页 + Add to Cart 均须登录 | §2.4、§3.4、§4.1、§4.7、§4.9.0–§4.9.1、§4.12、BR406、BR619、BR852 | 修订（v1.1.3） |
 
 ---
 
@@ -32,7 +32,8 @@
 | 2026/09/09 | v1.0 | 廖炫尧 | 首版 |
 | 2026/09/20 | v1.1 | — | ① Sort By 四档规则对齐 App；② 购物车 Checkout 按钮展示已选商品件数；③ 运费档位 Standard / Air Express / Air Priority，计算与 App 一致；④ 结算页地址不自动弹窗，空态 + Add New Address；⑤ 地址确认/Change 两列布局；⑥ 优惠券移下一期；⑦ COD Fee 划线展示 Free；⑧ 结果页增加 View Order Details；⑨ 全局右侧 Sticky 导航 + 回顶部；⑩ 商品卡 Feature Tag 跳转专题页；⑪ 搜索/分类页移除 Filter 与 Featured Tab |
 | 2026/09/20 | v1.1.1 | — | ⑫ 购物车 SKU 上限 50：超限拦截加购、页内提示与删除引导（英文文案见 §12） |
-| 2026/09/21 | v1.1.2 | — | ⑬ 购物车页（/cart）仅登录可进；Header/Sticky 购物车入口同步门禁 |
+| 2026/09/21 | v1.1.2 | — | ⑬ 购物车页仅登录可进（已被 v1.1.3 扩展） |
+| 2026/09/21 | v1.1.3 | — | ⑬ Add to Cart + /cart 均须登录；取消游客购物车与登录合并 |
 
 ---
 
@@ -432,7 +433,7 @@ COD Handling Fee 展示规则（本期免费但须显式露出）：
 14. 加购拦截：Add to Cart 提交前校验；若 cartSkuCount >= 50 且目标 skuId 不在当前购物车 → 拒绝请求，不更新角标，触发 BR848。
 15. 接近上限：cartSkuCount >= 45 且 < 50 时，购物车页展示信息条 BR850（Almost full）。
 16. 达到上限：cartSkuCount = 50 时，购物车页展示警告条 BR849（Cart full）；编辑模式顶部可复用同文案。
-17. 登录合并：游客 cart 与账号 cart 合并后若 sku 总数 > 50，按 App/后端策略保留 50 条（默认：最近加购优先），丢弃其余并 BR851 Toast；Header 角标与列表同步刷新。
+17. ~~登录合并~~（v1.1.3 已取消游客车，本条仅适用于历史 App 对齐说明；Web 不做游客合并）。
 18. Buy Now 不写入购物车，不受 SKU 上限约束。
 ```
 
@@ -441,7 +442,7 @@ COD Handling Fee 展示规则（本期免费但须显式露出）：
 | 场景 | 规则 |
 |------|------|
 | PDP Add to Cart | 选全 SKU 后提交；若购物车已满 50 SKU 且为新品 → BR848 拦截；已有 SKU 仅改量 |
-| 登录合并购物车 | 合并后超过 50 SKU → 截断至 50 + BR851 Toast |
+| ~~登录合并购物车~~ | v1.1.3 取消游客车，不再合并 |
 
 ### §4.7 PDP 业务规则 — 增补（原规则 3 后插入）
 
@@ -511,69 +512,78 @@ COD Handling Fee 展示规则（本期免费但须显式露出）：
 
 ---
 
-## 13. 购物车页仅登录可进（粘贴替换 §2.4、§3.4、§4.9.1、BR619 相关）
+## 13. 购物车 + 加购均须登录（v1.1.3 — 粘贴替换 §2.4、§3.4、§4.7、§4.9.1）
+
+> **相对 v1.1.2 的变更：** v1.1.2 仅限制 `/cart` 页面；**v1.1.3 同时限制 Add to Cart**，并**取消游客购物车**（无 localStorage、无登录合并）。
 
 ### 规则摘要
 
-| 维度 | v1.0 / v1.1.1 | v1.1.2 |
+| 维度 | v1.0 / v1.1.1 | v1.1.3 |
 |------|---------------|--------|
-| 购物车页 `/cart`、`/cart?mode=edit` | 游客可进 | **仅登录可进（BR619 / BR852）** |
-| Add to Cart（PDP 等） | 游客可加购 | **不变**：游客仍可加购，角标照常更新 |
-| Header / Sticky 购物车 Icon | 直跳 `/cart` | 未登录 → **BR619** → `/login?redirect=/cart` |
-| 登录后 | 合并游客车 | 登录成功 **先合并**（规则 9），redirect 回 `/cart` 展示合并结果 |
-| Checkout 按钮 | 须登录 | 用户在 `/cart` 时已登录，**BR618 不再单独做未登录跳转**（仍防会话过期 401） |
+| Add to Cart | 游客可加购 | **须登录（BR619 / BR852）**；未登录 → login?redirect=**当前页 URL** |
+| 购物车页 `/cart` | 游客可进 | **仅登录可进**；未登录 → login?redirect=/cart |
+| Header / Sticky 购物车 Icon | 直跳 `/cart` | 未登录 → login?redirect=/cart |
+| 游客购物车 localStorage | 有 | **取消** |
+| 登录合并游客车（原规则 9） | 有 | **取消** |
+| Header 角标（未登录） | 可显示游客件数 | **0 或隐藏** |
+| 登录回跳 Add to Cart | — | **保留已选 SKU**（同 Buy Now）；用户可再次点击加购或前端自动补提交 |
 
 ### §2.4 约束与原则 — 第 3、6 点（替换）
 
 ```
-3. 登录后置：浏览、搜索、加购（游客）无需登录；**购物车页（/cart）、结算与订单**为硬门禁。
-6. 购物车：**购物车页须登录进入（BR852）**；游客仍可在 PDP 等场景 Add to Cart（localStorage），Header 角标照常更新；**登录成功后**须将游客购物车与账号购物车合并（§4.9.1 规则 9），再进入 /cart 展示。
+3. 登录后置：浏览、搜索无需登录；Add to Cart、购物车页（/cart）、结算与订单为硬门禁（BR619 / BR852）。
+6. 购物车：须登录方可 Add to Cart 与进入 /cart；不做游客购物车（无 localStorage、无登录合并）；购物车数据仅存于登录账号。
 ```
 
 ### §3.4 跨模块衔接 — 替换/增补行
 
 | 场景 | 规则 |
 |------|------|
-| **未登录访问 /cart** | 跳转 `/login?redirect={encodeURIComponent(/cart 或含 query 的完整 URL)}`（BR852，同 BR619） |
-| **Header / Sticky 点击购物车** | 已登录 → `/cart`；未登录 → BR852 / BR619 |
-| 购物车「去结算」 | 用户在 /cart 时已登录；点击 Checkout → `/checkout`（3 步条 Cart→Checkout→Complete）；会话过期 401 走 BR804 |
-| PDP Add to Cart | 游客可用；成功后 BR832；**不**因本规则改为必须登录 |
-| 登录 redirect=/cart | 登录成功 → 触发规则 9 合并 → 进入 /cart |
+| **未登录 Add to Cart** | 跳转 `/login?redirect={encodeURIComponent(当前页完整 URL)}`（BR619）；登录回跳后**保留已选 SKU** |
+| **未登录访问 /cart** | 跳转 `/login?redirect={encodeURIComponent(/cart 含 query)}`（BR852） |
+| **Header / Sticky 点击购物车** | 已登录 → `/cart`；未登录 → login?redirect=/cart |
+| 购物车「去结算」 | 用户在 /cart 时已登录；Checkout → `/checkout`；401 走 BR804 |
+| PDP Add to Cart | **须登录**；未登录不调用加购 API、不更新角标、不触发 BR832 |
+| 退出登录 | 清除会话；角标归零；跳转首页 `/` |
 
-（删除或替换原「去结算先校验登录」在 cart 页的重复描述——改为「cart 页本身已门禁」。）
+**删除：** 原「游客购物车合并（规则 9）」相关全部表述。
 
-### §4.1 业务规则 — 增补（购物车 Icon）
-
-```
-16. Header 购物车 Icon：已登录点击跳转 /cart；未登录点击走 BR852（redirect=/cart），**不**进入购物车页。
-```
-
-### §4.1.3 BR106 — 验收标准增补
+### §4.7 PDP 业务规则 — 替换原规则 3
 
 ```
-未登录点击购物车 Icon → 跳转 login?redirect=/cart，不进入 /cart。
+3. 加购（Add to Cart）：须在 PDP 选全 SKU；**须登录**，未登录走 BR619（redirect=当前 PDP URL），回跳后保留 SKU 选择态；已登录时直接在 PDP 提交加购，不唤起 #17 Modal；成功 Header 角标 +1 并 BR832。未选全规格 Toast 指明缺失项。
 ```
 
-### §4.9.0 交易步骤条 — 增补
+### §4.7 BR406 — 粘贴替换
+
+| 编号 | 需求名称 | 触发条件 | 交互行为 | 状态 | 验收标准 |
+|------|---------|---------|---------|------|---------|
+| BR406 | 加购 | 点击 Add to Cart | 已登录：选全 SKU → 加购 → BR832；**未登录：BR619**，redirect=当前页，回跳保留 SKU | 未登录△ | 无游客加购 |
+
+### §4.1 业务规则 — 替换购物车角标与 Icon 相关
 
 ```
-购物车步骤条（Cart 步）仅在用户已进入 /cart 时展示；因 /cart 须登录，Step 1 页面不存在游客态。
+2. 购物车角标：仅登录态展示账号购物车总件数；未登录为 0 或隐藏；加购成功（已登录）+1 并 BR832。
+16. Header 购物车 Icon：已登录 → /cart；未登录 → login?redirect=/cart（BR852）。
 ```
 
-### §4.9.1 功能描述 — 替换「游客可使用购物车」句
+### §4.9.1 功能描述 — 替换
 
 ```
-购物车页（#23–#25）须登录进入（BR852）。游客可在 PDP 等页面 Add to Cart，数据存 localStorage，Header 角标更新；访问购物车页或点击 Header/Sticky 购物车入口时须先登录，登录成功后合并游客车（规则 9）再展示列表。
+购物车模块（#23–#25）与 Add to Cart 均须登录（v1.1.3）。
+  - 未登录点击 Add to Cart → 登录页，redirect 为当前浏览页；
+  - 未登录访问 /cart 或点击 Header/Sticky 购物车 → login?redirect=/cart；
+  - 登录后购物车数据仅来自账号，不支持游客 localStorage 暂存。
 ```
 
-### §4.9.1 业务规则 — 替换原第 9 点前后相关、新增规则 19
+### §4.9.1 业务规则 — 删除原规则 9，新增规则 19–20
 
 ```
-9. 游客加购与合并：游客 Add to Cart 写入 localStorage；**登录成功时**（含 redirect=/cart 场景）自动触发与账号购物车合并接口，Header 角标同步；合并失败 Toast，不阻断登录。
-19. 购物车页门禁：路由 /cart、/cart?mode=edit 须 isLoggedIn=true；否则 BR852 跳转 login，redirect 为请求的完整 cart URL。已登录会话访问不受限。
-```
+（删除原规则 9「游客购物车合并」整段。）
 
-（删除「游客可使用购物车」若指可使用购物车**页**的表述。）
+19. 购物车门禁：/cart、/cart?mode=edit 须 isLoggedIn=true，否则 BR852。
+20. 加购门禁：Add to Cart 须 isLoggedIn=true，否则 BR619（redirect=当前 URL）；不得写入游客本地购物车。
+```
 
 ### §4.12 Sticky Cart（BR844）— 验收增补
 
@@ -581,31 +591,43 @@ COD Handling Fee 展示规则（本期免费但须显式露出）：
 未登录点击 Cart Icon → login?redirect=/cart；已登录 → /cart。
 ```
 
-### BR619 适用范围 — 增补说明（粘贴至 BR619 基准描述或 §4.11）
+### BR619 适用范围 — 增补
 
 ```
-BR619 硬门禁页面含：/cart（含 ?mode=edit）、/checkout、/checkout/result、账户/订单/地址等需登录页。
-购物车页专用交互编号：BR852（同 BR619，redirect 固定为 cart URL）。
+BR619 硬门禁含：Add to Cart（全站）、/cart、/checkout、/checkout/result、账户/订单/地址等。
+购物车门禁交互编号：BR852（/cart 路由与购物车 Icon；Add to Cart 未登录时 redirect=当前页，可与 BR619 合并描述）。
 ```
 
-### 交互 BR852（新增）
+### 交互 BR852（v1.1.3 替换）
 
 | 编号 | 需求名称 | 触发条件 | 交互行为 | 状态 | 验收标准 |
 |------|---------|---------|---------|------|---------|
-| BR852 | 购物车页门禁 | 未登录访问 /cart；或未登录点击 Header/Sticky 购物车 | 跳转 `/login?redirect={cartUrl}`；登录成功合并游客车（规则 9）后进入 /cart | 未登录● | 不出现游客态购物车页 |
+| BR852 | 购物车门禁 | ① 未登录 Add to Cart；② 未登录访问 /cart；③ 未登录点击 Header/Sticky 购物车 | ① login?redirect=**当前页 URL**；②③ login?redirect=**/cart**；登录回跳后 Add to Cart 保留 SKU | 未登录● | 无游客加购；无游客 cart 页 |
 
-### BR618（粘贴替换 — 去掉未登录列）
+### BR618（粘贴替换）
 
 | 编号 | 需求名称 | 触发条件 | 交互行为 | 状态 | 验收标准 |
 |------|---------|---------|---------|------|---------|
-| BR618 | 去结算 | 已登录用户在 /cart 点击 Checkout | `Checkout ({selectedQuantity})`；跳转 /checkout | — | 数量联动；401 走 BR804 |
+| BR618 | 去结算 | 已登录用户在 /cart 点击 Checkout | `Checkout ({selectedQuantity})` → /checkout | — | 401 走 BR804 |
 
-### §7.1 验收 — 新增
+### §6.3 / OQ1 — 标注
 
 ```
-[] 未登录直接访问 /cart 或点击 Header/Sticky 购物车 → login?redirect=/cart，无购物车页渲染
-[] 已登录可正常进入 /cart；游客 Add to Cart 后登录 redirect 回 /cart 可见合并商品
+游客购物车与登录合并（原 OQ1 / §4.9.1 规则 9）：v1.1.3 起 Web 不做游客购物车，该规则关闭。
 ```
+
+### §7.1 验收 — 替换
+
+```
+[] 未登录点击 Add to Cart → login?redirect=当前页，不加购、不 BR832
+[] 未登录访问 /cart 或点击 Header/Sticky 购物车 → login?redirect=/cart
+[] 已登录 Add to Cart / 进入 /cart 正常；无 localStorage 游客车
+[] 登录回跳 PDP 后已选 SKU 仍保留
+```
+
+### 文档变更记录行
+
+| 2026/09/21 | v1.1.3 | — | Add to Cart 与 /cart 均须登录；取消游客购物车与登录合并 |
 
 ---
 
@@ -616,5 +638,5 @@ BR619 硬门禁页面含：/cart（含 ?mode=edit）、/checkout、/checkout/res
 - **BR840–BR846**：Sticky 交互  
 - **BR847**：Feature Tag 跳转专题  
 - **BR848–851**：购物车 SKU 上限  
-- **BR852**：购物车页登录门禁  
+- **BR852**：购物车门禁（Add to Cart + /cart + Icon，v1.1.3）  
 - **删除/下期**：BR828、BR836、BR837（Filter/Featured）；BR625–626（优惠券 P1）

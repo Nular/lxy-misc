@@ -5,7 +5,8 @@
 | 2026/09/09 | v1.0 | 廖炫尧 | 首版 |
 | 2026/09/20 | v1.1 | — | Sort By 四档；Checkout 数量；运费三档；地址空态不弹窗+两列；优惠券下期；COD 划线 Free；结果页订单详情；Sticky 导航；Tag 跳专题；搜索/分类去 Filter&Featured |
 | 2026/09/20 | v1.1.1 | — | 购物车 SKU 上限 50；超限拦截加购 + 删除引导（英文文案见 changes §12） |
-| 2026/09/21 | v1.1.2 | — | 购物车页（/cart）仅登录可进；Header/Sticky 购物车入口同步门禁 |
+| 2026/09/21 | v1.1.2 | — | 购物车页（/cart）仅登录可进（已被 v1.1.3 扩展） |
+| 2026/09/21 | v1.1.3 | — | **加购 + 购物车页均须登录**；取消游客购物车 localStorage/合并 |
 
 > **v1.1 变更对照与可复制段落**：见 [`kickbazar-toc-web-prd-v1.1-changes.md`](./kickbazar-toc-web-prd-v1.1-changes.md)
 
@@ -44,12 +45,12 @@
 
 1. 功能不扩张：不新增 App 未覆盖的模块；仅做 Web 端应有 UI/UX 适配。
 2. 业务真源：价格、库存、优惠、支付、地址规则与 App 保持一致。
-3. 登录后置：浏览、搜索、加购（游客）无需登录；**购物车页（/cart）、结算与订单**为硬门禁。
+3. 登录后置：浏览、搜索无需登录；**Add to Cart、购物车页（/cart）、结算与订单**为硬门禁（BR619 / BR852）。
 4. 合规：本期不加载任何非必要第三方追踪脚本；Cookie 横幅由他人负责。
 5. **分期与筛选：**
    - **本期做**：搜索结果排序、分类页/店铺 Items Tab 排序（Sort By 四档，见 §4.5 sort 枚举）。
    - **本期不做**：搜索结果页 Featured Tab、搜索结果页/分类页类目 Filter（L1–L3）、价格区间、颜色、尺码、品牌等多维属性 Filter；**优惠券见 §6.1**。
-6. 购物车：**购物车页须登录（BR852）**；游客仍可 Add to Cart（localStorage + 角标）；登录成功后合并账号购物车（§4.9.1 规则 9）。
+6. 购物车：**须登录**方可 Add to Cart 与进入 `/cart`（BR852）；**不做游客购物车**（无 localStorage 暂存、无登录合并）；数据仅存账号购物车。
 7. 专题：品牌馆、国家馆、精选、潮流四馆均为本期 P0。
 
 ---
@@ -63,15 +64,15 @@
 | 场景 | 规则 |
 |------|------|
 | 未登录访问结算/订单/地址/**购物车页** | 跳转 `/login?redirect={encodeURIComponent(当前URL)}`（BR619；购物车页见 **BR852**） |
-| **未登录访问 /cart 或点击 Header/Sticky 购物车** | BR852 → `/login?redirect=/cart`；登录成功合并游客车后进入 /cart |
+| **未登录 Add to Cart** | BR619 → `/login?redirect={encodeURIComponent(当前页URL)}`；回跳后**保留已选 SKU**（同 Buy Now） |
+| **未登录访问 /cart 或点击 Header/Sticky 购物车** | BR852 → `/login?redirect=/cart`；登录成功后进入 /cart |
 | 购物车「去结算」 | 用户在 /cart 时已登录；Checkout → /checkout；3 步条 Cart → Checkout → Order Complete |
 | 规格选择器「立即购买」 | 未登录跳转登录，回跳后保留已选 SKU |
 | Header 账户入口 | 跳转个人中心/登录模块/订单 |
 | 会话过期 | 接口 401 时 Toast 提示并跳转登录（回跳当前页） |
 | 商品卡 | 固定尺寸；**点击 topicTag 跳转专题页（BR847）** |
 | 分类一级收敛入口 | 次导航 L1、抽屉 L1、L2 View All 均跳转 /category/{l1Id}；页面结构 **Banner + 商品列表**（无 Filter） |
-| PDP 加购 | 须选全 SKU 后 Add to Cart；成功 → BR832；**满 50 SKU 且为新 skuId → BR848 拦截**；同 SKU 仅改量 |
-| 登录合并购物车 | 合并后 > 50 SKU → 截断至 50 + BR851 Toast（与 App 一致） |
+| PDP 加购 | 须选全 SKU；**须登录**（未登录 → BR619）；成功 → BR832；满 50 SKU 且新 skuId → BR848 |
 | PDP 立即购买 | Buy Now 直达 /checkout；Cart 页不展示该 SKU |
 | Buy Now 步骤条 | 仅 Checkout → Order Complete 两步 |
 | **登录后 redirect 回 checkout** | 若仍无 addressId，Shipping Address 展示**空态 + Add New Address**，**不自动弹 Modal** |
@@ -156,11 +157,11 @@
 
 #### 4.9.1 购物车（#23–#25）— v1.1 增补
 
-**登录门禁（v1.1.2）：**
+**登录门禁（v1.1.3）：**
 
-- `/cart`、`/cart?mode=edit` **仅登录可进**（BR852）。
-- 未登录：直链或 Header/Sticky 购物车 → `login?redirect=/cart`。
-- 游客仍可 Add to Cart（localStorage）；登录成功时合并（规则 9）再展示购物车页。
+- **Add to Cart**（PDP 等）：须登录；未登录 → BR619，`redirect` 为当前页 URL；回跳后保留已选 SKU。
+- **`/cart`、`/cart?mode=edit`**：仅登录可进（BR852）；未登录直链或 Header/Sticky 购物车 → `login?redirect=/cart`。
+- **取消游客购物车**：无 localStorage 暂存；Header 角标未登录时为 0 或隐藏；登录后展示账号购物车件数。
 
 **Checkout 按钮数量：**
 
@@ -176,16 +177,16 @@
 - `cartSkuCount >= 50` 且加购**新 skuId** → 拒绝，Toast（BR848）。
 - 已在车中的 SKU **改数量**不受限（受库存/moq 约束）。
 - `45 ≤ cartSkuCount < 50` → 信息条（BR850）；`= 50` → 警告条（BR849）。
-- 登录合并超 50 → 保留 50 条 + Toast（BR851）。Buy Now 不受限。
+- 账号购物车超 50 SKU 加购新 SKU → BR848。Buy Now 不受 SKU 上限约束。
 
 | 编号 | 需求名称 | 交互行为 | 验收标准 |
 |------|---------|---------|---------|
 | BR618 | 去结算 | 已登录 /cart 上 Checkout ({selectedQuantity}) → /checkout | 数量联动；401→BR804 |
-| BR852 | 购物车页门禁 | 未登录访问 /cart 或点购物车 Icon | login?redirect=/cart；登录后合并进 /cart | 无游客态 cart 页 |
+| BR852 | 购物车门禁 | 未登录 Add to Cart；或访问 /cart；或点购物车 Icon | Add to Cart → login?redirect=当前页；/cart 或 Icon → login?redirect=/cart | 无游客加购/无游客 cart 页 |
+| BR406 | PDP 加购 | 未登录点击 Add to Cart | 同 BR619，redirect=当前 PDP URL；回跳保留 SKU | 已登录才调用加购 API |
 | BR848 | 加购超限 | Toast: Cart limit reached (50 items)... | 新 SKU 失败；同 SKU 加量 OK |
 | BR849 | 满额提示 | Warning banner + 50/50 items | 英文文案见 changes §12.1 |
 | BR850 | 接近上限 | Info banner: almost full (n/50) | n 准确 |
-| BR851 | 合并截断 | Toast: Some items were removed... | 列表 ≤50 SKU |
 
 #### 4.9.6 结算与地址 — v1.1 核心修订
 
@@ -287,7 +288,8 @@
 - [ ] 商品卡 topicTag 跳转专题页
 - [ ] **搜索/分类页无 Filter、无 Featured Tab**
 - [ ] **购物车 ≤50 SKU；新 SKU 加购拦截 + 删除引导；英文 Toast/Banner 文案一致**
-- [ ] **未登录不可进 /cart；Header/Sticky 购物车 → login?redirect=/cart；登录后合并可见**
+- [ ] **未登录 Add to Cart → login?redirect=当前页；未登录不可进 /cart；Header/Sticky 购物车 → login?redirect=/cart**
+- [ ] **无游客购物车 localStorage；登录后角标与 /cart 仅展示账号数据**
 
 ---
 
