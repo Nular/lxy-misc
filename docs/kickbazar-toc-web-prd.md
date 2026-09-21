@@ -51,9 +51,8 @@
 3. 登录后置：浏览、搜索无需登录；**Add to Cart、购物车页（/cart）、结算与订单**为硬门禁（BR619 / BR852）。
 4. 合规：本期不加载任何非必要第三方追踪脚本；Cookie 横幅由他人负责。
 5. **分期与筛选：**
-   - **本期做**：搜索结果排序、分类页/店铺 Items Tab 排序（Sort By 四档，见 §4.5 sort 枚举）。
-   - **本期做**：分类页 Categories Filter（L1 页筛 L2 并跳转；L2 页筛 L3 本页过滤，见 §4.6）。
-   - **本期不做**：搜索结果页 Featured Tab、**搜索结果页**类目 Filter、价格/颜色/尺码/品牌等多维 Filter；**优惠券见 §6.1**。
+   - **本期做**：搜索/分类/店铺 Items Tab 排序（**与 App 一致**：From Z-A / A-Z / Newest / Oldest，见 §4.5）；**分类页 Categories Filter**（L1 页筛 L2 并跳转；L2 页筛 L3 本页 `?l3=` 筛选，见 §4.6）。
+   - **本期不做**：搜索结果页 Featured Tab、**搜索结果页**类目 Filter（L1–L3）；Recommend / New Arrival / Price / Sales 四档排序（§6.2 P1）；价格/颜色/尺码/品牌等多维 Filter；**优惠券见 §6.1**。
 6. 购物车：**须登录**方可 Add to Cart 与进入 `/cart`（BR852）；**不做游客购物车**（无 localStorage 暂存、无登录合并）；数据仅存账号购物车。
 7. 专题：品牌馆、国家馆、精选、潮流四馆均为本期 P0。
 
@@ -61,7 +60,11 @@
 
 ## 三、产品概述
 
-（v1.0 §3.1–§3.3 保持不变）
+（v1.0 §3.1 保持不变）
+
+### 3.2 产品目标（v1.1.3 修订）
+
+支持孟加拉本地地址与 COD；**Web 加购/购物车须登录**，数据仅存账号购物车（**不做游客 localStorage / 登录合并**）。
 
 ### 3.4 跨模块衔接规范（v1.1 修订摘录）
 
@@ -97,24 +100,24 @@
 
 1. **搜索下拉（#8）**：Header 搜索框点击展开，Recent + Discovery；点击词条跳转 `/search?q=`。
 2. **搜索结果页（#9）**：命中商品列表 + 排序（#12）。URL 带 `q`。本期**不含**类目 Filter（#11）与 Featured Tab（#10）。
-3. **结果排序**：默认 `sort=recommend`；搜索/分类/店铺 Items Tab 复用 Sort By（BR211–BR213）；四档：**Recommend / New Arrival / Price / 销量（Sales）**；不含 A-Z / Z-A。
+3. **结果排序（本期与 App 一致）**：默认 **From Z-A**；选项 From Z-A、From A-Z、Newest first、Oldest first（BR211）。Recommend / New Arrival / Price / Sales 四档见 **§6.2 P1（下期）**。
 
-#### 4.5.2 sort 排序枚举（全站复用）
+#### 4.5.2 sort 排序枚举（本期有效，全站复用）
 
 | 枚举值 | 中文名称 | 英文名称 | 字段说明 |
 |--------|---------|---------|---------|
-| recommend | 推荐排序 | Recommend | **默认**。一级**平台序** → 二级**商家序** → 三级**商品更改时间（update）倒序**；与 App 一致 |
-| new_arrival | 上新 | New Arrival | 按商品更改时间倒序 |
-| price_asc | 价格从低到高 | Price Low to High | 售价升序 |
-| price_desc | 价格从高到低 | Price High to Low | 售价降序 |
-| sales_desc | 销量从高到低 | Sales High to Low | 销量降序 |
-| sales_asc | 销量从低到高 | Sales Low to High | 销量升序 |
+| name_desc | From Z-A | From Z-A | **默认**。商品名称 Z→A |
+| name_asc | From A-Z | From A-Z | 商品名称 A→Z |
+| new_arrival_desc | Newest first | Newest first | 按商品更改时间（update）倒序 |
+| new_arrival_asc | Oldest first | Oldest first | 按商品更改时间正序 |
 
-**下拉展示四档：** Recommend · New Arrival · Price（↑↓）· Sales / 销量（↑↓）
+**Sort By 下拉展示（本期四档）：** From Z-A · From A-Z · Newest first · Oldest first
+
+> **下期（§6.2 P1）：** recommend / new_arrival / price_asc / price_desc / sales_asc / sales_desc 六档 Web 四档 UI（Recommend · New Arrival · Price · Sales）。
 
 #### 4.5 业务规则（摘录）
 
-- 默认 `sort=recommend`。
+- 默认 `sort=name_desc`（From Z-A）。
 - 分页：首屏 10 行 + View More（BR825）。
 - **本期不做**搜索结果页类目 Filter 与 Featured Tab。
 - 无结果：空态 + Recommended 组件。
@@ -123,7 +126,7 @@
 
 | 编号 | 需求名称 | 交互行为 | 验收标准 |
 |------|---------|---------|---------|
-| BR211 | 排序 | 四档 Recommend/New Arrival/Price↑↓/销量↑↓；默认 Recommend | 无 A-Z；与 App 一致 |
+| BR211 | 排序 | 四档 From Z-A / A-Z / Newest / Oldest；默认 From Z-A；URL 写 `sort=`（BR212） | 与 App 一致 |
 | BR207–BR210 | 结果列表/空态 | 同 v1.0 | — |
 | BR212–BR213 | URL 同步/反馈 | 同 v1.0 | — |
 | BR825 | View More | 同 v1.0 | — |
@@ -306,7 +309,7 @@
 
 | 编号 | 需求名称 | 交互行为 |
 |------|---------|---------|
-| BR840 | 快捷导航常驻 | Home / 客服 / Cart 固定右侧 |
+| BR840 | 快捷导航常驻 | 默认 Home / 客服 / Cart 固定右侧；**/cart 路由下块 A 仅 Home+客服**（BR855） |
 | BR841 | 回顶显隐 | 超阈值展示块 B |
 | BR842–BR843 | Home / 客服 | /、supportEntryUrl |
 | BR844 | Sticky Cart | 非 /cart 页→/cart；未登录→login?redirect=/cart |
@@ -326,33 +329,62 @@
 | 价格/属性多维 Filter | 颜色、尺码、品牌、价格区间等 |
 | **搜索结果页 Filter & Featured** | 搜索页 L1–L3 Filter、Featured Tab（**分类页 Categories Filter 本期做**，见 §4.6） |
 | **优惠券 Coupon & Code** | 券码输入、Drawer 选券、Summary Coupon 行 — **下一期 P1** |
+| **Recommend/New Arrival/Price/Sales 四档排序** | 本期 Sort By 与 App 一致（A-Z 四档）；Web 四档 UI — **下一期 P1** |
 | Header 购物车预览（#22） | 本期不做 |
 | 在线钱包支付 | 与 App 同期不做 |
 | 发票（#34） | 下一期 P1 |
 
+### 6.2 P1 扩展（摘录）
+
+| 功能 | 说明 |
+|------|------|
+| Sort By 四档 UI | Recommend / New Arrival / Price / Sales（含 recommend 平台序→商家序→更改时间） |
+| 优惠券 Coupon & Code | 结算页券码、Drawer 选券、Order Summary Coupon 行 |
+| 搜索页类目 Filter | L1–L3 Filter（BR828） |
+| Featured Tab | 搜索结果四大馆 Tab（BR837） |
+
+### 6.3 P2（摘录）
+
+游客购物车合并策略 — **【已关闭 v1.1.3】** Web 不做游客车。
+
 ---
 
-## 七、验收总则（v1.1 修订摘录）
+## 七、验收总则（v1.2.2 无矛盾版）
 
-- [ ] Sort By 四档与 App 一致（Recommend = 平台序→商家序→更改时间）
+**搜索 / 分类**
+
+- [ ] 搜索页：Sort By 仅 From Z-A / A-Z / Newest / Oldest；**无 Filter / Featured**
+- [ ] L1 页 Filter 含 L2，选 L2 → 跳转 L2 页
+- [ ] L2 页 Filter 含 L3，选 L3 → `?l3=` 本页筛选
+- [ ] 抽屉 L1 不跳转；L2 View All → L1 页；L2 项 → L2 页
+
+**PDP / 购物车**
+
+- [ ] 无 #17 Modal；规格内嵌购买区（BR403）
+- [ ] 未选全 SKU → Toast「Please select product spec」（Add to Cart / Buy Now，BR854）
+- [ ] 未登录 Add to Cart → login?redirect=当前页；未登录不可进 /cart（BR852）
+- [ ] 已登录加购/进 cart；**无 localStorage 游客车**
+- [ ] 购物车 ≤50 SKU；Checkout ({selectedQuantity})；满额/接近上限 Banner
+- [ ] **/cart 页 Sticky 无 Cart**（BR855）；其他页有 Cart
+
+**结算 / 结果**
+
 - [ ] Checkout 按钮展示 `Checkout ({selectedQuantity})`
-- [ ] 运费三档 Standard / Air Express / Air Priority，非 Local 固定 60
-- [ ] 结算无地址：空态 + Add New Address，不自动弹窗；关 Modal 留 checkout
-- [ ] 地址三行布局：姓名电话 / 详细地址截断 / 省市区
-- [ ] 结算页无优惠券 UI
-- [ ] COD Handling Fee 划线 + Free
-- [ ] 结果页 View Order Details 跳转**本单最新 orderId** + View Order List
-- [ ] 右侧 Sticky：非 cart 页 Home/客服/Cart；**/cart 页无 Cart 入口** + 回顶部
-- [ ] **未选全 SKU：Add to Cart / Buy Now → Toast「Please select product spec」**
-- [ ] **无 #17 规格 Modal；规格内嵌 PDP 购买区（BR403）**
-- [ ] **未选全 SKU 点 Add to Cart → Toast「Please select product spec」**
-- [ ] 商品卡 topicTag 跳转专题页
-- [ ] **搜索页无 Filter、无 Featured Tab**；**分类页 L1/L2 Filter 行为符合 §4.6**
-- [ ] **Categories 抽屉：L1 不跳转；L2 View All→L1 页；L2 项→L2 页**
-- [ ] **购物车 ≤50 SKU；新 SKU 加购拦截 + 删除引导；英文 Toast/Banner 文案一致**
-- [ ] **未登录 Add to Cart → login?redirect=当前页；未登录不可进 /cart；Header/Sticky 购物车 → login?redirect=/cart**
-- [ ] **无游客购物车 localStorage；登录后角标与 /cart 仅展示账号数据**
+- [ ] 地址三行 + 详细地址截断（BR620b）；空态不自动弹 Modal
+- [ ] 运费三档动态；COD 划线 Free；**无 Coupon UI**
+- [ ] View Order Details → **本单 orderId**（BR853）
+
+**全局**
+
+- [ ] 退出登录 → `/`（BR821）
+- [ ] topicTag → 专题页（BR847）；Sticky + 回顶部
+
+**已删除的过期验收项（勿保留于飞书正文）：**
+
+- ~~分类落地页均不展示 Filter~~（v1.2 已恢复分类页 Filter）
+- ~~登录后游客购物车自动合并~~（v1.1.3 取消游客车）
+- ~~合并截断 Toast（BR851）~~
 
 ---
 
-*完整 v1.0 未修订章节（Header、Footer、PDP 细节、店铺、专题页结构、NFR、附录 FL/BR 索引等）仍以首版 PRD 为准；凡与本文 v1.1 冲突处，以本文及 [`kickbazar-toc-web-prd-v1.1-changes.md`](./kickbazar-toc-web-prd-v1.1-changes.md) 为准。*
+*完整 v1.0 未修订章节（Header、Footer、店铺、专题页结构、NFR、附录 FL/BR 索引等）仍以首版 PRD 为准。凡与本文冲突处，以本文、`kickbazar-toc-web-prd-feishu-clean.md`（飞书粘贴终稿）及 [`kickbazar-toc-web-prd-v1.1-changes.md`](./kickbazar-toc-web-prd-v1.1-changes.md) 为准。*

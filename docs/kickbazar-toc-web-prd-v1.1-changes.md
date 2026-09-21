@@ -24,6 +24,7 @@
 | 13 | 购物车页 + Add to Cart 均须登录 | §2.4、§3.4、§4.1、§4.7、§4.9.0–§4.9.1、§4.12、BR406、BR619、BR852 | 修订（v1.1.3） |
 | 14 | 技术评审四项（订单详情/地址/抽屉/分类 Filter） | §3.4、§4.6、§4.9.6–§4.9.8、BR301/308/620/628/632/836/853 | 修订（v1.2） |
 | 15 | 未选全 SKU 加购 Toast；Sticky /cart 隐藏 Cart | §3.4、§4.7、§4.12、BR406/854/855 | 增补（v1.2.1） |
+| 16 | 无独立 #17；规格内嵌 PDP | §1.2、§3.4、§4.7、§6.1、BR403/407/412–417 | 修订（v1.2.2） |
 
 ---
 
@@ -38,46 +39,54 @@
 | 2026/09/21 | v1.1.3 | — | ⑬ Add to Cart + /cart 均须登录；取消游客购物车与登录合并 |
 | 2026/09/21 | v1.2 | — | ⑭ View Order Details 跳本单最新订单；地址三行截断；Categories 抽屉 L1 不跳转；分类页 Filter（L2 跳转/L3 筛选） |
 | 2026/09/21 | v1.2.1 | — | ⑮ 未选全 SKU 加购 Toast「Please select product spec」；Sticky 在 /cart 隐藏 Cart 入口 |
+| 2026/09/21 | v1.2.2 | — | ⑯ 取消独立 #17 规格 Modal；规格选择内嵌 PDP 购买区 |
 
 ---
 
 ## 1. Sort By 排序（粘贴替换 §2.4 约束第 5 点、§4.5 相关段落）
 
+> **v1.1 初稿曾写 Recommend 四档（Web 对齐 SHEIN）；v1.2 定稿改为「本期与 App 一致」：** From Z-A / A-Z / Newest / Oldest。** Recommend/New Arrival/Price/Sales 四档 UI 移入 §6.2 P1（下期）。以下以定稿为准。
+
 ### §2.4 约束与原则 — 第 5 点（替换）
 
 ```
 5. 分期与筛选：
-  本期做：搜索结果排序、分类页/店铺 Items Tab 排序（Sort By 四档，见 §4.5 sort 枚举）。
-  本期不做：搜索结果页 Featured Tab、搜索结果页/分类页类目 Filter（L1–L3）、价格区间、颜色、尺码、品牌等多维属性 Filter；优惠券见 §6.1。
+  本期做：搜索/分类/店铺 Items Tab 排序（与 App 一致：From Z-A / A-Z / Newest / Oldest，见 §4.5）；分类页 Categories Filter（L1 页→L2 跳转；L2 页→L3 本页 ?l3= 筛选）。
+  本期不做：搜索结果页 Featured Tab、搜索结果页类目 Filter（L1–L3）；Recommend/New Arrival/Price/Sales 四档排序（§6.2 P1）；价格/颜色/尺码/品牌等多维 Filter；优惠券见 §6.1。
 ```
 
 ### §4.5.1 功能描述 — 搜索结果段（替换第 2–3 点）
 
 ```
 2. 搜索结果页（#9）：展示命中商品列表，支持排序（#12）。URL 带 q 参数，可分享、可后退。本期不含类目 Filter（#11）与 Featured Tab（#10）。
-3. 结果排序：默认 Recommend（sort=recommend）；搜索/分类/店铺 Items Tab 全站复用 Sort By 控件（BR211–BR213）；选项为 Recommend / New Arrival / Price / 销量（Sales）四档，Price 与 Sales 各含升序/降序子项，不含 A-Z / Z-A。
+3. 结果排序（本期与 App 一致）：默认 From Z-A（sort=name_desc）；选项 From Z-A、From A-Z、Newest first、Oldest first（BR211）。Recommend / New Arrival / Price / Sales 四档见 §6.2 P1（下期）。
 ```
 
-### sort 排序枚举表（粘贴替换 §4.5.2 sort 枚举整表）
+### sort 排序枚举表（粘贴替换 §4.5.2 sort 枚举整表 — **本期有效**）
 
 | 枚举值 | 中文名称 | 英文名称 | 字段说明 |
 |--------|---------|---------|---------|
-| recommend | 推荐排序 | Recommend | **默认**。一级 **平台序** → 二级 **商家序** → 三级 **商品更改时间（update）倒序**；与 App 一致 |
-| new_arrival | 上新 | New Arrival | 按商品更改时间（update）倒序 |
-| price_asc | 价格从低到高 | Price Low to High | 按售价升序（Price 档） |
-| price_desc | 价格从高到低 | Price High to Low | 按售价降序（Price 档） |
-| sales_desc | 销量从高到低 | Sales High to Low | 按销量降序（销量档） |
-| sales_asc | 销量从低到高 | Sales Low to High | 按销量升序（销量档） |
+| name_desc | From Z-A | From Z-A | **默认**。商品名称 Z→A |
+| name_asc | From A-Z | From A-Z | 商品名称 A→Z |
+| new_arrival_desc | Newest first | Newest first | 按商品更改时间（update）倒序 |
+| new_arrival_asc | Oldest first | Oldest first | 按商品更改时间正序 |
 
-**Sort By 下拉展示（用户可见四档）：** Recommend · New Arrival · Price（Low to High / High to Low）· Sales / 销量（High to Low / Low to High）
+**Sort By 下拉展示（本期四档）：** From Z-A · From A-Z · Newest first · Oldest first
 
-**本期不做：** name_asc / name_desc（A-Z / Z-A）。
+### sort 排序枚举（**下期 §6.2 P1 — 勿混入本期表**）
 
-### BR211（粘贴替换）
+| 枚举值 | 英文名称 | 说明 |
+|--------|---------|------|
+| recommend | Recommend | 平台序→商家序→更改时间 |
+| new_arrival | New Arrival | 更改时间倒序 |
+| price_asc / price_desc | Price Low/High | 售价升降序 |
+| sales_asc / sales_desc | Sales Low/High | 销量升降序 |
+
+### BR211（粘贴替换 — 本期唯一行）
 
 | 编号 | 需求名称 | 触发条件 | 交互行为 | 状态 | 验收标准 |
 |------|---------|---------|---------|------|---------|
-| BR211 | 排序（基准） | 点击 Sort By | 四档：Recommend / New Arrival / Price↑↓ / 销量↑↓；默认 Recommend；Recommend 排序：平台序→商家序→更改时间 | 加载● | 无 A-Z；与 App 一致 |
+| BR211 | 排序（基准） | 点击 Sort By | 四档 From Z-A / A-Z / Newest / Oldest；默认 From Z-A；URL 写 sort=（BR212） | 加载● | 与 App 一致 |
 
 ### FL034（粘贴替换功能清单行）
 
@@ -344,57 +353,43 @@ COD Handling Fee 展示规则（本期免费但须显式露出）：
 
 ---
 
-## 11. 搜索/分类页去掉 Filter 与 Featured（粘贴替换多处）
+## 11. 搜索页去掉 Filter 与 Featured（v1.1）；分类页 Filter 见 §14（v1.2 恢复）
 
-### §1.2 本文档范围 — 搜索/分类行（替换）
+> **注意：** v1.1 曾写「分类页也不做 Filter」——**已被 v1.2 §14 覆盖**。本期：**搜索页**无 Filter/Featured；**分类页**有 Categories Filter（L1→L2 跳转；L2→L3 本页 `?l3=` 筛选）。
+
+### §1.2 本文档范围 — 搜索/分类行（替换 — 唯一表，勿重复粘贴）
 
 | 模块 | 页面/组件 | 本期范围说明 |
 |------|----------|-------------|
 | 搜索 | 搜索弹窗、结果列表、排序 | P0；**不含** Featured Tab、类目 Filter |
-| 分类 | 一级/二级分类、分类商品列表 | P0；**不含** 页内 L3 Filter |
+| 分类 | 一级/二级分类、**Categories Filter**、分类商品列表 | P0；L1 页 Filter=L2→跳转 L2 页；L2 页 Filter=L3→`?l3=` 本页筛选 |
 
-### §1.2 — 删除或标注不做
-
-- 删除「搜索筛选 #11 FL139」作为本期 P0 独立条目（或改为「下一期」）
+**删除：** §1.2 第二个重复模块表；分类行「不含 L3 Filter」过期表述；错别字 `Categories Filte`、行末 `r`。
 
 ### §4.5 功能清单 — 删除行
 
-删除：**FL139** 结果类目筛选、**FL035** 若仅服务 Filter URL 则删除。
+删除：**FL139** 结果类目筛选（搜索 Filter，下期）。
 
-保留：FL030–FL034（结果列表、排序等）。
-
-### §4.5 业务规则 — 删除第 6、7 点，替换为
+### §4.5 业务规则 — 替换第 6、7 点
 
 ```
-6. 本期不做搜索结果页类目 Filter（L1–L3）与 Featured Tab（四大馆 Tab/Pill）；结果页仅关键词 + Sort By + 商品列表。
+6. 本期不做搜索结果页类目 Filter（L1–L3）与 Featured Tab；结果页仅关键词 + Sort By + 商品列表。
 7. 无结果：展示空态 + 推荐组件（BR418–BR420），不展示 Filter/Featured 占位。
 ```
 
-### §4.5.3 交互说明 — 删除 BR828、BR837
+### §4.5.3 — 删除 BR828、BR837（搜索 Filter / Featured Tab）
 
-并从 BR211 验收中删除「与 Filter 叠加」相关描述。
-
-### §4.6 分类 — 删除 L3 Filter
-
-**功能清单：** 删除 FL141、FL142c 中与「页内 L3 Filter」相关项。
-
-**业务规则：** 删除 ①–④ 中 Filter 相关；分类页结构为 **Banner + 商品列表 + Sort By**，无 Categories 筛选条。
-
-**交互：** 删除 **BR836**、**BR833**（L3 Filter）；保留抽屉三列（L1/L2/推荐）与 BR305 列表排序。
-
-**§3.4 分类一级收敛：** 页面结构改为 `Banner + 商品列表`（删除「+ Filter」）。
-
-### §7.1 功能验收 — 替换相关勾选项
+### §7.1 功能验收 — 搜索相关（勿写「分类无 Filter」）
 
 ```
-删除：[] 搜索 Featured Tab 与类目 Filter（L1–L3）本期可用
-新增：[] 搜索结果页、分类落地页均不展示 Filter 与 Featured Tab；仅 Sort By + 列表
+[] 搜索页：Sort By + 列表；无 Filter、无 Featured Tab
+[] 分类页 L1/L2 Filter 行为符合 §4.6 / BR836（与搜索 Filter 独立）
 ```
 
 ### NFR007 — 替换
 
 ```
-布局策略：PC 顶栏导航；搜索结果页/分类页本期仅 Sort By，不含类目 Filter 与 Featured Tab；价格/属性 Filter 本期不做。
+布局策略：PC 顶栏导航；搜索页本期仅 Sort By，不含类目 Filter 与 Featured Tab；分类页含 Categories Filter（§4.6）；价格/属性多维 Filter 本期不做。
 ```
 
 ---
@@ -417,7 +412,7 @@ COD Handling Fee 展示规则（本期免费但须显式露出）：
 | 不计入 | 同一 SKU **改数量**不新增 SKU 名额；Header 角标仍为**总件数**（与 SKU 数口径不同） |
 | 拦截 | `cartSkuCount >= 50` 且本次为**新 skuId** 时，**禁止加购**（Buy Now 不受影响） |
 | 允许 | 已有 SKU 加数量（受库存/moq 约束）；删除/批量删除释放名额 |
-| 登录合并 | 合并后若 > 50 SKU，与 App 一致：保留最近加购的 50 条，其余丢弃并 Toast |
+| 登录合并 | **【v1.1.3 已取消游客车】** Web 不做 localStorage 游客车，无合并截断（删除 BR851） |
 
 ### §4.9.1 功能描述 — 增补段落
 
@@ -844,7 +839,8 @@ L3 不作为独立路由页（无 /category/{l3Id} 落地页）。
 - **BR853**：View Order Details → 本单最新 orderId（v1.2）  
 - **BR308a**：抽屉 L2 类目跳转（v1.2）  
 - **BR836**：分类页 Categories Filter（v1.2 恢复）  
-- **BR854–BR855**：规格未选全加购 Toast；Sticky /cart 隐藏 Cart（v1.2.1）
+- **BR854–BR855**：规格未选全 Toast；Sticky /cart 隐藏 Cart（v1.2.1）
+- **#17 / BR412–417**：本期不做；规格内嵌 PDP（v1.2.2）
 - **删除/下期**：BR828、BR837（**搜索** Filter/Featured）；BR625–626（优惠券 P1）
 
 ---
@@ -932,3 +928,108 @@ Sticky Cart 仅在非 /cart 路由展示；/cart 页走 BR855 隐藏。
 ### 文档变更记录行
 
 | 2026/09/21 | v1.2.1 | — | 未选全 SKU 加购 Toast；Sticky 在购物车页隐藏 Cart 入口 |
+| 2026/09/21 | v1.2.2 | — | 无独立 #17；规格内嵌 PDP 购买区 |
+
+---
+
+## 16. 规格选择内嵌 PDP（v1.2.2 — 取消独立 #17 Modal）
+
+> **相对 v1.0：** 删除「#17 规格选择器 Modal / Bottom Sheet」独立模块；规格与数量选择为 PDP #16 右侧购买区的**内嵌组成部分**。
+
+### 规则摘要
+
+| 维度 | 原 PRD（v1.0） | v1.2.2 |
+|------|---------------|--------|
+| #17 独立 Modal | PC 居中 / Mobile Sheet | **本期不做** |
+| 规格选择位置 | PDP 或 #17 弹层 | **仅 PDP 右侧购买区内嵌** |
+| Add to Cart | 可唤起 #17 | **不唤起**；未选全→BR854 |
+| Buy Now | 可走 #17 确认 | **不唤起**；内嵌区选全后直接 /checkout |
+| BR412–417 | #17 专用 | **本期不验收**；合并至 BR403/406/407 |
+
+### §1.2 商品行（替换）
+
+| 模块 | 页面/组件 | 本期范围说明 |
+|------|----------|-------------|
+| 商品 | 商品详情（**含内嵌规格选择区**）、推荐组件 | P0；**无独立 #17 规格 Modal/页面** |
+
+### §3.4 — 替换/删除
+
+| 场景 | 规则 |
+|------|------|
+| PDP 规格选择 | SKU/数量均在 PDP 右侧购买区内完成（**BR403**）；不打开 #17 |
+| PDP Add to Cart | 未选全→**BR854**；选全→BR406（登录→加购） |
+| PDP Buy Now | 未选全→**BR854**；选全→**BR407**（登录→/checkout） |
+
+**删除：** 「规格选择器「立即购买」」独立行（已合并入 PDP Buy Now）。
+
+### §4.7.2 功能描述 — 页面结构（替换规格/购买相关）
+
+```
+PDP 采用左图右购。右侧购买区（内嵌规格选择组件，非独立路由/Modal）包含：
+  - 商品名、价格、折扣/专题 Tag；
+  - SKU 属性选择（颜色/尺码等）+ 数量步进；
+  - Add to Cart、Buy Now 按钮。
+
+本期不单独提供 #17 规格选择器页面或全屏/居中 Modal。自列表/推荐区进入 PDP 后，须在购买区完成规格选择再加购或购买。
+Mobile：规格区可随布局位于主内容区或底栏 Sticky 购买条内，但仍为 PDP 同一页内嵌，非独立 Modal。
+```
+
+### §4.7 业务规则 — 替换规则 3、4
+
+```
+3. 加购（Add to Cart）：
+  a. 在 PDP 内嵌规格区选全必填 SKU；
+  b. 未选全点击 → BR854 Toast「Please select product spec」，点击无效；
+  c. 选全后须登录（BR619）；已登录→直接加购→BR832；
+  d. 不唤起 #17 Modal。
+
+4. 立即购买（Buy Now）：
+  a. 在 PDP 内嵌规格区选全必填 SKU；
+  b. 未选全点击 → BR854（同 Add to Cart 文案）；
+  c. 选全后须登录（BR619）；已登录→直达 /checkout，不经过购物车、不经过 #17；
+  d. Buy Now 商品不出现在 /cart。
+```
+
+### §4.7.5–§4.7.8（#17 规格选择器）— 处理方式
+
+```
+整节标注：【本期不做 — v1.2.2】
+原 FL053–FL057、BR412–BR417 移入 §6.1 或保留附录仅作历史参考，本期研发/测试不验收。
+本期规格交互验收基准：BR403（内嵌区）+ BR406 + BR407 + BR854。
+```
+
+### §6.1 本期不做 — 新增行
+
+| 项目 | 说明 |
+|------|------|
+| 规格选择器独立 Modal（#17） | 规格内嵌 PDP 购买区；不实现单独弹层 |
+
+### BR403 — 验收增补
+
+```
+内嵌规格区：切换 SKU 价格联动（BR415）；缺货置灰；数量 moq~min(stock,99)；切换 SKU 数量归 1。全站无 #17 弹层入口。
+```
+
+### BR407 — 粘贴替换
+
+| 编号 | 需求名称 | 触发条件 | 交互行为 | 状态 | 验收标准 |
+|------|---------|---------|---------|------|---------|
+| BR407 | Buy Now | 点击 Buy Now | 未选全→BR854；选全未登录→BR619；选全已登录→/checkout | 未登录△ 错误● | 不唤起 #17；不经 /cart |
+
+### BR854 — 适用范围扩充（v1.2.2）
+
+| 编号 | 需求名称 | 触发条件 | 交互行为 | 验收标准 |
+|------|---------|---------|---------|---------|
+| BR854 | 规格未选全 | Add to Cart **或 Buy Now**，SKU 未选全 | Toast「Please select product spec」；无 API、无跳转 | Add/Buy Now 均生效 |
+
+### §7.1 验收 — 新增
+
+```
+[] PDP 无 #17 规格 Modal；规格仅在购买区内嵌
+[] 未选全 SKU 点 Buy Now → 同 BR854 Toast
+[] 选全 Buy Now → /checkout（2 步条），不经 Modal
+```
+
+### 文档变更记录
+
+| 2026/09/21 | v1.2.2 | — | 取消 #17；规格内嵌 PDP |

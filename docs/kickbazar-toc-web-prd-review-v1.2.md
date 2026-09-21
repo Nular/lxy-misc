@@ -1,8 +1,9 @@
 # KickBazar ToC Web PRD — 文档洁癖审查报告（v1.2）
 
 > 审查对象：飞书 PRD 终稿（用户粘贴版）  
-> 对照基准：v1.1 / v1.1.1 / v1.1.2 / v1.1.3 / v1.2 已确认需求  
-> 审查维度：自相矛盾、重复块、过期表述、结构错位、笔误、验收不可测
+> 对照基准：v1.1 / v1.1.1 / v1.1.2 / v1.1.3 / v1.2 / v1.2.1 / v1.2.2 已确认需求  
+> 审查维度：自相矛盾、重复块、过期表述、结构错位、笔误、验收不可测  
+> **状态（2026/09/21）：** 修订已落盘 → [`kickbazar-toc-web-prd-feishu-clean.md`](./kickbazar-toc-web-prd-feishu-clean.md)（飞书粘贴指南）+ [`kickbazar-toc-web-prd.md`](./kickbazar-toc-web-prd.md)（同步版）
 
 ---
 
