@@ -8,6 +8,7 @@
 | 2026/09/21 | v1.1.2 | — | 购物车页（/cart）仅登录可进（已被 v1.1.3 扩展） |
 | 2026/09/21 | v1.1.3 | — | **加购 + 购物车页均须登录**；取消游客购物车 localStorage/合并 |
 | 2026/09/21 | v1.2 | — | 订单详情跳最新单；地址三行截断；Categories 抽屉跳转规则；分类页 Filter（L2 跳转 / L3 筛选） |
+| 2026/09/21 | v1.2.1 | — | 未选全 SKU 加购 Toast；Sticky 在 /cart 隐藏 Cart 入口 |
 
 > **v1.1 变更对照与可复制段落**：见 [`kickbazar-toc-web-prd-v1.1-changes.md`](./kickbazar-toc-web-prd-v1.1-changes.md)
 
@@ -76,7 +77,7 @@
 | Categories 抽屉 | **L1 列点击不跳转**（仅联动 L2）；L2 **View All** → `/category/{l1Id}`；L2 **类目项** → `/category/{l2Id}`（BR301/BR308） |
 | 次导航 L1 快捷入口 | 仍跳转 `/category/{l1Id}`（与抽屉 L1 行为区分） |
 | 分类落地页 | L1 页：Banner + **Categories Filter（L2）** + 列表；L2 页：Banner + **Categories Filter（L3）** + 列表 |
-| PDP 加购 | 须选全 SKU；**须登录**（未登录 → BR619）；成功 → BR832；满 50 SKU 且新 skuId → BR848 |
+| PDP 加购 | 未选全 SKU → Toast「Please select product spec」，点击无效（BR854）；选全后须登录加购（BR619/BR406） |
 | PDP 立即购买 | Buy Now 直达 /checkout；Cart 页不展示该 SKU |
 | Buy Now 步骤条 | 仅 Checkout → Order Complete 两步 |
 | **登录后 redirect 回 checkout** | 若仍无 addressId，Shipping Address 展示**空态 + Add New Address**，**不自动弹 Modal** |
@@ -211,7 +212,8 @@
 |------|---------|---------|---------|
 | BR618 | 去结算 | 已登录 /cart 上 Checkout ({selectedQuantity}) → /checkout | 数量联动；401→BR804 |
 | BR852 | 购物车门禁 | 未登录 Add to Cart；或访问 /cart；或点购物车 Icon | Add to Cart → login?redirect=当前页；/cart 或 Icon → login?redirect=/cart | 无游客加购/无游客 cart 页 |
-| BR406 | PDP 加购 | 未登录点击 Add to Cart | 同 BR619，redirect=当前 PDP URL；回跳保留 SKU | 已登录才调用加购 API |
+| BR406 | PDP 加购 | 点击 Add to Cart | 未选全 SKU→BR854；未登录→BR619；已登录选全→加购→BR832 | 校验顺序：SKU→登录→加购 |
+| BR854 | 规格未选全加购 | Add to Cart 且 SKU 未选全 | Toast「Please select product spec」；不跳转、不调 API、不 BR832 | 按钮可点但无效 |
 | BR848 | 加购超限 | Toast: Cart limit reached (50 items)... | 新 SKU 失败；同 SKU 加量 OK |
 | BR849 | 满额提示 | Warning banner + 50/50 items | 英文文案见 changes §12.1 |
 | BR850 | 接近上限 | Info banner: almost full (n/50) | n 准确 |
@@ -268,7 +270,7 @@
 
 #### 4.12.1 功能描述
 
-**块 A — 快捷导航（FL140）：** 视口右侧 fixed，纵向 **Home / 客服 / Cart**；Cart 角标同 Header BR106；路由切换保持。
+**块 A — 快捷导航（FL140）：** 视口右侧 fixed，纵向 **Home / 客服 / Cart**（**`/cart` 页隐藏 Cart 入口**，仅展示 Home + 客服，BR855）；其余页面 Cart 角标同 Header BR106。
 
 **块 B — 回顶部（FL141）：** 独立小块；scrollY > 80px（同 BR103）后淡入；点击 smooth scroll 至顶。
 
@@ -282,7 +284,9 @@
 |------|---------|---------|
 | BR840 | 快捷导航常驻 | Home / 客服 / Cart 固定右侧 |
 | BR841 | 回顶显隐 | 超阈值展示块 B |
-| BR842–BR844 | 各入口跳转 | /、supportEntryUrl、/cart |
+| BR842–BR843 | Home / 客服 | /、supportEntryUrl |
+| BR844 | Sticky Cart | 非 /cart 页→/cart；未登录→login?redirect=/cart |
+| BR855 | Sticky 隐藏 Cart | 路由为 /cart（含 ?mode=edit） | 块 A 不展示 Cart Icon | — | Home/客服仍展示 |
 | BR845 | 回顶点击 | smooth scroll |
 | BR846 | Modal 互斥 | Modal 开时隐藏 |
 
@@ -313,7 +317,8 @@
 - [ ] 结算页无优惠券 UI
 - [ ] COD Handling Fee 划线 + Free
 - [ ] 结果页 View Order Details 跳转**本单最新 orderId** + View Order List
-- [ ] 右侧 Sticky Home/客服/Cart + 回顶部
+- [ ] 右侧 Sticky：非 cart 页 Home/客服/Cart；**/cart 页无 Cart 入口** + 回顶部
+- [ ] **未选全 SKU 点 Add to Cart → Toast「Please select product spec」**
 - [ ] 商品卡 topicTag 跳转专题页
 - [ ] **搜索页无 Filter、无 Featured Tab**；**分类页 L1/L2 Filter 行为符合 §4.6**
 - [ ] **Categories 抽屉：L1 不跳转；L2 View All→L1 页；L2 项→L2 页**

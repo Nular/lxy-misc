@@ -23,6 +23,7 @@
 | 12 | 购物车最多 50 SKU，超限建议删除 | §3.4、§4.7、§4.9.1、§7.1、BR406、BR848–851 | 增补 |
 | 13 | 购物车页 + Add to Cart 均须登录 | §2.4、§3.4、§4.1、§4.7、§4.9.0–§4.9.1、§4.12、BR406、BR619、BR852 | 修订（v1.1.3） |
 | 14 | 技术评审四项（订单详情/地址/抽屉/分类 Filter） | §3.4、§4.6、§4.9.6–§4.9.8、BR301/308/620/628/632/836/853 | 修订（v1.2） |
+| 15 | 未选全 SKU 加购 Toast；Sticky /cart 隐藏 Cart | §3.4、§4.7、§4.12、BR406/854/855 | 增补（v1.2.1） |
 
 ---
 
@@ -842,4 +843,91 @@ L3 不作为独立路由页（无 /category/{l3Id} 落地页）。
 - **BR853**：View Order Details → 本单最新 orderId（v1.2）  
 - **BR308a**：抽屉 L2 类目跳转（v1.2）  
 - **BR836**：分类页 Categories Filter（v1.2 恢复）  
+- **BR854–BR855**：规格未选全加购 Toast；Sticky /cart 隐藏 Cart（v1.2.1）
 - **删除/下期**：BR828、BR837（**搜索** Filter/Featured）；BR625–626（优惠券 P1）
+
+---
+
+## 15. 未选全 SKU 加购 + Sticky 购物车页隐藏 Cart（v1.2.1）
+
+### 1）未选全 SKU 点击 Add to Cart（§4.7 + BR406/BR854）
+
+**§4.7 业务规则 — 加购段（替换/增补）：**
+
+```
+3. 加购（Add to Cart）：
+  a. 须先在 PDP 购买区选全必填 SKU 规格；
+  b. 若 SKU 未选全即点击 Add to Cart → 点击视为无效：不调用加购 API、不跳转登录、不触发 BR832、不更新角标；
+  c. 同时 Toast（BR801）：「Please select product spec」（固定英文文案，支持 i18n key：`pdp.toast.select_spec`）；
+  d. SKU 选全后：须登录（未登录→BR619）；已登录→直接加购→BR832；不唤起 #17 Modal。
+```
+
+**校验顺序：** SKU 完整性 → 登录态 → 50 SKU 上限（BR848）→ 加购 API
+
+**BR854（新增）：**
+
+| 编号 | 需求名称 | 触发条件 | 交互行为 | 状态 | 验收标准 |
+|------|---------|---------|---------|------|---------|
+| BR854 | 规格未选全加购 | 点击 Add to Cart 且必填 SKU 未选全 | Toast「Please select product spec」；无 API、无 BR832 | 错误● | 可重复点击；选全后可正常加购 |
+
+**BR406（v1.2.1 替换）：**
+
+| 编号 | 需求名称 | 触发条件 | 交互行为 | 状态 | 验收标准 |
+|------|---------|---------|---------|------|---------|
+| BR406 | 加购 | 点击 Add to Cart | 未选全→BR854；已选全未登录→BR619；已选全已登录→加购→BR832 | 未登录△ 错误● | 不唤起 #17 |
+
+**§3.4 增补行：**
+
+| 场景 | 规则 |
+|------|------|
+| PDP Add to Cart SKU 未选全 | Toast「Please select product spec」；点击无效（BR854） |
+
+---
+
+### 2）Sticky 快捷导航 — 购物车页隐藏 Cart（§4.12 + BR855）
+
+**§4.12.1 功能描述 — 块 A 增补：**
+
+```
+块 A 入口按路由动态展示：
+  - 默认：Home / 客服 / Cart 三 Icon；
+  - 当前路由为 /cart 或 /cart?mode=edit 时：隐藏 Cart Icon，仅展示 Home + 客服（BR855）；
+  - Header 购物车 Icon 不受影响（购物车页仍可通过 Header 进入，或用户已在 cart 页无需重复入口）。
+回顶部块 B 规则不变。
+```
+
+**§4.12 业务规则 — 新增：**
+
+```
+11. Cart 入口显隐：navItemKey=cart 在 pathname 匹配 ^/cart 时不渲染；离开 /cart 后恢复展示。
+12. 隐藏 Cart 时块 A 纵向间距按 UI 稿重排，仅 2 个 Icon，不保留 Cart 占位空白。
+```
+
+**字段 quickNavItems[] — navItemVisible 补充：**
+
+```
+navItemKey=cart：navItemVisible = pathname 不以 /cart 开头（含 query）。
+```
+
+**BR855（新增）：**
+
+| 编号 | 需求名称 | 触发条件 | 交互行为 | 状态 | 验收标准 |
+|------|---------|---------|---------|------|---------|
+| BR855 | Sticky 隐藏 Cart | 进入 /cart（含 edit 模式） | 块 A 不展示 Cart；Home/客服/回顶仍可用 | — | 离开 /cart 恢复 Cart |
+
+**BR844 验收增补：**
+
+```
+Sticky Cart 仅在非 /cart 路由展示；/cart 页走 BR855 隐藏。
+```
+
+**§7.1 验收 — 新增：**
+
+```
+[] 未选全 SKU 点 Add to Cart → Toast「Please select product spec」，无加购
+[] /cart 页 Sticky 无 Cart Icon；其他页 Sticky 仍有 Cart
+```
+
+### 文档变更记录行
+
+| 2026/09/21 | v1.2.1 | — | 未选全 SKU 加购 Toast；Sticky 在购物车页隐藏 Cart 入口 |
