@@ -9,6 +9,7 @@
 | 2026/09/21 | v1.1.3 | — | **加购 + 购物车页均须登录**；取消游客购物车 localStorage/合并 |
 | 2026/09/21 | v1.2 | — | 订单详情跳最新单；地址三行截断；Categories 抽屉跳转规则；分类页 Filter（L2 跳转 / L3 筛选） |
 | 2026/09/21 | v1.2.1 | — | 未选全 SKU 加购 Toast；Sticky 在 /cart 隐藏 Cart 入口 |
+| 2026/09/21 | v1.2.2 | — | 无独立 #17 规格 Modal；规格区内嵌 PDP 购买区 |
 
 > **v1.1 变更对照与可复制段落**：见 [`kickbazar-toc-web-prd-v1.1-changes.md`](./kickbazar-toc-web-prd-v1.1-changes.md)
 
@@ -32,7 +33,7 @@
 | 首页 | 核心展示区、服务介绍 | P0 |
 | 搜索 | 搜索弹窗、结果列表、排序 | P0；**不含 Featured Tab、类目 Filter** |
 | 分类 | 一级/二级分类、分类商品列表、**页内 Categories Filter** | P0；L1 页 Filter 含 L2（跳转）；L2 页 Filter 含 L3（本页筛选） |
-| 商品 | 商品详情、规格选择器、推荐组件 | P0 |
+| 商品 | 商品详情（**含内嵌规格选择区**，无独立 #17 Modal）、推荐组件 | P0 |
 | 店铺 | 店铺页、商品列表 Tab、店铺介绍弹框 | P0 |
 | 交易 | 购物车/页面/编辑/折扣、结算、结果页、地址弹框 | P0 |
 | 专题 | 品牌馆、国家馆、精选、潮流 | P0（四馆均为本期） |
@@ -70,7 +71,7 @@
 | **未登录 Add to Cart** | BR619 → `/login?redirect={encodeURIComponent(当前页URL)}`；回跳后**保留已选 SKU**（同 Buy Now） |
 | **未登录访问 /cart 或点击 Header/Sticky 购物车** | BR852 → `/login?redirect=/cart`；登录成功后进入 /cart |
 | 购物车「去结算」 | 用户在 /cart 时已登录；Checkout → /checkout；3 步条 Cart → Checkout → Order Complete |
-| 规格选择器「立即购买」 | 未登录跳转登录，回跳后保留已选 SKU |
+| PDP Buy Now | 在内嵌规格区选全 SKU；未选全→BR854；须登录（BR619），回跳保留 SKU；**不唤起 #17 Modal** |
 | Header 账户入口 | 跳转个人中心/登录模块/订单 |
 | 会话过期 | 接口 401 时 Toast 提示并跳转登录（回跳当前页） |
 | 商品卡 | 固定尺寸；**点击 topicTag 跳转专题页（BR847）** |
@@ -78,7 +79,7 @@
 | 次导航 L1 快捷入口 | 仍跳转 `/category/{l1Id}`（与抽屉 L1 行为区分） |
 | 分类落地页 | L1 页：Banner + **Categories Filter（L2）** + 列表；L2 页：Banner + **Categories Filter（L3）** + 列表 |
 | PDP 加购 | 未选全 SKU → Toast「Please select product spec」，点击无效（BR854）；选全后须登录加购（BR619/BR406） |
-| PDP 立即购买 | Buy Now 直达 /checkout；Cart 页不展示该 SKU |
+| PDP 立即购买 | 内嵌规格区选全后 Buy Now 直达 /checkout；未选全→BR854 |
 | Buy Now 步骤条 | 仅 Checkout → Order Complete 两步 |
 | **登录后 redirect 回 checkout** | 若仍无 addressId，Shipping Address 展示**空态 + Add New Address**，**不自动弹 Modal** |
 | Save 地址成功 | 写入地址库；绑定 addressId；Order Summary 可继续操作 |
@@ -182,6 +183,29 @@
 
 ---
 
+### 4.7 模块 D：商品详情（#16）— v1.2.2 内嵌规格区
+
+**无独立规格选择器页面/Modal（#17 本期不做）。** SKU 规格与数量选择内嵌于 PDP **右侧购买区**（与 App 一致），Add to Cart / Buy Now 均在此完成。
+
+| 规则 | 说明 |
+|------|------|
+| 布局 | 左图右购；右侧含 SKU 属性、数量步进、Add to Cart、Buy Now |
+| 规格交互 | 同 **BR403**（属性高亮、缺货置灰、切换 SKU 数量归 1、价格联动 BR415） |
+| Add to Cart | 未选全 SKU → **BR854** Toast「Please select product spec」，点击无效；选全→登录门禁→加购 **BR406** |
+| Buy Now | 未选全 SKU → **BR854**；选全→**BR407**（登录→/checkout），**不经过 #17、不经过 /cart** |
+| 禁止 | 不实现居中 Modal / Bottom Sheet 规格弹层（原 #17）；列表快捷加购不唤起规格弹层 |
+
+| 编号 | 名称 | 交互 | 验收 |
+|------|------|------|------|
+| BR403 | 内嵌规格区 | PDP 右侧选 SKU + 数量 | 无 #17 Modal |
+| BR406 | 加购 | 未选全→BR854；选全→BR619/加购/BR832 | 不唤起 #17 |
+| BR407 | Buy Now | 未选全→BR854；选全→BR619→/checkout | 不唤起 #17 |
+| BR854 | 规格未选全 | Add to Cart / Buy Now 且 SKU 未选全 | Toast「Please select product spec」 |
+
+> 原 **BR412–BR417**（#17 Modal）本期不验收；交互合并至 BR403/406/407/854。
+
+---
+
 ### 4.9 模块 F：交易
 
 #### 4.9.1 购物车（#23–#25）— v1.1 增补
@@ -212,8 +236,8 @@
 |------|---------|---------|---------|
 | BR618 | 去结算 | 已登录 /cart 上 Checkout ({selectedQuantity}) → /checkout | 数量联动；401→BR804 |
 | BR852 | 购物车门禁 | 未登录 Add to Cart；或访问 /cart；或点购物车 Icon | Add to Cart → login?redirect=当前页；/cart 或 Icon → login?redirect=/cart | 无游客加购/无游客 cart 页 |
-| BR406 | PDP 加购 | 点击 Add to Cart | 未选全 SKU→BR854；未登录→BR619；已登录选全→加购→BR832 | 校验顺序：SKU→登录→加购 |
-| BR854 | 规格未选全加购 | Add to Cart 且 SKU 未选全 | Toast「Please select product spec」；不跳转、不调 API、不 BR832 | 按钮可点但无效 |
+| BR406 | PDP 加购 | 点击 Add to Cart | 未选全→BR854；选全未登录→BR619；选全已登录→BR832 | SKU→登录→加购；无 #17 |
+| BR854 | 规格未选全 | Add/Buy Now 且 SKU 未选全 | Toast「Please select product spec」；无效点击 | 不调 API |
 | BR848 | 加购超限 | Toast: Cart limit reached (50 items)... | 新 SKU 失败；同 SKU 加量 OK |
 | BR849 | 满额提示 | Warning banner + 50/50 items | 英文文案见 changes §12.1 |
 | BR850 | 接近上限 | Info banner: almost full (n/50) | n 准确 |
@@ -298,6 +322,7 @@
 
 | 项目 | 说明 |
 |------|------|
+| **规格选择器独立 Modal（#17）** | 规格区内嵌 PDP；不实现单独弹层/页面 |
 | 价格/属性多维 Filter | 颜色、尺码、品牌、价格区间等 |
 | **搜索结果页 Filter & Featured** | 搜索页 L1–L3 Filter、Featured Tab（**分类页 Categories Filter 本期做**，见 §4.6） |
 | **优惠券 Coupon & Code** | 券码输入、Drawer 选券、Summary Coupon 行 — **下一期 P1** |
@@ -318,6 +343,8 @@
 - [ ] COD Handling Fee 划线 + Free
 - [ ] 结果页 View Order Details 跳转**本单最新 orderId** + View Order List
 - [ ] 右侧 Sticky：非 cart 页 Home/客服/Cart；**/cart 页无 Cart 入口** + 回顶部
+- [ ] **未选全 SKU：Add to Cart / Buy Now → Toast「Please select product spec」**
+- [ ] **无 #17 规格 Modal；规格内嵌 PDP 购买区（BR403）**
 - [ ] **未选全 SKU 点 Add to Cart → Toast「Please select product spec」**
 - [ ] 商品卡 topicTag 跳转专题页
 - [ ] **搜索页无 Filter、无 Featured Tab**；**分类页 L1/L2 Filter 行为符合 §4.6**

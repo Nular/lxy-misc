@@ -37,6 +37,7 @@
 | 2026/09/21 | v1.1.2 | — | ⑬ 购物车页仅登录可进（已被 v1.1.3 扩展） |
 | 2026/09/21 | v1.1.3 | — | ⑬ Add to Cart + /cart 均须登录；取消游客购物车与登录合并 |
 | 2026/09/21 | v1.2 | — | ⑭ View Order Details 跳本单最新订单；地址三行截断；Categories 抽屉 L1 不跳转；分类页 Filter（L2 跳转/L3 筛选） |
+| 2026/09/21 | v1.2.1 | — | ⑮ 未选全 SKU 加购 Toast「Please select product spec」；Sticky 在 /cart 隐藏 Cart 入口 |
 
 ---
 
