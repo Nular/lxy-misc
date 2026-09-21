@@ -22,6 +22,7 @@
 | 11 | 搜索结果页、分类页去掉 Filter 与 Featured | §1.2、§2.4、§4.5、§4.6、§7.1、NFR007 | 删除 |
 | 12 | 购物车最多 50 SKU，超限建议删除 | §3.4、§4.7、§4.9.1、§7.1、BR406、BR848–851 | 增补 |
 | 13 | 购物车页 + Add to Cart 均须登录 | §2.4、§3.4、§4.1、§4.7、§4.9.0–§4.9.1、§4.12、BR406、BR619、BR852 | 修订（v1.1.3） |
+| 14 | 技术评审四项（订单详情/地址/抽屉/分类 Filter） | §3.4、§4.6、§4.9.6–§4.9.8、BR301/308/620/628/632/836/853 | 修订（v1.2） |
 
 ---
 
@@ -34,6 +35,7 @@
 | 2026/09/20 | v1.1.1 | — | ⑫ 购物车 SKU 上限 50：超限拦截加购、页内提示与删除引导（英文文案见 §12） |
 | 2026/09/21 | v1.1.2 | — | ⑬ 购物车页仅登录可进（已被 v1.1.3 扩展） |
 | 2026/09/21 | v1.1.3 | — | ⑬ Add to Cart + /cart 均须登录；取消游客购物车与登录合并 |
+| 2026/09/21 | v1.2 | — | ⑭ View Order Details 跳本单最新订单；地址三行截断；Categories 抽屉 L1 不跳转；分类页 Filter（L2 跳转/L3 筛选） |
 
 ---
 
@@ -631,12 +633,213 @@ BR619 硬门禁含：Add to Cart（全站）、/cart、/checkout、/checkout/res
 
 ---
 
+## 14. 技术评审四项修订（v1.2 — 粘贴替换对应章节）
+
+### 变更总览
+
+| # | 评审项 | 原 PRD（v1.1） | v1.2 |
+|---|--------|---------------|------|
+| 1 | View Order Details | `/account/orders/{orderId}` 未强调来源 | **跳转本单提交返回的 orderId**（刚完成的最新一笔订单） |
+| 2 | 地址确认展示 | 两列：左姓名电话 / 右省市区+详细地址 | **三行**：上姓名电话 → 中详细地址（过长截断）→ 下省市区 |
+| 3 | Categories 抽屉 | L1 点击跳转 L1 页（BR308） | **L1 不跳转**；L2 View All→L1 页；L2 项→L2 页 |
+| 4 | 分类页 Filter | v1.1 删除分类页 Filter | **恢复**：L1 页 Filter 含 L2（选中跳转 L2 页）；L2 页 Filter 含 L3（选中本页 ?l3= 筛选） |
+
+> **搜索页**仍不做 Filter / Featured（v1.1 §11 不变）。
+
+---
+
+### 1. View Order Details → 最新订单（§4.9.6 结果页 + §4.9.7 + BR628/BR853）
+
+#### §4.9.6 提交与结果 — 结果页 CTA（替换）
+
+```
+结果页成功态：
+  - 展示 orderId、实付金额；
+  - View Order Details：跳转 `/account/orders/{orderId}`，其中 orderId **必须为本笔提交接口返回的订单 ID**（用户刚完成的最新一笔订单，非历史列表首条推断）；
+  - View Order List：跳转 ordersListUrl。
+```
+
+#### §4.9.7 订单结果页字段 — orderDetailUrl 说明（增补）
+
+```
+orderDetailUrl = `/account/orders/{orderId}`，orderId 取自下单成功响应体，与结果页展示 orderId 一致。
+```
+
+#### BR853（新增）
+
+| 编号 | 需求名称 | 触发条件 | 交互行为 | 状态 | 验收标准 |
+|------|---------|---------|---------|------|---------|
+| BR853 | 查看订单详情 | 结果页点击 View Order Details | 跳转 `/account/orders/{orderId}`；orderId=**本单响应最新订单 ID** | — | 进入刚下单的详情页 |
+
+#### BR628 — 验收标准增补
+
+```
+View Order Details 须满足 BR853；不得跳转至错误历史订单。
+```
+
+---
+
+### 2. 地址确认布局三行 + 详细地址截断（§4.9.6 + BR620b + BR632）
+
+#### 地址确认卡片布局（替换原两列 ToB 样式）
+
+```
+只读地址卡片（结算页 Shipping Address 已填态、Change Address 列表项、地址 Modal 预览态统一）：
+
+  第 1 行（上）：Recipient Name + Phone Number（+880），同一行或两行紧凑排列；
+  第 2 行（中）：Address 详细地址（addressLine）；
+        - 单行展示，超出容器宽度时 **截断**（ellipsis / line-clamp，建议 1–2 行）；
+        - Hover 或点击可展示完整地址（Tooltip / title，以实现为准）；
+  第 3 行（下）：Division · District · Area（省/区/区域，点号或逗号分隔）。
+
+Change Address 列表 Modal、Edit 保存后的展示均沿用上述三行结构（**不再使用左右两列**）。
+```
+
+#### BR620b（粘贴替换）
+
+| 编号 | 需求名称 | 触发条件 | 交互行为 | 验收标准 |
+|------|---------|---------|---------|---------|
+| BR620b | 地址展示态 | Save / Change 选中地址 | 三行：姓名电话 / 详细地址（truncate）/ Division·District·Area | 长地址不撑破布局 |
+
+#### BR632 — 验收增补
+
+```
+列表每项布局同 BR620b 三行；选中后绑定 addressId。
+```
+
+#### §4.9.6 已填态描述（替换）
+
+```
+已填态：只读地址确认卡片（三行布局，见 BR620b）；Change Address / Edit Address。
+```
+
+---
+
+### 3. Categories 抽屉跳转规则（§4.6 + §3.4 + BR301/BR308/BR105）
+
+#### §4.6.1 功能描述 — 抽屉段落（替换）
+
+```
+分类抽屉（Hover Categories 展开）三列：L1｜L2 + View All｜Recommend。
+
+  - 第一列 L1：Hover/点击 **仅联动**第二列 L2 与第三列 Recommend，**不跳转路由**；
+  - 第二列 L2：
+      · 首项 **View All** → 跳转一级类目商品列表 `/category/{l1Id}`，面包屑 Home › {L1}；
+      · 其余 **L2 类目项** → 跳转二级类目商品列表 `/category/{l2Id}`，面包屑 Home › {L1} › {L2}；
+  - 第三列 Recommend：商品推荐，点击商品卡进 PDP（BR120）；**不在此列做一级类目跳转**。
+
+次导航栏一级分类快捷入口（非抽屉）：仍点击跳转 `/category/{l1Id}`，与抽屉 L1 行为区分。
+```
+
+#### §3.4 — 替换原「分类一级收敛」相关行
+
+| 场景 | 规则 |
+|------|------|
+| Categories 抽屉 L1 | **不跳转**，仅联动 L2/Recommend |
+| 抽屉 L2 View All | → `/category/{l1Id}` |
+| 抽屉 L2 类目项 | → `/category/{l2Id}` |
+| 次导航 L1 快捷入口 | → `/category/{l1Id}`（不变） |
+
+（**删除**「抽屉 L1 点击 / L2 View All / 次导航 L1 均收敛至 L1 页」的统一表述。）
+
+#### BR301 / BR308（粘贴替换）
+
+| 编号 | 需求名称 | 触发条件 | 交互行为 | 验收标准 |
+|------|---------|---------|---------|---------|
+| BR301 | 分类抽屉 | Hover Categories | 三列；L1 联动不跳转；L2 列表随 L1 切换 | 可滚动 |
+| BR308 | 抽屉内跳转 | 点击 L2 View All | → `/category/{l1Id}`；抽屉收起 | 面包屑正确 |
+| BR308a | 抽屉 L2 跳转 | 点击 L2 类目项（非 View All） | → `/category/{l2Id}`；抽屉收起 | 面包屑 Home›L1›L2 |
+
+#### BR105 — 差异说明（Header 次导航）
+
+```
+BR105 次导航 L1 快捷入口仍进 /category/{l1Id}；与抽屉 L1「不跳转」并存，验收分别覆盖。
+```
+
+---
+
+### 4. 分类页 Categories Filter（§1.2、§2.4、§4.6 — 恢复并细化）
+
+#### §1.2 分类行（替换 v1.1「不含 L3 Filter」）
+
+| 模块 | 页面/组件 | 本期范围说明 |
+|------|----------|-------------|
+| 分类 | 一级/二级分类、分类商品列表、**Categories Filter** | P0；L1 页 Filter=L2（跳转）；L2 页 Filter=L3（本页筛选） |
+
+#### §2.4 第 5 点 — 增补（替换 v1.1 整段删除分类 Filter 的表述）
+
+```
+5. 分期与筛选：
+  本期做：搜索排序；**分类页 Categories Filter**（L1 页→L2 跳转；L2 页→L3 本页筛选）；店铺 Items Tab 排序。
+  本期不做：搜索结果页 Featured Tab、**搜索结果页**类目 Filter、价格/颜色/尺码/品牌等多维 Filter；优惠券见 §6.1。
+```
+
+#### §4.6 分类落地页结构（替换 v1.1「Banner + 列表无 Filter」）
+
+```
+一级类目页 /category/{l1Id}：
+  Banner + Categories Filter（展示该 L1 下全部 **L2**）+ Sort By + 商品列表（默认 L1 下商品或 L1 聚合规则与 App 一致）；
+  选中某一 L2 Filter 项 → **路由跳转** `/category/{l2Id}`（非本页 filter 参数）。
+
+二级类目页 /category/{l2Id}：
+  Banner + Categories Filter（展示该 L2 下全部 **L3**）+ Sort By + 商品列表；
+  选中某一 L3 Filter 项 → **本页筛选**，URL 写入 `?l3={l3Id}` 并刷新列表（展示该 L3 下所有商品）；
+  Clear / 取消选中 → 移除 `l3`，展示 L2 下全部商品。
+
+L3 不作为独立路由页（无 /category/{l3Id} 落地页）。
+```
+
+#### 业务规则 — 增补
+
+```
+① 分类页 Filter 仅 Categories 一组，不含价格/属性；
+② L1 页 Filter 选项 = L2 子节点，点击=跳转；
+③ L2 页 Filter 选项 = L3 子节点，点击=本页 ?l3= 筛选；
+④ Filter 选中态与 URL 同步（L2 页 l3 参数）；
+⑤ 与搜索页 Filter（BR828，本期不做）数据场景独立。
+```
+
+#### FL141 / FL142c（恢复）
+
+| 编号 | 功能名称 | 描述 |
+|------|---------|------|
+| FL141 | 二级页 L3 Filter | L2 页 Categories 展示 L3，?l3= 本页筛选 |
+| FL142c | 一级页 L2 Filter | L1 页 Categories 展示 L2，选中跳转 L2 页 |
+
+#### BR836（粘贴替换 — 恢复 v1.1 删除项）
+
+| 编号 | 需求名称 | 触发条件 | 交互行为 | 状态 | 验收标准 |
+|------|---------|---------|---------|------|---------|
+| BR836 | 分类页 Categories Filter | L1 或 L2 落地页 | L1 页：选 L2 → `/category/{l2Id}`；L2 页：选 L3 → `?l3=` 刷新列表 | 加载● | 与 BR828 搜索 Filter 独立 |
+
+#### §7.1 验收 — 替换 v1.1 分类 Filter 删除项
+
+```
+删除：[] 分类落地页均不展示 Filter
+新增：
+  [] L1 页 Categories Filter 含 L2，选 L2 跳转 L2 页
+  [] L2 页 Categories Filter 含 L3，选 L3 本页 ?l3= 筛选
+  [] 搜索页仍无 Filter / Featured
+```
+
+#### §6.1 本期不做 — 修正
+
+```
+删除或改写「分类页 Filter」条目；保留「搜索结果页 Filter & Featured」为不做。
+```
+
+---
+
 ## 附录索引增补
 
 - **FL140–FL141**：§4.12 右侧 Sticky / 回顶部  
+- **FL141/FL142c**：分类页 Categories Filter（v1.2 恢复）  
 - **FL086–FL087**：购物车 SKU 上限 / 容量提示  
 - **BR840–BR846**：Sticky 交互  
 - **BR847**：Feature Tag 跳转专题  
 - **BR848–851**：购物车 SKU 上限  
 - **BR852**：购物车门禁（Add to Cart + /cart + Icon，v1.1.3）  
-- **删除/下期**：BR828、BR836、BR837（Filter/Featured）；BR625–626（优惠券 P1）
+- **BR853**：View Order Details → 本单最新 orderId（v1.2）  
+- **BR308a**：抽屉 L2 类目跳转（v1.2）  
+- **BR836**：分类页 Categories Filter（v1.2 恢复）  
+- **删除/下期**：BR828、BR837（**搜索** Filter/Featured）；BR625–626（优惠券 P1）

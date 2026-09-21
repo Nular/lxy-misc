@@ -7,6 +7,7 @@
 | 2026/09/20 | v1.1.1 | — | 购物车 SKU 上限 50；超限拦截加购 + 删除引导（英文文案见 changes §12） |
 | 2026/09/21 | v1.1.2 | — | 购物车页（/cart）仅登录可进（已被 v1.1.3 扩展） |
 | 2026/09/21 | v1.1.3 | — | **加购 + 购物车页均须登录**；取消游客购物车 localStorage/合并 |
+| 2026/09/21 | v1.2 | — | 订单详情跳最新单；地址三行截断；Categories 抽屉跳转规则；分类页 Filter（L2 跳转 / L3 筛选） |
 
 > **v1.1 变更对照与可复制段落**：见 [`kickbazar-toc-web-prd-v1.1-changes.md`](./kickbazar-toc-web-prd-v1.1-changes.md)
 
@@ -29,7 +30,7 @@
 | 全局 | 顶部导航（已登录、未登录）、信任背书区、底部信息区、**右侧 Sticky 快捷导航（#40）** | P0 |
 | 首页 | 核心展示区、服务介绍 | P0 |
 | 搜索 | 搜索弹窗、结果列表、排序 | P0；**不含 Featured Tab、类目 Filter** |
-| 分类 | 一级/二级分类、分类商品列表 | P0；**不含页内 L3 Filter** |
+| 分类 | 一级/二级分类、分类商品列表、**页内 Categories Filter** | P0；L1 页 Filter 含 L2（跳转）；L2 页 Filter 含 L3（本页筛选） |
 | 商品 | 商品详情、规格选择器、推荐组件 | P0 |
 | 店铺 | 店铺页、商品列表 Tab、店铺介绍弹框 | P0 |
 | 交易 | 购物车/页面/编辑/折扣、结算、结果页、地址弹框 | P0 |
@@ -49,7 +50,8 @@
 4. 合规：本期不加载任何非必要第三方追踪脚本；Cookie 横幅由他人负责。
 5. **分期与筛选：**
    - **本期做**：搜索结果排序、分类页/店铺 Items Tab 排序（Sort By 四档，见 §4.5 sort 枚举）。
-   - **本期不做**：搜索结果页 Featured Tab、搜索结果页/分类页类目 Filter（L1–L3）、价格区间、颜色、尺码、品牌等多维属性 Filter；**优惠券见 §6.1**。
+   - **本期做**：分类页 Categories Filter（L1 页筛 L2 并跳转；L2 页筛 L3 本页过滤，见 §4.6）。
+   - **本期不做**：搜索结果页 Featured Tab、**搜索结果页**类目 Filter、价格/颜色/尺码/品牌等多维 Filter；**优惠券见 §6.1**。
 6. 购物车：**须登录**方可 Add to Cart 与进入 `/cart`（BR852）；**不做游客购物车**（无 localStorage 暂存、无登录合并）；数据仅存账号购物车。
 7. 专题：品牌馆、国家馆、精选、潮流四馆均为本期 P0。
 
@@ -71,7 +73,9 @@
 | Header 账户入口 | 跳转个人中心/登录模块/订单 |
 | 会话过期 | 接口 401 时 Toast 提示并跳转登录（回跳当前页） |
 | 商品卡 | 固定尺寸；**点击 topicTag 跳转专题页（BR847）** |
-| 分类一级收敛入口 | 次导航 L1、抽屉 L1、L2 View All 均跳转 /category/{l1Id}；页面结构 **Banner + 商品列表**（无 Filter） |
+| Categories 抽屉 | **L1 列点击不跳转**（仅联动 L2）；L2 **View All** → `/category/{l1Id}`；L2 **类目项** → `/category/{l2Id}`（BR301/BR308） |
+| 次导航 L1 快捷入口 | 仍跳转 `/category/{l1Id}`（与抽屉 L1 行为区分） |
+| 分类落地页 | L1 页：Banner + **Categories Filter（L2）** + 列表；L2 页：Banner + **Categories Filter（L3）** + 列表 |
 | PDP 加购 | 须选全 SKU；**须登录**（未登录 → BR619）；成功 → BR832；满 50 SKU 且新 skuId → BR848 |
 | PDP 立即购买 | Buy Now 直达 /checkout；Cart 页不展示该 SKU |
 | Buy Now 步骤条 | 仅 Checkout → Order Complete 两步 |
@@ -126,13 +130,37 @@
 
 ---
 
-### 4.6 模块 C：分类（#13–#15）
+### 4.6 模块 C：分类（#13–#15）— v1.2 技术评审修订
 
-#### 修订要点（v1.1）
+#### 分类抽屉（#13）
 
-- 抽屉仍为 L1 / L2 / Recommend 三列（BR301）。
-- **分类落地页**：Banner + 商品列表 + Sort By；**无 L3 Filter 筛选条**。
-- 删除 BR836、分类页 L3 Filter 相关 FL141/FL142c。
+三列布局：**L1｜L2 + View All｜Recommend**（BR301）。
+
+| 操作 | 行为 |
+|------|------|
+| Hover/点击 **L1**（第一列） | **不跳转**；仅联动展示第二列 L2 列表 + 第三列 Recommend |
+| 点击 **L2 View All** | 跳转 **一级类目页** `/category/{l1Id}`；面包屑 Home › {L1} |
+| 点击 **L2 类目项** | 跳转 **二级类目页** `/category/{l2Id}`；面包屑 Home › {L1} › {L2} |
+| 第三列 Recommend | 商品卡同 BR120；**一级类目不跳转**（Recommend 区商品进 PDP） |
+
+> 次导航栏 L1 快捷入口仍跳转 `/category/{l1Id}`，与抽屉 L1「仅联动不跳转」区分。
+
+#### 分类落地页 + Categories Filter（v1.2 恢复，仅分类页）
+
+| 页面 | Filter 内容 | 选择行为 |
+|------|------------|---------|
+| **一级页** `/category/{l1Id}` | Categories：**二级类目（L2）** 列表 | 选中某 L2 → **跳转** `/category/{l2Id}` |
+| **二级页** `/category/{l2Id}` | Categories：**三级类目（L3）** 列表 | 选中某 L3 → **本页筛选**，URL `?l3={l3Id}`，刷新商品列表；Clear 清除 `l3` |
+
+- 默认（无 `l3`）：二级页展示该 L2 下全部商品。
+- Filter 仅 **Categories** 一列/组；不含价格/属性多维 Filter。
+- 与搜索页 Filter（BR828，本期不做）场景独立。
+
+| 编号 | 需求名称 | 交互行为 | 验收标准 |
+|------|---------|---------|---------|
+| BR301 | 分类抽屉 | L1 不跳转；L2 View All→L1 页；L2 项→L2 页 | 三列联动 |
+| BR308 | 抽屉跳转 | 见上表；**删除**「抽屉 L1 点击进 L1 页」 | 与次导航 L1 区分 |
+| BR836 | 分类页 Categories Filter | L1 页筛 L2→跳转；L2 页筛 L3→?l3= 本页过滤 | 与搜索 Filter 独立 |
 
 ---
 
@@ -198,7 +226,7 @@
 |----|------|
 | 空态 | 文案 + **Add New Address**；**不自动弹 Modal** |
 | Add New Address | 打开 BR635 Modal；关闭后**留 checkout**，不 back |
-| 已填态 | **两列只读卡片**（左：姓名/电话；右：Division·District·Area + 详细地址）；Change / Edit |
+| 已填态 | **三行只读卡片**（上：姓名+电话；中：详细地址，过长**截断**；下：Division·District·Area）；Change / Edit |
 | Place Order 无地址 | Toast；不提交；不自动开 Modal |
 
 **发货档位（与 App 一致，非 Local 固定价）：**
@@ -215,7 +243,7 @@
 
 **结果页成功态 CTA：**
 
-1. **View Order Details** → `/account/orders/{orderId}`
+1. **View Order Details** → `/account/orders/{orderId}`，**orderId 为本单提交返回的最新订单 ID**（即刚完成的订单，BR853）
 2. **View Order List** → ordersListUrl
 
 **本期不做：** 优惠券 Coupon & Code（§6.1）
@@ -225,12 +253,13 @@
 | 编号 | 需求名称 | 交互行为 | 验收标准 |
 |------|---------|---------|---------|
 | BR620a | 地址空态 | 空态 + Add New Address；不自动弹窗 | 可浏览结算页 |
-| BR620b | 地址展示 | 两列确认卡片（ToB 样式） | 字段完整 |
+| BR620b | 地址展示 | 三行卡片：姓名电话 / 详细地址（truncate）/ 省市区 | 长地址 ellipsis |
 | BR620c | 下单门禁 | 无 addressId → Toast，不提交 | 可手动 Add |
-| BR632 | Change Address | 列表 Modal，**两列可选卡片** | 同 BR620b 布局 |
+| BR632 | Change Address | 列表 Modal，卡片布局同 BR620b | 三行一致 |
+| BR853 | 查看订单详情 | 结果页 View Order Details | 跳转**本单 orderId**（最新一笔） |
 | BR622 | 发货档位 | Standard / Air Express / Air Priority；动态运费 | 非固定 60 |
 | BR623 | COD | COD 行：划线价 + **Free** | fee=0 仍展示 |
-| BR628 | 结果成功 | View Order Details + View Order List | 两按钮可达 |
+| BR628 | 结果成功 | View Order Details（BR853 最新单）+ View Order List | orderId 来自提交响应 |
 | BR625–626 | 优惠券 | **下一期 P1，本期不验收** | — |
 
 ---
@@ -266,7 +295,7 @@
 | 项目 | 说明 |
 |------|------|
 | 价格/属性多维 Filter | 颜色、尺码、品牌、价格区间等 |
-| **搜索结果/分类页 Filter & Featured** | L1–L3 Filter、Featured Tab |
+| **搜索结果页 Filter & Featured** | 搜索页 L1–L3 Filter、Featured Tab（**分类页 Categories Filter 本期做**，见 §4.6） |
 | **优惠券 Coupon & Code** | 券码输入、Drawer 选券、Summary Coupon 行 — **下一期 P1** |
 | Header 购物车预览（#22） | 本期不做 |
 | 在线钱包支付 | 与 App 同期不做 |
@@ -280,13 +309,14 @@
 - [ ] Checkout 按钮展示 `Checkout ({selectedQuantity})`
 - [ ] 运费三档 Standard / Air Express / Air Priority，非 Local 固定 60
 - [ ] 结算无地址：空态 + Add New Address，不自动弹窗；关 Modal 留 checkout
-- [ ] 地址确认/Change 两列布局
+- [ ] 地址三行布局：姓名电话 / 详细地址截断 / 省市区
 - [ ] 结算页无优惠券 UI
 - [ ] COD Handling Fee 划线 + Free
-- [ ] 结果页 View Order Details + View Order List
+- [ ] 结果页 View Order Details 跳转**本单最新 orderId** + View Order List
 - [ ] 右侧 Sticky Home/客服/Cart + 回顶部
 - [ ] 商品卡 topicTag 跳转专题页
-- [ ] **搜索/分类页无 Filter、无 Featured Tab**
+- [ ] **搜索页无 Filter、无 Featured Tab**；**分类页 L1/L2 Filter 行为符合 §4.6**
+- [ ] **Categories 抽屉：L1 不跳转；L2 View All→L1 页；L2 项→L2 页**
 - [ ] **购物车 ≤50 SKU；新 SKU 加购拦截 + 删除引导；英文 Toast/Banner 文案一致**
 - [ ] **未登录 Add to Cart → login?redirect=当前页；未登录不可进 /cart；Header/Sticky 购物车 → login?redirect=/cart**
 - [ ] **无游客购物车 localStorage；登录后角标与 /cart 仅展示账号数据**
