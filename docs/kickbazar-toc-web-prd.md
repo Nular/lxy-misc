@@ -10,6 +10,7 @@
 | 2026/09/21 | v1.2 | — | 订单详情跳最新单；地址三行截断；Categories 抽屉跳转规则；分类页 Filter（L2 跳转 / L3 筛选） |
 | 2026/09/21 | v1.2.1 | — | 未选全 SKU 加购 Toast；Sticky 在 /cart 隐藏 Cart 入口 |
 | 2026/09/21 | v1.2.2 | — | 无独立 #17 规格 Modal；规格区内嵌 PDP 购买区 |
+| 2026/09/23 | v1.2.3 | — | §4.4 改为首页（Banner+一级分类+特色馆+Recommended）；推荐组件全局定义移至 §4.18 |
 
 > **v1.1 变更对照与可复制段落**：见 [`kickbazar-toc-web-prd-v1.1-changes.md`](./kickbazar-toc-web-prd-v1.1-changes.md)
 
@@ -30,7 +31,7 @@
 | 模块 | 页面/组件 | 本期范围说明 |
 |------|----------|-------------|
 | 全局 | 顶部导航（已登录、未登录）、信任背书区、底部信息区、**右侧 Sticky 快捷导航（#40）** | P0 |
-| 首页 | 核心展示区、服务介绍 | P0 |
+| 首页 | 核心展示区（Banner + 一级分类 + 特色馆 + Recommended）、服务介绍（#7） | P0 |
 | 搜索 | 搜索弹窗、结果列表、排序 | P0；**不含 Featured Tab、类目 Filter** |
 | 分类 | 一级/二级分类、分类商品列表、**页内 Categories Filter** | P0；L1 页 Filter 含 L2（跳转）；L2 页 Filter 含 L3（本页筛选） |
 | 商品 | 商品详情（**含内嵌规格选择区**，无独立 #17 Modal）、推荐组件 | P0 |
@@ -93,6 +94,102 @@
 ## 四、功能需求明细
 
 （章节说明、BR 复用索引同 v1.0，略）
+
+### 4.4 模块 A：首页核心展示区（#6）
+
+#### 基本信息
+
+| 属性 | 内容 |
+|------|------|
+| 页面编号 | #6 |
+| 路由 | `/` |
+| 类型 | 页面 |
+| 优先级 | P0 |
+| 关联模块 | #18 全局推荐组件（§4.18）、#35–#38 专题页（§4.10）、#13 分类抽屉 |
+
+#### 4.4.1 功能描述
+
+首页核心展示区是 Web 商城默认落地页，承担运营曝光、品类分流与商品发现职责。主内容区自上而下固定为四段结构（与 App/UI 一致）：
+
+```
+【Banner】→ 【一级分类】→ 【特色馆】→ 【Recommended】
+```
+
+| 区块 | 说明 |
+|------|------|
+| **Banner** | 运营轮播头图；可配置跳转专题页、分类页或外链（外链 `target="_blank"`） |
+| **一级分类** | App L1 分类快捷入口（宫格或横滑）；点击跳转 `/category/{l1Id}` |
+| **特色馆** | 四大专题固定入口：Brand Zone / Country Pavilion / Featured / Trending；跳转 §4.10 对应专题路由 |
+| **Recommended** | 首页推荐商品流；嵌入全局组件 #18（`scene=home`）；含 View More（BR825） |
+
+> **服务介绍（#7）** 为首页底部独立营销区块（Product Replace / Secure Payment 等），与 Header 保障条职责分离，不在上述四段结构内重复描述。
+
+**功能清单**
+
+| 编号 | 功能名称（中文） | 功能名称（英文） | 功能描述 |
+|------|----------------|-----------------|---------|
+| FL015 | 首页 Banner | Home Banner | 轮播运营位，可链专题/分类 |
+| FL016 | 一级分类入口 | L1 Category Entry | L1 宫格/横滑，跳转一级分类页 |
+| FL017 | 特色馆入口 | Topic Pavilion Entry | 四馆固定入口横滑/宫格 |
+| FL018 | 首页 Recommended | Home Recommended | 嵌入 #18，`scene=home`，View More |
+| FL019 | Banner 跳转 | Banner Navigation | 点击 Banner 按配置跳转 |
+| FL020 | 特色馆跳转 | Pavilion Navigation | 四馆入口跳转专题页 |
+| FL138 | View More 加载 | View More Pagination | 首页 Recommended 每次加载 10 行（BR825） |
+
+**业务规则**
+
+1. 四段结构顺序固定：Banner → 一级分类 → 特色馆 → Recommended；缺数据区块可隐藏，但不改变其余区块相对顺序。
+2. Banner：无配置时不展示占位；支持多图轮播；切换不阻断页面滚动。
+3. 一级分类：数据与 App 分类树 L1 一致；排序与 App 一致；点击跳转 `/category/{l1Id}`（与 Header 次导航 L1 目标一致）。
+4. 特色馆：四入口固定展示（品牌馆 / 国家馆 / 精选 / 潮流）；`topicType` 映射同 §4.10；下线专题入口可隐藏或置灰（运营配置）。
+5. Recommended：标题默认「Recommended」（可 i18n 配置）；召回与展示规则见 **§4.18**（`displayMode=recommended` 随机序；与 Sort By 的 recommend 枚举严格区分）。
+6. 首页商品卡：样式与交互同 **BR120**；含 `topicTag` 时点击 Tag 跳转专题（**BR847**）。
+7. View More：首屏若干行 + 每次 10 行；刷新页面重置（**BR825**）。
+8. 浏览首页无需登录；加购/购物车门禁同 §3.4。
+
+#### 4.4.2 字段定义（摘录）
+
+**Banner**
+
+| 字段名 | 中文名称 | 类型 | 必填 | 说明 |
+|--------|---------|------|------|------|
+| bannerId | Banner ID | string | 是 | 唯一标识 |
+| imageUrl | 图片地址 | string | 是 | 轮播图 |
+| linkType | 链接类型 | enum | 是 | topic / category / external |
+| linkTarget | 跳转目标 | string | 否 | 专题 ID、categoryId 或外链 URL |
+| sortOrder | 排序 | number | 是 | 升序 |
+
+**一级分类入口**
+
+| 字段名 | 中文名称 | 类型 | 必填 | 说明 |
+|--------|---------|------|------|------|
+| categoryId | 分类 ID | string | 是 | L1 ID，路由 `/category/{id}` |
+| categoryName | 分类名称 | string | 是 | 支持 i18n |
+| iconUrl | 图标 | string | 否 | 宫格图标 |
+
+**特色馆入口**
+
+| 字段名 | 中文名称 | 类型 | 必填 | 说明 |
+|--------|---------|------|------|------|
+| topicType | 专题类型 | enum | 是 | brand / country / featured / trending |
+| topicTitle | 展示标题 | string | 是 | 如 Brand Zone，支持 i18n |
+| coverUrl | 入口图 | string | 是 | 特色馆入口图 |
+| topicUrl | 专题路由 | string | 是 | 跳转路径，同 §4.10 |
+
+**首页 Recommended**：复用 §4.18 组件配置 + §4.7.11 通用商品卡字段。
+
+#### 4.4.3 交互说明
+
+| 编号 | 需求名称 | 触发条件 | 交互行为 | 状态 | 验收标准 |
+|------|---------|---------|---------|------|---------|
+| BR115 | 首页加载 | 进入 `/` | 渲染四段结构 | 加载● 错误● | 顺序正确 |
+| BR116 | Banner 轮播 | 有多图 | 自动/手动切换；点击按 linkType 跳转 | — | 外链新标签 |
+| BR117 | 一级分类点击 | 点击 L1 入口 | 跳转 `/category/{l1Id}` | — | 与 App L1 一致 |
+| BR118 | 特色馆点击 | 点击四馆入口 | 跳转对应专题页（§4.10） | — | 四馆均可达 |
+| BR119 | 首页 View More | scene=home 点击 View More | 同 BR208；每次 10 行；刷新重置 | 加载● | 空态 CTA |
+| BR120 | 商品卡 | 点击 Recommended 卡片 | 主体→PDP；topicTag→专题（BR847） | — | 热区独立 |
+
+---
 
 ### 4.5 模块 B：搜索（#8–#12）
 
@@ -206,6 +303,47 @@
 | BR854 | 规格未选全 | Add to Cart / Buy Now 且 SKU 未选全 | Toast「Please select product spec」 |
 
 > 原 **BR412–BR417**（#17 Modal）本期不验收；交互合并至 BR403/406/407/854。
+
+---
+
+### 4.18 模块 H：全局推荐组件 Recommended（#18）
+
+> **说明：** 原 §4.4 与 §4.7.9–4.7.12 重复描述本组件；v1.2.3 起**仅在本节维护**全局定义。首页 Recommended 区块见 §4.4。
+
+#### 4.18.1 功能描述
+
+Recommended 为全站复用的商品推荐组件，可嵌入首页、PDP 底栏、购物车、搜索无结果、店铺 Home Tab 等宿主页面。召回逻辑与 App 一致（OQ7）。展示顺序为 **随机排序**（`displayMode=recommended`），与列表 Sort By 的 recommend 枚举严格区分。
+
+| scene | 宿主 | View More |
+|-------|------|-----------|
+| home | 首页 #6（§4.4） | 是（BR825，每次 10 行） |
+| pdp | 商品详情 #16 底栏 | 否 |
+| cart | 购物车 #23 | 否 |
+| search_empty | 搜索无结果 #9 | 否 |
+| store | 店铺 Home Tab | 按宿主页 |
+| topic | 专题等 | 按宿主页 |
+
+**功能清单：** FL058 嵌入、FL059 布局适配、FL060 跳转、FL138 View More。
+
+**业务规则**
+
+1. 模块命名统一为 **Recommended**（非 Sort By 的 Recommend）。
+2. 标题可运营配置（如 You May Like），支持 i18n。
+3. `displayMode=recommended`：前端对召回列表随机排序展示。
+4. 无推荐数据时可隐藏整个区块。
+5. 商品卡同 **BR120**；专题商品展示 `topicTag`（**BR847**）。
+6. 布局：PC 网格；Mobile 横滑（**BR419**）。
+
+#### 4.18.2 交互说明
+
+| 编号 | 需求名称 | 交互行为 | 验收标准 |
+|------|---------|---------|---------|
+| BR418 | 组件嵌入 | 统一卡片样式；recommended 随机顺序 | 标题可配置 |
+| BR419 | 布局适配 | PC 网格 / Mobile 横滑 | 风格一致 |
+| BR420 | 推荐跳转 | 点击卡片→PDP | 不改变历史栈 |
+| BR847 | Feature Tag | 点击 topicTag→专题页 | 全站一致 |
+
+字段定义：组件配置 + 通用商品卡字段见 v1.0 §4.4.2 / §4.7.11（飞书首版）；本节不再重复粘贴字段表。
 
 ---
 
@@ -373,6 +511,12 @@
 - [ ] 地址三行 + 详细地址截断（BR620b）；空态不自动弹 Modal
 - [ ] 运费三档动态；COD 划线 Free；**无 Coupon UI**
 - [ ] View Order Details → **本单 orderId**（BR853）
+
+**首页**
+
+- [ ] 首页结构：Banner → 一级分类 → 特色馆 → Recommended（§4.4）
+- [ ] 特色馆四入口可达对应专题页；L1 分类跳转 `/category/{l1Id}`
+- [ ] 首页 Recommended View More 每次 10 行（BR825）
 
 **全局**
 
