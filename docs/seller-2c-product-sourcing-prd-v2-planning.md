@@ -158,13 +158,19 @@ sequenceDiagram
 | 合并下单 | 一单多 SKU 行 vs 多单 — **需交易中台确认** |
 | 邮件 | 2C 店主邮箱、2B 联系人配置来源 |
 
-**开放问题（定稿前）**
+**开放问题（已定稿 2026/09/28）**
 
-1. Cart 改数量 vs Checkout 只读？  
-2. 合并 Checkout 生成 **一个 PO 多行** 还是 **每 SKU 一单**？  
-3. 折扣 Tag：`-X%` 还是 `Save ৳X`？  
-4. 推荐位：Success 是否必做，还是仅 Discovery + Detail？  
-5. V2-07/08/11 是否纳入本期 P1？
+| # | 结论 |
+|---|------|
+| 1 | **数量**：Cart **与 Checkout** 均可修改。 |
+| 2 | **合并下单**：**一个采购单、多 SKU 行**。 |
+| 3 | **折扣 Tag**：**-X%**（如 -20%）。 |
+| 4 | **推荐位**：**Product Detail** + **Order Success**（不做 Discovery 推荐）。 |
+
+**待确认（可选 P1）**
+
+- Buy Now 是否与 Cart 合并进入 Checkout（PRD v2.0 建议：Buy Now 仅单行，Cart 路径合并多行）。  
+- V2-07/08/11 是否纳入本期。
 
 ---
 
