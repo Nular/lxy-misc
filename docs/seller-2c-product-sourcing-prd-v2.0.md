@@ -2,6 +2,7 @@
 
 > **范围**：仅 **用户下单全流程**（不含 PO List 搜索/导出/Buy Again）。  
 > **基线**：`seller-2c-product-sourcing-prd-v1.0-final.md`（MVP v1.0）。  
+> **本期范围摘要（评审用）**：`seller-2c-product-sourcing-prd-v2-iteration-scope.md`  
 > **版本**：v2.0 · 2026/09/28
 
 ---
@@ -120,7 +121,7 @@
 | **Grand Total** | ∑(单价×数量)；运费/COD 本期仍为 0（与 V1 一致）。 |
 | **提交** | 创建 **一个** 采购订单，`items[]` 多 SKU；状态 Pending Payment。 |
 
-**面包屑**：Product Sourcing > Product Discovery > Product Detail > Checkout（从 Buy Now 时）；自 Cart 进入可为 … > Cart > Checkout。
+**导航**：交易步骤条见 `seller-2c-product-sourcing-prd-v2-iteration-scope.md` §四（Cart 路径：Cart → Checkout → Success；Buy Now：Checkout → Success）。面包屑与步骤条分层，具体文案 UI 定稿后落地。
 
 ### 5.5 Order Success
 
