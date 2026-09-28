@@ -102,7 +102,9 @@ sequenceDiagram
 
 ---
 
-## 四、PRD v2.0 章节目录（仅下单全流程）
+## 四、PRD v2.0.0 章节目录（仅下单全流程）
+
+> **定稿文档**：`seller-2c-product-sourcing-prd-v2.0.0.md`（相对线上 **v1.0.1**）。以下为规划期目录备忘。
 
 1. 文档信息与相对 v1.0 变更  
 2. 范围：包含 / 不包含（PO 模块边界）  
@@ -169,7 +171,7 @@ sequenceDiagram
 
 **待确认（可选 P1）**
 
-- Buy Now 是否与 Cart 合并进入 Checkout（PRD v2.0 建议：Buy Now 仅单行，Cart 路径合并多行）。  
+- Buy Now 是否与 Cart 合并进入 Checkout（PRD v2.0.0：Buy Now 仅单行，Cart 路径合并多行）。  
 - V2-07/08/11 是否纳入本期。
 
 ---
@@ -178,7 +180,7 @@ sequenceDiagram
 
 确认 **§2.1 四项是否全部 P0** 及 **§八开放问题** 后，可生成：
 
-- `seller-2c-product-sourcing-prd-v2.0.md`（仅下单全流程）  
+- `seller-2c-product-sourcing-prd-v2.0.0.md`（仅下单全流程）  
 - 原型：`cart.html` + 上述页面增量  
 
 ---

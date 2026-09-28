@@ -62,7 +62,7 @@ index → product-detail → [Buy Now] → checkout → order-success → purcha
 
 ## Design reference
 
-- **PRD v2.0 (order flow)**: `docs/seller-2c-product-sourcing-prd-v2.0.md`
+- **PRD v2.0.0 (order flow)**: `docs/seller-2c-product-sourcing-prd-v2.0.0.md`（上一版线上 **v1.0.1**）
 - **PRD v1.0 final**: `docs/seller-2c-product-sourcing-prd-v1.0-final.md`
 - `docs/seller-2c-product-sourcing-ui-design.md`
 - Legacy draft: `docs/seller-2c-product-sourcing-prd-v1.md`

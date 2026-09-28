@@ -1,7 +1,9 @@
 # Seller 后台 2C 店铺 — 选品中心（Product Sourcing）PRD
 
 > **评审定稿**：v1.0（2026/09/07）  
-> **说明**：本文档为飞书终稿归档；实现与原型请以本文为准。历史草稿见 `seller-2c-product-sourcing-prd-v1.md`。
+> **线上 PRD 版本**：**v1.0.1**（v1.0 定稿后修订；能力边界与本文一致）。  
+> **后续迭代**：下单链路升级见 **`seller-2c-product-sourcing-prd-v2.0.0.md`**（相对 v1.0.1）。  
+> **说明**：本文档为飞书终稿归档；历史草稿见 `seller-2c-product-sourcing-prd-v1.md`。
 
 ## 一、文档信息
 
