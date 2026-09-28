@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cart — Product Sourcing</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">Kick<span>Bazar</span> Seller</div>
+      <div class="nav-section">Store</div>
+      <div class="nav-group">
+        <div class="nav-parent">Product Sourcing</div>
+        <a class="nav-item nav-sub" href="index.html">Product Discovery</a>
+        <a class="nav-item nav-sub" href="purchase-orders.html">Purchase Orders List</a>
+      </div>
+      <a class="nav-item" href="#">Orders List</a>
+    </aside>
+
+    <div class="main">
+      <header class="topbar">
+        <div class="breadcrumb">Product Sourcing &rsaquo; <strong>Cart</strong></div>
+        <a class="btn btn-secondary cart-link" href="cart.html">Cart <span class="cart-badge" id="cartBadgeTop">0</span></a>
+      </header>
+
+      <main class="content">
+        <h1 class="page-title">Cart</h1>
+
+        <div class="card" id="cartCard">
+          <div class="table-wrap">
+            <table class="cart-table">
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Price</th>
+                  <th>Qty</th>
+                  <th>Subtotal</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="cartTableBody"></tbody>
+            </table>
+          </div>
+          <div class="card-body" style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border)">
+            <strong>Grand Total: <span id="cartGrandTotal">৳ 0.00</span></strong>
+            <div style="display:flex;gap:10px">
+              <a class="btn btn-secondary" href="index.html">Continue Sourcing</a>
+              <a class="btn btn-primary" id="cartCheckoutBtn" href="checkout.html?from=cart">Checkout</a>
+            </div>
+          </div>
+        </div>
+
+        <p class="empty" id="cartEmpty" style="display:none">Your cart is empty. <a href="index.html">Back to Product Discovery</a> · <a href="#" id="loadDemoCart">Load demo cart (2 SKUs)</a></p>
+      </main>
+    </div>
+  </div>
+  <script src="js/app.js"></script>
+</body>
+</html>

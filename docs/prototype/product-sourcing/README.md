@@ -16,7 +16,7 @@ Open: http://localhost:8080/index.html
 Self-contained HTML files (CSS/JS inlined) for local preview without a server:
 
 - **ZIP**: `product-sourcing-html-export.zip` (in this folder)
-- **Folder**: `export/` (6 `.html` files)
+- **Folder**: `export/` (7 `.html` files)
 
 Download from GitHub:
 
@@ -37,8 +37,9 @@ Product Sourcing (main menu)
 | File | Page |
 |------|------|
 | `index.html` | Product Discovery (SPU list + publish tags) |
-| `product-detail.html` | Product Detail + Buy Now modal |
-| `checkout.html` | Checkout (editable qty, shipping, summary) |
+| `product-detail.html` | Product Detail + Add to Cart / Buy Now + recommendations |
+| `cart.html` | Cart (editable qty, multi-SKU) |
+| `checkout.html` | Checkout (multi-SKU lines, editable qty, shipping, summary) |
 | `order-success.html` | Order Success + Payment Details + Upload |
 | `purchase-orders.html` | Purchase Orders List (tabs) |
 | `order-detail.html` | Purchase Order Detail + Publish to Store |
@@ -46,18 +47,22 @@ Product Sourcing (main menu)
 ## Flow
 
 ```
+index → product-detail → [Add to Cart] → cart → checkout → order-success
 index → product-detail → [Buy Now] → checkout → order-success → purchase-orders → order-detail
 ```
 
 ## Interactive features
 
-- Buy Now modal with quantity stepper
-- Checkout: qty / shipping method recalculates Grand Total
+- Cart: localStorage, qty steppers, demo 2-SKU loader on empty state
+- Buy Now modal → single-line checkout; Cart → merged multi-SKU checkout
+- Checkout: per-line qty recalculates Grand Total (syncs back to cart)
+- Discount display: strikethrough + `-X%` tag on Discovery / Detail / Cart / Checkout
 - Copy buttons on Order Success (toast)
 - Purchase Orders tab filter (All / Published / Unpublished)
 
 ## Design reference
 
+- **PRD v2.0 (order flow)**: `docs/seller-2c-product-sourcing-prd-v2.0.md`
 - **PRD v1.0 final**: `docs/seller-2c-product-sourcing-prd-v1.0-final.md`
 - `docs/seller-2c-product-sourcing-ui-design.md`
 - Legacy draft: `docs/seller-2c-product-sourcing-prd-v1.md`

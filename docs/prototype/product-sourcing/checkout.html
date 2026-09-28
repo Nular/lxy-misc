@@ -23,6 +23,7 @@
     <div class="main">
       <header class="topbar">
         <div class="breadcrumb">Product Sourcing &rsaquo; Product Discovery &rsaquo; Product Detail &rsaquo; <strong>Checkout</strong></div>
+        <a class="btn btn-secondary cart-link" href="cart.html">Cart <span class="cart-badge" id="cartBadgeTop">0</span></a>
       </header>
 
       <main class="content">
@@ -44,18 +45,8 @@
                 <span>2. Product Information</span>
                 <button class="btn btn-ghost" type="button" id="openRemark" style="height:auto;padding:0">Remark</button>
               </div>
-              <div class="card-body">
-                <div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px">Shipping warehouse: <strong>Fast Local</strong></div>
-                <div style="display:flex;gap:14px;align-items:flex-start">
-                  <div style="width:72px;height:72px;background:var(--surface-2);border-radius:8px;flex-shrink:0"></div>
-                  <div style="flex:1">
-                    <div style="font-weight:600">Denim Jacket Classic Blue</div>
-                    <div style="font-size:13px;color:var(--text-secondary)">Blue / M</div>
-                    <div style="font-size:13px;color:var(--text-secondary);margin-top:4px">SKU ID: KB-DJ-2026-001-M</div>
-                    <div style="font-size:13px;margin-top:6px">Price: ৳ 1,250.00</div>
-                    <div style="font-size:13px;margin-top:8px">Qty: <strong>2</strong> <span style="color:var(--text-muted)">(read-only)</span></div>
-                  </div>
-                </div>
+              <div class="card-body" id="checkoutLines">
+                <p style="font-size:12px;color:var(--text-secondary);margin-bottom:12px">One purchase order, multiple SKU lines. Quantity editable here (V2).</p>
               </div>
             </div>
 
