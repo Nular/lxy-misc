@@ -365,6 +365,24 @@ tr:hover td { background: #fafbfc; }
   font-weight: 600;
 }
 
+.warn-icon {
+  color: var(--warning);
+  cursor: help;
+  margin-left: 4px;
+}
+
+.warning-banner {
+  background: var(--warning-bg);
+  border: 1px solid #fcd34d;
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-size: 12px;
+  color: #92400e;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+.warning-banner a { color: #b45309; font-weight: 600; }
+
 .qty-stepper { display: inline-flex; align-items: center; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
 .qty-stepper button { width: 32px; height: 32px; border: none; background: var(--surface-2); cursor: pointer; font-size: 16px; }
 .qty-stepper input { width: 48px; height: 32px; border: none; text-align: center; font-size: 14px; }

@@ -37,43 +37,33 @@ function initQtyStepper(container, onChange) {
 }
 
 function initCheckoutSummary() {
-  const subtotalEl = document.getElementById('subtotal');
-  const shippingEl = document.getElementById('shippingFee');
-  const codEl = document.getElementById('codFee');
   const totalEl = document.getElementById('grandTotal');
+  if (!totalEl) return;
   const unitPrice = Number(document.body.dataset.unitPrice || 1250);
-  const qtyInput = document.getElementById('checkoutQty');
-  if (!subtotalEl) return;
+  const qty = Number(document.body.dataset.checkoutQty || 1);
+  totalEl.textContent = formatBDT(unitPrice * qty);
+}
 
-  const shippingRates = { standard: 50, air_express: 120, air_priority: 200 };
-  const codRates = { standard: 10, air_express: 15, air_priority: 20 };
-  let method = 'standard';
-
-  const recalc = () => {
-    const qty = Number(qtyInput?.value || 1);
-    const sub = unitPrice * qty;
-    const ship = shippingRates[method];
-    const cod = codRates[method];
-    const total = sub + ship + cod;
-    subtotalEl.textContent = formatBDT(sub);
-    shippingEl.textContent = formatBDT(ship);
-    codEl.textContent = formatBDT(cod);
-    totalEl.textContent = formatBDT(total);
-    document.querySelectorAll('.line-subtotal').forEach(el => { el.textContent = formatBDT(sub); });
-  };
-
-  document.querySelectorAll('[data-shipping]').forEach(el => {
+function initPaymentMethodToggle() {
+  document.querySelectorAll('[data-payment]').forEach(el => {
     el.addEventListener('click', () => {
-      document.querySelectorAll('[data-shipping]').forEach(x => x.classList.remove('selected'));
+      document.querySelectorAll('[data-payment]').forEach(x => {
+        x.classList.remove('selected');
+        x.textContent = x.textContent.replace(/^●/, '○');
+      });
       el.classList.add('selected');
-      method = el.dataset.shipping;
-      recalc();
+      el.textContent = el.textContent.replace(/^○/, '●');
     });
   });
+}
 
-  const stepper = document.querySelector('#checkoutQtyStepper');
-  if (stepper) initQtyStepper(stepper, recalc);
-  recalc();
+function initRemarkModal() {
+  const modal = document.getElementById('remarkModal');
+  if (!modal) return;
+  document.getElementById('openRemark')?.addEventListener('click', () => modal.classList.add('open'));
+  document.querySelectorAll('[data-close-remark]').forEach(btn => {
+    btn.addEventListener('click', () => modal.classList.remove('open'));
+  });
 }
 
 function matchesProductTab(filter, publish) {
@@ -108,31 +98,38 @@ function initProductTabs() {
   });
 }
 
-function initCancelOrderModal() {
-  const modal = document.getElementById('cancelOrderModal');
-  const contactNotice = document.getElementById('cancelContactNotice');
-  if (!modal) return;
+function initOrderDetailPage() {
+  const mode = new URLSearchParams(window.location.search).get('status') === 'completed' ? 'completed' : 'pending';
+  const cancelBtn = document.getElementById('openCancelOrder');
+  const publishBtn = document.getElementById('publishBtn');
+  const warning = document.getElementById('pendingWarning');
+  if (!cancelBtn && !publishBtn) return;
 
-  const noticeParam = new URLSearchParams(window.location.search).get('notice');
-  const showContactNotice = noticeParam === '0'
-    ? false
-    : document.body.dataset.showContactNotice === 'true';
-
-  if (noticeParam === '0') {
-    const orderNo = 'PO202608310001';
-    const breadcrumbStrong = document.querySelector('.breadcrumb strong');
-    if (breadcrumbStrong) breadcrumbStrong.textContent = orderNo;
-    const title = document.querySelector('main h1');
-    if (title) title.textContent = orderNo;
-    const pill = document.querySelector('main .pill');
+  if (mode === 'completed') {
+    const orderNo = 'PO202608280088';
+    document.getElementById('orderNoTitle')?.textContent = orderNo;
+    document.getElementById('orderNoBreadcrumb')?.textContent = orderNo;
+    const pill = document.getElementById('orderStatusPill');
     if (pill) {
-      pill.textContent = 'Pending Payment';
-      pill.className = 'pill pill-info';
-      pill.style.marginTop = '8px';
+      pill.textContent = 'Completed';
+      pill.className = 'pill pill-published';
+    }
+    if (warning) warning.style.display = 'none';
+    cancelBtn.style.display = 'none';
+    if (publishBtn) publishBtn.style.display = '';
+    const timeline = document.getElementById('statusTimeline');
+    if (timeline) {
+      timeline.innerHTML = `
+        <div>● Order placed — 2026/08/28 09:15</div>
+        <div style="margin-top:6px">● Payment confirmed — 2026/08/28 14:20</div>
+        <div style="margin-top:6px">● Completed — 2026/08/30 18:45</div>`;
     }
   }
+}
 
-  if (contactNotice) contactNotice.style.display = showContactNotice ? '' : 'none';
+function initCancelOrderModal() {
+  const modal = document.getElementById('cancelOrderModal');
+  if (!modal) return;
 
   document.getElementById('openCancelOrder')?.addEventListener('click', () => modal.classList.add('open'));
   document.querySelectorAll('[data-close-cancel-modal]').forEach(btn => {
@@ -161,7 +158,10 @@ function initOrderTabs() {
 
 document.addEventListener('DOMContentLoaded', () => {
   initCheckoutSummary();
+  initPaymentMethodToggle();
+  initRemarkModal();
   initProductTabs();
+  initOrderDetailPage();
   initCancelOrderModal();
   initOrderTabs();
 

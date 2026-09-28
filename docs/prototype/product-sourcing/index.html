@@ -32,7 +32,11 @@
         <h1 class="page-title">Product Discovery</h1>
 
         <div class="search-bar">
-          <input type="search" placeholder="Search by product name or SKU code" />
+          <select style="height:40px;border:1px solid var(--border);border-radius:6px;padding:0 10px;font-size:13px">
+            <option>Product Name</option>
+            <option>SKU ID</option>
+          </select>
+          <input type="search" placeholder="Search" />
           <button class="btn btn-primary" type="button">Search</button>
         </div>
 
@@ -40,7 +44,6 @@
           <button class="tab active" type="button" data-product-tab="all">All</button>
           <button class="tab" type="button" data-product-tab="published">Published</button>
           <button class="tab" type="button" data-product-tab="unpublished">Unpublished</button>
-          <button class="tab" type="button" data-product-tab="partial">Partially Published</button>
         </div>
 
         <div class="grid-4" id="productGrid">
@@ -52,12 +55,12 @@
               <span class="pill pill-published">Published</span>
             </div>
           </a>
-          <a class="product-card" data-product-card data-publish="partial" href="product-detail.html" style="text-decoration:none;color:inherit">
+          <a class="product-card" data-product-card data-publish="unpublished" href="product-detail.html" style="text-decoration:none;color:inherit">
             <div class="thumb">Product Image</div>
             <div class="info">
               <div class="title">Denim Jacket Classic Blue</div>
               <div class="price">Purchase Price: ৳ 1,280.00</div>
-              <span class="pill pill-partial">Partially Published</span>
+              <span class="pill pill-unpublished">Unpublished</span>
             </div>
           </a>
           <a class="product-card" data-product-card data-publish="unpublished" href="product-detail.html" style="text-decoration:none;color:inherit">
@@ -84,12 +87,12 @@
               <span class="pill pill-unpublished">Unpublished</span>
             </div>
           </a>
-          <a class="product-card" data-product-card data-publish="partial" href="product-detail.html" style="text-decoration:none;color:inherit">
+          <a class="product-card" data-product-card data-publish="published" href="product-detail.html" style="text-decoration:none;color:inherit">
             <div class="thumb">Product Image</div>
             <div class="info">
               <div class="title">Knit Sweater Winter Warm</div>
               <div class="price">Purchase Price: ৳ 1,050.00</div>
-              <span class="pill pill-partial">Partially Published</span>
+              <span class="pill pill-published">Published</span>
             </div>
           </a>
         </div>

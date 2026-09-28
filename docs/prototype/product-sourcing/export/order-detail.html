@@ -373,6 +373,24 @@ tr:hover td { background: #fafbfc; }
   font-weight: 600;
 }
 
+.warn-icon {
+  color: var(--warning);
+  cursor: help;
+  margin-left: 4px;
+}
+
+.warning-banner {
+  background: var(--warning-bg);
+  border: 1px solid #fcd34d;
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-size: 12px;
+  color: #92400e;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+.warning-banner a { color: #b45309; font-weight: 600; }
+
 .qty-stepper { display: inline-flex; align-items: center; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
 .qty-stepper button { width: 32px; height: 32px; border: none; background: var(--surface-2); cursor: pointer; font-size: 16px; }
 .qty-stepper input { width: 48px; height: 32px; border: none; text-align: center; font-size: 14px; }
@@ -474,7 +492,7 @@ tr:hover td { background: #fafbfc; }
 
   </style>
 </head>
-<body data-show-contact-notice="true">
+<body data-order-mode="pending">
   <div class="app-shell">
     <aside class="sidebar">
       <div class="brand">Kick<span>Bazar</span> Seller</div>
@@ -489,27 +507,31 @@ tr:hover td { background: #fafbfc; }
 
     <div class="main">
       <header class="topbar">
-        <div class="breadcrumb">Product Sourcing &rsaquo; Purchase Orders List &rsaquo; <strong>PO202608300045</strong></div>
+        <div class="breadcrumb">Product Sourcing &rsaquo; Purchase Orders List &rsaquo; <strong id="orderNoBreadcrumb">PO202608310001</strong></div>
         <div class="topbar-actions">
+          <button class="btn btn-primary" id="publishBtn" type="button" style="display:none" onclick="showToast('Published successfully.')">Publish to Store</button>
           <button class="btn btn-secondary" id="openCancelOrder" type="button">Cancel Order</button>
         </div>
       </header>
 
       <main class="content">
+        <div class="warning-banner" id="pendingWarning">
+          Your purchase order has been successfully submitted. Please contact our sales representative to confirm the payment method and complete the payment. We will arrange production and shipment as soon as possible upon receipt of your payment. Please make the payment promptly to avoid any delays in order processing and shipment.<br><br>
+          <strong>Contact Information:</strong> Phone: 01794 133553 · Email: <a href="mailto:payment@kickbazar.com">payment@kickbazar.com</a>
+        </div>
+
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px">
           <div>
-            <h1 style="font-size:22px;font-weight:700">PO202608300045</h1>
-            <span class="pill pill-neutral" style="margin-top:8px">Pending Confirmation</span>
+            <h1 style="font-size:22px;font-weight:700" id="orderNoTitle">PO202608310001</h1>
+            <span class="pill pill-info" id="orderStatusPill" style="margin-top:8px">Pending Payment</span>
           </div>
         </div>
 
         <div class="grid-2" style="margin-bottom:16px">
           <div class="card">
             <div class="card-header">Status Timeline</div>
-            <div class="card-body" style="font-size:13px;color:var(--text-secondary)">
-              <div>● Order placed — 2026/08/30 11:20</div>
-              <div style="margin-top:6px">● Buyer paid — 2026/08/30 15:40</div>
-              <div style="margin-top:6px">○ Pending platform confirmation</div>
+            <div class="card-body" style="font-size:13px;color:var(--text-secondary)" id="statusTimeline">
+              <div>● Order placed — 2026/08/31 14:30</div>
             </div>
           </div>
           <div class="card">
@@ -521,12 +543,13 @@ tr:hover td { background: #fafbfc; }
         <div class="card" style="margin-bottom:16px">
           <div class="card-header">Product Information</div>
           <div class="card-body">
+            <div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px">Shipping warehouse: Fast Local</div>
             <div style="display:flex;gap:14px">
               <div style="width:80px;height:80px;background:var(--surface-2);border-radius:8px"></div>
               <div>
-                <div style="font-weight:600">Summer Dress Floral Print</div>
-                <div style="font-size:13px;color:var(--text-secondary)">Pink / S · KB-SD-2026-012-S</div>
-                <div style="font-size:13px;margin-top:6px">৳ 890.00 × 1 = <strong>৳ 890.00</strong></div>
+                <div style="font-weight:600">Denim Jacket Classic Blue</div>
+                <div style="font-size:13px;color:var(--text-secondary)">Blue / M · SKU ID: KB-DJ-2026-001-M</div>
+                <div style="font-size:13px;margin-top:6px">Price: ৳ 1,250.00 × 2 = <strong>৳ 2,500.00</strong></div>
               </div>
             </div>
           </div>
@@ -536,37 +559,21 @@ tr:hover td { background: #fafbfc; }
           <div class="card">
             <div class="card-header">Order Summary</div>
             <div class="card-body">
-              <div class="field-row"><span>Subtotal</span><span>৳ 890.00</span></div>
-              <div class="field-row"><span>Shipping Fee</span><span>৳ 50.00</span></div>
-              <div class="field-row"><span>COD Handling Fee</span><span>৳ 10.00</span></div>
-              <div class="field-row total"><span>Grand Total</span><span>৳ 950.00</span></div>
+              <div class="field-row total"><span>Grand Total</span><span>৳ 2,500.00</span></div>
             </div>
           </div>
           <div class="card">
-            <div class="card-header">Shipping &amp; Payment</div>
+            <div class="card-header">Shipping Address</div>
             <div class="card-body" style="font-size:14px">
-              <p><strong>Shipping Method:</strong> Standard</p>
-              <p style="margin-top:8px"><strong>Payment:</strong> Bank Transfer</p>
-              <p style="margin-top:12px;font-size:13px;color:var(--text-secondary)"><strong>Billing Address</strong><br>Same as shipping</p>
-              <p style="margin-top:8px;font-size:13px;color:var(--text-secondary)"><strong>Shipping Address</strong><br>Rahim Uddin, Gulshan, Dhaka</p>
+              <div style="font-weight:600">XiaoLong · 01794133553</div>
+              <div style="margin-top:6px;color:var(--text-secondary)">B01 Happy Street<br>Baitul Mukarram Stadium, Dhaka - South, Dhaka</div>
             </div>
           </div>
         </div>
 
-        <div class="grid-2">
-          <div class="card">
-            <div class="card-header">Payment Proof</div>
-            <div class="card-body">
-              <div class="upload-zone" style="margin-bottom:10px">Receipt uploaded ✓</div>
-              <button class="btn btn-secondary" type="button">Upload Payment Proof</button>
-            </div>
-          </div>
-          <div class="card">
-            <div class="card-header">Logistics</div>
-            <div class="card-body" style="font-size:13px;color:var(--text-secondary)">
-              <p>Logistics information will appear after shipment.</p>
-            </div>
-          </div>
+        <div class="card">
+          <div class="card-header">Payment Method</div>
+          <div class="card-body" style="font-size:14px" id="paymentMethodText">Bank Transfer</div>
         </div>
       </main>
     </div>
@@ -580,14 +587,12 @@ tr:hover td { background: #fafbfc; }
       </div>
       <div class="modal-body">
         <p>Please confirm that you want to cancel this order. The order will be closed immediately upon cancellation.</p>
-        <div class="info-banner" id="cancelContactNotice" style="display:none">
-          You have already transferred payment, but the supplier has not yet confirmed receipt. Please contact the platform for further assistance.<br>
-          Email: <a href="mailto:payment@kickbazar.com">payment@kickbazar.com</a>
-        </div>
+        <p style="margin-top:10px">If you have already paid, please contact our sales representative for the refund process.</p>
+        <p style="margin-top:8px"><strong>Connect Email:</strong> <a href="mailto:payment@kickbazar.com">payment@kickbazar.com</a></p>
       </div>
       <div class="modal-footer">
         <button class="btn btn-secondary" data-close-cancel-modal type="button">Keep My Order</button>
-        <button class="btn btn-primary" id="confirmCancelBtn" type="button">Confirm Cancellation</button>
+        <button class="btn btn-primary" id="confirmCancelBtn" type="button">Confirm Cancel</button>
       </div>
     </div>
   </div>
@@ -631,43 +636,33 @@ function initQtyStepper(container, onChange) {
 }
 
 function initCheckoutSummary() {
-  const subtotalEl = document.getElementById('subtotal');
-  const shippingEl = document.getElementById('shippingFee');
-  const codEl = document.getElementById('codFee');
   const totalEl = document.getElementById('grandTotal');
+  if (!totalEl) return;
   const unitPrice = Number(document.body.dataset.unitPrice || 1250);
-  const qtyInput = document.getElementById('checkoutQty');
-  if (!subtotalEl) return;
+  const qty = Number(document.body.dataset.checkoutQty || 1);
+  totalEl.textContent = formatBDT(unitPrice * qty);
+}
 
-  const shippingRates = { standard: 50, air_express: 120, air_priority: 200 };
-  const codRates = { standard: 10, air_express: 15, air_priority: 20 };
-  let method = 'standard';
-
-  const recalc = () => {
-    const qty = Number(qtyInput?.value || 1);
-    const sub = unitPrice * qty;
-    const ship = shippingRates[method];
-    const cod = codRates[method];
-    const total = sub + ship + cod;
-    subtotalEl.textContent = formatBDT(sub);
-    shippingEl.textContent = formatBDT(ship);
-    codEl.textContent = formatBDT(cod);
-    totalEl.textContent = formatBDT(total);
-    document.querySelectorAll('.line-subtotal').forEach(el => { el.textContent = formatBDT(sub); });
-  };
-
-  document.querySelectorAll('[data-shipping]').forEach(el => {
+function initPaymentMethodToggle() {
+  document.querySelectorAll('[data-payment]').forEach(el => {
     el.addEventListener('click', () => {
-      document.querySelectorAll('[data-shipping]').forEach(x => x.classList.remove('selected'));
+      document.querySelectorAll('[data-payment]').forEach(x => {
+        x.classList.remove('selected');
+        x.textContent = x.textContent.replace(/^●/, '○');
+      });
       el.classList.add('selected');
-      method = el.dataset.shipping;
-      recalc();
+      el.textContent = el.textContent.replace(/^○/, '●');
     });
   });
+}
 
-  const stepper = document.querySelector('#checkoutQtyStepper');
-  if (stepper) initQtyStepper(stepper, recalc);
-  recalc();
+function initRemarkModal() {
+  const modal = document.getElementById('remarkModal');
+  if (!modal) return;
+  document.getElementById('openRemark')?.addEventListener('click', () => modal.classList.add('open'));
+  document.querySelectorAll('[data-close-remark]').forEach(btn => {
+    btn.addEventListener('click', () => modal.classList.remove('open'));
+  });
 }
 
 function matchesProductTab(filter, publish) {
@@ -702,31 +697,38 @@ function initProductTabs() {
   });
 }
 
-function initCancelOrderModal() {
-  const modal = document.getElementById('cancelOrderModal');
-  const contactNotice = document.getElementById('cancelContactNotice');
-  if (!modal) return;
+function initOrderDetailPage() {
+  const mode = new URLSearchParams(window.location.search).get('status') === 'completed' ? 'completed' : 'pending';
+  const cancelBtn = document.getElementById('openCancelOrder');
+  const publishBtn = document.getElementById('publishBtn');
+  const warning = document.getElementById('pendingWarning');
+  if (!cancelBtn && !publishBtn) return;
 
-  const noticeParam = new URLSearchParams(window.location.search).get('notice');
-  const showContactNotice = noticeParam === '0'
-    ? false
-    : document.body.dataset.showContactNotice === 'true';
-
-  if (noticeParam === '0') {
-    const orderNo = 'PO202608310001';
-    const breadcrumbStrong = document.querySelector('.breadcrumb strong');
-    if (breadcrumbStrong) breadcrumbStrong.textContent = orderNo;
-    const title = document.querySelector('main h1');
-    if (title) title.textContent = orderNo;
-    const pill = document.querySelector('main .pill');
+  if (mode === 'completed') {
+    const orderNo = 'PO202608280088';
+    document.getElementById('orderNoTitle')?.textContent = orderNo;
+    document.getElementById('orderNoBreadcrumb')?.textContent = orderNo;
+    const pill = document.getElementById('orderStatusPill');
     if (pill) {
-      pill.textContent = 'Pending Payment';
-      pill.className = 'pill pill-info';
-      pill.style.marginTop = '8px';
+      pill.textContent = 'Completed';
+      pill.className = 'pill pill-published';
+    }
+    if (warning) warning.style.display = 'none';
+    cancelBtn.style.display = 'none';
+    if (publishBtn) publishBtn.style.display = '';
+    const timeline = document.getElementById('statusTimeline');
+    if (timeline) {
+      timeline.innerHTML = `
+        <div>● Order placed — 2026/08/28 09:15</div>
+        <div style="margin-top:6px">● Payment confirmed — 2026/08/28 14:20</div>
+        <div style="margin-top:6px">● Completed — 2026/08/30 18:45</div>`;
     }
   }
+}
 
-  if (contactNotice) contactNotice.style.display = showContactNotice ? '' : 'none';
+function initCancelOrderModal() {
+  const modal = document.getElementById('cancelOrderModal');
+  if (!modal) return;
 
   document.getElementById('openCancelOrder')?.addEventListener('click', () => modal.classList.add('open'));
   document.querySelectorAll('[data-close-cancel-modal]').forEach(btn => {
@@ -755,7 +757,10 @@ function initOrderTabs() {
 
 document.addEventListener('DOMContentLoaded', () => {
   initCheckoutSummary();
+  initPaymentMethodToggle();
+  initRemarkModal();
   initProductTabs();
+  initOrderDetailPage();
   initCancelOrderModal();
   initOrderTabs();
 

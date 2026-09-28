@@ -374,6 +374,24 @@ tr:hover td { background: #fafbfc; }
   font-weight: 600;
 }
 
+.warn-icon {
+  color: var(--warning);
+  cursor: help;
+  margin-left: 4px;
+}
+
+.warning-banner {
+  background: var(--warning-bg);
+  border: 1px solid #fcd34d;
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-size: 12px;
+  color: #92400e;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+.warning-banner a { color: #b45309; font-weight: 600; }
+
 .qty-stepper { display: inline-flex; align-items: center; border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; }
 .qty-stepper button { width: 32px; height: 32px; border: none; background: var(--surface-2); cursor: pointer; font-size: 16px; }
 .qty-stepper input { width: 48px; height: 32px; border: none; text-align: center; font-size: 14px; }
@@ -499,7 +517,11 @@ tr:hover td { background: #fafbfc; }
         <h1 class="page-title">Product Discovery</h1>
 
         <div class="search-bar">
-          <input type="search" placeholder="Search by product name or SKU code" />
+          <select style="height:40px;border:1px solid var(--border);border-radius:6px;padding:0 10px;font-size:13px">
+            <option>Product Name</option>
+            <option>SKU ID</option>
+          </select>
+          <input type="search" placeholder="Search" />
           <button class="btn btn-primary" type="button">Search</button>
         </div>
 
@@ -507,7 +529,6 @@ tr:hover td { background: #fafbfc; }
           <button class="tab active" type="button" data-product-tab="all">All</button>
           <button class="tab" type="button" data-product-tab="published">Published</button>
           <button class="tab" type="button" data-product-tab="unpublished">Unpublished</button>
-          <button class="tab" type="button" data-product-tab="partial">Partially Published</button>
         </div>
 
         <div class="grid-4" id="productGrid">
@@ -519,12 +540,12 @@ tr:hover td { background: #fafbfc; }
               <span class="pill pill-published">Published</span>
             </div>
           </a>
-          <a class="product-card" data-product-card data-publish="partial" href="product-detail.html" style="text-decoration:none;color:inherit">
+          <a class="product-card" data-product-card data-publish="unpublished" href="product-detail.html" style="text-decoration:none;color:inherit">
             <div class="thumb">Product Image</div>
             <div class="info">
               <div class="title">Denim Jacket Classic Blue</div>
               <div class="price">Purchase Price: ৳ 1,280.00</div>
-              <span class="pill pill-partial">Partially Published</span>
+              <span class="pill pill-unpublished">Unpublished</span>
             </div>
           </a>
           <a class="product-card" data-product-card data-publish="unpublished" href="product-detail.html" style="text-decoration:none;color:inherit">
@@ -551,12 +572,12 @@ tr:hover td { background: #fafbfc; }
               <span class="pill pill-unpublished">Unpublished</span>
             </div>
           </a>
-          <a class="product-card" data-product-card data-publish="partial" href="product-detail.html" style="text-decoration:none;color:inherit">
+          <a class="product-card" data-product-card data-publish="published" href="product-detail.html" style="text-decoration:none;color:inherit">
             <div class="thumb">Product Image</div>
             <div class="info">
               <div class="title">Knit Sweater Winter Warm</div>
               <div class="price">Purchase Price: ৳ 1,050.00</div>
-              <span class="pill pill-partial">Partially Published</span>
+              <span class="pill pill-published">Published</span>
             </div>
           </a>
         </div>
@@ -613,43 +634,33 @@ function initQtyStepper(container, onChange) {
 }
 
 function initCheckoutSummary() {
-  const subtotalEl = document.getElementById('subtotal');
-  const shippingEl = document.getElementById('shippingFee');
-  const codEl = document.getElementById('codFee');
   const totalEl = document.getElementById('grandTotal');
+  if (!totalEl) return;
   const unitPrice = Number(document.body.dataset.unitPrice || 1250);
-  const qtyInput = document.getElementById('checkoutQty');
-  if (!subtotalEl) return;
+  const qty = Number(document.body.dataset.checkoutQty || 1);
+  totalEl.textContent = formatBDT(unitPrice * qty);
+}
 
-  const shippingRates = { standard: 50, air_express: 120, air_priority: 200 };
-  const codRates = { standard: 10, air_express: 15, air_priority: 20 };
-  let method = 'standard';
-
-  const recalc = () => {
-    const qty = Number(qtyInput?.value || 1);
-    const sub = unitPrice * qty;
-    const ship = shippingRates[method];
-    const cod = codRates[method];
-    const total = sub + ship + cod;
-    subtotalEl.textContent = formatBDT(sub);
-    shippingEl.textContent = formatBDT(ship);
-    codEl.textContent = formatBDT(cod);
-    totalEl.textContent = formatBDT(total);
-    document.querySelectorAll('.line-subtotal').forEach(el => { el.textContent = formatBDT(sub); });
-  };
-
-  document.querySelectorAll('[data-shipping]').forEach(el => {
+function initPaymentMethodToggle() {
+  document.querySelectorAll('[data-payment]').forEach(el => {
     el.addEventListener('click', () => {
-      document.querySelectorAll('[data-shipping]').forEach(x => x.classList.remove('selected'));
+      document.querySelectorAll('[data-payment]').forEach(x => {
+        x.classList.remove('selected');
+        x.textContent = x.textContent.replace(/^●/, '○');
+      });
       el.classList.add('selected');
-      method = el.dataset.shipping;
-      recalc();
+      el.textContent = el.textContent.replace(/^○/, '●');
     });
   });
+}
 
-  const stepper = document.querySelector('#checkoutQtyStepper');
-  if (stepper) initQtyStepper(stepper, recalc);
-  recalc();
+function initRemarkModal() {
+  const modal = document.getElementById('remarkModal');
+  if (!modal) return;
+  document.getElementById('openRemark')?.addEventListener('click', () => modal.classList.add('open'));
+  document.querySelectorAll('[data-close-remark]').forEach(btn => {
+    btn.addEventListener('click', () => modal.classList.remove('open'));
+  });
 }
 
 function matchesProductTab(filter, publish) {
@@ -684,31 +695,38 @@ function initProductTabs() {
   });
 }
 
-function initCancelOrderModal() {
-  const modal = document.getElementById('cancelOrderModal');
-  const contactNotice = document.getElementById('cancelContactNotice');
-  if (!modal) return;
+function initOrderDetailPage() {
+  const mode = new URLSearchParams(window.location.search).get('status') === 'completed' ? 'completed' : 'pending';
+  const cancelBtn = document.getElementById('openCancelOrder');
+  const publishBtn = document.getElementById('publishBtn');
+  const warning = document.getElementById('pendingWarning');
+  if (!cancelBtn && !publishBtn) return;
 
-  const noticeParam = new URLSearchParams(window.location.search).get('notice');
-  const showContactNotice = noticeParam === '0'
-    ? false
-    : document.body.dataset.showContactNotice === 'true';
-
-  if (noticeParam === '0') {
-    const orderNo = 'PO202608310001';
-    const breadcrumbStrong = document.querySelector('.breadcrumb strong');
-    if (breadcrumbStrong) breadcrumbStrong.textContent = orderNo;
-    const title = document.querySelector('main h1');
-    if (title) title.textContent = orderNo;
-    const pill = document.querySelector('main .pill');
+  if (mode === 'completed') {
+    const orderNo = 'PO202608280088';
+    document.getElementById('orderNoTitle')?.textContent = orderNo;
+    document.getElementById('orderNoBreadcrumb')?.textContent = orderNo;
+    const pill = document.getElementById('orderStatusPill');
     if (pill) {
-      pill.textContent = 'Pending Payment';
-      pill.className = 'pill pill-info';
-      pill.style.marginTop = '8px';
+      pill.textContent = 'Completed';
+      pill.className = 'pill pill-published';
+    }
+    if (warning) warning.style.display = 'none';
+    cancelBtn.style.display = 'none';
+    if (publishBtn) publishBtn.style.display = '';
+    const timeline = document.getElementById('statusTimeline');
+    if (timeline) {
+      timeline.innerHTML = `
+        <div>● Order placed — 2026/08/28 09:15</div>
+        <div style="margin-top:6px">● Payment confirmed — 2026/08/28 14:20</div>
+        <div style="margin-top:6px">● Completed — 2026/08/30 18:45</div>`;
     }
   }
+}
 
-  if (contactNotice) contactNotice.style.display = showContactNotice ? '' : 'none';
+function initCancelOrderModal() {
+  const modal = document.getElementById('cancelOrderModal');
+  if (!modal) return;
 
   document.getElementById('openCancelOrder')?.addEventListener('click', () => modal.classList.add('open'));
   document.querySelectorAll('[data-close-cancel-modal]').forEach(btn => {
@@ -737,7 +755,10 @@ function initOrderTabs() {
 
 document.addEventListener('DOMContentLoaded', () => {
   initCheckoutSummary();
+  initPaymentMethodToggle();
+  initRemarkModal();
   initProductTabs();
+  initOrderDetailPage();
   initCancelOrderModal();
   initOrderTabs();
 
