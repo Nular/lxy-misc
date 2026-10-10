@@ -85,8 +85,14 @@ SKU	SKU	默认	只读
 6.1 入库流水
 
 流水 Tab：Inbound
-类型：采购入库（含原「期初」业务，统一通过入库单确认上架，不再单独 Opening 类型/子筛）。
-子筛：全部 / Purchase（采购）
+类型：手动入库、采购入库（含原「期初」业务，统一通过入库单确认上架，不再单独 Opening 类型/子筛）。
+子筛：全部 / Manual（手动入库） / Purchase（采购入库）
+
+类型（英文）	类型（中文）	子筛	说明
+Manual Inbound	手动入库	Manual	入库模块-手动入库单确认上架
+Purchase Inbound	采购入库	Purchase	入库模块-采购入库单确认上架
+
+与 5.3 库存调整单、6.4 Manual Adjustment Tab 区分：库存调整流水不进 Inbound，仅进 Manual Adjustment Tab。
 
 写账：入库确认上架后 total↑、available↑，locked 不变。
 关联单号：入库单号（采购入库可附采购单号为次要信息）。

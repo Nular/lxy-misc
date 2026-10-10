@@ -1084,6 +1084,7 @@ tbody tr.selected {
           </div>
           <div class="sub-tabs" id="inbound-sub">
             <div class="sub-tab active" data-sub="all">All</div>
+            <div class="sub-tab" data-sub="manual">Manual</div>
             <div class="sub-tab" data-sub="purchase">Purchase</div>
           </div>
           <div class="table-wrapper">
@@ -1107,7 +1108,8 @@ tbody tr.selected {
 const base = {
   inbound: [
     { time:'2026-08-21 09:32:15', warehouse:'SH001 - Shanghai Main Warehouse', zone:'SH001STO (Storage)', sku:'SKU-10001-BK', qty:'+200', after:{total:1200,locked:200,available:1000}, type:'Purchase Inbound', order:'IN-20260821001', operator:'Zhang Wei', sub:'purchase' },
-    { time:'2026-08-18 08:00:00', warehouse:'SH001 - Shanghai Main Warehouse', zone:'SH001STO (Storage)', sku:'SKU-10002-42', qty:'+100', after:{total:900,locked:160,available:740}, type:'Purchase Inbound', order:'IN-20260818001', operator:'Admin', sub:'purchase' }
+    { time:'2026-08-18 08:00:00', warehouse:'SH001 - Shanghai Main Warehouse', zone:'SH001STO (Storage)', sku:'SKU-10002-42', qty:'+100', after:{total:900,locked:160,available:740}, type:'Purchase Inbound', order:'IN-20260818001', operator:'Admin', sub:'purchase' },
+    { time:'2026-08-19 11:00:00', warehouse:'BJ001 - Beijing Distribution Center', zone:'BJ001STO (Storage)', sku:'SKU-10003-01', qty:'+80', after:{total:3280,locked:560,available:2720}, type:'Manual Inbound', order:'IN-20260819005', operator:'Admin', sub:'manual' }
   ],
   manual: [
     { time:'2026-08-19 10:05:30', warehouse:'BJ001 - Beijing Distribution Center', zone:'BJ001STO (Storage)', sku:'SKU-10003-01', qty:'+500', after:{total:3200,locked:560,available:2640}, type:'Manual Adjustment', order:'ADJ-20260819001', operator:'Admin', sub:'manual' },
@@ -1139,7 +1141,7 @@ function render(){
   let data=[];
   const manualRows=allManualRows();
   if(tab==='all') data=[...base.inbound,...manualRows,...base.occupy,...base.deduct];
-  else if(tab==='inbound'){ data=base.inbound.filter(d=>d.sub==='purchase'); if(sub==='purchase') data=data.filter(d=>d.sub==='purchase'); }
+  else if(tab==='inbound'){ data=base.inbound; if(sub==='manual') data=data.filter(d=>d.sub==='manual'); if(sub==='purchase') data=data.filter(d=>d.sub==='purchase'); }
   else if(tab==='manual') data=manualRows;
   else data=base[tab]||[];
   data.sort((a,b)=>b.time.localeCompare(a.time));

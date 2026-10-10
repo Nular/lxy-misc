@@ -141,7 +141,8 @@ const recordData = {
     { time: '2026-08-21 09:32:15', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10001-BK', qty: '+200', after: { total: 1200, locked: 200, available: 1000 }, type: 'Purchase Inbound', order: 'IN-20260821001', operator: 'Zhang Wei', sub: 'purchase' },
     { time: '2026-08-20 14:18:42', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10002-42', qty: '+150', after: { total: 900, locked: 160, available: 740 }, type: 'Purchase Inbound', order: 'IN-20260820003', operator: 'Li Ming', sub: 'purchase' },
     { time: '2026-08-18 16:22:08', warehouse: 'SG-001', zone: 'SG-001-STO (Storage)', sku: 'SKU-10004-01', qty: '+100', after: { total: 450, locked: 80, available: 370 }, type: 'Purchase Inbound', order: 'IN-20260818002', operator: 'Tan Wei Ming', sub: 'purchase' },
-    { time: '2026-08-18 08:00:00', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10002-42', qty: '+100', after: { total: 900, locked: 160, available: 740 }, type: 'Purchase Inbound', order: 'IN-20260818001', operator: 'Admin', sub: 'purchase' }
+    { time: '2026-08-18 08:00:00', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10002-42', qty: '+100', after: { total: 900, locked: 160, available: 740 }, type: 'Purchase Inbound', order: 'IN-20260818001', operator: 'Admin', sub: 'purchase' },
+    { time: '2026-08-19 11:00:00', warehouse: 'BJ-001', zone: 'BJ-001-STO (Storage)', sku: 'SKU-10003-01', qty: '+80', after: { total: 3280, locked: 560, available: 2720 }, type: 'Manual Inbound', order: 'IN-20260819005', operator: 'Admin', sub: 'manual' }
   ],
   manual: [
     { time: '2026-08-19 10:05:30', warehouse: 'BJ-001', zone: 'BJ-001-STO (Storage)', sku: 'SKU-10003-01', qty: '+500', after: { total: 3200, locked: 560, available: 2640 }, type: 'Manual Adjustment', order: 'ADJ-20260819001', operator: 'Admin', sub: 'manual' },
@@ -895,10 +896,12 @@ function renderRecords() {
     data = [...recordData.inbound, ...allManual, ...recordData.occupy, ...recordData.deduct];
     data.sort((a, b) => b.time.localeCompare(a.time));
   } else if (currentRecordTab === 'inbound') {
-    data = recordData.inbound.filter(d => d.sub === 'purchase');
+    data = recordData.inbound;
     const activeSub = document.querySelector('#inbound-sub-tabs .sub-tab.active');
-    if (activeSub && activeSub.textContent.trim().toLowerCase() === 'purchase') {
-      data = data.filter(d => d.sub === 'purchase');
+    if (activeSub) {
+      const subText = activeSub.textContent.trim().toLowerCase();
+      if (subText === 'manual') data = data.filter(d => d.sub === 'manual');
+      if (subText === 'purchase') data = data.filter(d => d.sub === 'purchase');
     }
   } else if (currentRecordTab === 'manual') {
     data = allManual.sort((a, b) => b.time.localeCompare(a.time));
@@ -908,6 +911,7 @@ function renderRecords() {
 
   const typeClass = {
     'Purchase Inbound': 'type-inbound',
+    'Manual Inbound': 'type-inbound',
     'Manual Adjustment': 'type-manual',
     'Manual Adjustment (Decrease)': 'type-manual',
     'Outbound Occupy': 'type-occupy', 'Outbound Deduct': 'type-deduct'
