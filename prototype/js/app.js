@@ -100,15 +100,19 @@ const spuData = [
   }
 ];
 
+let manualRecords = [];
+
 const skuData = [
-  { skuId: 'SKU-10001-BK', spec: 'Black', productName: 'Wireless Bluetooth Earbuds Pro', total: 1200, locked: 200, available: 1000, warehouse: 'Shanghai Main Warehouse', zone: 'Main Storage', zoneCode: 'SH-001-STO', barcode: 'EAN: 6901234567890', barcodes: ['EAN: 6901234567890', 'UPC: 012345678901', 'PAN: KB-10001-BK'] },
-  { skuId: 'SKU-10001-WH', spec: 'White', productName: 'Wireless Bluetooth Earbuds Pro', total: 980, locked: 150, available: 830, warehouse: 'Shanghai Main Warehouse', zone: 'Main Storage', zoneCode: 'SH-001-STO', barcode: 'EAN: 6901234567891', barcodes: ['EAN: 6901234567891'] },
-  { skuId: 'SKU-10001-BL', spec: 'Blue', productName: 'Wireless Bluetooth Earbuds Pro', total: 400, locked: 70, available: 330, warehouse: 'Beijing Distribution Center', zone: 'Cold Storage', zoneCode: 'BJ-001-STO', barcode: 'UPC: 012345678902', barcodes: ['UPC: 012345678902', 'PAN: KB-10001-BL'] },
-  { skuId: 'SKU-10002-42', spec: '42mm Silver', productName: 'Smart Watch Series X', total: 900, locked: 160, available: 740, warehouse: 'Shanghai Main Warehouse', zone: 'Main Storage', zoneCode: 'SH-001-STO', barcode: 'EAN: 6901234567900', barcodes: ['EAN: 6901234567900'] },
-  { skuId: 'SKU-10002-46', spec: '46mm Black', productName: 'Smart Watch Series X', total: 660, locked: 120, available: 540, warehouse: 'Shanghai Main Warehouse', zone: 'Main Storage', zoneCode: 'SH-001-STO', barcode: 'EAN: 6901234567901', barcodes: ['EAN: 6901234567901', 'PAN: KB-10002-46'] },
-  { skuId: 'SKU-10003-01', spec: 'Standard', productName: 'Portable Power Bank 20000mAh', total: 3200, locked: 560, available: 2640, warehouse: 'Beijing Distribution Center', zone: 'Cold Storage', zoneCode: 'BJ-001-STO', barcode: 'EAN: 6901234567910', barcodes: ['EAN: 6901234567910'] },
-  { skuId: 'SKU-10004-01', spec: '128GB', productName: 'USB-C Flash Drive', total: 450, locked: 80, available: 370, warehouse: 'Singapore Regional Warehouse', zone: 'Storage Zone', zoneCode: 'SG-001-STO', barcode: 'PAN: KB-10004-01', barcodes: ['PAN: KB-10004-01'] }
+  { skuId: 'SKU-10001-BK', spec: 'Black; M', productName: 'Wireless Bluetooth Earbuds Pro', total: 1200, locked: 200, available: 1000, warehouse: 'Shanghai Main Warehouse', zone: 'Storage Zone', zoneCode: 'SH001STO', warehouseCode: 'SH001', barcode: 'EAN: 6901234567890', pan: 'KB-10001-BK', barcodes: ['EAN: 6901234567890', 'UPC: 012345678901', 'PAN: KB-10001-BK'] },
+  { skuId: 'SKU-10001-WH', spec: 'White; L', productName: 'Wireless Bluetooth Earbuds Pro', total: 980, locked: 150, available: 830, warehouse: 'Shanghai Main Warehouse', zone: 'Storage Zone', zoneCode: 'SH001STO', warehouseCode: 'SH001', barcode: 'EAN: 6901234567891', pan: '-', barcodes: ['EAN: 6901234567891'] },
+  { skuId: 'SKU-10001-BL', spec: 'Blue; XS', productName: 'Wireless Bluetooth Earbuds Pro', total: 400, locked: 70, available: 330, warehouse: 'Beijing Distribution Center', zone: 'Storage Zone', zoneCode: 'BJ001STO', warehouseCode: 'BJ001', barcode: 'UPC: 012345678902', pan: 'KB-10001-BL', barcodes: ['UPC: 012345678902', 'PAN: KB-10001-BL'] },
+  { skuId: 'SKU-10002-42', spec: '42mm Silver', productName: 'Smart Watch Series X', total: 900, locked: 160, available: 740, warehouse: 'Shanghai Main Warehouse', zone: 'Storage Zone', zoneCode: 'SH001STO', warehouseCode: 'SH001', barcode: 'EAN: 6901234567900', pan: '-', barcodes: ['EAN: 6901234567900'] },
+  { skuId: 'SKU-10002-46', spec: '46mm Black', productName: 'Smart Watch Series X', total: 660, locked: 120, available: 540, warehouse: 'Shanghai Main Warehouse', zone: 'Storage Zone', zoneCode: 'SH001STO', warehouseCode: 'SH001', barcode: 'EAN: 6901234567901', pan: 'KB-10002-46', barcodes: ['EAN: 6901234567901', 'PAN: KB-10002-46'] },
+  { skuId: 'SKU-10003-01', spec: 'Standard', productName: 'Portable Power Bank 20000mAh', total: 3200, locked: 560, available: 2640, warehouse: 'Beijing Distribution Center', zone: 'Storage Zone', zoneCode: 'BJ001STO', warehouseCode: 'BJ001', barcode: 'EAN: 6901234567910', pan: '-', barcodes: ['EAN: 6901234567910'] },
+  { skuId: 'SKU-10004-01', spec: '128GB', productName: 'USB-C Flash Drive', total: 0, locked: 0, available: 0, warehouse: 'Shanghai Main Warehouse', zone: 'Receiving Zone', zoneCode: 'SH001RCV', warehouseCode: 'SH001', barcode: '-', pan: 'KB-10004-01', barcodes: ['PAN: KB-10004-01'] }
 ];
+
+let currentAdjSkuId = null;
 
 const recordData = {
   inbound: [
@@ -746,8 +750,64 @@ function renderSkuTable() {
       <td>${s.zone}</td>
       <td>${s.zoneCode}</td>
       <td><span class="barcode-cell" title="${s.barcodes.join('\n')}">${s.barcode}</span></td>
+      <td>${s.pan || '-'}</td>
+      <td><a class="btn-link" onclick="openAdjustment('${s.skuId}','${s.zoneCode}')">Inventory Adjustment</a></td>
     </tr>
   `).join('');
+}
+
+function openAdjustment(skuId, zoneCode) {
+  const s = skuData.find(x => x.skuId === skuId && x.zoneCode === zoneCode);
+  if (!s) return;
+  currentAdjSkuId = skuId + '|' + zoneCode;
+  document.getElementById('adj-sku').value = s.skuId;
+  document.getElementById('adj-loc').value = `${s.warehouseCode} / ${s.zoneCode} (${s.zone})`;
+  document.getElementById('adj-before').value = s.total;
+  document.getElementById('adj-qty').value = '';
+  document.getElementById('adj-type').value = '';
+  document.getElementById('adj-reason').value = '';
+  openModal('adj-modal');
+}
+
+function submitAdjustment() {
+  const s = skuData.find(x => x.skuId + '|' + x.zoneCode === currentAdjSkuId);
+  if (!s) return;
+  const dir = document.getElementById('adj-dir').value;
+  const qty = parseInt(document.getElementById('adj-qty').value, 10);
+  const type = document.getElementById('adj-type').value;
+  const reason = document.getElementById('adj-reason').value.trim();
+  if (!qty || qty <= 0 || !type || !reason) {
+    showToast('Please complete required fields.', 'error');
+    return;
+  }
+  if (dir === 'decrease' && s.available < qty) {
+    showToast('Insufficient available inventory.', 'error');
+    return;
+  }
+  if (dir === 'increase') {
+    s.total += qty;
+  } else {
+    s.total -= qty;
+  }
+  s.available = s.total - s.locked;
+  const orderNo = 'ADJ-' + Date.now();
+  manualRecords.unshift({
+    time: new Date().toISOString().slice(0, 19).replace('T', ' '),
+    warehouse: s.warehouseCode,
+    zone: `${s.zoneCode} (${s.zone})`,
+    sku: s.skuId,
+    qty: (dir === 'increase' ? '+' : '-') + qty,
+    after: { total: s.total, locked: s.locked, available: s.available },
+    type: dir === 'increase' ? 'Manual Adjustment' : 'Manual Adjustment (Decrease)',
+    order: orderNo,
+    operator: 'Current User',
+    sub: 'manual'
+  });
+  recordData.inbound.unshift(manualRecords[0]);
+  closeModal('adj-modal');
+  renderSkuTable();
+  renderSpuTable();
+  showToast(`Inventory adjusted successfully. ${orderNo}`, 'success');
 }
 
 // ========== Records ==========
@@ -777,21 +837,26 @@ function renderRecords() {
   let data = [];
 
   if (currentRecordTab === 'all') {
-    data = [...recordData.inbound, ...recordData.occupy, ...recordData.deduct, ...recordData.unfreeze];
+    data = [...recordData.inbound, ...recordData.occupy, ...recordData.deduct];
     data.sort((a, b) => b.time.localeCompare(a.time));
   } else if (currentRecordTab === 'inbound') {
     data = recordData.inbound;
     const activeSub = document.querySelector('#inbound-sub-tabs .sub-tab.active');
     if (activeSub) {
       const subText = activeSub.textContent.trim().toLowerCase();
-      if (subText === 'initial stock') data = data.filter(d => d.sub === 'initial');
+      if (subText === 'manual') data = data.filter(d => d.sub === 'manual');
       if (subText === 'purchase') data = data.filter(d => d.sub === 'purchase');
+      if (subText === 'opening') data = data.filter(d => d.sub === 'opening' || d.sub === 'initial');
     }
   } else {
     data = recordData[currentRecordTab] || [];
   }
 
-  const typeClass = { 'Purchase Inbound': 'type-inbound', 'Manual Adjustment': 'type-inbound', 'Outbound Occupy': 'type-occupy', 'Outbound Deduct': 'type-deduct', 'Unfreeze': 'type-unfreeze' };
+  const typeClass = {
+    'Purchase Inbound': 'type-inbound', 'Manual Adjustment': 'type-inbound',
+    'Manual Adjustment (Decrease)': 'type-inbound', 'Opening Inbound': 'type-inbound',
+    'Outbound Occupy': 'type-occupy', 'Outbound Deduct': 'type-deduct'
+  };
 
   tbody.innerHTML = data.map(r => {
     const qtyClass = r.qty.startsWith('+') ? 'up' : r.qty.startsWith('-') ? 'down' : '';
