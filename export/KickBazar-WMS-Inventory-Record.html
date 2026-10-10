@@ -1070,6 +1070,7 @@ tbody tr.selected {
             <div class="tab active" data-tab="inbound">Inbound</div>
             <div class="tab" data-tab="occupy">Outbound Occupy</div>
             <div class="tab" data-tab="deduct">Outbound Deduct</div>
+            <div class="tab" data-tab="manual">Manual Adjustment</div>
             <div class="tab" data-tab="all">All</div>
           </div>
           <div class="filter-bar">
@@ -1083,9 +1084,7 @@ tbody tr.selected {
           </div>
           <div class="sub-tabs" id="inbound-sub">
             <div class="sub-tab active" data-sub="all">All</div>
-            <div class="sub-tab" data-sub="manual">Manual</div>
             <div class="sub-tab" data-sub="purchase">Purchase</div>
-            <div class="sub-tab" data-sub="opening">Opening</div>
           </div>
           <div class="table-wrapper">
             <table>
@@ -1108,8 +1107,11 @@ tbody tr.selected {
 const base = {
   inbound: [
     { time:'2026-08-21 09:32:15', warehouse:'SH001 - Shanghai Main Warehouse', zone:'SH001STO (Storage)', sku:'SKU-10001-BK', qty:'+200', after:{total:1200,locked:200,available:1000}, type:'Purchase Inbound', order:'IN-20260821001', operator:'Zhang Wei', sub:'purchase' },
-    { time:'2026-08-19 10:05:30', warehouse:'BJ001 - Beijing Distribution Center', zone:'BJ001STO (Storage)', sku:'SKU-10003-01', qty:'+500', after:{total:3200,locked:560,available:2640}, type:'Manual Adjustment', order:'IN-20260819001', operator:'Wang Fang', sub:'manual' },
-    { time:'2026-08-18 08:00:00', warehouse:'SH001 - Shanghai Main Warehouse', zone:'SH001STO (Storage)', sku:'SKU-10002-42', qty:'+100', after:{total:900,locked:160,available:740}, type:'Opening Inbound', order:'IN-OPEN-001', operator:'Admin', sub:'opening' }
+    { time:'2026-08-18 08:00:00', warehouse:'SH001 - Shanghai Main Warehouse', zone:'SH001STO (Storage)', sku:'SKU-10002-42', qty:'+100', after:{total:900,locked:160,available:740}, type:'Purchase Inbound', order:'IN-20260818001', operator:'Admin', sub:'purchase' }
+  ],
+  manual: [
+    { time:'2026-08-19 10:05:30', warehouse:'BJ001 - Beijing Distribution Center', zone:'BJ001STO (Storage)', sku:'SKU-10003-01', qty:'+500', after:{total:3200,locked:560,available:2640}, type:'Manual Adjustment', order:'ADJ-20260819001', operator:'Admin', sub:'manual' },
+    { time:'2026-08-17 15:20:11', warehouse:'SH001 - Shanghai Main Warehouse', zone:'SH001STO (Storage)', sku:'SKU-10001-WH', qty:'-10', after:{total:970,locked:150,available:820}, type:'Manual Adjustment (Decrease)', order:'ADJ-20260817002', operator:'Admin', sub:'manual' }
   ],
   occupy: [
     { time:'2026-08-21 11:45:22', warehouse:'SH001 - Shanghai Main Warehouse', zone:'SH001STO (Storage)', sku:'SKU-10001-BK', qty:'50', after:{total:1200,locked:200,available:1000}, type:'Outbound Occupy', order:'OUT-20260821005', operator:'System', sub:'occupy' }
@@ -1127,11 +1129,18 @@ document.querySelectorAll('#inbound-sub .sub-tab').forEach(t=>t.addEventListener
   document.querySelectorAll('#inbound-sub .sub-tab').forEach(x=>x.classList.remove('active')); t.classList.add('active');
   sub=t.dataset.sub; render();
 }));
+function allManualRows(){
+  const ls=JSON.parse(localStorage.getItem('manual_records')||'[]').map(r=>({...r,sub:'manual'}));
+  const merged=[...base.manual];
+  ls.forEach(r=>{ if(!merged.some(m=>m.order===r.order && m.time===r.time)) merged.push(r); });
+  return merged;
+}
 function render(){
   let data=[];
-  const manual = JSON.parse(localStorage.getItem('manual_records')||'[]').map(r=>({...r,sub:'manual'}));
-  if(tab==='all') data=[...base.inbound,...manual,...base.occupy,...base.deduct];
-  else if(tab==='inbound'){ data=[...base.inbound,...manual]; if(sub!=='all') data=data.filter(d=>d.sub===sub); }
+  const manualRows=allManualRows();
+  if(tab==='all') data=[...base.inbound,...manualRows,...base.occupy,...base.deduct];
+  else if(tab==='inbound'){ data=base.inbound.filter(d=>d.sub==='purchase'); if(sub==='purchase') data=data.filter(d=>d.sub==='purchase'); }
+  else if(tab==='manual') data=manualRows;
   else data=base[tab]||[];
   data.sort((a,b)=>b.time.localeCompare(a.time));
   document.getElementById('tbody').innerHTML=data.map(r=>{

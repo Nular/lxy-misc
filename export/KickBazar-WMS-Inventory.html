@@ -1040,7 +1040,8 @@ tbody tr.selected {
 <div class="app-container">
 <header class="header">
   <div class="logo" onclick="location.href='KickBazar-WMS-Dashboard.html'" style="cursor:pointer"><div class="logo-icon"></div><span>KickBazar</span></div>
-  <div class="wh-global"><span>Warehouse</span><select id="global-wh"><option value="">All</option><option value="SH001">SH001 - Shanghai Main Warehouse</option><option value="BJ001">BJ001 - Beijing Distribution Center</option></select><span class="admin-tag">Admin</span></div>
+  <div class="wh-global"><span>Warehouse</span><select id="global-wh"><option value="">All</option><option value="SH001">SH001 - Shanghai Main Warehouse</option><option value="BJ001">BJ001 - Beijing Distribution Center</option></select>
+  <span>Role</span><select id="role-select" onchange="setUserRole(this.value)" style="margin-left:4px"><option value="admin">Admin</option><option value="warehouse">Warehouse Manager</option></select></div>
 </header>
 <div class="main-layout">
 <nav class="sidebar">
@@ -1105,6 +1106,9 @@ tbody tr.selected {
 <div class="toast-container" id="toast-container"></div>
 
 <script>
+function getUserRole(){ return localStorage.getItem('wms_role')||'admin'; }
+function isAdminUser(){ return getUserRole()==='admin'; }
+function setUserRole(role){ localStorage.setItem('wms_role',role); const s=document.getElementById('role-select'); if(s)s.value=role; renderSku(); showToast(role==='admin'?'Role: Admin':'Warehouse Manager — inventory adjustment disabled','info'); }
 const catalog = [
   {id:'SKU-10001-BK',spec:'Black; M',product:'PRD-10001',productName:'Wireless Bluetooth Earbuds Pro',ean:'6901234567890',upc:'012345678901',pan:'KB-10001-BK'},
   {id:'SKU-10001-WH',spec:'White; L',product:'PRD-10001',productName:'Wireless Bluetooth Earbuds Pro',ean:'6901234567891',upc:'',pan:''},
@@ -1180,7 +1184,7 @@ function renderSku() {
     <td>${r.whName}</td><td>${r.zone}</td><td>${r.zoneCode}</td>
     <td><span class="barcode-cell" title="${barcodeTitle(r)}">${primaryBarcode(r)}</span></td>
     <td>${r.pan || '-'}</td>
-    <td><a class="btn-link" onclick="openAdjustment(${skuRows.indexOf(r)})">Inventory Adjustment</a></td></tr>`).join('');
+    <td>${isAdminUser()?`<a class="btn-link" onclick="openAdjustment(${skuRows.indexOf(r)})">Inventory Adjustment</a>`:`<span style="color:#999;cursor:not-allowed" title="Admin only">Admin only</span>`}</td></tr>`).join('');
   document.getElementById('row-total').textContent = rows.length;
 }
 
@@ -1194,6 +1198,7 @@ document.querySelectorAll('#inventory-tabs .tab').forEach(t=>t.addEventListener(
 }));
 
 function openAdjustment(idx) {
+  if(!isAdminUser()){ showToast('Admin only.','error'); return; }
   currentAdjIndex = idx; const r = skuRows[idx];
   document.getElementById('adj-sku').value = r.id;
   document.getElementById('adj-loc').value = r.wh+' / '+r.zoneCode+' ('+r.zone+')';
@@ -1203,6 +1208,7 @@ function openAdjustment(idx) {
 }
 
 function submitAdjustment() {
+  if(!isAdminUser()){ showToast('Admin only.','error'); return; }
   const r = skuRows[currentAdjIndex];
   const dir = document.getElementById('adj-dir').value;
   const qty = parseInt(document.getElementById('adj-qty').value,10);
@@ -1221,12 +1227,12 @@ function submitAdjustment() {
     sku: r.id, qty: (dir==='increase'?'+':'-')+qty,
     after: {total:r.total, locked:r.locked, available:r.available},
     type: dir==='increase' ? 'Manual Adjustment' : 'Manual Adjustment (Decrease)',
-    order: orderNo, operator: 'Current User', sub: 'manual', reason, adjType: type
+    order: orderNo, operator: 'Admin', sub: 'manual', reason, adjType: type
   };
   const logs = JSON.parse(localStorage.getItem('manual_records')||'[]');
   logs.unshift(rec); localStorage.setItem('manual_records', JSON.stringify(logs.slice(0,100)));
   closeModal('adj-modal'); buildSpu(); renderSku();
-  showToast('Inventory adjusted successfully. Record: '+orderNo, 'success');
+  showToast('Inventory adjusted successfully. See Record → Manual Adjustment: '+orderNo, 'success');
 }
 
 function openModal(id){document.getElementById(id).classList.add('show');}
@@ -1242,6 +1248,7 @@ if (whCode) {
 }
 
 initData(); renderSpu();
+const rs=document.getElementById('role-select'); if(rs) rs.value=getUserRole();
 document.querySelector('#inventory-tabs .tab[data-inv-tab="sku"]').click();
 </script>
 </body></html>

@@ -14,6 +14,13 @@
         <div class="logo-icon"></div>
         <span>KickBazar</span>
       </div>
+      <div class="header-right" style="display:flex;align-items:center;gap:12px;margin-left:auto;padding-right:16px;font-size:13px;color:#666">
+        <span>Role (demo)</span>
+        <select id="role-select" onchange="setUserRole(this.value)" style="padding:4px 8px;border:1px solid #e8e8e8;border-radius:4px">
+          <option value="admin">Admin</option>
+          <option value="warehouse">Warehouse Manager</option>
+        </select>
+      </div>
     </header>
 
     <div class="main-layout">
@@ -413,13 +420,14 @@
         <div class="page" id="page-record">
           <div class="page-header">
             <h1 class="page-title">Inventory Record</h1>
-            <p class="page-subtitle">Track inventory changes: inbound, outbound occupy, deduct, unfreeze</p>
+            <p class="page-subtitle">Track inventory changes: inbound, outbound occupy, deduct, manual adjustment</p>
           </div>
           <div class="page-body">
             <div class="tabs" id="record-tabs">
               <div class="tab active" data-record-tab="inbound">Inbound</div>
               <div class="tab" data-record-tab="occupy">Outbound Occupy</div>
               <div class="tab" data-record-tab="deduct">Outbound Deduct</div>
+              <div class="tab" data-record-tab="manual">Manual Adjustment</div>
               <div class="tab" data-record-tab="all">All</div>
             </div>
 
@@ -461,9 +469,7 @@
             <!-- Sub filter for inbound -->
             <div class="sub-tabs" id="inbound-sub-tabs">
               <div class="sub-tab active">All</div>
-              <div class="sub-tab">Manual</div>
               <div class="sub-tab">Purchase</div>
-              <div class="sub-tab">Opening</div>
             </div>
 
             <div class="table-wrapper">

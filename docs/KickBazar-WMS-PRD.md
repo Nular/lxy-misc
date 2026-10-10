@@ -93,8 +93,8 @@
 
 - 库存变更与流水写入**同一事务**；失败整单回滚，禁止半截流水或脏库存。
 - 关联单号：系统生成库存调整单号 **ADJ-YYYYMMDDnnn**。
-- 成功 Toast：`Inventory adjusted successfully.`（可提示查看 Record → Inbound → Manual）。
-- **权限**：管理员；仓库管理员仅限所属仓库。
+- 成功 Toast：`Inventory adjusted successfully.`（可提示查看 Record → **Manual Adjustment** Tab）。
+- **权限**：**仅 Admin** 可发起库存调整；仓库管理员仅可查看库存与流水，Operation 展示「Admin only」且接口拒绝写账。
 - 停用仓、停用库区不可作为新调整目标。
 
 ---
@@ -102,10 +102,10 @@
 ## 6 库存流水
 
 **只读展示**。禁止在流水页直接修改库存数字或手工抹账。  
-盘盈、盘亏、报溢、报损、录入纠错等库存更正，须通过 **5.3 库存调整单** 提交后由系统写账并**自动生成流水**（见 6.1）。  
+盘盈、盘亏、报溢、报损、录入纠错等库存更正，须通过 **5.3 库存调整单**（仅 Admin）提交后由系统写账并**自动生成流水**（见 **6.4**）。  
 移库、报损作业、打包/发运**不写**库存流水、不出现在任何 Tab。
 
-入口：Record。四个 Tab：**Inbound**、**Outbound Occupy**、**Outbound Deduct**、**All**。（本期不做 Unfreeze Tab）
+入口：Record。五个 Tab：**Inbound**、**Outbound Occupy**、**Outbound Deduct**、**Manual Adjustment**、**All**。（本期不做 Unfreeze Tab）
 
 共用筛选：时间（默认近 7 天）、Warehouse、Zone、SKU ID、关联单号、操作人。
 
@@ -117,26 +117,30 @@
 
 流水 Tab：**Inbound**
 
-**类型**：采购入库、期初入库、**手动调整**（增加为正、减少为负）。
+**类型**：**采购入库**（含原「期初」场景，统一走入库单上架，不再单独 Opening 类型/子筛）。
 
-**子筛**：全部 / **Manual（人工调整）** / **Purchase（采购）** / **Opening（期初）**
+**子筛**：全部 / **Purchase（采购）**
 
 | 类型来源 | 写账触发 | 本模块 |
 |----------|----------|--------|
 | 采购入库 | 入库确认上架 | 只读展示 |
-| 期初入库 | 入库确认上架 | 只读展示 |
-| 手动调整 | **5.3 库存调整单**确认 | 只读展示；流水由调整单自动生成 |
 
-**手动调整流水**：
+- 关联单号：入库单号（可附采购单号为次要信息）。
+- 变更后列：Total / Locked / Available；total、available 上升用绿色↑标识。
 
-| 类型（英文） | 类型（中文） | 说明 |
-|--------------|--------------|------|
-| Manual Adjustment | 人工调整入库 | 调整方向 = 增加 |
-| Manual Adjustment (Decrease) | 人工调整出库 | 调整方向 = 减少；在 Inbound → Manual 展示，Qty 为负 |
+### 6.4 手动调整流水
 
-- 写账：增加时 total↑、available↑，locked 不变；减少时 total↓、available↓，locked 不变。
-- 关联单号：手动调整为 **ADJ-** 调整单号；采购/期初为入库单号（采购可附采购单号为次要信息）。
-- 变更后列：Total / Locked / Available；入库类 total、available 上升用绿色↑标识。
+流水 Tab：**Manual Adjustment**（位于 Outbound Deduct 之后）
+
+仅展示 **5.3 库存调整单** 产生的流水（增加与减少均在本 Tab，不混入 Inbound）。
+
+| 类型（英文） | 类型（中文） | Qty |
+|--------------|--------------|-----|
+| Manual Adjustment | 人工调整入库 | 正数，带 + |
+| Manual Adjustment (Decrease) | 人工调整出库 | 负数，带 - |
+
+- 写账：增加时 total↑、available↑；减少时 total↓、available↓；locked 均不变。
+- 关联单号：**ADJ-** 调整单号；操作人一般为 Admin。
 
 ### 6.2 出库占用流水
 
@@ -209,8 +213,8 @@ Total Inventory 点击跳转：Inventory → SPU/SKU Inventory，当前仓库，
 | 采购单创建/确认/关单/回写 | 不变 | 不变 | 不变 | 仅采购单流水 |
 | 出库确认导入 | — | ↑ | ↓ | 出库占用 |
 | 拣货确认（出库扣减） | ↓ | ↓ | — | 出库扣减 |
-| **库存调整-增加** | ↑ | — | ↑ | 入库 / Manual |
-| **库存调整-减少** | ↓ | — | ↓ | 入库 / Manual（Qty 负） |
+| **库存调整-增加** | ↑ | — | ↑ | Manual Adjustment |
+| **库存调整-减少** | ↓ | — | ↓ | Manual Adjustment |
 | 打包/发运 | 不变 | 不变 | 不变 | 不写 |
 
 所有库存增减动作，库存变更与对应流水必须在同一业务事务内完成。

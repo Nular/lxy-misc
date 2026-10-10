@@ -790,6 +790,7 @@ tbody tr.selected {
 
 /* Record type badges */
 .type-inbound { color: #389e0d; }
+.type-manual { color: #722ed1; }
 .type-occupy { color: #d46b08; }
 .type-deduct { color: #cf1322; }
 .type-unfreeze { color: #096dd9; }

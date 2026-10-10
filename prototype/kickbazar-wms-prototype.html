@@ -797,6 +797,7 @@ tbody tr.selected {
 
 /* Record type badges */
 .type-inbound { color: #389e0d; }
+.type-manual { color: #722ed1; }
 .type-occupy { color: #d46b08; }
 .type-deduct { color: #cf1322; }
 .type-unfreeze { color: #096dd9; }
@@ -1036,6 +1037,13 @@ tbody tr.selected {
       <div class="logo" onclick="navigateTo('home')" style="cursor:pointer" title="Back to Home">
         <div class="logo-icon"></div>
         <span>KickBazar</span>
+      </div>
+      <div class="header-right" style="display:flex;align-items:center;gap:12px;margin-left:auto;padding-right:16px;font-size:13px;color:#666">
+        <span>Role (demo)</span>
+        <select id="role-select" onchange="setUserRole(this.value)" style="padding:4px 8px;border:1px solid #e8e8e8;border-radius:4px">
+          <option value="admin">Admin</option>
+          <option value="warehouse">Warehouse Manager</option>
+        </select>
       </div>
     </header>
 
@@ -1436,13 +1444,14 @@ tbody tr.selected {
         <div class="page" id="page-record">
           <div class="page-header">
             <h1 class="page-title">Inventory Record</h1>
-            <p class="page-subtitle">Track inventory changes: inbound, outbound occupy, deduct, unfreeze</p>
+            <p class="page-subtitle">Track inventory changes: inbound, outbound occupy, deduct, manual adjustment</p>
           </div>
           <div class="page-body">
             <div class="tabs" id="record-tabs">
               <div class="tab active" data-record-tab="inbound">Inbound</div>
               <div class="tab" data-record-tab="occupy">Outbound Occupy</div>
               <div class="tab" data-record-tab="deduct">Outbound Deduct</div>
+              <div class="tab" data-record-tab="manual">Manual Adjustment</div>
               <div class="tab" data-record-tab="all">All</div>
             </div>
 
@@ -1484,9 +1493,7 @@ tbody tr.selected {
             <!-- Sub filter for inbound -->
             <div class="sub-tabs" id="inbound-sub-tabs">
               <div class="sub-tab active">All</div>
-              <div class="sub-tab">Manual</div>
               <div class="sub-tab">Purchase</div>
-              <div class="sub-tab">Opening</div>
             </div>
 
             <div class="table-wrapper">
@@ -1886,6 +1893,28 @@ const spuData = [
 
 let manualRecords = [];
 
+function getUserRole() {
+  return localStorage.getItem('wms_role') || 'admin';
+}
+
+function isAdminUser() {
+  return getUserRole() === 'admin';
+}
+
+function setUserRole(role) {
+  localStorage.setItem('wms_role', role);
+  const sel = document.getElementById('role-select');
+  if (sel) sel.value = role;
+  renderSkuTable();
+  showToast(role === 'admin' ? 'Role: Admin' : 'Role: Warehouse Manager (no inventory adjustment)', 'info');
+}
+
+function initUserRole() {
+  const role = getUserRole();
+  const sel = document.getElementById('role-select');
+  if (sel) sel.value = role;
+}
+
 const skuData = [
   { skuId: 'SKU-10001-BK', spec: 'Black; M', productName: 'Wireless Bluetooth Earbuds Pro', total: 1200, locked: 200, available: 1000, warehouse: 'Shanghai Main Warehouse', zone: 'Storage Zone', zoneCode: 'SH001STO', warehouseCode: 'SH001', barcode: 'EAN: 6901234567890', pan: 'KB-10001-BK', barcodes: ['EAN: 6901234567890', 'UPC: 012345678901', 'PAN: KB-10001-BK'] },
   { skuId: 'SKU-10001-WH', spec: 'White; L', productName: 'Wireless Bluetooth Earbuds Pro', total: 980, locked: 150, available: 830, warehouse: 'Shanghai Main Warehouse', zone: 'Storage Zone', zoneCode: 'SH001STO', warehouseCode: 'SH001', barcode: 'EAN: 6901234567891', pan: '-', barcodes: ['EAN: 6901234567891'] },
@@ -1902,8 +1931,12 @@ const recordData = {
   inbound: [
     { time: '2026-08-21 09:32:15', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10001-BK', qty: '+200', after: { total: 1200, locked: 200, available: 1000 }, type: 'Purchase Inbound', order: 'IN-20260821001', operator: 'Zhang Wei', sub: 'purchase' },
     { time: '2026-08-20 14:18:42', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10002-42', qty: '+150', after: { total: 900, locked: 160, available: 740 }, type: 'Purchase Inbound', order: 'IN-20260820003', operator: 'Li Ming', sub: 'purchase' },
-    { time: '2026-08-19 10:05:30', warehouse: 'BJ-001', zone: 'BJ-001-STO (Storage)', sku: 'SKU-10003-01', qty: '+500', after: { total: 3200, locked: 560, available: 2640 }, type: 'Manual Adjustment', order: 'IN-20260819001', operator: 'Wang Fang', sub: 'initial' },
-    { time: '2026-08-18 16:22:08', warehouse: 'SG-001', zone: 'SG-001-STO (Storage)', sku: 'SKU-10004-01', qty: '+100', after: { total: 450, locked: 80, available: 370 }, type: 'Purchase Inbound', order: 'IN-20260818002', operator: 'Tan Wei Ming', sub: 'purchase' }
+    { time: '2026-08-18 16:22:08', warehouse: 'SG-001', zone: 'SG-001-STO (Storage)', sku: 'SKU-10004-01', qty: '+100', after: { total: 450, locked: 80, available: 370 }, type: 'Purchase Inbound', order: 'IN-20260818002', operator: 'Tan Wei Ming', sub: 'purchase' },
+    { time: '2026-08-18 08:00:00', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10002-42', qty: '+100', after: { total: 900, locked: 160, available: 740 }, type: 'Purchase Inbound', order: 'IN-20260818001', operator: 'Admin', sub: 'purchase' }
+  ],
+  manual: [
+    { time: '2026-08-19 10:05:30', warehouse: 'BJ-001', zone: 'BJ-001-STO (Storage)', sku: 'SKU-10003-01', qty: '+500', after: { total: 3200, locked: 560, available: 2640 }, type: 'Manual Adjustment', order: 'ADJ-20260819001', operator: 'Admin', sub: 'manual' },
+    { time: '2026-08-17 15:20:11', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10001-WH', qty: '-10', after: { total: 970, locked: 150, available: 820 }, type: 'Manual Adjustment (Decrease)', order: 'ADJ-20260817002', operator: 'Admin', sub: 'manual' }
   ],
   occupy: [
     { time: '2026-08-21 11:45:22', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10001-BK', qty: '50', after: { total: 1200, locked: 200, available: 1000 }, type: 'Outbound Occupy', order: 'OUT-20260821005', operator: 'System' },
@@ -1928,6 +1961,7 @@ let currentRecordTab = 'inbound';
 
 // ========== Init ==========
 document.addEventListener('DOMContentLoaded', () => {
+  initUserRole();
   initNavigation();
   initInventoryTabs();
   initRecordTabs();
@@ -2535,12 +2569,19 @@ function renderSkuTable() {
       <td>${s.zoneCode}</td>
       <td><span class="barcode-cell" title="${s.barcodes.join('\n')}">${s.barcode}</span></td>
       <td>${s.pan || '-'}</td>
-      <td><a class="btn-link" onclick="openAdjustment('${s.skuId}','${s.zoneCode}')">Inventory Adjustment</a></td>
+      <td>${isAdminUser()
+        ? `<a class="btn-link" onclick="openAdjustment('${s.skuId}','${s.zoneCode}')">Inventory Adjustment</a>`
+        : `<span class="text-muted" title="Admin only" style="color:#999;cursor:not-allowed">Admin only</span>`}
+      </td>
     </tr>
   `).join('');
 }
 
 function openAdjustment(skuId, zoneCode) {
+  if (!isAdminUser()) {
+    showToast('Admin only. Inventory adjustment is not available for warehouse managers.', 'error');
+    return;
+  }
   const s = skuData.find(x => x.skuId === skuId && x.zoneCode === zoneCode);
   if (!s) return;
   currentAdjSkuId = skuId + '|' + zoneCode;
@@ -2554,6 +2595,10 @@ function openAdjustment(skuId, zoneCode) {
 }
 
 function submitAdjustment() {
+  if (!isAdminUser()) {
+    showToast('Admin only.', 'error');
+    return;
+  }
   const s = skuData.find(x => x.skuId + '|' + x.zoneCode === currentAdjSkuId);
   if (!s) return;
   const dir = document.getElementById('adj-dir').value;
@@ -2584,14 +2629,20 @@ function submitAdjustment() {
     after: { total: s.total, locked: s.locked, available: s.available },
     type: dir === 'increase' ? 'Manual Adjustment' : 'Manual Adjustment (Decrease)',
     order: orderNo,
-    operator: 'Current User',
+    operator: 'Admin',
     sub: 'manual'
   });
-  recordData.inbound.unshift(manualRecords[0]);
+  recordData.manual.unshift(manualRecords[0]);
+  try {
+    const ls = JSON.parse(localStorage.getItem('manual_records') || '[]');
+    ls.unshift({ ...manualRecords[0] });
+    localStorage.setItem('manual_records', JSON.stringify(ls.slice(0, 100)));
+  } catch (e) { /* prototype */ }
   closeModal('adj-modal');
   renderSkuTable();
   renderSpuTable();
-  showToast(`Inventory adjusted successfully. ${orderNo}`, 'success');
+  if (currentRecordTab === 'manual' || currentRecordTab === 'all') renderRecords();
+  showToast(`Inventory adjusted successfully. ${orderNo} — see Record → Manual Adjustment`, 'success');
 }
 
 // ========== Records ==========
@@ -2601,8 +2652,8 @@ function initRecordTabs() {
       document.querySelectorAll('#record-tabs .tab').forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
       currentRecordTab = tab.dataset.recordTab;
-      document.getElementById('inbound-sub-tabs').style.display =
-        currentRecordTab === 'inbound' ? 'flex' : 'none';
+      const subBar = document.getElementById('inbound-sub-tabs');
+      if (subBar) subBar.style.display = currentRecordTab === 'inbound' ? 'flex' : 'none';
       renderRecords();
     });
   });
@@ -2620,25 +2671,36 @@ function renderRecords() {
   const tbody = document.getElementById('record-table-body');
   let data = [];
 
+  const manualFromStorage = [];
+  try {
+    JSON.parse(localStorage.getItem('manual_records') || '[]').forEach(r => {
+      manualFromStorage.push({ ...r, sub: 'manual' });
+    });
+  } catch (e) { /* ignore */ }
+
+  const allManual = [...recordData.manual, ...manualFromStorage.filter(m =>
+    !recordData.manual.some(x => x.order === m.order && x.time === m.time)
+  )];
+
   if (currentRecordTab === 'all') {
-    data = [...recordData.inbound, ...recordData.occupy, ...recordData.deduct];
+    data = [...recordData.inbound, ...allManual, ...recordData.occupy, ...recordData.deduct];
     data.sort((a, b) => b.time.localeCompare(a.time));
   } else if (currentRecordTab === 'inbound') {
-    data = recordData.inbound;
+    data = recordData.inbound.filter(d => d.sub === 'purchase');
     const activeSub = document.querySelector('#inbound-sub-tabs .sub-tab.active');
-    if (activeSub) {
-      const subText = activeSub.textContent.trim().toLowerCase();
-      if (subText === 'manual') data = data.filter(d => d.sub === 'manual');
-      if (subText === 'purchase') data = data.filter(d => d.sub === 'purchase');
-      if (subText === 'opening') data = data.filter(d => d.sub === 'opening' || d.sub === 'initial');
+    if (activeSub && activeSub.textContent.trim().toLowerCase() === 'purchase') {
+      data = data.filter(d => d.sub === 'purchase');
     }
+  } else if (currentRecordTab === 'manual') {
+    data = allManual.sort((a, b) => b.time.localeCompare(a.time));
   } else {
     data = recordData[currentRecordTab] || [];
   }
 
   const typeClass = {
-    'Purchase Inbound': 'type-inbound', 'Manual Adjustment': 'type-inbound',
-    'Manual Adjustment (Decrease)': 'type-inbound', 'Opening Inbound': 'type-inbound',
+    'Purchase Inbound': 'type-inbound',
+    'Manual Adjustment': 'type-manual',
+    'Manual Adjustment (Decrease)': 'type-manual',
     'Outbound Occupy': 'type-occupy', 'Outbound Deduct': 'type-deduct'
   };
 
