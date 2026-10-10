@@ -9,7 +9,8 @@ Warehouse Management System (WMS) interactive HTML prototype based on PRD specif
 - **Warehouses → Warehouse Management** — List, create, edit, view, delete warehouses
 - **Warehouses → Zone Management** — List, create, edit, view, delete zones
 - **Inventory → SPU/SKU Inventory** — SPU expandable view and SKU detail view
-- **Inventory → Record** — Inbound, Outbound Occupy, Outbound Deduct, Unfreeze, All tabs
+- **Inventory → Record** — Inbound (All/Manual/Purchase/Opening), Outbound Occupy, Outbound Deduct, All tabs
+- **Inventory → SPU/SKU Inventory** — SKU tab **Inventory Adjustment** modal; writes manual flow to Record
 
 ## Quick Start
 
@@ -53,7 +54,8 @@ Warehouses
 | Manage zones | Double-click Zone Count cell |
 | Create zone | Zone Management → "Add Zone" |
 | SPU expand | Click ▶ icon to expand SKU sub-table |
-| Record tabs | Switch between Inbound / Occupy / Deduct / Unfreeze / All |
+| Record tabs | Inbound / Occupy / Deduct / All; Inbound sub-tabs include Manual |
+| Inventory adjustment | SKU view → Inventory Adjustment → confirm → see Record → Inbound → Manual |
 
 ## Files
 
