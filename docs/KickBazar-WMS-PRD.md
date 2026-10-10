@@ -128,20 +128,6 @@
 - 关联单号：入库单号（可附采购单号为次要信息）。
 - 变更后列：Total / Locked / Available；total、available 上升用绿色↑标识。
 
-### 6.4 手动调整流水
-
-流水 Tab：**Manual Adjustment**（位于 Outbound Deduct 之后）
-
-仅展示 **5.3 库存调整单** 产生的流水（增加与减少均在本 Tab，不混入 Inbound）。
-
-| 类型（英文） | 类型（中文） | Qty |
-|--------------|--------------|-----|
-| Manual Adjustment | 人工调整入库 | 正数，带 + |
-| Manual Adjustment (Decrease) | 人工调整出库 | 负数，带 - |
-
-- 写账：增加时 total↑、available↑；减少时 total↓、available↓；locked 均不变。
-- 关联单号：**ADJ-** 调整单号；操作人一般为 Admin。
-
 ### 6.2 出库占用流水
 
 流水 Tab：**Outbound Occupy**
@@ -153,6 +139,20 @@
 流水 Tab：**Outbound Deduct**
 
 类型：出库扣减。发货确认：locked↓、total↓。打包/发运不写。
+
+### 6.4 手动调整流水
+
+流水 Tab：**Manual Adjustment**（位于 Outbound Deduct 之后、All 之前）
+
+仅展示 **5.3 库存调整单** 产生的流水（增加与减少均在本 Tab，不混入 Inbound）。
+
+| 类型（英文） | 类型（中文） | Qty |
+|--------------|--------------|-----|
+| Manual Adjustment | 人工调整入库 | 正数，带 + |
+| Manual Adjustment (Decrease) | 人工调整出库 | 负数，带 - |
+
+- 写账：增加时 total↑、available↑；减少时 total↓、available↓；locked 均不变。
+- 关联单号：**ADJ-** 调整单号；操作人一般为 Admin。
 
 ---
 
@@ -180,8 +180,7 @@ Total Inventory 点击跳转：Inventory → SPU/SKU Inventory，当前仓库，
 
 | 类型 | 英文 | 来源 |
 |------|------|------|
-| 采购入库 | Purchase Inbound | 入库流水 |
-| 期初入库 | Opening Inbound | 入库流水 |
+| 采购入库 | Purchase Inbound | 入库流水（Inbound） |
 | 人工调整入库 | Manual Adjustment | 5.3 调整单-增加 |
 | 人工调整出库 | Manual Adjustment (Decrease) | 5.3 调整单-减少 |
 | 出库占用 | Outbound Occupy | 出库占用流水 |
@@ -209,7 +208,7 @@ Total Inventory 点击跳转：Inventory → SPU/SKU Inventory，当前仓库，
 
 | 事件 | 实物 | 锁定 | 未锁定 | 流水 |
 |------|------|------|--------|------|
-| 期初/采购确认上架 | ↑ | — | ↑ | 入库 |
+| 采购确认上架（含原期初，统一入库单） | ↑ | — | ↑ | Inbound |
 | 采购单创建/确认/关单/回写 | 不变 | 不变 | 不变 | 仅采购单流水 |
 | 出库确认导入 | — | ↑ | ↓ | 出库占用 |
 | 拣货确认（出库扣减） | ↓ | ↓ | — | 出库扣减 |
