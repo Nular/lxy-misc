@@ -16,7 +16,23 @@ Warehouse Management System (WMS) interactive HTML prototype based on PRD specif
 
 ### 单文件版（推荐，无需服务器）
 
-直接双击打开：
+**整包导出**（Dashboard / 仓库设置 / 库存 / 流水 / 全站 SPA）：
+
+```
+export/KickBazar-WMS-Export.zip
+```
+
+或直接打开：
+
+| 路径 | 内容 |
+|------|------|
+| `export/KickBazar-WMS-Prototype.html` | 全站 SPA（与 `prototype/kickbazar-wms-prototype.html` 同步） |
+| `export/KickBazar-WMS-Inventory.html` | SPU/SKU 库存 + 库存调整 |
+| `export/KickBazar-WMS-Inventory-Record.html` | 库存流水 |
+| `export/KickBazar-WMS-Dashboard.html` | Dashboard |
+| `export/KickBazar-WMS-Warehouse-Setup.html` | 仓库/库区（Admin） |
+
+开发用单文件：
 
 ```
 prototype/kickbazar-wms-prototype.html

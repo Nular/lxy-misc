@@ -1026,6 +1026,7 @@ tbody tr.selected {
   color: var(--primary);
   opacity: 0.8;
 }
+
   </style>
 </head>
 <body>
@@ -1406,6 +1407,8 @@ tbody tr.selected {
                       <th>Zone</th>
                       <th>Zone Code</th>
                       <th>Primary Barcode</th>
+                      <th>PAN</th>
+                      <th>Operation</th>
                     </tr>
                   </thead>
                   <tbody id="sku-table-body"></tbody>
@@ -1440,7 +1443,6 @@ tbody tr.selected {
               <div class="tab active" data-record-tab="inbound">Inbound</div>
               <div class="tab" data-record-tab="occupy">Outbound Occupy</div>
               <div class="tab" data-record-tab="deduct">Outbound Deduct</div>
-              <div class="tab" data-record-tab="unfreeze">Unfreeze</div>
               <div class="tab" data-record-tab="all">All</div>
             </div>
 
@@ -1482,8 +1484,9 @@ tbody tr.selected {
             <!-- Sub filter for inbound -->
             <div class="sub-tabs" id="inbound-sub-tabs">
               <div class="sub-tab active">All</div>
-              <div class="sub-tab">Initial Stock</div>
+              <div class="sub-tab">Manual</div>
               <div class="sub-tab">Purchase</div>
+              <div class="sub-tab">Opening</div>
             </div>
 
             <div class="table-wrapper">
@@ -1750,6 +1753,32 @@ tbody tr.selected {
     </div>
   </div>
 
+  <!-- Inventory Adjustment Modal -->
+  <div class="modal-overlay" id="adj-modal">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <span class="modal-title">Inventory Adjustment</span>
+        <button class="modal-close" onclick="closeModal('adj-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form class="form-grid single" id="adj-form">
+          <div class="form-group"><label>SKU</label><input class="readonly" id="adj-sku" readonly></div>
+          <div class="form-group"><label>Warehouse / Zone</label><input class="readonly" id="adj-loc" readonly></div>
+          <div class="form-group"><label>Qty Before</label><input class="readonly" id="adj-before" readonly></div>
+          <div class="form-group"><label>Direction <span class="required">*</span></label><select id="adj-dir"><option value="increase">Increase</option><option value="decrease">Decrease</option></select></div>
+          <div class="form-group"><label>Adjustment Qty <span class="required">*</span></label><input type="number" min="1" id="adj-qty"></div>
+          <div class="form-group"><label>Adjustment Type <span class="required">*</span></label><select id="adj-type"><option value="">Select</option><option>Inventory Gain (盘盈)</option><option>Inventory Loss (盘亏)</option><option>Overage (报溢)</option><option>Damage (报损)</option><option>Data Correction (录入纠错)</option></select></div>
+          <div class="form-group full"><label>Reason <span class="required">*</span></label><textarea id="adj-reason" maxlength="200"></textarea></div>
+          <div class="form-group full"><label>Attachment</label><input type="file" id="adj-file"></div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('adj-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitAdjustment()">Confirm</button>
+      </div>
+    </div>
+  </div>
+
   <div class="toast-container" id="toast-container"></div>
 
   <script>
@@ -1855,15 +1884,19 @@ const spuData = [
   }
 ];
 
+let manualRecords = [];
+
 const skuData = [
-  { skuId: 'SKU-10001-BK', spec: 'Black', productName: 'Wireless Bluetooth Earbuds Pro', total: 1200, locked: 200, available: 1000, warehouse: 'Shanghai Main Warehouse', zone: 'Main Storage', zoneCode: 'SH-001-STO', barcode: 'EAN: 6901234567890', barcodes: ['EAN: 6901234567890', 'UPC: 012345678901', 'PAN: KB-10001-BK'] },
-  { skuId: 'SKU-10001-WH', spec: 'White', productName: 'Wireless Bluetooth Earbuds Pro', total: 980, locked: 150, available: 830, warehouse: 'Shanghai Main Warehouse', zone: 'Main Storage', zoneCode: 'SH-001-STO', barcode: 'EAN: 6901234567891', barcodes: ['EAN: 6901234567891'] },
-  { skuId: 'SKU-10001-BL', spec: 'Blue', productName: 'Wireless Bluetooth Earbuds Pro', total: 400, locked: 70, available: 330, warehouse: 'Beijing Distribution Center', zone: 'Cold Storage', zoneCode: 'BJ-001-STO', barcode: 'UPC: 012345678902', barcodes: ['UPC: 012345678902', 'PAN: KB-10001-BL'] },
-  { skuId: 'SKU-10002-42', spec: '42mm Silver', productName: 'Smart Watch Series X', total: 900, locked: 160, available: 740, warehouse: 'Shanghai Main Warehouse', zone: 'Main Storage', zoneCode: 'SH-001-STO', barcode: 'EAN: 6901234567900', barcodes: ['EAN: 6901234567900'] },
-  { skuId: 'SKU-10002-46', spec: '46mm Black', productName: 'Smart Watch Series X', total: 660, locked: 120, available: 540, warehouse: 'Shanghai Main Warehouse', zone: 'Main Storage', zoneCode: 'SH-001-STO', barcode: 'EAN: 6901234567901', barcodes: ['EAN: 6901234567901', 'PAN: KB-10002-46'] },
-  { skuId: 'SKU-10003-01', spec: 'Standard', productName: 'Portable Power Bank 20000mAh', total: 3200, locked: 560, available: 2640, warehouse: 'Beijing Distribution Center', zone: 'Cold Storage', zoneCode: 'BJ-001-STO', barcode: 'EAN: 6901234567910', barcodes: ['EAN: 6901234567910'] },
-  { skuId: 'SKU-10004-01', spec: '128GB', productName: 'USB-C Flash Drive', total: 450, locked: 80, available: 370, warehouse: 'Singapore Regional Warehouse', zone: 'Storage Zone', zoneCode: 'SG-001-STO', barcode: 'PAN: KB-10004-01', barcodes: ['PAN: KB-10004-01'] }
+  { skuId: 'SKU-10001-BK', spec: 'Black; M', productName: 'Wireless Bluetooth Earbuds Pro', total: 1200, locked: 200, available: 1000, warehouse: 'Shanghai Main Warehouse', zone: 'Storage Zone', zoneCode: 'SH001STO', warehouseCode: 'SH001', barcode: 'EAN: 6901234567890', pan: 'KB-10001-BK', barcodes: ['EAN: 6901234567890', 'UPC: 012345678901', 'PAN: KB-10001-BK'] },
+  { skuId: 'SKU-10001-WH', spec: 'White; L', productName: 'Wireless Bluetooth Earbuds Pro', total: 980, locked: 150, available: 830, warehouse: 'Shanghai Main Warehouse', zone: 'Storage Zone', zoneCode: 'SH001STO', warehouseCode: 'SH001', barcode: 'EAN: 6901234567891', pan: '-', barcodes: ['EAN: 6901234567891'] },
+  { skuId: 'SKU-10001-BL', spec: 'Blue; XS', productName: 'Wireless Bluetooth Earbuds Pro', total: 400, locked: 70, available: 330, warehouse: 'Beijing Distribution Center', zone: 'Storage Zone', zoneCode: 'BJ001STO', warehouseCode: 'BJ001', barcode: 'UPC: 012345678902', pan: 'KB-10001-BL', barcodes: ['UPC: 012345678902', 'PAN: KB-10001-BL'] },
+  { skuId: 'SKU-10002-42', spec: '42mm Silver', productName: 'Smart Watch Series X', total: 900, locked: 160, available: 740, warehouse: 'Shanghai Main Warehouse', zone: 'Storage Zone', zoneCode: 'SH001STO', warehouseCode: 'SH001', barcode: 'EAN: 6901234567900', pan: '-', barcodes: ['EAN: 6901234567900'] },
+  { skuId: 'SKU-10002-46', spec: '46mm Black', productName: 'Smart Watch Series X', total: 660, locked: 120, available: 540, warehouse: 'Shanghai Main Warehouse', zone: 'Storage Zone', zoneCode: 'SH001STO', warehouseCode: 'SH001', barcode: 'EAN: 6901234567901', pan: 'KB-10002-46', barcodes: ['EAN: 6901234567901', 'PAN: KB-10002-46'] },
+  { skuId: 'SKU-10003-01', spec: 'Standard', productName: 'Portable Power Bank 20000mAh', total: 3200, locked: 560, available: 2640, warehouse: 'Beijing Distribution Center', zone: 'Storage Zone', zoneCode: 'BJ001STO', warehouseCode: 'BJ001', barcode: 'EAN: 6901234567910', pan: '-', barcodes: ['EAN: 6901234567910'] },
+  { skuId: 'SKU-10004-01', spec: '128GB', productName: 'USB-C Flash Drive', total: 0, locked: 0, available: 0, warehouse: 'Shanghai Main Warehouse', zone: 'Receiving Zone', zoneCode: 'SH001RCV', warehouseCode: 'SH001', barcode: '-', pan: 'KB-10004-01', barcodes: ['PAN: KB-10004-01'] }
 ];
+
+let currentAdjSkuId = null;
 
 const recordData = {
   inbound: [
@@ -2501,8 +2534,64 @@ function renderSkuTable() {
       <td>${s.zone}</td>
       <td>${s.zoneCode}</td>
       <td><span class="barcode-cell" title="${s.barcodes.join('\n')}">${s.barcode}</span></td>
+      <td>${s.pan || '-'}</td>
+      <td><a class="btn-link" onclick="openAdjustment('${s.skuId}','${s.zoneCode}')">Inventory Adjustment</a></td>
     </tr>
   `).join('');
+}
+
+function openAdjustment(skuId, zoneCode) {
+  const s = skuData.find(x => x.skuId === skuId && x.zoneCode === zoneCode);
+  if (!s) return;
+  currentAdjSkuId = skuId + '|' + zoneCode;
+  document.getElementById('adj-sku').value = s.skuId;
+  document.getElementById('adj-loc').value = `${s.warehouseCode} / ${s.zoneCode} (${s.zone})`;
+  document.getElementById('adj-before').value = s.total;
+  document.getElementById('adj-qty').value = '';
+  document.getElementById('adj-type').value = '';
+  document.getElementById('adj-reason').value = '';
+  openModal('adj-modal');
+}
+
+function submitAdjustment() {
+  const s = skuData.find(x => x.skuId + '|' + x.zoneCode === currentAdjSkuId);
+  if (!s) return;
+  const dir = document.getElementById('adj-dir').value;
+  const qty = parseInt(document.getElementById('adj-qty').value, 10);
+  const type = document.getElementById('adj-type').value;
+  const reason = document.getElementById('adj-reason').value.trim();
+  if (!qty || qty <= 0 || !type || !reason) {
+    showToast('Please complete required fields.', 'error');
+    return;
+  }
+  if (dir === 'decrease' && s.available < qty) {
+    showToast('Insufficient available inventory.', 'error');
+    return;
+  }
+  if (dir === 'increase') {
+    s.total += qty;
+  } else {
+    s.total -= qty;
+  }
+  s.available = s.total - s.locked;
+  const orderNo = 'ADJ-' + Date.now();
+  manualRecords.unshift({
+    time: new Date().toISOString().slice(0, 19).replace('T', ' '),
+    warehouse: s.warehouseCode,
+    zone: `${s.zoneCode} (${s.zone})`,
+    sku: s.skuId,
+    qty: (dir === 'increase' ? '+' : '-') + qty,
+    after: { total: s.total, locked: s.locked, available: s.available },
+    type: dir === 'increase' ? 'Manual Adjustment' : 'Manual Adjustment (Decrease)',
+    order: orderNo,
+    operator: 'Current User',
+    sub: 'manual'
+  });
+  recordData.inbound.unshift(manualRecords[0]);
+  closeModal('adj-modal');
+  renderSkuTable();
+  renderSpuTable();
+  showToast(`Inventory adjusted successfully. ${orderNo}`, 'success');
 }
 
 // ========== Records ==========
@@ -2532,21 +2621,26 @@ function renderRecords() {
   let data = [];
 
   if (currentRecordTab === 'all') {
-    data = [...recordData.inbound, ...recordData.occupy, ...recordData.deduct, ...recordData.unfreeze];
+    data = [...recordData.inbound, ...recordData.occupy, ...recordData.deduct];
     data.sort((a, b) => b.time.localeCompare(a.time));
   } else if (currentRecordTab === 'inbound') {
     data = recordData.inbound;
     const activeSub = document.querySelector('#inbound-sub-tabs .sub-tab.active');
     if (activeSub) {
       const subText = activeSub.textContent.trim().toLowerCase();
-      if (subText === 'initial stock') data = data.filter(d => d.sub === 'initial');
+      if (subText === 'manual') data = data.filter(d => d.sub === 'manual');
       if (subText === 'purchase') data = data.filter(d => d.sub === 'purchase');
+      if (subText === 'opening') data = data.filter(d => d.sub === 'opening' || d.sub === 'initial');
     }
   } else {
     data = recordData[currentRecordTab] || [];
   }
 
-  const typeClass = { 'Purchase Inbound': 'type-inbound', 'Manual Adjustment': 'type-inbound', 'Outbound Occupy': 'type-occupy', 'Outbound Deduct': 'type-deduct', 'Unfreeze': 'type-unfreeze' };
+  const typeClass = {
+    'Purchase Inbound': 'type-inbound', 'Manual Adjustment': 'type-inbound',
+    'Manual Adjustment (Decrease)': 'type-inbound', 'Opening Inbound': 'type-inbound',
+    'Outbound Occupy': 'type-occupy', 'Outbound Deduct': 'type-deduct'
+  };
 
   tbody.innerHTML = data.map(r => {
     const qtyClass = r.qty.startsWith('+') ? 'up' : r.qty.startsWith('-') ? 'down' : '';
@@ -2599,6 +2693,7 @@ function showToast(message, type = 'info') {
   container.appendChild(toast);
   setTimeout(() => toast.remove(), 4000);
 }
+
   </script>
 </body>
 </html>
