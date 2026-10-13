@@ -4,25 +4,27 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Purchase Orders — Product Sourcing</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
+  <header class="app-header">
+    <a class="logo-mark" href="index.html">
+      <span class="logo-elephant" aria-hidden="true">🐘</span>
+      <span><span class="kick">Kick</span><span class="bazar">Bazar</span></span>
+    </a>
+  </header>
   <div class="app-shell">
     <aside class="sidebar">
-      <div class="brand">Kick<span>Bazar</span> Seller</div>
-      <div class="nav-section">Store</div>
-      <div class="nav-group">
-        <div class="nav-parent">Product Sourcing</div>
-        <a class="nav-item nav-sub" href="index.html">Product Discovery</a>
-        <a class="nav-item nav-sub active" href="purchase-orders.html">Purchase Orders List</a>
-      </div>
-      <a class="nav-item" href="#">Orders List</a>
+      <div class="nav-section">Product Sourcing</div>
+      <a class="nav-item nav-sub" href="index.html">Product Discovery</a>
+      <a class="nav-item nav-sub active" href="purchase-orders.html">Purchase Orders List</a>
     </aside>
 
     <div class="main">
       <header class="topbar">
         <div class="breadcrumb">Product Sourcing &rsaquo; <strong>Purchase Orders List</strong></div>
+        <a class="btn btn-secondary cart-link" href="cart.html">Cart <span class="cart-badge" id="cartBadgeTop">0</span></a>
       </header>
 
       <main class="content">
