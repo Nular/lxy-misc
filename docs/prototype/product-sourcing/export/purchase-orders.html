@@ -1124,6 +1124,29 @@ function initCartPage() {
   const tbody = document.getElementById('cartTableBody');
   if (!tbody) return;
 
+  if (new URLSearchParams(window.location.search).get('demo') === '1' && readCart().length === 0) {
+    writeCart([
+      {
+        lineId: 'KB-DJ-2026-001-M',
+        title: 'Denim Jacket Classic Blue',
+        subtitle: 'Blue / M · KB-DJ-2026-001-M',
+        price: 1250,
+        originalPrice: 1562.5,
+        discountPct: 20,
+        qty: 2,
+      },
+      {
+        lineId: 'KB-TS-2026-002-L',
+        title: 'Cotton T-Shirt Basic Fit',
+        subtitle: 'White / L · KB-TS-2026-002-L',
+        price: 450,
+        originalPrice: null,
+        discountPct: null,
+        qty: 3,
+      },
+    ]);
+  }
+
     const card = document.getElementById('cartCard');
     const empty = document.getElementById('cartEmpty');
     const stepper = document.getElementById('checkoutStepper');
@@ -1211,7 +1234,33 @@ function initCartPage() {
   render();
 }
 
+function seedDemoCartIfRequested() {
+  if (new URLSearchParams(window.location.search).get('demo') !== '1') return;
+  if (readCart().length > 0) return;
+  writeCart([
+    {
+      lineId: 'KB-DJ-2026-001-M',
+      title: 'Denim Jacket Classic Blue',
+      subtitle: 'Blue / M · KB-DJ-2026-001-M',
+      price: 1250,
+      originalPrice: 1562.5,
+      discountPct: 20,
+      qty: 2,
+    },
+    {
+      lineId: 'KB-TS-2026-002-L',
+      title: 'Cotton T-Shirt Basic Fit',
+      subtitle: 'White / L · KB-TS-2026-002-L',
+      price: 450,
+      originalPrice: null,
+      discountPct: null,
+      qty: 3,
+    },
+  ]);
+}
+
 function resolveCheckoutLinesForPage() {
+  seedDemoCartIfRequested();
   const params = new URLSearchParams(window.location.search);
   const from = params.get('from') || 'buynow';
   let lines = readCheckoutLines();
