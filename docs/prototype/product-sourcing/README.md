@@ -4,12 +4,22 @@ English UI prototype for Seller 2C Product Sourcing module.
 
 ## Quick start
 
+**一键启动（推荐）：**
+
+```bash
+bash docs/prototype/product-sourcing/start-preview.sh
+```
+
+Cloud Agent：在 Cursor **Ports** 面板打开 **8080**（详见 `预览说明.md`）。
+
+手动方式：
+
 ```bash
 cd docs/prototype/product-sourcing
 python3 -m http.server 8080
 ```
 
-Open: http://localhost:8080/index.html
+Open: http://127.0.0.1:8080/index.html
 
 ## Standalone HTML export (download)
 
