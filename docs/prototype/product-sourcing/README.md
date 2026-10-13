@@ -21,21 +21,27 @@ python3 -m http.server 8080
 
 Open: http://127.0.0.1:8080/index.html
 
-## Standalone HTML export (download)
+## Standalone HTML（一个文件）
 
-Self-contained HTML files (CSS/JS inlined) for local preview without a server:
+全部页面、样式和脚本都在 **`product-sourcing.html`**。用浏览器打开这一个文件即可，页面之间用地址栏 hash 切换（例如 `#cart.html?demo=1`），不再依赖旁边的其他 HTML。
 
-- **入口页**: `export/start.html`（目录，链到各页）
-- **ZIP**: `product-sourcing-html-export.zip`（含 `start.html` + 7 个页面，CSS/JS 已内联）
-- **Folder**: `export/`
+- **单文件**: `product-sourcing.html`
+- **ZIP**: `product-sourcing-html-export.zip`（里面只有这一个 HTML）
+- **目录页**: `export-start.html`（链进同一个文件的各个 hash）
 
-从 GitHub 下载 ZIP（解压后打开 `start.html`）：
+从 GitHub 下载单文件：
+
+https://github.com/Nular/lxy-misc/raw/cursor/seller-2c-product-sourcing-brainstorming-d41a/docs/prototype/product-sourcing/product-sourcing.html
+
+ZIP（解压后打开 `product-sourcing.html`）：
 
 https://github.com/Nular/lxy-misc/raw/cursor/seller-2c-product-sourcing-brainstorming-d41a/docs/prototype/product-sourcing/product-sourcing-html-export.zip
 
-在线预览入口（htmlpreview）：
+在线预览（htmlpreview）：
 
-https://htmlpreview.github.io/?https://github.com/Nular/lxy-misc/blob/cursor/seller-2c-product-sourcing-brainstorming-d41a/docs/prototype/product-sourcing/export/start.html
+https://htmlpreview.github.io/?https://github.com/Nular/lxy-misc/blob/cursor/seller-2c-product-sourcing-brainstorming-d41a/docs/prototype/product-sourcing/product-sourcing.html
+
+直接打开某个页面时，在预览地址后加 hash，例如购物车示例：`#cart.html?demo=1`。
 
 ## Navigation
 

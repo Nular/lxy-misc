@@ -1028,6 +1028,18 @@ tr:hover td { background: #fafbfc; }
   </div>
 
   <script>
+function pageSearch() {
+  return window.__spaSearch != null ? window.__spaSearch : window.location.search;
+}
+
+function goPage(url) {
+  if (typeof window.__spaGo === 'function') {
+    window.__spaGo(url);
+    return;
+  }
+  window.location.href = url;
+}
+
 const CART_STORAGE_KEY = 'kb_sourcing_cart_v2';
 const CHECKOUT_LINES_KEY = 'kb_sourcing_checkout_lines';
 const LAST_ORDER_TOTAL_KEY = 'kb_sourcing_last_order_total';
@@ -1209,7 +1221,7 @@ function initCartPage() {
   const counter = document.getElementById('skuCounter');
   let editMode = false;
 
-  if (new URLSearchParams(window.location.search).get('demo') === '1' && readCart().length === 0) {
+  if (new URLSearchParams(pageSearch()).get('demo') === '1' && readCart().length === 0) {
     writeCart(demoCartLines());
   }
 
@@ -1333,7 +1345,7 @@ function initCartPage() {
     const selected = readCart().filter(l => l.status !== 'invalid' && l.selected !== false);
     if (!selected.length) return;
     writeCheckoutLines(selected);
-    window.location.href = 'checkout.html?from=cart';
+    goPage('checkout.html?from=cart');
   });
 
   document.getElementById('loadDemoCart')?.addEventListener('click', (e) => {
@@ -1347,14 +1359,14 @@ function initCartPage() {
 }
 
 function seedDemoCartIfRequested() {
-  if (new URLSearchParams(window.location.search).get('demo') !== '1') return;
+  if (new URLSearchParams(pageSearch()).get('demo') !== '1') return;
   if (readCart().length > 0) return;
   writeCart(demoCartLines());
 }
 
 function resolveCheckoutLinesForPage() {
   seedDemoCartIfRequested();
-  const params = new URLSearchParams(window.location.search);
+  const params = new URLSearchParams(pageSearch());
   const from = params.get('from') || 'buynow';
   let lines = readCheckoutLines();
 
@@ -1435,9 +1447,14 @@ function initCheckoutLines() {
 
   recalcTotal();
 
-  document.querySelector('a[href="order-success.html"]')?.addEventListener('click', () => {
-    recalcTotal();
-  });
+  const successLink = document.querySelector('a[href="order-success.html"]');
+  if (successLink) {
+    const from = new URLSearchParams(pageSearch()).get('from') || 'cart';
+    if (from === 'buynow') successLink.setAttribute('href', 'order-success.html?from=buynow');
+    successLink.addEventListener('click', () => {
+      recalcTotal();
+    });
+  }
 }
 
 function initProductDetailActions() {
@@ -1473,7 +1490,7 @@ function initProductDetailActions() {
     line.qty = qty;
     writeCheckoutLines([line]);
     modal?.classList.remove('open');
-    window.location.href = 'checkout.html?from=buynow';
+    goPage('checkout.html?from=buynow');
   });
 }
 
@@ -1539,7 +1556,7 @@ function initProductTabs() {
 }
 
 function initOrderDetailPage() {
-  const mode = new URLSearchParams(window.location.search).get('status') === 'completed' ? 'completed' : 'pending';
+  const mode = new URLSearchParams(pageSearch()).get('status') === 'completed' ? 'completed' : 'pending';
   const cancelBtn = document.getElementById('openCancelOrder');
   const publishBtn = document.getElementById('publishBtn');
   const warning = document.getElementById('pendingWarning');
@@ -1608,7 +1625,7 @@ function initCheckoutStepper() {
   const mount = document.getElementById('checkoutStepper');
   if (!mount) return;
   const page = mount.dataset.stepPage || 'checkout';
-  const from = new URLSearchParams(window.location.search).get('from') || 'cart';
+  const from = new URLSearchParams(pageSearch()).get('from') || 'cart';
   const buyNow = from === 'buynow';
 
   if (page === 'cart') {
@@ -1655,7 +1672,7 @@ function initRecommendations() {
   });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+function initApp() {
   updateCartBadges();
   initCartPage();
   initCheckoutLines();
@@ -1682,6 +1699,87 @@ document.addEventListener('DOMContentLoaded', () => {
       chip.classList.add('selected');
     });
   });
+}
+
+function parseSpaUrl(url) {
+  let raw = String(url || 'index.html').trim().replace(/^#/, '');
+  if (raw.startsWith('./')) raw = raw.slice(2);
+  const hash = raw.indexOf('#');
+  if (hash >= 0) raw = raw.slice(0, hash);
+  const q = raw.indexOf('?');
+  const file = (q >= 0 ? raw.slice(0, q) : raw) || 'index.html';
+  const search = q >= 0 ? raw.slice(q) : '';
+  return { file, search };
+}
+
+function renderSpaPage(file) {
+  const root = document.getElementById('app-root');
+  if (!root) return false;
+  const tpl = document.getElementById('tpl-' + file.replace(/\.html$/i, ''));
+  [...document.body.attributes].forEach((attr) => {
+    if (attr.name.startsWith('data-')) document.body.removeAttribute(attr.name);
+  });
+  if (!tpl) {
+    document.title = 'Product Sourcing';
+    root.innerHTML = '<main class="content"><h1 class="page-title">Page not found</h1><p><a href="index.html">Back to Product Discovery</a></p></main>';
+    return true;
+  }
+  [...tpl.attributes].forEach((attr) => {
+    if (attr.name.startsWith('data-') && attr.name !== 'data-title') {
+      document.body.setAttribute(attr.name, attr.value);
+    }
+  });
+  const title = tpl.getAttribute('data-title');
+  if (title) document.title = title;
+  root.replaceChildren(tpl.content.cloneNode(true));
+  return true;
+}
+
+function installSinglePageApp() {
+  if (!document.getElementById('app-root') || window.__spaInstalled) return false;
+  window.__spaInstalled = true;
+
+  window.__spaGo = function (url, opts) {
+    const { file, search } = parseSpaUrl(url);
+    window.__spaSearch = search;
+    renderSpaPage(file);
+    const next = '#' + file + search;
+    let current = '';
+    try { current = decodeURIComponent(location.hash || ''); } catch (err) { current = location.hash || ''; }
+    if (current !== next) {
+      if (opts && opts.replace) history.replaceState({ spa: next }, '', next);
+      else history.pushState({ spa: next }, '', next);
+    }
+    window.scrollTo(0, 0);
+    initApp();
+  };
+
+  document.addEventListener('click', (e) => {
+    if (!window.__spaGo) return;
+    if (e.defaultPrevented || e.button !== 0) return;
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const a = e.target.closest && e.target.closest('a[href]');
+    if (!a) return;
+    const href = a.getAttribute('href');
+    if (!href || /^(mailto:|https?:|tel:)/i.test(href)) return;
+    if (!/(^|\/)[^/?#]+\.html(\?|#|$)/.test(href)) return;
+    e.preventDefault();
+    window.__spaGo(href);
+  });
+
+  window.addEventListener('popstate', () => {
+    const current = (location.hash || '').replace(/^#/, '') || 'index.html';
+    window.__spaGo(current, { replace: true });
+  });
+
+  const initial = (location.hash || '').replace(/^#/, '') || 'index.html';
+  window.__spaGo(initial, { replace: true });
+  return true;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (installSinglePageApp()) return;
+  initApp();
 });
 
 </script>
