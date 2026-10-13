@@ -12,7 +12,8 @@
 |------|--------|--------|--------------|
 | 2026/09/07 | v1.0 | — | 选品中心 MVP 定稿（归档 `seller-2c-product-sourcing-prd-v1.0-final.md`） |
 | — | v1.0.1 | — | 定稿后线上修订；能力边界同 v1.0（无购物车、Buy Now 单笔闭环） |
-| 2026/09/28 | **v2.0.0** | — | 购物车与合并下单；Cart/Checkout 可改量；划线价与 **-X%** Tag；Detail/Success 推荐；邮件触发；交易步骤条与面包屑分层 |
+| 2026/09/28 | **v2.0.0** | — | 购物车与合并下单；Cart/Checkout 可改量；划线价与 **-X%** Tag；Detail/Success 推荐；交易步骤条与面包屑分层 |
+| 2026/10/13 | **v2.0.0** | — | Order Summary 增加 Subtotal / Promotion / Shipping Fee（无运费，展示 **Free**）；去掉邮件通知；Buy Now 直达 Checkout，不做数量弹层 |
 
 ### 1.1 术语说明
 
@@ -32,9 +33,9 @@
 |------|-----------|--------------|
 | 全局 | 顶栏 **Cart** 入口 + 角标 | **P0**（v2.0.0 新增） |
 | 选品 | Product Discovery | **P0**；v1.0.1 + **划线价/-X% Tag**；**无** 列表推荐 |
-| 商品 | Product Detail（内嵌 SKU/数量）、Buy Now 弹层 | **P0**；+ **Add to Cart**、推荐区 |
-| 交易 | **购物车**、**交易步骤条**、Checkout、Order Success | **P0** |
-| 横切 | 采购价/折扣展示、推荐组件、邮件触发 | **P0** |
+| 商品 | Product Detail（内嵌 SKU）、Buy Now 直达 Checkout | **P0**；+ **Add to Cart**、推荐区；**不做** Buy Now 数量弹层 |
+| 交易 | **购物车**、**交易步骤条**、Checkout、Order Success | **P0**；Cart / Checkout 的 Order Summary 含 Subtotal、Promotion、Shipping Fee |
+| 横切 | 采购价/折扣展示、推荐组件 | **P0**；**不做** 邮件通知 |
 | 采购订单 | Purchase Orders List / Detail | **不在本文**（维持 v1.0.1；一单多 SKU **数据兼容**） |
 
 ---
@@ -43,7 +44,7 @@
 
 ### 2.1 业务背景
 
-KickBazar **2B 货源 + 2C 零售**：2C 商家在 **Seller Web** 通过 **Product Sourcing（选品中心）** 向固定 2B 货源采购 SKU，银行/数字转账付款后铺货。v1.0.1 已支持 **Buy Now → Checkout → 采购单** 单笔闭环；v2.0.0 在 **同一后台模块** 内补齐 **购物车、合并结算、营销展示与触达**，与 App 选品能力方向对齐，但 **交互形态为 B 端后台**（非 ToC 商城站）。
+KickBazar **2B 货源 + 2C 零售**：2C 商家在 **Seller Web** 通过 **Product Sourcing（选品中心）** 向固定 2B 货源采购 SKU，银行/数字转账付款后铺货。v1.0.1 已支持 **Buy Now → Checkout → 采购单** 单笔闭环；v2.0.0 在 **同一后台模块** 内补齐 **购物车、合并结算与营销展示**，与 App 选品能力方向对齐，但 **交互形态为 B 端后台**（非 ToC 商城站）。**本期不做邮件通知。**
 
 ### 2.2 市场与用户
 
@@ -68,8 +69,8 @@ KickBazar **2B 货源 + 2C 零售**：2C 商家在 **Seller Web** 通过 **Produ
 |------|------|
 | v1.0.1 仅 Buy Now，无法凑单 | **Cart + 一单多 SKU** |
 | 无折扣视觉 | **originalPrice + salePrice + -X% Tag** |
-| 转化路径单一 | **Add to Cart** 与 **Buy Now** 双路径 |
-| 下单后触达弱 | **创建单邮件** + Success 提示 |
+| 转化路径单一 | **Add to Cart** 与 **Buy Now** 双路径（Buy Now **不弹层**） |
+| 金额构成不完整 | Cart 与 Checkout 的 Order Summary 展示 **Subtotal、Promotion、Shipping Fee（Free）** |
 | 交易进度不清晰 | **交易步骤条**（Cart 路径 3 步 / Buy Now 2 步） |
 
 ### 2.4 约束与原则
@@ -103,7 +104,7 @@ Seller Web **Product Sourcing** 是 2C 商家的 **B2B 选品与采购下单** �
 Discovery → Detail → **Add to Cart**（可多款）→ **Cart** → Checkout → Order & Pay → Order Success → PO Detail / Continue Sourcing  
 
 **旅程 2：立即购买（单行）**  
-Discovery → Detail → **Buy Now**（弹层确认数量）→ **Checkout**（仅当前 SKU）→ Order & Pay → Order Success  
+Discovery → Detail → **Buy Now**（不弹层，数量默认 1）→ **Checkout**（仅当前 SKU，可改量）→ Order & Pay → Order Success  
 
 **旅程 3：v1.0.1 延续（采购后）**  
 Order Success / PO List → 联系客服付款 → 2B 确认收款 → Publish to Store（**规则同 v1.0.1**）
@@ -113,10 +114,10 @@ Order Success / PO List → 联系客服付款 → 2B 确认收款 → Publish t
 | 场景 | 规则 |
 |------|------|
 | Add to Cart 成功 | Toast「Added to cart」；顶栏角标更新（**BR106**） |
-| Buy Now Confirm | 写入结算快照 `checkoutEntrySource=buy_now`；跳转 Checkout；**不经过 Cart**（**BR142**） |
-| Cart → Checkout | `checkoutEntrySource=cart`；携带 **全部有效行**（**BR141**） |
-| Checkout 改量（cart 来源） | 实时重算 Grand Total；**回写同步 Cart**（**BR136**） |
-| Order & Pay 成功 | 创建 **一个** PO、多 `items[]`；跳转 Success；触发创建单邮件（**BR138**） |
+| Buy Now | 点击即写入结算快照 `checkoutEntrySource=buy_now`、**quantity 默认 1**；跳转 Checkout；**不打开数量弹层**；**不经过 Cart**（**BR132 / BR142**） |
+| Cart → Checkout | `checkoutEntrySource=cart`；携带已勾选且有效的行 |
+| Checkout 改量（cart 来源） | 重算 Subtotal / Promotion / Grand Total；Shipping Fee 保持 **Free**；**回写同步 Cart**（**BR136**） |
+| Order & Pay 成功 | 创建 **一个** PO、多 `items[]`；跳转 Success；**不发邮件**（**BR138**） |
 | View Order Detail | 跳转 PO Detail（**v1.0.1 路由**，本文不改 PO UI） |
 | 未在本文描述的能力 | **同 v1.0.1**（Remark、Security Reminder、Cancel 仅 Pending Payment 等） |
 
@@ -281,7 +282,7 @@ v1.0.1 商品发现列表；v2.0.0 在 SPU 卡片价格区增加 **划线原价 
 
 #### 4.3.1 功能描述
 
-v1.0.1 橱窗、SKU 选择、Buy Now 弹层、MOQ、超卖；v2.0.0 增加底栏 **Add to Cart**、价格折扣展示、底侧 **You May Also Like**。规格与数量在 **PDP 内嵌**（无独立规格全屏 Modal）。
+v1.0.1 橱窗、SKU 选择、MOQ、超卖；v2.0.0 增加底栏 **Add to Cart** 与 **Buy Now**、价格折扣展示、底侧推荐。**Buy Now 不打开数量弹层**，点击后直接进入 Checkout，数量默认 1，改量在 Checkout。规格在 **PDP 内嵌**。
 
 #### 功能清单
 
@@ -289,7 +290,7 @@ v1.0.1 橱窗、SKU 选择、Buy Now 弹层、MOQ、超卖；v2.0.0 增加底栏
 |------|------------------|------------------|----------|
 | FL220 | 详情折扣价 | PDP Pricing | 现价/原价/-X% Tag |
 | FL221 | 加入购物车 | Add to Cart | 当前 SKU 入车 |
-| FL222 | 立即购买 | Buy Now | 弹层确认数量后进 Checkout |
+| FL222 | 立即购买 | Buy Now | 点击直达 Checkout；不弹层；数量默认 1 |
 | FL223 | 底侧推荐 | PDP Recommendations | You May Also Like |
 
 #### 业务规则
@@ -305,7 +306,7 @@ v1.0.1 橱窗、SKU 选择、Buy Now 弹层、MOQ、超卖；v2.0.0 增加底栏
 | 字段名 | 中文名称 | 类型 | 必填 | 字段说明 |
 |--------|----------|------|------|----------|
 | selectedSkuId | 已选 SKU | string | 否 | 未选全时为空 |
-| quantity | 数量 | number | 是 | Buy Now 弹层内；Add to Cart 默认 1 |
+| quantity | 数量 | number | 是 | Add to Cart 与 Buy Now 均默认 1；改量在 Cart / Checkout |
 | recommendProducts[] | 推荐列表 | array | 否 | 见 §4.4 |
 
 #### 交互说明
@@ -313,8 +314,8 @@ v1.0.1 橱窗、SKU 选择、Buy Now 弹层、MOQ、超卖；v2.0.0 增加底栏
 | 编号 | 需求名称 | 触发条件 | 交互行为 | 状态 | 验收标准 |
 |------|----------|----------|----------|------|----------|
 | BR130 | Add to Cart | 点击且 SKU 选全 | Toast；角标 BR106；停留 PDP | — | 不跳转 |
-| BR131 | Buy Now 弹层 | 点击 Buy Now | 打开数量弹层 | — | 同 v1.0.1 |
-| BR132 | Buy Now 确认 | Confirm | `buy_now` 快照 → Checkout | — | 单行 |
+| BR131 | Buy Now | 点击且 SKU 选全 | 不打开弹层，离开 PDP | — | 直接进入 Checkout |
+| BR132 | Buy Now 快照 | 点击 Buy Now | `buy_now` 单行、qty=1 → Checkout | — | 不读 Cart；Checkout 可改量 |
 | BR133 | 规格未选全 | 未选全点加购/购买 | Toast；不调 API | — | 同 v1.0.1 |
 | BR134 | 推荐跳转 | 点击推荐卡 | 新页签打开 PDP | — | — |
 
@@ -393,7 +394,7 @@ v1.0.1 橱窗、SKU 选择、Buy Now 弹层、MOQ、超卖；v2.0.0 增加底栏
 
 1. Cart **空态不展示** 步骤条。  
 2. 步骤条在 Header 下方、页标题上方。  
-3. Checkout **页面布局仍为 v1.0.1**（固定达卡地址、Bank/Digital、Security、仅 Grand Total）；**不引入** ToC 地址弹层、运费档位、COD、优惠券。  
+3. Checkout **页面布局仍为 v1.0.1**（固定达卡地址、Bank/Digital、Security）。Order Summary 展示 **Subtotal、Promotion、Shipping Fee、Grand Total**。Shipping Fee **无运费计价，展示 Free**。**不引入** ToC 地址弹层、运费档位、COD、优惠券。  
 4. PO 时间线不复用本步骤条。
 
 #### 字段定义
@@ -427,12 +428,12 @@ v1.0.1 橱窗、SKU 选择、Buy Now 弹层、MOQ、超卖；v2.0.0 增加底栏
 
 #### 4.6.1 功能描述
 
-对齐 ToC 购物车信息架构，**适配 Seller 选品**（无优惠券、无运费/COD）：
+对齐 ToC 购物车信息架构，**适配 Seller 选品**（无优惠券、无 COD、无运费档位）：
 
 - **有效商品**列表：勾选、图、标题、规格、专题 Tag、价、数量、行小计、Remove。  
 - **失效商品**分区：置底灰色，**不可勾选**，可 Remove；原因如下架/缺货。  
 - **编辑模式**：批量勾选删除，二次确认；删空回空态。  
-- **Order Summary**（仅三项）：**Subtotal**（勾选行原价小计）+ **Promotion**（现价小计 − 原价小计，为负或 0）= **Grand Total**。不含 Shipping / COD / Coupon。  
+- **Order Summary**：**Subtotal**（勾选行原价小计）+ **Promotion**（现价小计 − 原价小计，为负或 0）+ **Shipping Fee**。购物车 **没有运费**，Shipping Fee **固定展示 Free**（金额 0）。**Grand Total** = Subtotal + Promotion + Shipping Fee。不含 COD / Coupon。  
 - 主按钮：**Checkout ({selectedQuantity})**。`selectedQuantity` = 已勾选且 `status=valid` 的 quantity 之和。未勾选任何有效行则禁用。  
 - SKU 上限 **99** 条不同 SKU（含失效行占名额）。Header 角标仍为 quantity 合计。接近 **90–98** 信息条；满 **99** 警告条并拦截新 SKU。  
 - **Buy Now 不写入购物车**。  
@@ -445,14 +446,14 @@ v1.0.1 橱窗、SKU 选择、Buy Now 弹层、MOQ、超卖；v2.0.0 增加底栏
 | FL250 | 有效商品列表 | Valid Lines | 可勾选、改量 |
 | FL251 | 失效商品 | Invalid Lines | 置灰、不可结算 |
 | FL252 | 编辑模式 | Edit Mode | 批量删除 + 确认 |
-| FL253 | 金额汇总 | Order Summary | Subtotal / Promotion / Grand Total |
+| FL253 | 金额汇总 | Order Summary | Subtotal / Promotion / Shipping Fee（Free）/ Grand Total |
 | FL254 | 去结算 | Checkout (n) | 仅勾选有效行 |
 | FL255 | SKU 上限 | Cart SKU Limit | 99 SKU |
 
 #### 业务规则
 
 1. 至少勾选 1 件有效商品才可 Checkout。全选只作用于有效行。  
-2. 改量实时重算行小计与三项汇总。  
+2. 改量实时重算行小计与 Order Summary。Shipping Fee 始终为 Free，不随勾选变化。  
 3. 新 SKU 且已有 99 行：拒绝加购，Toast `Cart limit reached (99 items). Remove an item to add more.`  
 4. 已在车中的 SKU 只加数量，不占新名额。  
 5. **本期无优惠券。** Checkout 页样式不因购物车改版而改为 ToC 结算（见 §4.7）。
@@ -468,13 +469,14 @@ v1.0.1 橱窗、SKU 选择、Buy Now 弹层、MOQ、超卖；v2.0.0 增加底栏
 | unitPrice / originalPrice | 现价 / 原价 |
 | subtotal | 勾选行原价合计 |
 | promotion | 现价合计 − 原价合计 |
-| grandTotal | subtotal + promotion |
+| shippingFee | 固定 0；界面文案 **Free**（购物车无运费） |
+| grandTotal | subtotal + promotion + shippingFee |
 
 #### 交互说明
 
 | 编号 | 需求名称 | 触发条件 | 交互行为 | 验收标准 |
 |------|----------|----------|----------|----------|
-| BR160 | 勾选汇总 | 勾选/改量 | 三项金额与 Checkout(n) 更新 | 不含运费 |
+| BR160 | 勾选汇总 | 勾选/改量 | Subtotal、Promotion、Grand Total 与 Checkout(n) 更新 | Shipping Fee 恒为 Free |
 | BR161 | 失效行 | status=invalid | 灰色、不可勾选、可删 | 置底 |
 | BR162 | 编辑删除 | Edit → 批量删 | 二次确认 | 删空即空态 |
 | BR163 | 去结算 | Checkout (n) | 仅 selected+valid 进入 Checkout | 步骤 2/3 不可点 |
@@ -493,9 +495,9 @@ v1.0.1 橱窗、SKU 选择、Buy Now 弹层、MOQ、超卖；v2.0.0 增加底栏
 
 #### 4.7.1 功能描述
 
-v1.0.1 三模块：**Shipping Address（固定）**、**Product Information + Remark**、**Payment Method**；右侧 **Order Summary（仅 Grand Total）** + **Security Reminder** + **Order & Pay**。
+v1.0.1 三模块：**Shipping Address（固定）**、**Product Information + Remark**、**Payment Method**；右侧 **Order Summary** + **Security Reminder** + **Order & Pay**。
 
-v2.0.0：**Product Information 多 SKU 行**，每行 **Qty 可编辑**；Grand Total = ∑(单价×数量)；提交创建 **一个 PO、多 items**。
+v2.0.0：**Product Information 多 SKU 行**，每行 **Qty 可编辑**。Order Summary 与购物车同结构：**Subtotal、Promotion、Shipping Fee、Grand Total**。Shipping Fee **展示 Free**（本期无运费）。Grand Total = Subtotal + Promotion + 0。提交创建 **一个 PO、多 items**。
 
 #### 功能清单
 
@@ -505,14 +507,15 @@ v2.0.0：**Product Information 多 SKU 行**，每行 **Qty 可编辑**；Grand 
 | FL261 | Checkout 改量 | Checkout Qty Edit | 行级步进器 |
 | FL262 | 合并下单 | Merge PO Submit | 一单多 SKU |
 | FL263 | 结算来源 | Checkout Source | cart / buy_now 快照 |
+| FL264 | 结算汇总 | Checkout Order Summary | Subtotal / Promotion / Shipping Fee（Free）/ Grand Total |
 
 #### 业务规则
 
-1. `cart`：items = **已勾选且 valid** 的行；`buy_now`：**单行**（**BR142**）。页面模块与 v1.0.1 一致，**不改**为 ToC 地址/运费/COD/券。  
-2. Checkout 改量同步 Cart（仅 cart 来源）（**BR136**）。  
-3. 运费/COD = 0；Summary **仅 Grand Total**（v1.0.1）。  
+1. `cart`：items = **已勾选且 valid** 的行；`buy_now`：**单行、进入时 quantity = 1**（**BR142**）。页面模块与 v1.0.1 一致，**不改**为 ToC 地址/运费档位/COD/券。  
+2. Checkout 改量同步 Cart（仅 cart 来源）（**BR136**）。Buy Now 来源只改结算行，不写回购物车。  
+3. **无 Shipping Method**。Shipping Fee 金额 = 0，文案 **Free**。Subtotal = 各行原价 × 数量；Promotion = 现价小计 − 原价小计；Grand Total = Subtotal + Promotion + Shipping Fee。  
 4. 固定地址、Payment、Security、Remark：**同 v1.0.1**（不重复 BR）。  
-5. 提交：Pending Payment；`items[{skuId, qty}]`（**BR138**）。
+5. 提交：Pending Payment；`items[{skuId, qty}]`；**不触发邮件**（**BR138**）。
 
 #### 字段定义
 
@@ -520,7 +523,10 @@ v2.0.0：**Product Information 多 SKU 行**，每行 **Qty 可编辑**；Grand 
 |--------|------|------|
 | items[] | array | 多行商品 |
 | checkoutEntrySource | enum | cart \| buy_now |
-| grandTotal | number | 应付合计 |
+| subtotal | number | 原价合计 |
+| promotion | number | 现价合计 − 原价合计 |
+| shippingFee | number | 固定 0；展示 **Free** |
+| grandTotal | number | subtotal + promotion + shippingFee |
 | paymentMethod | enum | bank \| digital（v1.0.1） |
 | remark | string | ≤200 字符 |
 
@@ -528,10 +534,10 @@ v2.0.0：**Product Information 多 SKU 行**，每行 **Qty 可编辑**；Grand 
 
 | 编号 | 需求名称 | 触发条件 | 交互行为 | 状态 | 验收标准 |
 |------|----------|----------|----------|------|----------|
-| BR136 | 改量同步 | Checkout 改量（cart） | 回写 Cart；重算 Total | — | 双端一致 |
+| BR136 | 改量同步 | Checkout 改量（cart） | 回写 Cart；重算四行汇总 | — | 与 Cart 一致；Shipping Fee 均为 Free |
 | BR137 | 加载快照 | 进入 Checkout | 按 source 拉取行 | 加载● | 失败可 Retry |
 | BR138 | 提交订单 | Order & Pay | 一单多行；跳 Success | 加载● | 防重复点击 |
-| BR142 | Buy Now 单行 | source=buy_now | 仅当前 SKU | — | 无 Cart 行 |
+| BR142 | Buy Now 单行 | source=buy_now | 仅当前 SKU，初始 qty=1 | — | 无弹层；无 Cart 其他行 |
 
 ---
 
@@ -547,20 +553,19 @@ v2.0.0：**Product Information 多 SKU 行**，每行 **Qty 可编辑**；Grand 
 
 #### 4.8.1 功能描述
 
-v1.0.1 成功话术、Order No.、Grand Total、Contact、按钮；v2.0.0 增加 **邮件已发送提示**、底侧 **Recommended**（乱序）。**无** 2B 账户、**无** 上传凭证。
+v1.0.1 成功话术、Order No.、Grand Total、Contact、按钮；v2.0.0 增加底侧 **Recommended**（乱序）。**无** 邮件已发送提示、**无** 2B 账户、**无** 上传凭证。Contact 中的 Email 仍是客服联络方式，不是订单通知。
 
 #### 功能清单
 
 | 编号 | 功能名称（中文） | 功能名称（英文） | 功能描述 |
 |------|------------------|------------------|----------|
-| FL270 | 邮件提示 | Email Sent Hint | 已向店主邮箱发送确认 |
-| FL271 | 成功页推荐 | Success Recommendations | You May Also Like |
+| FL271 | 成功页推荐 | Success Recommendations | Recommended |
 | FL272 | 金额一致 | Total Consistency | Grand Total 与 Checkout 一致 |
 
 #### 业务规则
 
-1. Contact：Phone **01794 133553**、Email **payment@kickbazar.com**（v1.0.1）。  
-2. 邮件发送失败：可降级文案，**不阻断** 成功页（**BR171**）。  
+1. Contact：Phone **01794 133553**、Email **payment@kickbazar.com**（v1.0.1，客服联络，不是发信通知）。  
+2. 成功页 **不展示**「邮件已发送」类文案，也 **不触发** 创建单邮件。  
 3. 推荐同 §4.4。
 
 #### 交互说明
@@ -568,42 +573,8 @@ v1.0.1 成功话术、Order No.、Grand Total、Contact、按钮；v2.0.0 增加
 | 编号 | 需求名称 | 触发条件 | 交互行为 | 状态 | 验收标准 |
 |------|----------|----------|----------|------|----------|
 | BR170 | Copy | 点击 Copy | 复制 Order No./联系方式 | — | 同 v1.0.1 |
-| BR171 | 邮件降级 | 发信失败 | 弱提示 + 仍成功态 | 错误○ | 不阻断 |
 | BR172 | 继续选品 | Continue Sourcing | 回 Discovery | — | — |
 | BR173 | 查看 PO | View Order Detail | PO Detail（v1.0.1） | — | — |
-
----
-
-### 4.9 模块 H：邮件通知（触发）
-
-#### 基本信息
-
-| 属性 | 内容 |
-|------|------|
-| 类型 | 后端触发 + Success 文案联动 |
-| 优先级 | P0 |
-
-#### 4.9.1 功能描述
-
-定义下单链路邮件触发；**不要求** 改造 PO 页面。
-
-#### 功能清单
-
-| 编号 | 功能名称（中文） | 功能名称（英文） | 功能描述 |
-|------|------------------|------------------|----------|
-| FL280 | 创建单邮件 | Order Created Email | Order & Pay 后发 2C 店主 |
-| FL281 | 确认收款邮件 | Payment Confirmed Email | 2B 确认后 2C+2B |
-
-#### 业务规则
-
-1. 模板 **English**；含 Order No.、Grand Total、payment@kickbazar.com。  
-2. 确认收款由交易中台/2B 触发（本文只定义收件人）。
-
-#### 交互说明
-
-| 编号 | 需求名称 | 触发条件 | 交互行为 | 验收标准 |
-|------|----------|----------|----------|----------|
-| BR180 | 无重发按钮 | Success 页 | 本期不提供用户重发 | — |
 
 ---
 
@@ -626,7 +597,9 @@ v1.0.1 成功话术、Order No.、Grand Total、Contact、按钮；v2.0.0 增加
 | Discovery 推荐 | 仅 Detail/Success |
 | PO 搜索/导出/Buy Again | 他方模块 |
 | Buy Now 合并 Cart | 本期 **不合并** |
-| 多 2B、凭证上传、Shipping Method | v1.0.1 已排除 |
+| Buy Now 数量弹层 | 本期 **不做**；点击直达 Checkout，数量默认 1 |
+| 邮件通知 | 创建单邮件、确认收款邮件、Success「邮件已发送」均 **本期不做** |
+| 多 2B、凭证上传、Shipping Method | v1.0.1 已排除；Summary 只展示 Shipping Fee = **Free** |
 
 ---
 
@@ -635,12 +608,12 @@ v1.0.1 成功话术、Order No.、Grand Total、Contact、按钮；v2.0.0 增加
 ### 7.1 功能验收（v2.0.0 增量）
 
 - [ ] Discovery 卡片：划线 + `-X%`；无推荐区  
-- [ ] PDP：Add to Cart、Buy Now 双按钮；Detail 推荐  
-- [ ] Cart：改量、删行、空车禁用 Checkout、三步条 Step1  
-- [ ] Checkout：多行、改量同步 Cart；Buy Now 单行；一单多 SKU 提交  
-- [ ] Success：邮件提示、推荐、Grand Total 一致  
+- [ ] PDP：Add to Cart、Buy Now 双按钮；Buy Now **无弹层**、直达 Checkout 且初始数量为 1；Detail 推荐  
+- [ ] Cart：改量、删行、空车禁用 Checkout、三步条 Step1；Order Summary 含 Subtotal、Promotion、Shipping Fee（Free）、Grand Total  
+- [ ] Checkout：同样四行汇总；多行、改量同步 Cart；Buy Now 单行；一单多 SKU 提交  
+- [ ] Success：推荐、Grand Total 一致；**无** 邮件已发送提示  
 - [ ] 步骤条：Cart 路径 3 步；Buy Now 2 步  
-- [ ] 创建单邮件任务成功或 2C 收到  
+- [ ] 下单成功 **不发送** 创建单邮件或确认收款邮件  
 
 ### 7.2 与 v1.0.1 关系验收
 
@@ -659,9 +632,8 @@ v1.0.1 成功话术、Order No.、Grand Total、Contact、按钮；v2.0.0 增加
 | 推荐组件 | FL230–FL231 |
 | 步骤条 | FL240–FL242 |
 | Cart | FL250–FL254 |
-| Checkout | FL260–FL263 |
-| Success | FL270–FL272 |
-| 邮件 | FL280–FL281 |
+| Checkout | FL260–FL264 |
+| Success | FL271–FL272 |
 
 ## 附录 B：BR 索引（v2.0.0，BR101 起）
 
@@ -674,8 +646,7 @@ v1.0.1 成功话术、Order No.、Grand Total、Contact、按钮；v2.0.0 增加
 | 步骤条 | BR150–BR153 |
 | Cart | BR160–BR163 |
 | Checkout | BR136–BR138、BR142 |
-| Success | BR170–BR173 |
-| 邮件 | BR180 |
+| Success | BR170、BR172–BR173 |
 
 ## 附录 C：v1.0.1 → v2.0.0 差异速查
 
@@ -683,11 +654,12 @@ v1.0.1 成功话术、Order No.、Grand Total、Contact、按钮；v2.0.0 增加
 |------|--------|--------|
 | 入口 | Buy Now | + Cart、Add to Cart |
 | Discovery/Detail | 采购价 | + 划线、-X%；Detail 推荐 |
-| Checkout | 单 SKU、数量规则见 v1.0.1 | 多 SKU；Cart/Checkout 可改量 |
-| Success | Contact | + 推荐、邮件提示 |
+| Buy Now | 数量弹层后结算 | 直达 Checkout，默认数量 1，无弹层 |
+| Checkout | 单 SKU；Summary 仅 Grand Total | 多 SKU；Cart/Checkout 可改量；Summary 为 Subtotal / Promotion / Shipping Fee（Free）/ Grand Total |
+| Success | Contact | + 推荐；**无** 邮件提示 |
 | 导航 | 面包屑 | + 交易步骤条 + 短面包屑 |
 | PO 模块 | v1.0.1 | 本文不改 UI |
 
 ---
 
-*PRD v2.0.0 · Product Sourcing · 章节框架对齐 KickBazar Web PRD（功能描述 / 字段定义与业务规则 / 交互说明 · FL + BR101+）· 2026/09/28*
+*PRD v2.0.0 · Product Sourcing · 章节框架对齐 KickBazar Web PRD（功能描述 / 字段定义与业务规则 / 交互说明 · FL + BR101+）· 2026/10/13 修订*

@@ -1037,6 +1037,14 @@ function formatBDT(n) {
   return '৳ ' + Number(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+function summarizeLines(lines) {
+  const subtotal = lines.reduce((s, l) => s + (Number(l.originalPrice) || Number(l.price)) * Number(l.qty), 0);
+  const sale = lines.reduce((s, l) => s + Number(l.price) * Number(l.qty), 0);
+  const promotion = sale - subtotal;
+  const shipping = 0;
+  return { subtotal, promotion, shipping, grand: subtotal + promotion + shipping };
+}
+
 function showToast(msg) {
   let t = document.getElementById('toast');
   if (!t) {
@@ -1275,16 +1283,16 @@ function initCartPage() {
     if (invalidHeader) invalidHeader.style.display = invalid.length ? '' : 'none';
 
     const picked = valid.filter(l => l.selected !== false);
-    const orig = picked.reduce((s, l) => s + (Number(l.originalPrice) || Number(l.price)) * Number(l.qty), 0);
-    const sale = picked.reduce((s, l) => s + Number(l.price) * Number(l.qty), 0);
-    const promo = sale - orig;
+    const summary = summarizeLines(picked);
     const qty = picked.reduce((s, l) => s + Number(l.qty), 0);
     const subEl = document.getElementById('sumSubtotal');
     const promoEl = document.getElementById('sumPromotion');
+    const shipEl = document.getElementById('sumShipping');
     const totalEl = document.getElementById('cartGrandTotal');
-    if (subEl) subEl.textContent = money(orig);
-    if (promoEl) promoEl.textContent = money(promo);
-    if (totalEl) totalEl.textContent = money(orig + promo);
+    if (subEl) subEl.textContent = money(summary.subtotal);
+    if (promoEl) promoEl.textContent = money(summary.promotion);
+    if (shipEl) shipEl.textContent = 'Free';
+    if (totalEl) totalEl.textContent = money(summary.grand);
     if (checkoutBtn) {
       checkoutBtn.textContent = qty > 0 ? `Checkout (${qty})` : 'Checkout (0)';
       checkoutBtn.disabled = qty === 0;
@@ -1369,7 +1377,7 @@ function resolveCheckoutLinesForPage() {
 
   if (!lines || !lines.length) {
     const unitPrice = Number(document.body.dataset.unitPrice || 1250);
-    const qty = Number(document.body.dataset.checkoutQty || 2);
+    const qty = Number(document.body.dataset.checkoutQty || 1);
     lines = [{
       lineId: 'KB-DJ-2026-001-M',
       title: 'Denim Jacket Classic Blue',
@@ -1391,13 +1399,20 @@ function initCheckoutLines() {
   if (!container) return;
 
   let lines = resolveCheckoutLinesForPage();
+  const from = new URLSearchParams(pageSearch()).get('from') || 'buynow';
 
   const recalcTotal = () => {
-    const total = lines.reduce((s, l) => s + l.price * l.qty, 0);
-    if (totalEl) totalEl.textContent = formatBDT(total);
+    const summary = summarizeLines(lines);
+    const subEl = document.getElementById('checkoutSubtotal');
+    const promoEl = document.getElementById('checkoutPromotion');
+    const shipEl = document.getElementById('checkoutShipping');
+    if (subEl) subEl.textContent = formatBDT(summary.subtotal);
+    if (promoEl) promoEl.textContent = formatBDT(summary.promotion);
+    if (shipEl) shipEl.textContent = 'Free';
+    if (totalEl) totalEl.textContent = formatBDT(summary.grand);
     writeCheckoutLines(lines);
-    syncCartFromCheckoutLines(lines);
-    sessionStorage.setItem(LAST_ORDER_TOTAL_KEY, String(total));
+    if (from === 'cart') syncCartFromCheckoutLines(lines);
+    sessionStorage.setItem(LAST_ORDER_TOTAL_KEY, String(summary.grand));
   };
 
   const hint = container.querySelector('p');
@@ -1438,7 +1453,6 @@ function initCheckoutLines() {
 
   const successLink = document.querySelector('a[href="order-success.html"]');
   if (successLink) {
-    const from = new URLSearchParams(pageSearch()).get('from') || 'cart';
     if (from === 'buynow') successLink.setAttribute('href', 'order-success.html?from=buynow');
     successLink.addEventListener('click', () => {
       recalcTotal();
@@ -1454,31 +1468,10 @@ function initProductDetailActions() {
     if (mergeLineIntoCart(line)) showToast('Added to cart successfully');
   });
 
-  const modal = document.getElementById('buyNowModal');
-  const modalQty = document.querySelector('#modalQtyStepper');
-  const modalSubtotal = document.getElementById('modalSubtotal');
-  const unitPrice = Number(document.body.dataset.productPrice || 1250);
-
-  if (modalQty && modalSubtotal) {
-    initQtyStepper(modalQty, (qty) => {
-      modalSubtotal.textContent = formatBDT(unitPrice * qty);
-    });
-  }
-
-  document.getElementById('openBuyNow')?.addEventListener('click', () => modal?.classList.add('open'));
-  document.querySelectorAll('[data-close-modal]').forEach(btn => {
-    btn.addEventListener('click', () => modal?.classList.remove('open'));
-  });
-
-  const confirm = document.getElementById('buyNowConfirm');
-  confirm?.addEventListener('click', (e) => {
-    e.preventDefault();
-    const input = modalQty?.querySelector('input');
-    const qty = Math.max(1, Number(input?.value) || 1);
+  document.getElementById('buyNowBtn')?.addEventListener('click', () => {
     const line = getProductFromDetailPage();
-    line.qty = qty;
+    line.qty = 1;
     writeCheckoutLines([line]);
-    modal?.classList.remove('open');
     goPage('checkout.html?from=buynow');
   });
 }

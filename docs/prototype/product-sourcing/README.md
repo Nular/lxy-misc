@@ -73,8 +73,8 @@ index → product-detail → [Buy Now] → checkout → order-success → purcha
 ## Interactive features
 
 - Cart: localStorage, qty steppers, demo 2-SKU loader on empty state
-- Buy Now modal → single-line checkout; Cart → merged multi-SKU checkout
-- Checkout: per-line qty recalculates Grand Total (syncs back to cart)
+- Buy Now goes straight to single-line checkout (no quantity modal); Cart merges selected SKUs
+- Checkout Order Summary: Subtotal, Promotion, Shipping Fee (Free), Grand Total; qty edits sync back to cart
 - Discount display: strikethrough + `-X%` tag on Discovery / Detail / Cart / Checkout
 - Copy buttons on Order Success (toast)
 - Purchase Orders tab filter (All / Published / Unpublished)

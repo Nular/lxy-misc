@@ -88,42 +88,7 @@
 
       <div class="sticky-footer" style="gap:10px">
         <button class="btn btn-secondary" id="addToCartBtn" type="button" style="min-width:140px">Add to Cart</button>
-        <button class="btn btn-primary" id="openBuyNow" type="button" style="min-width:140px">Buy Now</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal-overlay" id="buyNowModal">
-    <div class="modal">
-      <div class="modal-header">
-        <span>Buy Now</span>
-        <button class="btn btn-ghost" data-close-modal type="button">✕</button>
-      </div>
-      <div class="modal-body">
-        <div style="display:flex;gap:12px;margin-bottom:16px">
-          <div style="width:72px;height:72px;background:var(--surface-2);border-radius:8px"></div>
-          <div>
-            <div style="font-weight:600;font-size:14px">Denim Jacket Classic Blue</div>
-            <div style="font-size:13px;color:var(--text-secondary)">Blue / M · KB-DJ-2026-001-M</div>
-            <div style="font-size:13px;margin-top:4px">Unit Price: ৳ 1,250.00</div>
-          </div>
-        </div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-          <span style="font-size:14px;font-weight:600">Quantity (MOQ: 1)</span>
-          <div class="qty-stepper" id="modalQtyStepper">
-            <button type="button" data-minus>−</button>
-            <input type="number" value="2" min="1" />
-            <button type="button" data-plus>+</button>
-          </div>
-        </div>
-        <div style="display:flex;justify-content:space-between;font-weight:700;padding-top:12px;border-top:1px solid var(--border)">
-          <span>Subtotal</span>
-          <span id="modalSubtotal">৳ 2,500.00</span>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button class="btn btn-secondary" data-close-modal type="button">Cancel</button>
-        <a class="btn btn-primary" href="checkout.html?from=buynow" id="buyNowConfirm">Confirm</a>
+        <button class="btn btn-primary" id="buyNowBtn" type="button" style="min-width:140px">Buy Now</button>
       </div>
     </div>
   </div>
