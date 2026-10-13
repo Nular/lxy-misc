@@ -38,8 +38,13 @@ def main():
         out.write_text(inline_page(name), encoding="utf-8")
         print("wrote", out.relative_to(ROOT))
 
+    hub = ROOT / "export-start.html"
+    (export_dir / "start.html").write_text(hub.read_text(encoding="utf-8"), encoding="utf-8")
+    print("wrote", "export/start.html")
+
     zip_path = ROOT / "product-sourcing-html-export.zip"
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
+        zf.write(export_dir / "start.html", arcname="start.html")
         for name in PAGES:
             zf.write(export_dir / name, arcname=name)
     print("wrote", zip_path.relative_to(ROOT))

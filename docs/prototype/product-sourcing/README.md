@@ -25,14 +25,17 @@ Open: http://127.0.0.1:8080/index.html
 
 Self-contained HTML files (CSS/JS inlined) for local preview without a server:
 
-- **ZIP**: `product-sourcing-html-export.zip` (in this folder)
-- **Folder**: `export/` (7 `.html` files)
+- **入口页**: `export/start.html`（目录，链到各页）
+- **ZIP**: `product-sourcing-html-export.zip`（含 `start.html` + 7 个页面，CSS/JS 已内联）
+- **Folder**: `export/`
 
-Download from GitHub:
+从 GitHub 下载 ZIP（解压后打开 `start.html`）：
 
 https://github.com/Nular/lxy-misc/raw/cursor/seller-2c-product-sourcing-brainstorming-d41a/docs/prototype/product-sourcing/product-sourcing-html-export.zip
 
-Or open any file in `export/` directly in your browser after cloning the repo.
+在线预览入口（htmlpreview）：
+
+https://htmlpreview.github.io/?https://github.com/Nular/lxy-misc/blob/cursor/seller-2c-product-sourcing-brainstorming-d41a/docs/prototype/product-sourcing/export/start.html
 
 ## Navigation
 

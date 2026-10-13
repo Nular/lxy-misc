@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Product Sourcing Prototype — KickBazar</title>
+  <style>
+    :root { --bg:#f4f6f9; --text:#0f172a; --muted:#64748b; --line:#e2e8f0; --blue:#137fec; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background:var(--bg); color:var(--text); }
+    header { background:#fff; border-bottom:1px solid var(--line); padding:16px 28px; display:flex; align-items:center; gap:10px; }
+    header strong { font-size:20px; }
+    header strong span { color:#e11d48; }
+    main { max-width:880px; margin:0 auto; padding:28px 20px 64px; }
+    h1 { font-size:28px; margin:0 0 8px; }
+    p.lead { color:var(--muted); margin:0 0 24px; line-height:1.55; }
+    .grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    a.card { display:block; background:#fff; border:1px solid var(--line); border-radius:10px; padding:16px 18px; text-decoration:none; color:inherit; }
+    a.card:hover { border-color:#93c5fd; }
+    a.card b { display:block; margin-bottom:4px; }
+    a.card span { color:var(--muted); font-size:13px; }
+    .note { margin-top:28px; font-size:13px; color:var(--muted); line-height:1.6; }
+    code { background:#fff; border:1px solid var(--line); border-radius:4px; padding:1px 6px; }
+    @media (max-width:720px) { .grid { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <span style="font-size:22px">🐘</span>
+    <strong>Kick<span>Bazar</span></strong>
+    <span style="color:#64748b;font-size:13px">Product Sourcing · HTML Prototype</span>
+  </header>
+  <main>
+    <h1>选品中心原型</h1>
+    <p class="lead">Seller 2C Product Sourcing v2.0.0。以下页面为独立 HTML（样式与脚本已内联），下载后可直接用浏览器打开，无需本地服务器。</p>
+    <div class="grid">
+      <a class="card" href="index.html"><b>Product Discovery</b><span>选品列表、折扣 Tag、分页</span></a>
+      <a class="card" href="product-detail.html"><b>Product Detail</b><span>Add to Cart / Buy Now、Recommended</span></a>
+      <a class="card" href="cart.html?demo=1"><b>Cart</b><span>勾选、失效商品、Checkout (n)、99 SKU</span></a>
+      <a class="card" href="checkout.html?from=cart&amp;demo=1"><b>Checkout</b><span>多 SKU；页面保持 B2B 结算</span></a>
+      <a class="card" href="checkout.html?from=buynow"><b>Buy Now Checkout</b><span>两步：Checkout → Order Complete</span></a>
+      <a class="card" href="order-success.html"><b>Order Success</b><span>成功页 + Recommended</span></a>
+      <a class="card" href="purchase-orders.html"><b>Purchase Orders</b><span>采购单列表</span></a>
+      <a class="card" href="order-detail.html"><b>Order Detail</b><span>采购单详情</span></a>
+    </div>
+    <p class="note">
+      建议路径：Discovery → Detail → Cart（<code>?demo=1</code> 自动载入示例商品）→ Checkout → Order Success。<br />
+      在 GitHub 网页里打开本文件只会看到源码。请下载同目录 ZIP，解压后打开 <code>start.html</code>。
+    </p>
+  </main>
+</body>
+</html>
