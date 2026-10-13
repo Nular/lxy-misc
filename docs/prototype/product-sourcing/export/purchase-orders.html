@@ -1054,7 +1054,8 @@ function updateCartBadges() {
   });
 }
 
-const CART_SKU_LIMIT = 50;
+const CART_SKU_LIMIT = 99;
+const CART_SKU_NEAR = 90;
 
 function demoCartLines() {
   return [
@@ -1074,7 +1075,7 @@ function mergeLineIntoCart(line) {
   } else {
     const skuCount = cart.length;
     if (skuCount >= CART_SKU_LIMIT) {
-      showToast('Cart limit reached (50 items). Remove an item to add more.');
+      showToast(`Cart limit reached (${CART_SKU_LIMIT} items). Remove an item to add more.`);
       return false;
     }
     cart.push({ ...line, qty: Number(line.qty) || 1, selected: true, status: 'valid' });
@@ -1261,14 +1262,14 @@ function initCartPage() {
     }
     const all = document.getElementById('selectAllValid');
     if (all) all.checked = valid.length > 0 && valid.every(l => l.selected !== false);
-    if (counter) counter.textContent = `${lines.length}/50 items`;
+    if (counter) counter.textContent = `${lines.length}/${CART_SKU_LIMIT} items`;
     if (banner) {
-      if (lines.length >= 50) {
+      if (lines.length >= CART_SKU_LIMIT) {
         banner.style.display = '';
-        banner.textContent = "You've reached the cart limit (50 items). Remove items to add new products.";
-      } else if (lines.length >= 45) {
+        banner.textContent = `You've reached the cart limit (${CART_SKU_LIMIT} items). Remove items to add new products.`;
+      } else if (lines.length >= CART_SKU_NEAR) {
         banner.style.display = '';
-        banner.textContent = `Your cart is almost full (${lines.length}/50 items).`;
+        banner.textContent = `Your cart is almost full (${lines.length}/${CART_SKU_LIMIT} items).`;
       } else if (invalid.length) {
         banner.style.display = '';
         banner.textContent = 'Remove unavailable items to free up space in your cart.';

@@ -434,7 +434,7 @@ v1.0.1 橱窗、SKU 选择、Buy Now 弹层、MOQ、超卖；v2.0.0 增加底栏
 - **编辑模式**：批量勾选删除，二次确认；删空回空态。  
 - **Order Summary**（仅三项）：**Subtotal**（勾选行原价小计）+ **Promotion**（现价小计 − 原价小计，为负或 0）= **Grand Total**。不含 Shipping / COD / Coupon。  
 - 主按钮：**Checkout ({selectedQuantity})**。`selectedQuantity` = 已勾选且 `status=valid` 的 quantity 之和。未勾选任何有效行则禁用。  
-- SKU 上限 **50** 条不同 SKU（含失效行占名额）。Header 角标仍为 quantity 合计。接近 45–49 信息条；满 50 警告条并拦截新 SKU。  
+- SKU 上限 **99** 条不同 SKU（含失效行占名额）。Header 角标仍为 quantity 合计。接近 **90–98** 信息条；满 **99** 警告条并拦截新 SKU。  
 - **Buy Now 不写入购物车**。  
 - 非空展示步骤条 Step 1。空态不展示步骤条。
 
@@ -447,13 +447,13 @@ v1.0.1 橱窗、SKU 选择、Buy Now 弹层、MOQ、超卖；v2.0.0 增加底栏
 | FL252 | 编辑模式 | Edit Mode | 批量删除 + 确认 |
 | FL253 | 金额汇总 | Order Summary | Subtotal / Promotion / Grand Total |
 | FL254 | 去结算 | Checkout (n) | 仅勾选有效行 |
-| FL255 | SKU 上限 | Cart SKU Limit | 50 SKU |
+| FL255 | SKU 上限 | Cart SKU Limit | 99 SKU |
 
 #### 业务规则
 
 1. 至少勾选 1 件有效商品才可 Checkout。全选只作用于有效行。  
 2. 改量实时重算行小计与三项汇总。  
-3. 新 SKU 且已有 50 行：拒绝加购，Toast `Cart limit reached (50 items). Remove an item to add more.`  
+3. 新 SKU 且已有 99 行：拒绝加购，Toast `Cart limit reached (99 items). Remove an item to add more.`  
 4. 已在车中的 SKU 只加数量，不占新名额。  
 5. **本期无优惠券。** Checkout 页样式不因购物车改版而改为 ToC 结算（见 §4.7）。
 
