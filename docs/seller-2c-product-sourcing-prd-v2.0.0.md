@@ -180,22 +180,28 @@ Order Success / PO List → 联系客服付款 → 2B 确认收款 → Publish t
 
 #### 4.1.1 功能描述
 
-在 Product Sourcing 各页顶栏提供 **Cart** 文字按钮与 **数量角标**，作为进入购物车（§4.6）的唯一全局入口。角标与购物车数据联动，Add to Cart 成功后即时更新。
+顶栏右侧为两个 **Icon**（无文字按钮）：
+
+1. **Home**：小房子，点击回 **Product Discovery**（`/seller/2c/sourcing`）。  
+2. **Cart**：购物车图标 + 数字角标，点击进购物车页。不做下拉预览。
+
+Add to Cart 成功：角标按 **quantity 合计** 增加，并 Toast / 气泡 **Added to cart successfully**。
 
 #### 功能清单
 
 | 编号 | 功能名称（中文） | 功能名称（英文） | 功能描述 |
 |------|------------------|------------------|----------|
-| FL201 | 顶栏购物车入口 | Cart Entry | 顶栏展示 Cart 链接 |
-| FL202 | 购物车角标 | Cart Badge | 展示待结算件数或 SKU 数（与研发统一一种） |
-| FL203 | 加购反馈联动 | Cart Badge Sync | Add to Cart 成功后角标更新 |
+| FL201 | 顶栏购物车图标 | Cart Icon | Icon 跳转 Cart |
+| FL202 | 购物车角标 | Cart Badge | **quantity 总件数**（含失效行件数） |
+| FL203 | 加购反馈 | Added Bubble | Added to cart successfully |
+| FL204 | 回首页图标 | Home Icon | 回 Product Discovery |
 
 #### 业务规则
 
-1. 角标统计口径：**推荐为购物车有效行 quantity 之和**；与研发锁定后全站一致。  
-2. 角标为 0：展示 `0` 或隐藏，由 UI 规范二选一。  
-3. 数据范围：当前 2C 店铺、**单一 2B 货源**（同 v1.0.1）。  
-4. 购物车数据与登录店主账号绑定。
+1. 角标 = 购物车各行 `quantity` 之和（与 Checkout 按钮的勾选件数口径不同，见 §4.6）。  
+2. 角标为 0 可展示 0 或隐藏，全站一致。  
+3. Home 始终回 Discovery，不回浏览器历史。  
+4. 数据范围：当前 2C 店铺、单一 2B 货源。
 
 #### 字段定义
 
@@ -327,7 +333,7 @@ v1.0.1 橱窗、SKU 选择、Buy Now 弹层、MOQ、超卖；v2.0.0 增加底栏
 
 #### 4.4.1 功能描述
 
-横滑或网格展示 **You May Also Like**；无数据时可隐藏整块。
+横滑或网格展示推荐；**标题与字段统一为 Recommended**。无数据可隐藏整块。
 
 #### 功能清单
 
@@ -340,7 +346,7 @@ v1.0.1 橱窗、SKU 选择、Buy Now 弹层、MOQ、超卖；v2.0.0 增加底栏
 
 1. **禁止** 在 Discovery 使用（**BR121**）。  
 2. 卡片字段：图、标题、采购价（可有 FL210 折扣样式）。  
-3. 标题文案默认 **You May Also Like**（可 i18n 配置）。
+3. 标题固定 **Recommended**。排序：**乱序**（每次请求/刷新随机打散，非平台序）。
 
 #### 交互说明
 
@@ -375,16 +381,20 @@ v1.0.1 橱窗、SKU 选择、Buy Now 弹层、MOQ、超卖；v2.0.0 增加底栏
 
 #### 业务规则
 
-**路径 A（`checkoutEntrySource=cart`）**  
-步骤：**Cart → Checkout → Order Success**
+文案：**Cart / Checkout / Order Complete**（Buy Now 无 Cart 步）。
 
-**路径 B（`checkoutEntrySource=buy_now`）**  
-步骤：**Checkout → Order Success**（无 Cart 步）
+**路径 A（`checkoutEntrySource=cart`）** — 3 步  
+
+- Cart 页：Step 1 active；Step 2/3 **不可点**；仅 **Checkout (n)** 进入结算。  
+- Checkout 页：Step 1 completed **可点回 Cart**（保留勾选）；Step 2 active。  
+- 成功结果：Step 1/2 **不可点**；Step 3 completed。
+
+**路径 B（`checkoutEntrySource=buy_now`）** — 2 步：Checkout → Order Complete。不展示 Cart，不可经步骤条进购物车。
 
 1. Cart **空态不展示** 步骤条。  
-2. Success 成功态：步骤条只读（建议不可回退改单）。  
-3. PO List/Detail 使用 **订单时间线**，不用本步骤条。  
-4. 交易区面包屑建议：`Product Sourcing › Place Purchase Order`；**禁止** 用 Discovery › Detail › Checkout › Success 长链。
+2. 步骤条在 Header 下方、页标题上方。  
+3. Checkout **页面布局仍为 v1.0.1**（固定达卡地址、Bank/Digital、Security、仅 Grand Total）；**不引入** ToC 地址弹层、运费档位、COD、优惠券。  
+4. PO 时间线不复用本步骤条。
 
 #### 字段定义
 
@@ -397,10 +407,11 @@ v1.0.1 橱窗、SKU 选择、Buy Now 弹层、MOQ、超卖；v2.0.0 增加底栏
 
 | 编号 | 需求名称 | 触发条件 | 交互行为 | 验收标准 |
 |------|----------|----------|----------|----------|
-| BR150 | 三步条 | cart 路径 | Cart→Checkout→Success | 步数正确 |
-| BR151 | 两步条 | buy_now 路径 | Checkout→Success；无 Cart | 不可点 Cart 步 |
+| BR150 | 三步条 | cart 路径 | Cart→Checkout→Order Complete | Cart 页后两步不可点 |
+| BR151 | 两步条 | buy_now | Checkout→Order Complete | 无 Cart 步 |
 | BR152 | 空车隐藏 | Cart 空 | 不展示步骤条 | — |
-| BR153 | Checkout 回退 | Checkout（cart 来源） | 可回 Cart（UI 定稿） | 保留行数据 |
+| BR153 | 回 Cart | Checkout 点已完成 Cart 步 | 回购物车，勾选保留 | — |
+| BR154 | 成功锁定 | Result 成功 | 已完成步不可点 | — |
 
 ---
 
@@ -416,47 +427,57 @@ v1.0.1 橱窗、SKU 选择、Buy Now 弹层、MOQ、超卖；v2.0.0 增加底栏
 
 #### 4.6.1 功能描述
 
-待结算 SKU 表格：图/标题/规格/价/数量/行小计/删除；底部 **Grand Total** 与 **Checkout**、**Continue Sourcing**。非空时展示 **步骤条 Step1=Cart**。
+对齐 ToC 购物车信息架构，**适配 Seller 选品**（无优惠券、无运费/COD）：
+
+- **有效商品**列表：勾选、图、标题、规格、专题 Tag、价、数量、行小计、Remove。  
+- **失效商品**分区：置底灰色，**不可勾选**，可 Remove；原因如下架/缺货。  
+- **编辑模式**：批量勾选删除，二次确认；删空回空态。  
+- **Order Summary**（仅三项）：**Subtotal**（勾选行原价小计）+ **Promotion**（现价小计 − 原价小计，为负或 0）= **Grand Total**。不含 Shipping / COD / Coupon。  
+- 主按钮：**Checkout ({selectedQuantity})**。`selectedQuantity` = 已勾选且 `status=valid` 的 quantity 之和。未勾选任何有效行则禁用。  
+- SKU 上限 **50** 条不同 SKU（含失效行占名额）。Header 角标仍为 quantity 合计。接近 45–49 信息条；满 50 警告条并拦截新 SKU。  
+- **Buy Now 不写入购物车**。  
+- 非空展示步骤条 Step 1。空态不展示步骤条。
 
 #### 功能清单
 
 | 编号 | 功能名称（中文） | 功能名称（英文） | 功能描述 |
 |------|------------------|------------------|----------|
-| FL250 | 购物车列表 | Cart Line List | 多 SKU 行展示 |
-| FL251 | 改量 | Cart Qty Edit | 步进器改 quantity |
-| FL252 | 删行 | Remove Line | 单行删除 |
-| FL253 | 去结算 | Cart Checkout | 携带全部有效行进 Checkout |
-| FL254 | 空购物车 | Cart Empty | 空态 + 回 Discovery |
+| FL250 | 有效商品列表 | Valid Lines | 可勾选、改量 |
+| FL251 | 失效商品 | Invalid Lines | 置灰、不可结算 |
+| FL252 | 编辑模式 | Edit Mode | 批量删除 + 确认 |
+| FL253 | 金额汇总 | Order Summary | Subtotal / Promotion / Grand Total |
+| FL254 | 去结算 | Checkout (n) | 仅勾选有效行 |
+| FL255 | SKU 上限 | Cart SKU Limit | 50 SKU |
 
 #### 业务规则
 
-1. quantity ≥ MOQ；改量实时算 lineSubtotal、Grand Total（**BR160**）。  
-2. Cart 为空：**Checkout 禁用**（**BR161**）。  
-3. 删至空：角标归零、空态（**BR162**）。  
-4. 价格展示可含 FL210 折扣样式。  
-5. 超卖规则同 v1.0.1。
+1. 至少勾选 1 件有效商品才可 Checkout。全选只作用于有效行。  
+2. 改量实时重算行小计与三项汇总。  
+3. 新 SKU 且已有 50 行：拒绝加购，Toast `Cart limit reached (50 items). Remove an item to add more.`  
+4. 已在车中的 SKU 只加数量，不占新名额。  
+5. **本期无优惠券。** Checkout 页样式不因购物车改版而改为 ToC 结算（见 §4.7）。
 
 #### 字段定义
 
-| 字段名 | 中文名称 | 类型 | 必填 | 字段说明 |
-|--------|----------|------|------|----------|
-| lineId | 行 ID | string | 是 | 唯一 |
-| skuId | SKU ID | string | 是 | — |
-| productTitle | 标题 | string | 是 | — |
-| skuLabel | 规格文案 | string | 是 | 如 Blue / M |
-| unitPrice | 单价 | number | 是 | BDT |
-| quantity | 数量 | number | 是 | ≥1 |
-| lineSubtotal | 行小计 | number | 是 | unitPrice×quantity |
-| cartGrandTotal | 合计 | number | 是 | 有效行之和 |
+| 字段名 | 说明 |
+|--------|------|
+| selected | 是否参与结算；失效行恒为 false |
+| status | valid / invalid |
+| invalidReason | 下架 / 缺货等 |
+| topicTag | 可选专题 Tag |
+| unitPrice / originalPrice | 现价 / 原价 |
+| subtotal | 勾选行原价合计 |
+| promotion | 现价合计 − 原价合计 |
+| grandTotal | subtotal + promotion |
 
 #### 交互说明
 
-| 编号 | 需求名称 | 触发条件 | 交互行为 | 状态 | 验收标准 |
-|------|----------|----------|----------|------|----------|
-| BR160 | 改量计价 | 步进器 | 行小计与合计更新 | — | 实时 |
-| BR161 | 空车结算 | Cart 空 | Checkout 禁用 | — | — |
-| BR162 | 删行 | Remove | 刷新列表与角标 | — | — |
-| BR163 | 去结算 | Checkout | `cart` 来源进 Checkout | — | 多行带入 |
+| 编号 | 需求名称 | 触发条件 | 交互行为 | 验收标准 |
+|------|----------|----------|----------|----------|
+| BR160 | 勾选汇总 | 勾选/改量 | 三项金额与 Checkout(n) 更新 | 不含运费 |
+| BR161 | 失效行 | status=invalid | 灰色、不可勾选、可删 | 置底 |
+| BR162 | 编辑删除 | Edit → 批量删 | 二次确认 | 删空即空态 |
+| BR163 | 去结算 | Checkout (n) | 仅 selected+valid 进入 Checkout | 步骤 2/3 不可点 |
 
 ---
 
@@ -487,7 +508,7 @@ v2.0.0：**Product Information 多 SKU 行**，每行 **Qty 可编辑**；Grand 
 
 #### 业务规则
 
-1. `cart`：items = Cart 有效行；`buy_now`：**单行**（**BR142**）。  
+1. `cart`：items = **已勾选且 valid** 的行；`buy_now`：**单行**（**BR142**）。页面模块与 v1.0.1 一致，**不改**为 ToC 地址/运费/COD/券。  
 2. Checkout 改量同步 Cart（仅 cart 来源）（**BR136**）。  
 3. 运费/COD = 0；Summary **仅 Grand Total**（v1.0.1）。  
 4. 固定地址、Payment、Security、Remark：**同 v1.0.1**（不重复 BR）。  
@@ -526,7 +547,7 @@ v2.0.0：**Product Information 多 SKU 行**，每行 **Qty 可编辑**；Grand 
 
 #### 4.8.1 功能描述
 
-v1.0.1 成功话术、Order No.、Grand Total、Contact、按钮；v2.0.0 增加 **邮件已发送提示**、底侧 **You May Also Like**。**无** 2B 账户、**无** 上传凭证。
+v1.0.1 成功话术、Order No.、Grand Total、Contact、按钮；v2.0.0 增加 **邮件已发送提示**、底侧 **Recommended**（乱序）。**无** 2B 账户、**无** 上传凭证。
 
 #### 功能清单
 
