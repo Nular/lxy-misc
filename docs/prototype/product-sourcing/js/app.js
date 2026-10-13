@@ -150,8 +150,9 @@ function initCartPage() {
   const tbody = document.getElementById('cartTableBody');
   if (!tbody) return;
 
-  const card = document.getElementById('cartCard');
-  const empty = document.getElementById('cartEmpty');
+    const card = document.getElementById('cartCard');
+    const empty = document.getElementById('cartEmpty');
+    const stepper = document.getElementById('checkoutStepper');
   const totalEl = document.getElementById('cartGrandTotal');
   const checkoutBtn = document.getElementById('cartCheckoutBtn');
 
@@ -162,10 +163,12 @@ function initCartPage() {
       if (card) card.style.display = 'none';
       if (empty) empty.style.display = 'block';
       if (checkoutBtn) checkoutBtn.classList.add('disabled');
+      if (stepper) stepper.style.display = 'none';
       return;
     }
     if (card) card.style.display = 'block';
     if (empty) empty.style.display = 'none';
+    if (stepper) stepper.style.display = '';
     if (checkoutBtn) checkoutBtn.classList.remove('disabled');
 
     lines.forEach(line => {
@@ -466,6 +469,43 @@ function initCancelOrderModal() {
   });
 }
 
+function stepperMarkup(labels, activeIndex, allComplete = false) {
+  const parts = [];
+  labels.forEach((label, i) => {
+    let cls = 'step';
+    if (allComplete || i < activeIndex) cls += ' done';
+    else if (i === activeIndex) cls += ' active';
+    parts.push(`<div class="${cls}"><span class="step-num">${i + 1}</span><span>${label}</span></div>`);
+    if (i < labels.length - 1) parts.push('<div class="step-line" aria-hidden="true"></div>');
+  });
+  const extra = labels.length === 2 ? ' steps-2' : '';
+  return `<div class="checkout-stepper${extra}">${parts.join('')}</div>`;
+}
+
+function initCheckoutStepper() {
+  const mount = document.getElementById('checkoutStepper');
+  if (!mount) return;
+  const page = mount.dataset.stepPage || 'checkout';
+  const from = new URLSearchParams(window.location.search).get('from') || 'cart';
+  const buyNow = from === 'buynow';
+
+  if (page === 'cart') {
+    mount.innerHTML = stepperMarkup(['Cart', 'Checkout', 'Order Success'], 0);
+    return;
+  }
+  if (page === 'checkout') {
+    mount.innerHTML = buyNow
+      ? stepperMarkup(['Checkout', 'Order Success'], 0)
+      : stepperMarkup(['Cart', 'Checkout', 'Order Success'], 1);
+    return;
+  }
+  if (page === 'success') {
+    mount.innerHTML = buyNow
+      ? stepperMarkup(['Checkout', 'Order Success'], 1, true)
+      : stepperMarkup(['Cart', 'Checkout', 'Order Success'], 2, true);
+  }
+}
+
 function initOrderTabs() {
   document.querySelectorAll('[data-po-tab]').forEach(tab => {
     tab.addEventListener('click', () => {
@@ -489,6 +529,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initPaymentMethodToggle();
   initRemarkModal();
   initProductTabs();
+  initCheckoutStepper();
   initOrderDetailPage();
   initCancelOrderModal();
   initOrderTabs();

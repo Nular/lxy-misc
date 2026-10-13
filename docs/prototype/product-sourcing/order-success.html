@@ -8,24 +8,23 @@
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
+  <header class="app-header">
+    <a class="logo-mark" href="index.html"><span class="logo-elephant">🐘</span><span><span class="kick">Kick</span><span class="bazar">Bazar</span></span></a>
+  </header>
   <div class="app-shell">
     <aside class="sidebar">
-      <div class="brand">Kick<span>Bazar</span> Seller</div>
-      <div class="nav-section">Store</div>
-      <div class="nav-group">
-        <div class="nav-parent">Product Sourcing</div>
-        <a class="nav-item nav-sub active" href="index.html">Product Discovery</a>
-        <a class="nav-item nav-sub" href="purchase-orders.html">Purchase Orders List</a>
-      </div>
-      <a class="nav-item" href="#">Orders List</a>
+      <div class="nav-section">Product Sourcing</div>
+      <a class="nav-item nav-sub" href="index.html">Product Discovery</a>
+      <a class="nav-item nav-sub" href="purchase-orders.html">Purchase Orders List</a>
     </aside>
 
     <div class="main">
       <header class="topbar">
-        <div class="breadcrumb">Product Sourcing &rsaquo; Product Discovery &rsaquo; Product Detail &rsaquo; Checkout &rsaquo; <strong>Order Success</strong></div>
+        <div class="breadcrumb">Product Sourcing &rsaquo; <strong>Place Purchase Order</strong></div>
       </header>
 
       <main class="content">
+        <div id="checkoutStepper" data-step-page="success"></div>
         <div class="success-wrap">
           <div class="success-icon">✓</div>
           <h1 style="font-size:24px;font-weight:700;margin-bottom:12px">Order placed successfully!</h1>

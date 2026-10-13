@@ -3,24 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Product Sourcing — Product Discovery</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <title>Product Discovery — Product Sourcing</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
+  <header class="app-header">
+    <a class="logo-mark" href="index.html">
+      <span class="logo-elephant" aria-hidden="true">🐘</span>
+      <span><span class="kick">Kick</span><span class="bazar">Bazar</span></span>
+    </a>
+  </header>
+
   <div class="app-shell">
     <aside class="sidebar">
-      <div class="brand">Kick<span>Bazar</span> Seller</div>
-      <div class="nav-section">Store</div>
-      <div class="nav-group">
-        <div class="nav-parent">Product Sourcing</div>
-        <a class="nav-item nav-sub active" href="index.html">Product Discovery</a>
-        <a class="nav-item nav-sub" href="purchase-orders.html">Purchase Orders List</a>
-      </div>
-      <a class="nav-item" href="#">Orders List</a>
-      <div class="nav-section">Settings</div>
-      <a class="nav-item" href="#">Addresses</a>
+      <div class="nav-section">Product Sourcing</div>
+      <a class="nav-item nav-sub active" href="index.html">Product Discovery</a>
+      <a class="nav-item nav-sub" href="purchase-orders.html">Purchase Orders List</a>
     </aside>
 
     <div class="main">
@@ -33,11 +32,11 @@
         <h1 class="page-title">Product Discovery</h1>
 
         <div class="search-bar">
-          <select style="height:40px;border:1px solid var(--border);border-radius:6px;padding:0 10px;font-size:13px">
+          <select aria-label="Search field">
             <option>Product Name</option>
             <option>SKU ID</option>
           </select>
-          <input type="search" placeholder="Search" />
+          <input type="search" placeholder="Search" aria-label="Search keywords" />
           <button class="btn btn-primary" type="button">Search</button>
         </div>
 
@@ -47,68 +46,201 @@
           <button class="tab" type="button" data-product-tab="unpublished">Unpublished</button>
         </div>
 
-        <div class="grid-4" id="productGrid">
-          <a class="product-card" data-product-card data-publish="published" href="product-detail.html" style="text-decoration:none;color:inherit">
-            <div class="thumb">Product Image</div>
-            <div class="info">
-              <div class="title">Cotton T-Shirt Basic Fit</div>
-              <div class="price">Purchase Price: ৳ 450.00</div>
-              <span class="pill pill-published">Published</span>
+        <div class="grid-discovery" id="productGrid">
+          <a class="discovery-card" data-product-card data-publish="published" href="product-detail.html">
+            <div class="discovery-card-media">
+              <span class="discovery-source">UGREEN</span>
+              <span class="discovery-status discovery-status--published">Published</span>
+              <img class="thumb-img" src="https://picsum.photos/seed/ps937/400/400" alt="" loading="lazy" />
+              <div class="discovery-chip-row"><span class="discovery-chip">Brands Apple</span></div>
             </div>
-          </a>
-          <a class="product-card" data-product-card data-publish="unpublished" href="product-detail.html" style="text-decoration:none;color:inherit">
-            <div class="thumb">Product Image</div>
-            <div class="info">
-              <div class="title">Denim Jacket Classic Blue</div>
-              <div class="price-row">
-                <span class="price-strike">৳ 1,562.50</span>
-                <span class="price-sale">৳ 1,280.00</span>
-                <span class="discount-tag">-18%</span>
+            <div class="discovery-card-body">
+              <h2 class="discovery-title">Novation MiniNova 37 Mini Analog Modeling Synthesizer</h2>
+              <div class="discovery-price-row">
+                <span class="discovery-price">৳ 5,863</span>
+                <span class="discount-tag">-54%</span>
               </div>
-              <span class="pill pill-unpublished">Unpublished</span>
+              <div class="discovery-urgency">ONLY 10 LEFT</div>
+              <span class="discovery-authentic">100% authentic</span>
+              <div class="discovery-sold">79 sold</div>
+              <span class="discovery-ref">937</span>
             </div>
           </a>
-          <a class="product-card" data-product-card data-publish="unpublished" href="product-detail.html" style="text-decoration:none;color:inherit">
-            <div class="thumb">Product Image</div>
-            <div class="info">
-              <div class="title">Summer Dress Floral Print</div>
-              <div class="price">Purchase Price: ৳ 890.00</div>
-              <span class="pill pill-unpublished">Unpublished</span>
+
+          <a class="discovery-card" data-product-card data-publish="unpublished" href="product-detail.html">
+            <div class="discovery-card-media">
+              <span class="discovery-source">Oppo</span>
+              <span class="discovery-status discovery-status--unpublished">Unpublished</span>
+              <img class="thumb-img" src="https://picsum.photos/seed/ps938/400/400" alt="" loading="lazy" />
+              <div class="discovery-chip-row"><span class="discovery-chip">Country Bangladesh</span></div>
+            </div>
+            <div class="discovery-card-body">
+              <h2 class="discovery-title">Oppo Reno 14 Pro 5G Smartphone 12GB+512GB</h2>
+              <div class="discovery-price-row">
+                <span class="discovery-price">৳ 5,863</span>
+                <span class="discount-tag">-54%</span>
+              </div>
+              <div class="discovery-urgency">Almost sold out</div>
+              <span class="discovery-authentic">100% authentic</span>
+              <div class="discovery-sold">10.8k+ sold</div>
+              <span class="discovery-ref">938</span>
             </div>
           </a>
-          <a class="product-card" data-product-card data-publish="published" href="product-detail.html" style="text-decoration:none;color:inherit">
-            <div class="thumb">Product Image</div>
-            <div class="info">
-              <div class="title">Sports Sneakers Pro Run</div>
-              <div class="price">Purchase Price: ৳ 2,100.00</div>
-              <span class="pill pill-published">Published</span>
+
+          <a class="discovery-card" data-product-card data-publish="published" href="product-detail.html">
+            <div class="discovery-card-media">
+              <span class="discovery-source">Bangladesh</span>
+              <span class="discovery-status discovery-status--published">Published</span>
+              <img class="thumb-img" src="https://picsum.photos/seed/ps939/400/400" alt="" loading="lazy" />
+              <div class="discovery-chip-row"><span class="discovery-chip">Local</span></div>
+            </div>
+            <div class="discovery-card-body">
+              <h2 class="discovery-title">Cotton T-Shirt Basic Fit — Summer Collection</h2>
+              <div class="discovery-price-row">
+                <span class="discovery-price">৳ 450</span>
+              </div>
+              <div class="discovery-sold">1.2k+ sold</div>
+              <span class="discovery-ref">939</span>
             </div>
           </a>
-          <a class="product-card" data-product-card data-publish="unpublished" href="product-detail.html" style="text-decoration:none;color:inherit">
-            <div class="thumb">Product Image</div>
-            <div class="info">
-              <div class="title">Linen Trousers Slim Fit</div>
-              <div class="price">Purchase Price: ৳ 720.00</div>
-              <span class="pill pill-unpublished">Unpublished</span>
+
+          <a class="discovery-card" data-product-card data-publish="unpublished" href="product-detail.html">
+            <div class="discovery-card-media">
+              <span class="discovery-source">Brand Zone</span>
+              <span class="discovery-status discovery-status--unpublished">Unpublished</span>
+              <img class="thumb-img" src="https://picsum.photos/seed/ps940/400/400" alt="" loading="lazy" />
+              <div class="discovery-chip-row"><span class="discovery-chip">Denim</span></div>
+            </div>
+            <div class="discovery-card-body">
+              <h2 class="discovery-title">Denim Jacket Classic Blue — Retail Ready</h2>
+              <div class="discovery-price-row">
+                <span class="discovery-price">৳ 1,250</span>
+                <span class="discount-tag">-20%</span>
+              </div>
+              <span class="discovery-authentic">100% authentic</span>
+              <div class="discovery-sold">320 sold</div>
+              <span class="discovery-ref">940</span>
             </div>
           </a>
-          <a class="product-card" data-product-card data-publish="published" href="product-detail.html" style="text-decoration:none;color:inherit">
-            <div class="thumb">Product Image</div>
-            <div class="info">
-              <div class="title">Knit Sweater Winter Warm</div>
-              <div class="price">Purchase Price: ৳ 1,050.00</div>
-              <span class="pill pill-published">Published</span>
+
+          <a class="discovery-card" data-product-card data-publish="published" href="product-detail.html">
+            <div class="discovery-card-media">
+              <span class="discovery-source">UGREEN</span>
+              <span class="discovery-status discovery-status--published">Published</span>
+              <img class="thumb-img" src="https://picsum.photos/seed/ps941/400/400" alt="" loading="lazy" />
+            </div>
+            <div class="discovery-card-body">
+              <h2 class="discovery-title">USB-C Hub 7-in-1 Adapter for Laptop</h2>
+              <div class="discovery-price-row">
+                <span class="discovery-price">৳ 2,199</span>
+                <span class="discount-tag">-32%</span>
+              </div>
+              <div class="discovery-urgency">ONLY 10 LEFT</div>
+              <div class="discovery-sold">456 sold</div>
+              <span class="discovery-ref">941</span>
+            </div>
+          </a>
+
+          <a class="discovery-card" data-product-card data-publish="unpublished" href="product-detail.html">
+            <div class="discovery-card-media">
+              <span class="discovery-source">Trending</span>
+              <span class="discovery-status discovery-status--unpublished">Unpublished</span>
+              <img class="thumb-img" src="https://picsum.photos/seed/ps942/400/400" alt="" loading="lazy" />
+            </div>
+            <div class="discovery-card-body">
+              <h2 class="discovery-title">Summer Dress Floral Print — Light Fabric</h2>
+              <div class="discovery-price-row">
+                <span class="discovery-price">৳ 890</span>
+              </div>
+              <div class="discovery-sold">88 sold</div>
+              <span class="discovery-ref">942</span>
+            </div>
+          </a>
+
+          <a class="discovery-card" data-product-card data-publish="published" href="product-detail.html">
+            <div class="discovery-card-media">
+              <span class="discovery-source">Sports</span>
+              <span class="discovery-status discovery-status--published">Published</span>
+              <img class="thumb-img" src="https://picsum.photos/seed/ps943/400/400" alt="" loading="lazy" />
+            </div>
+            <div class="discovery-card-body">
+              <h2 class="discovery-title">Sports Sneakers Pro Run — Unisex</h2>
+              <div class="discovery-price-row">
+                <span class="discovery-price">৳ 2,100</span>
+                <span class="discount-tag">-15%</span>
+              </div>
+              <div class="discovery-sold">2.1k+ sold</div>
+              <span class="discovery-ref">943</span>
+            </div>
+          </a>
+
+          <a class="discovery-card" data-product-card data-publish="published" href="product-detail.html">
+            <div class="discovery-card-media">
+              <span class="discovery-source">Knitwear</span>
+              <span class="discovery-status discovery-status--published">Published</span>
+              <img class="thumb-img" src="https://picsum.photos/seed/ps944/400/400" alt="" loading="lazy" />
+            </div>
+            <div class="discovery-card-body">
+              <h2 class="discovery-title">Knit Sweater Winter Warm — Premium Wool Blend</h2>
+              <div class="discovery-price-row">
+                <span class="discovery-price">৳ 1,050</span>
+              </div>
+              <div class="discovery-sold">156 sold</div>
+              <span class="discovery-ref">944</span>
+            </div>
+          </a>
+
+          <a class="discovery-card" data-product-card data-publish="unpublished" href="product-detail.html">
+            <div class="discovery-card-media">
+              <span class="discovery-source">Linen</span>
+              <span class="discovery-status discovery-status--unpublished">Unpublished</span>
+              <img class="thumb-img" src="https://picsum.photos/seed/ps945/400/400" alt="" loading="lazy" />
+            </div>
+            <div class="discovery-card-body">
+              <h2 class="discovery-title">Linen Trousers Slim Fit — Office Casual</h2>
+              <div class="discovery-price-row">
+                <span class="discovery-price">৳ 720</span>
+              </div>
+              <div class="discovery-urgency">Almost sold out</div>
+              <span class="discovery-ref">945</span>
+            </div>
+          </a>
+
+          <a class="discovery-card" data-product-card data-publish="published" href="product-detail.html">
+            <div class="discovery-card-media">
+              <span class="discovery-source">Accessories</span>
+              <span class="discovery-status discovery-status--published">Published</span>
+              <img class="thumb-img" src="https://picsum.photos/seed/ps946/400/400" alt="" loading="lazy" />
+            </div>
+            <div class="discovery-card-body">
+              <h2 class="discovery-title">Leather Belt Classic Buckle — Brown</h2>
+              <div class="discovery-price-row">
+                <span class="discovery-price">৳ 380</span>
+                <span class="discount-tag">-10%</span>
+              </div>
+              <div class="discovery-sold">540 sold</div>
+              <span class="discovery-ref">946</span>
             </div>
           </a>
         </div>
 
         <p class="empty" id="productEmpty" style="display:none">No records available</p>
 
-        <div class="page-actions" style="margin-top:24px">
-          <span style="font-size:13px;color:var(--text-secondary)">Page 1 of 12</span>
-          <div style="display:flex;gap:8px">
-            <button class="btn btn-secondary" disabled>Previous</button>
-            <button class="btn btn-secondary">Next</button>
+        <div class="pagination-bar">
+          <span class="pagination-summary"><strong>05</strong> of <strong>20</strong> results</span>
+          <div class="pagination-nav">
+            <button type="button" disabled aria-label="Previous page">&lsaquo;</button>
+            <span class="page-num active">1</span>
+            <button type="button" class="page-num">2</button>
+            <button type="button" class="page-num">3</button>
+            <button type="button" class="page-num">4</button>
+            <span style="color:var(--text-muted);padding:0 4px">…</span>
+            <button type="button" class="page-num">36</button>
+            <button type="button" aria-label="Next page">&rsaquo;</button>
+            <div class="pagination-goto">
+              <span>Go to</span>
+              <input type="number" min="1" max="36" value="1" aria-label="Page number" />
+            </div>
           </div>
         </div>
       </main>

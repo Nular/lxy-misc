@@ -14,8 +14,8 @@
   --text: #0f172a;
   --text-secondary: #64748b;
   --text-muted: #94a3b8;
-  --primary: #2563eb;
-  --primary-hover: #1d4ed8;
+  --primary: #137fec;
+  --primary-hover: #0f6bd4;
   --primary-soft: #eff6ff;
   --success: #059669;
   --success-bg: #ecfdf5;
@@ -115,14 +115,331 @@ a:hover { text-decoration: underline; }
   align-items: center;
   justify-content: space-between;
   position: sticky;
-  top: 0;
+  top: 49px;
   z-index: 10;
 }
 
 .breadcrumb { font-size: 13px; color: var(--text-secondary); }
 .breadcrumb strong { color: var(--text); font-weight: 600; }
 
-.content { padding: 24px 28px 48px; max-width: 1280px; }
+.content { padding: 20px 28px 48px; max-width: none; }
+
+.app-header {
+  margin-left: var(--sidebar-w);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 28px;
+  display: flex;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 11;
+}
+
+.logo-mark {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  font-size: 22px;
+  color: #111;
+  letter-spacing: -0.03em;
+  text-decoration: none;
+}
+
+.logo-mark:hover { text-decoration: none; }
+.logo-elephant { font-size: 26px; line-height: 1; }
+.logo-mark .kick { color: #111; }
+.logo-mark .bazar { color: #e11d48; }
+
+.checkout-stepper {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 20px;
+  padding: 14px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.checkout-stepper .step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-muted);
+}
+
+.checkout-stepper .step.active { color: var(--primary); }
+.checkout-stepper .step.done { color: var(--text-secondary); }
+
+.checkout-stepper .step-num {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+}
+
+.checkout-stepper .step.active .step-num {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.checkout-stepper .step.done .step-num {
+  background: var(--success);
+  border-color: var(--success);
+  color: #fff;
+}
+
+.checkout-stepper .step-line {
+  width: 48px;
+  height: 2px;
+  background: var(--border);
+  margin: 0 12px;
+}
+
+.checkout-stepper.steps-2 .step-line { width: 64px; }
+
+.grid-discovery {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.discovery-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  background: var(--surface);
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  color: inherit;
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+
+.discovery-card:hover {
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08);
+  border-color: #cbd5e1;
+  text-decoration: none;
+}
+
+.discovery-card-media {
+  position: relative;
+  aspect-ratio: 1;
+  background: #f8fafc;
+  overflow: hidden;
+}
+
+.discovery-card-media .thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.discovery-source {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  max-width: calc(100% - 90px);
+  padding: 3px 8px;
+  background: rgba(15, 23, 42, 0.75);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.discovery-status {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.discovery-status--published { background: #dcfce7; color: #15803d; }
+.discovery-status--unpublished { background: #fce7f3; color: #be185d; }
+
+.discovery-chip-row {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  right: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.discovery-chip {
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.discovery-card-body {
+  padding: 10px 10px 12px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+  min-height: 118px;
+}
+
+.discovery-title {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--text);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin: 0;
+}
+
+.discovery-price-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+
+.discovery-price {
+  font-size: 15px;
+  font-weight: 800;
+  color: #dc2626;
+  letter-spacing: -0.02em;
+}
+
+.discovery-urgency {
+  font-size: 11px;
+  font-weight: 700;
+  color: #dc2626;
+}
+
+.discovery-authentic {
+  display: inline-block;
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 2px 8px;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #c2410c;
+}
+
+.discovery-sold {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: auto;
+}
+
+.discovery-ref {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  font-size: 11px;
+  color: #cbd5e1;
+  font-weight: 600;
+}
+
+.search-bar select {
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0 10px;
+  font-size: 13px;
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.search-bar select option { color: #111; background: #fff; }
+
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.pagination-summary {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.pagination-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.pagination-nav button,
+.pagination-nav .page-num {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pagination-nav .page-num.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.pagination-nav button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.pagination-goto {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 12px;
+  color: var(--text-secondary);
+}
+
+.pagination-goto input {
+  width: 48px;
+  height: 32px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  text-align: center;
+  font-size: 13px;
+}
 
 .page-title { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 20px; }
 
@@ -522,7 +839,12 @@ tr:hover td { background: #fafbfc; }
 }
 .toast.show { opacity: 1; }
 
+@media (max-width: 1400px) {
+  .grid-discovery { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
 @media (max-width: 1100px) {
+  .grid-discovery { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .grid-4 { grid-template-columns: repeat(2, 1fr); }
   .checkout-layout { grid-template-columns: 1fr; }
   .summary-sticky { position: static; }
@@ -538,16 +860,14 @@ tr:hover td { background: #fafbfc; }
 </style>
 </head>
 <body data-product-id="KB-DJ-2026-001-M" data-product-title="Denim Jacket Classic Blue" data-product-price="1250" data-product-original="1562.5">
+  <header class="app-header">
+    <a class="logo-mark" href="index.html"><span class="logo-elephant">🐘</span><span><span class="kick">Kick</span><span class="bazar">Bazar</span></span></a>
+  </header>
   <div class="app-shell">
     <aside class="sidebar">
-      <div class="brand">Kick<span>Bazar</span> Seller</div>
-      <div class="nav-section">Store</div>
-      <div class="nav-group">
-        <div class="nav-parent">Product Sourcing</div>
-        <a class="nav-item nav-sub active" href="index.html">Product Discovery</a>
-        <a class="nav-item nav-sub" href="purchase-orders.html">Purchase Orders List</a>
-      </div>
-      <a class="nav-item" href="#">Orders List</a>
+      <div class="nav-section">Product Sourcing</div>
+      <a class="nav-item nav-sub active" href="index.html">Product Discovery</a>
+      <a class="nav-item nav-sub" href="purchase-orders.html">Purchase Orders List</a>
     </aside>
 
     <div class="main">
@@ -559,7 +879,7 @@ tr:hover td { background: #fafbfc; }
       <main class="content" style="padding-bottom:88px">
         <div class="grid-2">
           <div class="detail-gallery">
-            <div class="main-img">Main Product Image</div>
+            <img class="main-img" src="https://picsum.photos/seed/denim940/640/640" alt="Denim Jacket" style="width:100%;height:auto;border-radius:var(--radius);display:block;object-fit:cover" />
             <div class="thumbs"><div></div><div></div><div></div><div></div></div>
           </div>
           <div>
@@ -582,10 +902,11 @@ tr:hover td { background: #fafbfc; }
             </div>
 
             <div class="price-row" style="margin-bottom:8px">
-              <span class="price-strike">৳ 1,562.50</span>
-              <span class="price-sale" style="font-size:20px">৳ 1,250.00</span>
+              <span class="discovery-price" style="font-size:22px">৳ 1,250</span>
               <span class="discount-tag">-20%</span>
             </div>
+            <p style="font-size:12px;color:var(--text-muted);margin-bottom:8px"><span class="price-strike">৳ 1,562.50</span> purchase price</p>
+            <span class="discovery-authentic" style="margin-bottom:12px">100% authentic</span>
             <p style="font-size:13px;color:var(--text-secondary);margin-bottom:20px">Stock: 120 (reference only, oversell allowed)</p>
 
             <div class="card">
@@ -809,8 +1130,9 @@ function initCartPage() {
   const tbody = document.getElementById('cartTableBody');
   if (!tbody) return;
 
-  const card = document.getElementById('cartCard');
-  const empty = document.getElementById('cartEmpty');
+    const card = document.getElementById('cartCard');
+    const empty = document.getElementById('cartEmpty');
+    const stepper = document.getElementById('checkoutStepper');
   const totalEl = document.getElementById('cartGrandTotal');
   const checkoutBtn = document.getElementById('cartCheckoutBtn');
 
@@ -821,10 +1143,12 @@ function initCartPage() {
       if (card) card.style.display = 'none';
       if (empty) empty.style.display = 'block';
       if (checkoutBtn) checkoutBtn.classList.add('disabled');
+      if (stepper) stepper.style.display = 'none';
       return;
     }
     if (card) card.style.display = 'block';
     if (empty) empty.style.display = 'none';
+    if (stepper) stepper.style.display = '';
     if (checkoutBtn) checkoutBtn.classList.remove('disabled');
 
     lines.forEach(line => {
@@ -1125,6 +1449,43 @@ function initCancelOrderModal() {
   });
 }
 
+function stepperMarkup(labels, activeIndex, allComplete = false) {
+  const parts = [];
+  labels.forEach((label, i) => {
+    let cls = 'step';
+    if (allComplete || i < activeIndex) cls += ' done';
+    else if (i === activeIndex) cls += ' active';
+    parts.push(`<div class="${cls}"><span class="step-num">${i + 1}</span><span>${label}</span></div>`);
+    if (i < labels.length - 1) parts.push('<div class="step-line" aria-hidden="true"></div>');
+  });
+  const extra = labels.length === 2 ? ' steps-2' : '';
+  return `<div class="checkout-stepper${extra}">${parts.join('')}</div>`;
+}
+
+function initCheckoutStepper() {
+  const mount = document.getElementById('checkoutStepper');
+  if (!mount) return;
+  const page = mount.dataset.stepPage || 'checkout';
+  const from = new URLSearchParams(window.location.search).get('from') || 'cart';
+  const buyNow = from === 'buynow';
+
+  if (page === 'cart') {
+    mount.innerHTML = stepperMarkup(['Cart', 'Checkout', 'Order Success'], 0);
+    return;
+  }
+  if (page === 'checkout') {
+    mount.innerHTML = buyNow
+      ? stepperMarkup(['Checkout', 'Order Success'], 0)
+      : stepperMarkup(['Cart', 'Checkout', 'Order Success'], 1);
+    return;
+  }
+  if (page === 'success') {
+    mount.innerHTML = buyNow
+      ? stepperMarkup(['Checkout', 'Order Success'], 1, true)
+      : stepperMarkup(['Cart', 'Checkout', 'Order Success'], 2, true);
+  }
+}
+
 function initOrderTabs() {
   document.querySelectorAll('[data-po-tab]').forEach(tab => {
     tab.addEventListener('click', () => {
@@ -1148,6 +1509,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initPaymentMethodToggle();
   initRemarkModal();
   initProductTabs();
+  initCheckoutStepper();
   initOrderDetailPage();
   initCancelOrderModal();
   initOrderTabs();

@@ -8,26 +8,25 @@
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body data-unit-price="1250" data-checkout-qty="2">
+  <header class="app-header">
+    <a class="logo-mark" href="index.html"><span class="logo-elephant">🐘</span><span><span class="kick">Kick</span><span class="bazar">Bazar</span></span></a>
+  </header>
   <div class="app-shell">
     <aside class="sidebar">
-      <div class="brand">Kick<span>Bazar</span> Seller</div>
-      <div class="nav-section">Store</div>
-      <div class="nav-group">
-        <div class="nav-parent">Product Sourcing</div>
-        <a class="nav-item nav-sub active" href="index.html">Product Discovery</a>
-        <a class="nav-item nav-sub" href="purchase-orders.html">Purchase Orders List</a>
-      </div>
-      <a class="nav-item" href="#">Orders List</a>
+      <div class="nav-section">Product Sourcing</div>
+      <a class="nav-item nav-sub" href="index.html">Product Discovery</a>
+      <a class="nav-item nav-sub" href="purchase-orders.html">Purchase Orders List</a>
     </aside>
 
     <div class="main">
       <header class="topbar">
-        <div class="breadcrumb">Product Sourcing &rsaquo; Product Discovery &rsaquo; Product Detail &rsaquo; <strong>Checkout</strong></div>
+        <div class="breadcrumb">Product Sourcing &rsaquo; <strong>Place Purchase Order</strong></div>
         <a class="btn btn-secondary cart-link" href="cart.html">Cart <span class="cart-badge" id="cartBadgeTop">0</span></a>
       </header>
 
       <main class="content">
         <h1 class="page-title">Checkout</h1>
+        <div id="checkoutStepper" data-step-page="checkout"></div>
 
         <div class="checkout-layout">
           <div style="display:flex;flex-direction:column;gap:16px">
