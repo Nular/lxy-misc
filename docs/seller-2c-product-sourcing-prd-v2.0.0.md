@@ -14,6 +14,7 @@
 | — | v1.0.1 | — | 定稿后线上修订；能力边界同 v1.0（无购物车、Buy Now 单笔闭环） |
 | 2026/09/28 | **v2.0.0** | — | 购物车与合并下单；Cart/Checkout 可改量；划线价与 **-X%** Tag；Detail/Success 推荐；交易步骤条与面包屑分层 |
 | 2026/10/13 | **v2.0.0** | — | Order Summary 增加 Subtotal / Promotion / Shipping Fee（无运费，展示 **Free**）；去掉邮件通知；Buy Now 直达 Checkout，不做数量弹层 |
+| 2026/10/13 | **v2.0.0** | — | 顶栏购物车旁增加客服 Icon；弹框展示并可复制 sales / orders / payment 三个联系方式 |
 
 ### 1.1 术语说明
 
@@ -31,7 +32,7 @@
 
 | 模块 | 页面/组件 | 本期范围说明 |
 |------|-----------|--------------|
-| 全局 | 顶栏 **Cart** 入口 + 角标 | **P0**（v2.0.0 新增） |
+| 全局 | 顶栏 **Home**、**客服 Icon**、**Cart** + 角标 | **P0**；客服弹框三个可复制联系方式 |
 | 选品 | Product Discovery | **P0**；v1.0.1 + **划线价/-X% Tag**；**无** 列表推荐 |
 | 商品 | Product Detail（内嵌 SKU）、Buy Now 直达 Checkout | **P0**；+ **Add to Cart**、推荐区；**不做** Buy Now 数量弹层 |
 | 交易 | **购物车**、**交易步骤条**、Checkout、Order Success | **P0**；Cart / Checkout 的 Order Summary 含 Subtotal、Promotion、Shipping Fee |
@@ -181,10 +182,21 @@ Order Success / PO List → 联系客服付款 → 2B 确认收款 → Publish t
 
 #### 4.1.1 功能描述
 
-顶栏右侧为两个 **Icon**（无文字按钮）：
+顶栏右侧为三个 **Icon**（无文字按钮），从左到右：
 
 1. **Home**：小房子，点击回 **Product Discovery**（`/seller/2c/sourcing`）。  
-2. **Cart**：购物车图标 + 数字角标，点击进购物车页。不做下拉预览。
+2. **Contact support**：客服耳机图标，紧挨购物车左侧。点击打开 **Contact support** 弹框，不跳转页面。  
+3. **Cart**：购物车图标 + 数字角标，点击进购物车页。不做下拉预览。
+
+客服弹框列出三条可复制联系方式。每条先给联系指示，再给用途：
+
+| 联系指示（可复制邮箱） | 用途 |
+|------------------------|------|
+| Connect sales: sales@kickbazar.com | Contact sales / Inquiry（联系业务员 / 询价） |
+| Connect orders: orders@kickbazar.com | Purchase orders（采购订单） |
+| Connect payment: payment@kickbazar.com | Payment issues（付款问题） |
+
+Copy 复制对应邮箱，Toast **Copied to clipboard**。这是人工联络入口，**不是**订单邮件通知。
 
 Add to Cart 成功：角标按 **quantity 合计** 增加，并 Toast / 气泡 **Added to cart successfully**。
 
@@ -196,13 +208,18 @@ Add to Cart 成功：角标按 **quantity 合计** 增加，并 Toast / 气泡 *
 | FL202 | 购物车角标 | Cart Badge | **quantity 总件数**（含失效行件数） |
 | FL203 | 加购反馈 | Added Bubble | Added to cart successfully |
 | FL204 | 回首页图标 | Home Icon | 回 Product Discovery |
+| FL205 | 客服图标 | Support Icon | 购物车左侧，全站顶栏 |
+| FL206 | 客服联系弹框 | Support Contact Modal | 三条联系指示，各自可复制邮箱 |
 
 #### 业务规则
 
 1. 角标 = 购物车各行 `quantity` 之和（与 Checkout 按钮的勾选件数口径不同，见 §4.6）。  
 2. 角标为 0 可展示 0 或隐藏，全站一致。  
 3. Home 始终回 Discovery，不回浏览器历史。  
-4. 数据范围：当前 2C 店铺、单一 2B 货源。
+4. 数据范围：当前 2C 店铺、单一 2B 货源。  
+5. 客服 Icon 出现在 Product Sourcing 全部页面顶栏，位置在 Cart 左侧。  
+6. 弹框三条联系方式固定为上表；Copy 只复制邮箱，不打开发信客户端，也不触发系统邮件。  
+7. 关闭：点 ✕ 或点遮罩。打开弹框不改变当前页面和购物车。
 
 #### 字段定义
 
@@ -217,6 +234,8 @@ Add to Cart 成功：角标按 **quantity 合计** 增加，并 Toast / 气泡 *
 |------|----------|----------|----------|------|----------|
 | BR101 | 进入购物车 | 点击 Cart | 跳转 Cart 页 | — | 路由正确 |
 | BR106 | 角标更新 | Add to Cart 成功 | 角标 +对应数量 | 加载● | 无需刷新页 |
+| BR107 | 打开客服弹框 | 点击客服 Icon | 打开 Contact support | — | 不跳转 |
+| BR108 | 复制联系方式 | 点击某条 Copy | 复制该邮箱并 Toast | — | 三条均可复制 |
 
 ---
 
@@ -614,6 +633,7 @@ v1.0.1 成功话术、Order No.、Grand Total、Contact、按钮；v2.0.0 增加
 - [ ] Success：推荐、Grand Total 一致；**无** 邮件已发送提示  
 - [ ] 步骤条：Cart 路径 3 步；Buy Now 2 步  
 - [ ] 下单成功 **不发送** 创建单邮件或确认收款邮件  
+- [ ] 全站顶栏 Cart 左侧有客服 Icon；弹框含 Connect sales / orders / payment，三条邮箱都可复制  
 
 ### 7.2 与 v1.0.1 关系验收
 
@@ -626,7 +646,7 @@ v1.0.1 成功话术、Order No.、Grand Total、Contact、按钮；v2.0.0 增加
 
 | 模块 | FL 范围 |
 |------|---------|
-| G0 顶栏 Cart | FL201–FL203 |
+| G0 顶栏 | FL201–FL206 |
 | Discovery | FL210–FL211 |
 | PDP | FL220–FL223 |
 | 推荐组件 | FL230–FL231 |
@@ -639,7 +659,7 @@ v1.0.1 成功话术、Order No.、Grand Total、Contact、按钮；v2.0.0 增加
 
 | 模块 | BR 范围 |
 |------|---------|
-| 全局 Cart | BR101、BR106 |
+| 全局顶栏 | BR101、BR106–BR108 |
 | Discovery | BR120–BR122 |
 | PDP | BR130–BR134 |
 | 推荐 | BR140–BR141 |
@@ -658,6 +678,7 @@ v1.0.1 成功话术、Order No.、Grand Total、Contact、按钮；v2.0.0 增加
 | Checkout | 单 SKU；Summary 仅 Grand Total | 多 SKU；Cart/Checkout 可改量；Summary 为 Subtotal / Promotion / Shipping Fee（Free）/ Grand Total |
 | Success | Contact | + 推荐；**无** 邮件提示 |
 | 导航 | 面包屑 | + 交易步骤条 + 短面包屑 |
+| 客服 | Success Contact | 顶栏客服弹框：sales / orders / payment，均可复制 |
 | PO 模块 | v1.0.1 | 本文不改 UI |
 
 ---

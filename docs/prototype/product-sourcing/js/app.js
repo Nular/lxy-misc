@@ -40,7 +40,99 @@ function showToast(msg) {
 }
 
 function copyText(text) {
-  navigator.clipboard.writeText(text).then(() => showToast('Copied to clipboard'));
+  const done = () => showToast('Copied to clipboard');
+  const fallback = () => {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      document.execCommand('copy');
+      done();
+    } catch (err) {
+      showToast('Copy failed');
+    }
+    ta.remove();
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done).catch(fallback);
+    return;
+  }
+  fallback();
+}
+
+const SUPPORT_CONTACTS = [
+  { email: 'sales@kickbazar.com', connect: 'Connect sales', purpose: 'Contact sales / Inquiry' },
+  { email: 'orders@kickbazar.com', connect: 'Connect orders', purpose: 'Purchase orders' },
+  { email: 'payment@kickbazar.com', connect: 'Connect payment', purpose: 'Payment issues' },
+];
+
+function supportModalMarkup() {
+  const rows = SUPPORT_CONTACTS.map(item => `
+    <div class="support-row">
+      <div>
+        <div class="support-instruction">${item.connect}: ${item.email}</div>
+        <div class="support-purpose">${item.purpose}</div>
+      </div>
+      <button class="btn btn-secondary" type="button" data-support-copy="${item.email}">Copy</button>
+    </div>`).join('');
+  return `
+    <div class="modal modal-wide" role="dialog" aria-modal="true" aria-labelledby="supportContactTitle">
+      <div class="modal-header">
+        <span id="supportContactTitle">Contact support</span>
+        <button class="btn btn-ghost" type="button" data-close-support aria-label="Close">✕</button>
+      </div>
+      <div class="modal-body">
+        <p>Copy a contact and reach the right team.</p>
+        <div class="support-list">${rows}</div>
+      </div>
+    </div>`;
+}
+
+function bindSupportContact() {
+  if (window.__supportBound) return;
+  window.__supportBound = true;
+  document.addEventListener('click', (e) => {
+    if (e.target.closest && e.target.closest('#supportContactBtn')) {
+      document.getElementById('supportContactModal')?.classList.add('open');
+      return;
+    }
+    const copyBtn = e.target.closest && e.target.closest('[data-support-copy]');
+    if (copyBtn) {
+      copyText(copyBtn.getAttribute('data-support-copy'));
+      return;
+    }
+    if (e.target.closest && e.target.closest('[data-close-support]')) {
+      document.getElementById('supportContactModal')?.classList.remove('open');
+      return;
+    }
+    const overlay = document.getElementById('supportContactModal');
+    if (overlay && e.target === overlay) overlay.classList.remove('open');
+  });
+}
+
+function initSupportContact() {
+  bindSupportContact();
+  if (!document.getElementById('supportContactModal')) {
+    const modal = document.createElement('div');
+    modal.id = 'supportContactModal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = supportModalMarkup();
+    document.body.appendChild(modal);
+  }
+  const cart = document.querySelector('.header-tools .cart-link');
+  if (!cart || document.getElementById('supportContactBtn')) return;
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.id = 'supportContactBtn';
+  btn.className = 'icon-btn';
+  btn.title = 'Contact support';
+  btn.setAttribute('aria-label', 'Contact support');
+  btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 13v-1a8 8 0 0 1 16 0v1"/><rect x="2" y="13" width="5" height="7" rx="1.5"/><rect x="17" y="13" width="5" height="7" rx="1.5"/></svg>';
+  cart.before(btn);
 }
 
 function readCart() {
@@ -637,6 +729,7 @@ function initRecommendations() {
 
 function initApp() {
   updateCartBadges();
+  initSupportContact();
   initCartPage();
   initCheckoutLines();
   initProductDetailActions();

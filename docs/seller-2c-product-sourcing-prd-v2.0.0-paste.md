@@ -147,3 +147,60 @@ v1.0.1 成功话术、Order No.、Grand Total、Contact、按钮；v2.0.0 增加
 ---
 
 界面文案（English）：`Subtotal`、`Promotion`、`Shipping Fee`、`Free`、`Grand Total`。Cart 与 Checkout 都展示这四行。Shipping Fee 没有金额，写 **Free**。
+
+---
+
+## 14. 客服联系弹框（2026/10/13 追加，整段贴到「4.1 全局 — 购物车入口」）
+
+**变更记录追加一行**
+
+| 2026/10/13 | **v2.0.0** | — | 顶栏购物车旁增加客服 Icon；弹框展示并可复制 sales / orders / payment 三个联系方式 |
+
+**范围表「全局」行替换为**
+
+| 全局 | 顶栏 **Home**、**客服 Icon**、**Cart** + 角标 | **P0**；客服弹框三个可复制联系方式 |
+
+**4.1 功能描述 — 在原 Home / Cart 说明中改为三个 Icon**
+
+顶栏右侧为三个 **Icon**（无文字按钮），从左到右：
+
+1. **Home**：小房子，点击回 **Product Discovery**。
+2. **Contact support**：客服耳机图标，紧挨购物车左侧。点击打开 **Contact support** 弹框，不跳转页面。
+3. **Cart**：购物车图标 + 数字角标，点击进购物车页。不做下拉预览。
+
+客服弹框列出三条可复制联系方式。每条先给联系指示，再给用途：
+
+| 联系指示（可复制邮箱） | 用途 |
+|------------------------|------|
+| Connect sales: sales@kickbazar.com | Contact sales / Inquiry（联系业务员 / 询价） |
+| Connect orders: orders@kickbazar.com | Purchase orders（采购订单） |
+| Connect payment: payment@kickbazar.com | Payment issues（付款问题） |
+
+Copy 复制对应邮箱，Toast **Copied to clipboard**。这是人工联络入口，不是订单邮件通知。
+
+**功能清单追加**
+
+| FL205 | 客服图标 | Support Icon | 购物车左侧，全站顶栏 |
+| FL206 | 客服联系弹框 | Support Contact Modal | 三条联系指示，各自可复制邮箱 |
+
+**业务规则追加**
+
+5. 客服 Icon 出现在 Product Sourcing 全部页面顶栏，位置在 Cart 左侧。
+6. 弹框三条联系方式固定为上表；Copy 只复制邮箱，不打开发信客户端，也不触发系统邮件。
+7. 关闭：点 ✕ 或点遮罩。打开弹框不改变当前页面和购物车。
+
+**交互追加**
+
+| BR107 | 打开客服弹框 | 点击客服 Icon | 打开 Contact support | — | 不跳转 |
+| BR108 | 复制联系方式 | 点击某条 Copy | 复制该邮箱并 Toast | — | 三条均可复制 |
+
+**验收追加一条**
+
+- [ ] 全站顶栏 Cart 左侧有客服 Icon；弹框含 Connect sales / orders / payment，三条邮箱都可复制
+
+**附录**
+
+| G0 顶栏 | FL201–FL206 |
+| 全局顶栏 | BR101、BR106–BR108 |
+
+| 客服 | Success Contact | 顶栏客服弹框：sales / orders / payment，均可复制 |
