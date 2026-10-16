@@ -936,15 +936,50 @@ function renderRecords() {
         <td>${r.zone}</td>
         <td>${r.sku}</td>
         <td class="${qtyClass}" style="font-weight:500">${r.qty}</td>
-        <td class="stock-change">
-          T: ${r.after.total} / L: ${r.after.locked} / A: ${r.after.available}
-        </td>
+        <td class="stock-change">${formatAfterChangeHtml(r)}</td>
         <td class="${typeClass[r.type] || ''}">${r.type}</td>
         <td>${r.order}</td>
         <td>${r.operator}</td>
       </tr>
     `;
   }).join('');
+}
+
+function getAfterChangeArrows(r) {
+  const type = r.type || '';
+  const plus = String(r.qty).startsWith('+');
+  const minus = String(r.qty).startsWith('-');
+  if (type.includes('Inbound') || (type.includes('Manual Adjustment') && plus)) {
+    return { t: 'up', l: 'same', a: 'up' };
+  }
+  if (type.includes('Manual Adjustment') && minus) {
+    return { t: 'down', l: 'same', a: 'down' };
+  }
+  if (type === 'Outbound Occupy') {
+    return { t: 'same', l: 'up', a: 'down' };
+  }
+  if (type === 'Outbound Deduct') {
+    return { t: 'down', l: 'down', a: 'same' };
+  }
+  return { t: 'same', l: 'same', a: 'same' };
+}
+
+function afterArrowSpan(dir) {
+  if (dir === 'up') return '<span class="up">↑</span>';
+  if (dir === 'down') return '<span class="down">↓</span>';
+  return '';
+}
+
+function formatAfterChangeHtml(r) {
+  const { total, locked, available } = r.after;
+  const arrows = getAfterChangeArrows(r);
+  return `T: ${total} ${afterArrowSpan(arrows.t)} / L: ${locked} ${afterArrowSpan(arrows.l)} / A: ${available} ${afterArrowSpan(arrows.a)}`;
+}
+
+function formatAfterChangeDetailHtml(r) {
+  const { total, locked, available } = r.after;
+  const arrows = getAfterChangeArrows(r);
+  return `<span class="stock-change">Total ${total} ${afterArrowSpan(arrows.t)} · Locked ${locked} ${afterArrowSpan(arrows.l)} · Available ${available} ${afterArrowSpan(arrows.a)}</span>`;
 }
 
 function enrichRecordDetail(r) {
@@ -979,14 +1014,13 @@ function detailRow(label, valueHtml) {
 function openRecordDetail(index) {
   const r = recordListCache[index];
   if (!r) return;
-  const after = `Total ${r.after.total} · Locked ${r.after.locked} · Available ${r.after.available}`;
   let html = `<div class="record-detail-grid">
     ${detailRow('Time', r.time)}
     ${detailRow('Warehouse', r.warehouse)}
     ${detailRow('Zone', r.zone)}
     ${detailRow('SKU ID', r.sku)}
     ${detailRow('Qty', r.qty)}
-    ${detailRow('After Change', after)}
+    ${detailRow('After Change', formatAfterChangeDetailHtml(r))}
     ${detailRow('Type', r.type)}
     ${detailRow('Operator', r.operator)}
   </div>`;
