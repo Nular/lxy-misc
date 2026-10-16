@@ -16,27 +16,15 @@ Warehouse Management System (WMS) interactive HTML prototype based on PRD specif
 
 ### 单文件版（推荐，无需服务器）
 
-**整包导出**（Dashboard / 仓库设置 / 库存 / 流水 / 全站 SPA）：
+**单文件导出（推荐）** — zip 内只有一个 HTML，含全部页面与交互：
 
 ```
-export/KickBazar-WMS-Export.zip
+export/KickBazar-WMS-Export.zip   →  KickBazar-WMS.html
 ```
 
-或直接打开：
+或直接打开 `export/KickBazar-WMS.html`（与 `prototype/kickbazar-wms-prototype.html` 同源，由 `scripts/build-wms-html.py` 生成）。
 
-| 路径 | 内容 |
-|------|------|
-| `export/KickBazar-WMS-Prototype.html` | 全站 SPA（与 `prototype/kickbazar-wms-prototype.html` 同步） |
-| `export/KickBazar-WMS-Inventory.html` | SPU/SKU 库存 + 库存调整 |
-| `export/KickBazar-WMS-Inventory-Record.html` | 库存流水 |
-| `export/KickBazar-WMS-Dashboard.html` | Dashboard |
-| `export/KickBazar-WMS-Warehouse-Setup.html` | 仓库/库区（Admin） |
-
-开发用单文件：
-
-```
-prototype/kickbazar-wms-prototype.html
-```
+`export/` 下其余分页面 HTML 为历史拆分稿，不再打入 zip。
 
 ### 多文件版
 
