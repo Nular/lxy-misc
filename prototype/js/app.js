@@ -149,12 +149,12 @@ const recordData = {
     { time: '2026-08-17 15:20:11', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10001-WH', qty: '-10', after: { total: 970, locked: 150, available: 820 }, type: 'Manual Adjustment (Decrease)', order: 'ADJ-20260817002', operator: 'Admin', sub: 'manual', direction: 'Decrease', adjQty: '10', adjType: 'Damage (报损)', reason: 'Carton crushed in storage aisle.', attachment: '—' }
   ],
   occupy: [
-    { time: '2026-08-21 11:45:22', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10001-BK', qty: '50', after: { total: 1200, locked: 200, available: 1000 }, type: 'Outbound Occupy', order: 'OUT-20260821005', operator: 'System', outboundNo: 'OUT-20260821005', relatedOrderNo: 'SO-20260821001', trackingNo: '—', status: 'Allocated' },
+    { time: '2026-08-21 11:45:22', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10001-BK', qty: '50', after: { total: 1200, locked: 200, available: 1000 }, type: 'Outbound Occupy', order: 'OUT-20260821005', operator: 'System', outboundNo: 'OUT-20260821005', relatedOrderNo: 'SO-20260821001', shipmentNo: '—', status: 'Allocated' },
     { time: '2026-08-21 10:30:18', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10002-42', qty: '30', after: { total: 900, locked: 160, available: 740 }, type: 'Outbound Occupy', order: 'OUT-20260821003', operator: 'System' },
     { time: '2026-08-20 15:12:55', warehouse: 'BJ-001', zone: 'BJ-001-STO (Storage)', sku: 'SKU-10003-01', qty: '100', after: { total: 3200, locked: 560, available: 2640 }, type: 'Outbound Occupy', order: 'OUT-20260820008', operator: 'System' }
   ],
   deduct: [
-    { time: '2026-08-21 14:20:33', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10001-WH', qty: '-25', after: { total: 980, locked: 150, available: 830 }, type: 'Outbound Deduct', order: 'OUT-20260820012', operator: 'Li Ming', outboundNo: 'OUT-20260820012', relatedOrderNo: 'SO-20260820012', trackingNo: 'TRK-SF1029384756', status: 'Shipped' },
+    { time: '2026-08-21 14:20:33', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10001-WH', qty: '-25', after: { total: 980, locked: 150, available: 830 }, type: 'Outbound Deduct', order: 'OUT-20260820012', operator: 'Li Ming', outboundNo: 'OUT-20260820012', relatedOrderNo: 'SO-20260820012', shipmentNo: 'SHP-SF1029384756', status: 'Shipped' },
     { time: '2026-08-20 17:05:41', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10001-BK', qty: '-40', after: { total: 1000, locked: 150, available: 850 }, type: 'Outbound Deduct', order: 'OUT-20260819015', operator: 'Zhang Wei' }
   ],
   unfreeze: [
@@ -864,14 +864,20 @@ function submitAdjustment() {
 }
 
 // ========== Records ==========
+function updateRecordSubTabs() {
+  const inboundSub = document.getElementById('inbound-sub-tabs');
+  const outboundSub = document.getElementById('outbound-sub-tabs');
+  if (inboundSub) inboundSub.style.display = currentRecordTab === 'inbound' ? 'flex' : 'none';
+  if (outboundSub) outboundSub.style.display = currentRecordTab === 'outbound' ? 'flex' : 'none';
+}
+
 function initRecordTabs() {
   document.querySelectorAll('#record-tabs .tab').forEach(tab => {
     tab.addEventListener('click', () => {
       document.querySelectorAll('#record-tabs .tab').forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
       currentRecordTab = tab.dataset.recordTab;
-      const subBar = document.getElementById('inbound-sub-tabs');
-      if (subBar) subBar.style.display = currentRecordTab === 'inbound' ? 'flex' : 'none';
+      updateRecordSubTabs();
       renderRecords();
     });
   });
@@ -879,6 +885,14 @@ function initRecordTabs() {
   document.querySelectorAll('#inbound-sub-tabs .sub-tab').forEach(tab => {
     tab.addEventListener('click', () => {
       document.querySelectorAll('#inbound-sub-tabs .sub-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      renderRecords();
+    });
+  });
+
+  document.querySelectorAll('#outbound-sub-tabs .sub-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('#outbound-sub-tabs .sub-tab').forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
       renderRecords();
     });
@@ -911,10 +925,17 @@ function renderRecords() {
       if (subText === 'manual') data = data.filter(d => d.sub === 'manual');
       if (subText === 'purchase') data = data.filter(d => d.sub === 'purchase');
     }
+  } else if (currentRecordTab === 'outbound') {
+    data = [...recordData.occupy, ...recordData.deduct];
+    const activeSub = document.querySelector('#outbound-sub-tabs .sub-tab.active');
+    if (activeSub) {
+      const subText = activeSub.textContent.trim().toLowerCase();
+      if (subText.includes('deduct')) data = data.filter(d => d.type === 'Outbound Deduct');
+      if (subText.includes('occupy')) data = data.filter(d => d.type === 'Outbound Occupy');
+    }
+    data.sort((a, b) => b.time.localeCompare(a.time));
   } else if (currentRecordTab === 'manual') {
     data = allManual.sort((a, b) => b.time.localeCompare(a.time));
-  } else {
-    data = recordData[currentRecordTab] || [];
   }
 
   recordListCache = data.map(enrichRecordDetail);
@@ -1008,7 +1029,7 @@ function enrichRecordDetail(r) {
   if (row.type === 'Outbound Occupy' || row.type === 'Outbound Deduct') {
     row.outboundNo = row.outboundNo || row.order;
     row.relatedOrderNo = row.relatedOrderNo || '—';
-    row.trackingNo = row.trackingNo || '—';
+    row.shipmentNo = row.shipmentNo || row.trackingNo || '—';
     row.status = row.status || (row.type === 'Outbound Occupy' ? 'Allocated' : 'Shipped');
   }
   return row;
@@ -1058,7 +1079,7 @@ function openRecordDetail(index) {
     html += `<div class="record-detail-section"><h4>Outbound</h4><div class="record-detail-grid">
       ${detailRow('Outbound No.', r.outboundNo)}
       ${detailRow('Related Order No.', r.relatedOrderNo)}
-      ${detailRow('Tracking No.', r.trackingNo)}
+      ${detailRow('Shipment No.', r.shipmentNo)}
       ${detailRow('Status', r.status)}
     </div></div>`;
   }

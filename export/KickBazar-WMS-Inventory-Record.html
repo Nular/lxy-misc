@@ -1084,8 +1084,7 @@ tbody tr.selected {
         <div class="page-body">
           <div class="tabs" id="record-tabs">
             <div class="tab active" data-tab="inbound">Inbound</div>
-            <div class="tab" data-tab="occupy">Outbound Occupy</div>
-            <div class="tab" data-tab="deduct">Outbound Deduct</div>
+            <div class="tab" data-tab="outbound">Outbound</div>
             <div class="tab" data-tab="manual">Manual Adjustment</div>
             <div class="tab" data-tab="all">All</div>
           </div>
@@ -1102,6 +1101,11 @@ tbody tr.selected {
             <div class="sub-tab active" data-sub="all">All</div>
             <div class="sub-tab" data-sub="manual">Manual</div>
             <div class="sub-tab" data-sub="purchase">Purchase</div>
+          </div>
+          <div class="sub-tabs" id="outbound-sub" style="display:none">
+            <div class="sub-tab active" data-outsub="all">All</div>
+            <div class="sub-tab" data-outsub="deduct">Outbound Deduct</div>
+            <div class="sub-tab" data-outsub="occupy">Outbound Occupy</div>
           </div>
           <div class="table-wrapper">
             <table>
@@ -1143,7 +1147,7 @@ function enrich(r){
   const row={...r};
   if(row.type==='Purchase Inbound'||row.type==='Manual Inbound'){row.inboundNo=row.inboundNo||row.order;row.inboundType=row.inboundType||(row.sub==='purchase'?'Purchase':'Manual');if(row.inboundType==='Purchase'&&!row.purchaseOrderNo)row.purchaseOrderNo='PO-20260820001';}
   if(row.type&&row.type.includes('Manual Adjustment')){row.direction=row.direction||(row.qty.startsWith('+')?'Increase':'Decrease');row.adjQty=row.adjQty||row.qty.replace(/^[+-]/,'');row.adjType=row.adjType||'—';row.reason=row.reason||'—';row.attachment=row.attachment||'—';}
-  if(row.type==='Outbound Occupy'||row.type==='Outbound Deduct'){row.outboundNo=row.outboundNo||row.order;row.relatedOrderNo=row.relatedOrderNo||'—';row.trackingNo=row.trackingNo||'—';row.status=row.status||(row.type==='Outbound Occupy'?'Allocated':'Shipped');}
+  if(row.type==='Outbound Occupy'||row.type==='Outbound Deduct'){row.outboundNo=row.outboundNo||row.order;row.relatedOrderNo=row.relatedOrderNo||'—';row.shipmentNo=row.shipmentNo||row.trackingNo||'—';row.status=row.status||(row.type==='Outbound Occupy'?'Allocated':'Shipped');}
   return row;
 }
 function openRecordDetail(i){
@@ -1157,7 +1161,7 @@ function openRecordDetail(i){
     html+=`<div class="record-detail-section"><h4>Inventory Adjustment</h4><div class="record-detail-grid">${detailRow('Adjustment No.',r.order)}${detailRow('Direction',r.direction)}${detailRow('Adjustment Qty',r.adjQty)}${detailRow('Adjustment Type',r.adjType)}${detailRow('Reason',r.reason)}${detailRow('Attachment',r.attachment)}</div></div>`;
   }
   if(r.type==='Outbound Occupy'||r.type==='Outbound Deduct'){
-    html+=`<div class="record-detail-section"><h4>Outbound</h4><div class="record-detail-grid">${detailRow('Outbound No.',r.outboundNo)}${detailRow('Related Order No.',r.relatedOrderNo)}${detailRow('Tracking No.',r.trackingNo)}${detailRow('Status',r.status)}</div></div>`;
+    html+=`<div class="record-detail-section"><h4>Outbound</h4><div class="record-detail-grid">${detailRow('Outbound No.',r.outboundNo)}${detailRow('Related Order No.',r.relatedOrderNo)}${detailRow('Shipment No.',r.shipmentNo)}${detailRow('Status',r.status)}</div></div>`;
   }
   document.getElementById('record-detail-body').innerHTML=html;
   document.getElementById('record-detail-modal').classList.add('show');
@@ -1173,20 +1177,28 @@ const base = {
     { time:'2026-08-17 15:20:11', warehouse:'SH001 - Shanghai Main Warehouse', zone:'SH001STO (Storage)', sku:'SKU-10001-WH', qty:'-10', after:{total:970,locked:150,available:820}, type:'Manual Adjustment (Decrease)', order:'ADJ-20260817002', operator:'Admin', sub:'manual', direction:'Decrease', adjQty:'10', adjType:'Damage (报损)', reason:'Carton crushed.', attachment:'—' }
   ],
   occupy: [
-    { time:'2026-08-21 11:45:22', warehouse:'SH001 - Shanghai Main Warehouse', zone:'SH001STO (Storage)', sku:'SKU-10001-BK', qty:'50', after:{total:1200,locked:200,available:1000}, type:'Outbound Occupy', order:'OUT-20260821005', operator:'System', sub:'occupy', relatedOrderNo:'SO-20260821001', trackingNo:'—', status:'Allocated' }
+    { time:'2026-08-21 11:45:22', warehouse:'SH001 - Shanghai Main Warehouse', zone:'SH001STO (Storage)', sku:'SKU-10001-BK', qty:'50', after:{total:1200,locked:200,available:1000}, type:'Outbound Occupy', order:'OUT-20260821005', operator:'System', sub:'occupy', relatedOrderNo:'SO-20260821001', shipmentNo:'—', status:'Allocated' }
   ],
   deduct: [
-    { time:'2026-08-21 14:20:33', warehouse:'SH001 - Shanghai Main Warehouse', zone:'SH001STO (Storage)', sku:'SKU-10001-WH', qty:'-25', after:{total:980,locked:150,available:830}, type:'Outbound Deduct', order:'OUT-20260820012', operator:'Li Ming', sub:'deduct', relatedOrderNo:'SO-20260820012', trackingNo:'TRK-SF1029384756', status:'Shipped' }
+    { time:'2026-08-21 14:20:33', warehouse:'SH001 - Shanghai Main Warehouse', zone:'SH001STO (Storage)', sku:'SKU-10001-WH', qty:'-25', after:{total:980,locked:150,available:830}, type:'Outbound Deduct', order:'OUT-20260820012', operator:'Li Ming', sub:'deduct', relatedOrderNo:'SO-20260820012', shipmentNo:'SHP-SF1029384756', status:'Shipped' }
   ]
 };
-let tab='inbound', sub='all';
+let tab='inbound', inSub='all', outSub='all';
+function updateRecordSubBars(){
+  document.getElementById('inbound-sub').style.display=tab==='inbound'?'flex':'none';
+  document.getElementById('outbound-sub').style.display=tab==='outbound'?'flex':'none';
+}
 document.querySelectorAll('#record-tabs .tab').forEach(t=>t.addEventListener('click',()=>{
   document.querySelectorAll('#record-tabs .tab').forEach(x=>x.classList.remove('active')); t.classList.add('active');
-  tab=t.dataset.tab; document.getElementById('inbound-sub').style.display=tab==='inbound'?'flex':'none'; render();
+  tab=t.dataset.tab; updateRecordSubBars(); render();
 }));
 document.querySelectorAll('#inbound-sub .sub-tab').forEach(t=>t.addEventListener('click',()=>{
   document.querySelectorAll('#inbound-sub .sub-tab').forEach(x=>x.classList.remove('active')); t.classList.add('active');
-  sub=t.dataset.sub; render();
+  inSub=t.dataset.sub; render();
+}));
+document.querySelectorAll('#outbound-sub .sub-tab').forEach(t=>t.addEventListener('click',()=>{
+  document.querySelectorAll('#outbound-sub .sub-tab').forEach(x=>x.classList.remove('active')); t.classList.add('active');
+  outSub=t.dataset.outsub; render();
 }));
 function allManualRows(){
   const ls=JSON.parse(localStorage.getItem('manual_records')||'[]').map(r=>({...r,sub:'manual'}));
@@ -1198,9 +1210,9 @@ function render(){
   let data=[];
   const manualRows=allManualRows();
   if(tab==='all') data=[...base.inbound,...manualRows,...base.occupy,...base.deduct];
-  else if(tab==='inbound'){ data=base.inbound; if(sub==='manual') data=data.filter(d=>d.sub==='manual'); if(sub==='purchase') data=data.filter(d=>d.sub==='purchase'); }
+  else if(tab==='inbound'){ data=base.inbound; if(inSub==='manual') data=data.filter(d=>d.sub==='manual'); if(inSub==='purchase') data=data.filter(d=>d.sub==='purchase'); }
+  else if(tab==='outbound'){ data=[...base.occupy,...base.deduct]; if(outSub==='deduct') data=data.filter(d=>d.type==='Outbound Deduct'); if(outSub==='occupy') data=data.filter(d=>d.type==='Outbound Occupy'); }
   else if(tab==='manual') data=manualRows;
-  else data=base[tab]||[];
   data.sort((a,b)=>b.time.localeCompare(a.time));
   recordListCache=data.map(enrich);
   document.getElementById('tbody').innerHTML=recordListCache.map((r,idx)=>{

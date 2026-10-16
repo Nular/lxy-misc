@@ -105,7 +105,7 @@
 盘盈、盘亏、报溢、报损、录入纠错等库存更正，须通过 **5.3 库存调整单**（仅 Admin）提交后由系统写账并**自动生成流水**（见 **6.4**）。  
 移库、报损作业、打包/发运**不写**库存流水、不出现在任何 Tab。
 
-入口：Record。五个 Tab：**Inbound**、**Outbound Occupy**、**Outbound Deduct**、**Manual Adjustment**、**All**。（本期不做 Unfreeze Tab）
+入口：Record。四个 Tab：**Inbound**、**Outbound**、**Manual Adjustment**、**All**。（本期不做 Unfreeze Tab）
 
 共用筛选：时间（默认近 7 天）、Warehouse、Zone、SKU ID、关联单号、操作人。
 
