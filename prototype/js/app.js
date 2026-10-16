@@ -940,6 +940,7 @@ function renderRecords() {
         <td class="${typeClass[r.type] || ''}">${r.type}</td>
         <td>${r.order}</td>
         <td>${r.operator}</td>
+        <td style="text-align:center">${recordViewButtonHtml(idx)}</td>
       </tr>
     `;
   }).join('');
@@ -974,6 +975,12 @@ function formatAfterChangeHtml(r) {
   const { total, locked, available } = r.after;
   const arrows = getAfterChangeArrows(r);
   return `T: ${total} ${afterArrowSpan(arrows.t)} / L: ${locked} ${afterArrowSpan(arrows.l)} / A: ${available} ${afterArrowSpan(arrows.a)}`;
+}
+
+const RECORD_VIEW_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5c-5 0-9.3 3.1-10.7 7.5C2.7 16.9 7 20 12 20s9.3-3.1 10.7-7.5C21.3 8.1 17 5 12 5zm0 12.5a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-2.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/></svg>`;
+
+function recordViewButtonHtml(idx) {
+  return `<button type="button" class="record-view-btn" title="View detail" aria-label="View detail" onclick="event.stopPropagation();openRecordDetail(${idx})">${RECORD_VIEW_ICON}</button>`;
 }
 
 function formatAfterChangeDetailHtml(r) {

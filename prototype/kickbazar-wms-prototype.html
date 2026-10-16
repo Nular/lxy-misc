@@ -806,6 +806,29 @@ tbody tr.selected {
   background: #f5faff;
 }
 
+.record-view-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  background: #fff;
+  color: #1890ff;
+  cursor: pointer;
+  padding: 0;
+}
+.record-view-btn:hover {
+  border-color: #1890ff;
+  background: #e6f7ff;
+}
+.record-view-btn svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
 .record-detail-grid {
   display: grid;
   grid-template-columns: 160px 1fr;
@@ -1542,6 +1565,7 @@ tbody tr.selected {
                     <th>Type</th>
                     <th>Related Order No.</th>
                     <th>Operator</th>
+                    <th style="width:56px;text-align:center">View</th>
                   </tr>
                 </thead>
                 <tbody id="record-table-body"></tbody>
@@ -2778,6 +2802,7 @@ function renderRecords() {
         <td class="${typeClass[r.type] || ''}">${r.type}</td>
         <td>${r.order}</td>
         <td>${r.operator}</td>
+        <td style="text-align:center">${recordViewButtonHtml(idx)}</td>
       </tr>
     `;
   }).join('');
@@ -2812,6 +2837,12 @@ function formatAfterChangeHtml(r) {
   const { total, locked, available } = r.after;
   const arrows = getAfterChangeArrows(r);
   return `T: ${total} ${afterArrowSpan(arrows.t)} / L: ${locked} ${afterArrowSpan(arrows.l)} / A: ${available} ${afterArrowSpan(arrows.a)}`;
+}
+
+const RECORD_VIEW_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5c-5 0-9.3 3.1-10.7 7.5C2.7 16.9 7 20 12 20s9.3-3.1 10.7-7.5C21.3 8.1 17 5 12 5zm0 12.5a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-2.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/></svg>`;
+
+function recordViewButtonHtml(idx) {
+  return `<button type="button" class="record-view-btn" title="View detail" aria-label="View detail" onclick="event.stopPropagation();openRecordDetail(${idx})">${RECORD_VIEW_ICON}</button>`;
 }
 
 function formatAfterChangeDetailHtml(r) {

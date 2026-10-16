@@ -1038,6 +1038,9 @@ tbody tr.selected {
     .type-manual { color: #722ed1; font-weight: 500; }
     tbody tr.record-row-clickable { cursor: pointer; }
     tbody tr.record-row-clickable:hover { background: #f5faff; }
+    .record-view-btn { display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border:1px solid #d9d9d9;border-radius:4px;background:#fff;color:#1890ff;cursor:pointer;padding:0; }
+    .record-view-btn:hover { border-color:#1890ff;background:#e6f7ff; }
+    .record-view-btn svg { width:16px;height:16px;fill:currentColor; }
     .record-detail-grid { display: grid; grid-template-columns: 160px 1fr; gap: 10px 16px; font-size: 13px; }
     .record-detail-grid .label { color: #666; }
     .record-detail-section { margin-top: 16px; padding-top: 12px; border-top: 1px solid #f0f0f0; }
@@ -1105,7 +1108,7 @@ tbody tr.selected {
               <thead>
                 <tr>
                   <th>Time</th><th>Warehouse</th><th>Zone</th><th>SKU ID</th><th>Qty</th>
-                  <th>After Change (Total/Locked/Available)</th><th>Type</th><th>Related Order No.</th><th>Operator</th>
+                  <th>After Change (Total/Locked/Available)</th><th>Type</th><th>Related Order No.</th><th>Operator</th><th style="width:56px;text-align:center">View</th>
                 </tr>
               </thead>
               <tbody id="tbody"></tbody>
@@ -1134,6 +1137,8 @@ function getAfterChangeArrows(r){
 function afterArrowSpan(dir){if(dir==='up')return'<span class="up">↑</span>';if(dir==='down')return'<span class="down">↓</span>';return'';}
 function formatAfterChangeHtml(r){const{total,locked,available}=r.after;const a=getAfterChangeArrows(r);return`T: ${total} ${afterArrowSpan(a.t)} / L: ${locked} ${afterArrowSpan(a.l)} / A: ${available} ${afterArrowSpan(a.a)}`;}
 function formatAfterChangeDetailHtml(r){const{total,locked,available}=r.after;const a=getAfterChangeArrows(r);return`<span class="stock-change">Total ${total} ${afterArrowSpan(a.t)} · Locked ${locked} ${afterArrowSpan(a.l)} · Available ${available} ${afterArrowSpan(a.a)}</span>`;}
+const RECORD_VIEW_ICON=`<svg viewBox="0 0 24 24"><path d="M12 5c-5 0-9.3 3.1-10.7 7.5C2.7 16.9 7 20 12 20s9.3-3.1 10.7-7.5C21.3 8.1 17 5 12 5zm0 12.5a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-2.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/></svg>`;
+function recordViewButtonHtml(i){return `<button type="button" class="record-view-btn" title="View detail" onclick="event.stopPropagation();openRecordDetail(${i})">${RECORD_VIEW_ICON}</button>`;}
 function enrich(r){
   const row={...r};
   if(row.type==='Purchase Inbound'||row.type==='Manual Inbound'){row.inboundNo=row.inboundNo||row.order;row.inboundType=row.inboundType||(row.sub==='purchase'?'Purchase':'Manual');if(row.inboundType==='Purchase'&&!row.purchaseOrderNo)row.purchaseOrderNo='PO-20260820001';}
@@ -1204,7 +1209,7 @@ function render(){
     return `<tr class="record-row-clickable" onclick="openRecordDetail(${idx})"><td>${r.time}</td><td>${r.warehouse}</td><td>${r.zone}</td><td>${r.sku}</td>
     <td class="${cls}" style="font-weight:600">${r.qty}</td>
     <td class="stock-change">${formatAfterChangeHtml(r)}</td>
-    <td class="${tcls}">${r.type}</td><td>${r.order}</td><td>${r.operator}</td></tr>`;
+    <td class="${tcls}">${r.type}</td><td>${r.order}</td><td>${r.operator}</td><td style="text-align:center">${recordViewButtonHtml(idx)}</td></tr>`;
   }).join('');
   document.getElementById('total').textContent=data.length;
 }
