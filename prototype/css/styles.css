@@ -791,6 +791,38 @@ tbody tr.selected {
 /* Record type badges */
 .type-inbound { color: #389e0d; }
 .type-manual { color: #722ed1; }
+
+.table-wrapper tbody tr.record-row-clickable {
+  cursor: pointer;
+}
+.table-wrapper tbody tr.record-row-clickable:hover {
+  background: #f5faff;
+}
+
+.record-detail-grid {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 10px 16px;
+  font-size: 13px;
+}
+.record-detail-grid .label {
+  color: #666;
+}
+.record-detail-grid .value {
+  color: #333;
+  word-break: break-word;
+}
+.record-detail-section {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+}
+.record-detail-section h4 {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: #333;
+}
 .type-occupy { color: #d46b08; }
 .type-deduct { color: #cf1322; }
 .type-unfreeze { color: #096dd9; }

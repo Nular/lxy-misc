@@ -138,23 +138,23 @@ let currentAdjSkuId = null;
 
 const recordData = {
   inbound: [
-    { time: '2026-08-21 09:32:15', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10001-BK', qty: '+200', after: { total: 1200, locked: 200, available: 1000 }, type: 'Purchase Inbound', order: 'IN-20260821001', operator: 'Zhang Wei', sub: 'purchase' },
+    { time: '2026-08-21 09:32:15', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10001-BK', qty: '+200', after: { total: 1200, locked: 200, available: 1000 }, type: 'Purchase Inbound', order: 'IN-20260821001', operator: 'Zhang Wei', sub: 'purchase', inboundNo: 'IN-20260821001', inboundType: 'Purchase', purchaseOrderNo: 'PO-20260821088' },
     { time: '2026-08-20 14:18:42', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10002-42', qty: '+150', after: { total: 900, locked: 160, available: 740 }, type: 'Purchase Inbound', order: 'IN-20260820003', operator: 'Li Ming', sub: 'purchase' },
     { time: '2026-08-18 16:22:08', warehouse: 'SG-001', zone: 'SG-001-STO (Storage)', sku: 'SKU-10004-01', qty: '+100', after: { total: 450, locked: 80, available: 370 }, type: 'Purchase Inbound', order: 'IN-20260818002', operator: 'Tan Wei Ming', sub: 'purchase' },
     { time: '2026-08-18 08:00:00', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10002-42', qty: '+100', after: { total: 900, locked: 160, available: 740 }, type: 'Purchase Inbound', order: 'IN-20260818001', operator: 'Admin', sub: 'purchase' },
-    { time: '2026-08-19 11:00:00', warehouse: 'BJ-001', zone: 'BJ-001-STO (Storage)', sku: 'SKU-10003-01', qty: '+80', after: { total: 3280, locked: 560, available: 2720 }, type: 'Manual Inbound', order: 'IN-20260819005', operator: 'Admin', sub: 'manual' }
+    { time: '2026-08-19 11:00:00', warehouse: 'BJ-001', zone: 'BJ-001-STO (Storage)', sku: 'SKU-10003-01', qty: '+80', after: { total: 3280, locked: 560, available: 2720 }, type: 'Manual Inbound', order: 'IN-20260819005', operator: 'Admin', sub: 'manual', inboundNo: 'IN-20260819005', inboundType: 'Manual', purchaseOrderNo: null }
   ],
   manual: [
-    { time: '2026-08-19 10:05:30', warehouse: 'BJ-001', zone: 'BJ-001-STO (Storage)', sku: 'SKU-10003-01', qty: '+500', after: { total: 3200, locked: 560, available: 2640 }, type: 'Manual Adjustment', order: 'ADJ-20260819001', operator: 'Admin', sub: 'manual' },
-    { time: '2026-08-17 15:20:11', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10001-WH', qty: '-10', after: { total: 970, locked: 150, available: 820 }, type: 'Manual Adjustment (Decrease)', order: 'ADJ-20260817002', operator: 'Admin', sub: 'manual' }
+    { time: '2026-08-19 10:05:30', warehouse: 'BJ-001', zone: 'BJ-001-STO (Storage)', sku: 'SKU-10003-01', qty: '+500', after: { total: 3200, locked: 560, available: 2640 }, type: 'Manual Adjustment', order: 'ADJ-20260819001', operator: 'Admin', sub: 'manual', direction: 'Increase', adjQty: '500', adjType: 'Inventory Gain (盘盈)', reason: 'Cycle count surplus confirmed by supervisor.', attachment: 'count-sheet-0819.pdf' },
+    { time: '2026-08-17 15:20:11', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10001-WH', qty: '-10', after: { total: 970, locked: 150, available: 820 }, type: 'Manual Adjustment (Decrease)', order: 'ADJ-20260817002', operator: 'Admin', sub: 'manual', direction: 'Decrease', adjQty: '10', adjType: 'Damage (报损)', reason: 'Carton crushed in storage aisle.', attachment: '—' }
   ],
   occupy: [
-    { time: '2026-08-21 11:45:22', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10001-BK', qty: '50', after: { total: 1200, locked: 200, available: 1000 }, type: 'Outbound Occupy', order: 'OUT-20260821005', operator: 'System' },
+    { time: '2026-08-21 11:45:22', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10001-BK', qty: '50', after: { total: 1200, locked: 200, available: 1000 }, type: 'Outbound Occupy', order: 'OUT-20260821005', operator: 'System', outboundNo: 'OUT-20260821005', relatedOrderNo: 'SO-20260821001', trackingNo: '—', status: 'Allocated' },
     { time: '2026-08-21 10:30:18', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10002-42', qty: '30', after: { total: 900, locked: 160, available: 740 }, type: 'Outbound Occupy', order: 'OUT-20260821003', operator: 'System' },
     { time: '2026-08-20 15:12:55', warehouse: 'BJ-001', zone: 'BJ-001-STO (Storage)', sku: 'SKU-10003-01', qty: '100', after: { total: 3200, locked: 560, available: 2640 }, type: 'Outbound Occupy', order: 'OUT-20260820008', operator: 'System' }
   ],
   deduct: [
-    { time: '2026-08-21 14:20:33', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10001-WH', qty: '-25', after: { total: 980, locked: 150, available: 830 }, type: 'Outbound Deduct', order: 'OUT-20260820012', operator: 'Li Ming' },
+    { time: '2026-08-21 14:20:33', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10001-WH', qty: '-25', after: { total: 980, locked: 150, available: 830 }, type: 'Outbound Deduct', order: 'OUT-20260820012', operator: 'Li Ming', outboundNo: 'OUT-20260820012', relatedOrderNo: 'SO-20260820012', trackingNo: 'TRK-SF1029384756', status: 'Shipped' },
     { time: '2026-08-20 17:05:41', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10001-BK', qty: '-40', after: { total: 1000, locked: 150, available: 850 }, type: 'Outbound Deduct', order: 'OUT-20260819015', operator: 'Zhang Wei' }
   ],
   unfreeze: [
@@ -168,6 +168,7 @@ let currentZoneEdit = null;
 let deleteTarget = null;
 let lockedZoneWarehouse = null;
 let currentRecordTab = 'inbound';
+let recordListCache = [];
 
 // ========== Init ==========
 document.addEventListener('DOMContentLoaded', () => {
@@ -830,6 +831,8 @@ function submitAdjustment() {
   }
   s.available = s.total - s.locked;
   const orderNo = 'ADJ-' + Date.now();
+  const fileInput = document.getElementById('adj-file');
+  const attachmentName = fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0].name : '—';
   manualRecords.unshift({
     time: new Date().toISOString().slice(0, 19).replace('T', ' '),
     warehouse: s.warehouseCode,
@@ -840,7 +843,12 @@ function submitAdjustment() {
     type: dir === 'increase' ? 'Manual Adjustment' : 'Manual Adjustment (Decrease)',
     order: orderNo,
     operator: 'Admin',
-    sub: 'manual'
+    sub: 'manual',
+    direction: dir === 'increase' ? 'Increase' : 'Decrease',
+    adjQty: String(qty),
+    adjType: type,
+    reason,
+    attachment: attachmentName
   });
   recordData.manual.unshift(manualRecords[0]);
   try {
@@ -909,6 +917,8 @@ function renderRecords() {
     data = recordData[currentRecordTab] || [];
   }
 
+  recordListCache = data.map(enrichRecordDetail);
+
   const typeClass = {
     'Purchase Inbound': 'type-inbound',
     'Manual Inbound': 'type-inbound',
@@ -917,10 +927,10 @@ function renderRecords() {
     'Outbound Occupy': 'type-occupy', 'Outbound Deduct': 'type-deduct'
   };
 
-  tbody.innerHTML = data.map(r => {
+  tbody.innerHTML = recordListCache.map((r, idx) => {
     const qtyClass = r.qty.startsWith('+') ? 'up' : r.qty.startsWith('-') ? 'down' : '';
     return `
-      <tr>
+      <tr class="record-row-clickable" onclick="openRecordDetail(${idx})" title="View detail">
         <td>${r.time}</td>
         <td>${r.warehouse}</td>
         <td>${r.zone}</td>
@@ -935,6 +945,85 @@ function renderRecords() {
       </tr>
     `;
   }).join('');
+}
+
+function enrichRecordDetail(r) {
+  const row = { ...r };
+  if (row.type === 'Purchase Inbound' || row.type === 'Manual Inbound') {
+    row.inboundNo = row.inboundNo || row.order;
+    row.inboundType = row.inboundType || (row.sub === 'purchase' ? 'Purchase' : 'Manual');
+    if (row.inboundType === 'Purchase' && !row.purchaseOrderNo) {
+      row.purchaseOrderNo = 'PO-20260820001';
+    }
+  }
+  if (row.type && row.type.includes('Manual Adjustment')) {
+    row.direction = row.direction || (row.qty.startsWith('+') ? 'Increase' : 'Decrease');
+    row.adjQty = row.adjQty || row.qty.replace(/^[+-]/, '');
+    row.adjType = row.adjType || '—';
+    row.reason = row.reason || '—';
+    row.attachment = row.attachment || '—';
+  }
+  if (row.type === 'Outbound Occupy' || row.type === 'Outbound Deduct') {
+    row.outboundNo = row.outboundNo || row.order;
+    row.relatedOrderNo = row.relatedOrderNo || '—';
+    row.trackingNo = row.trackingNo || '—';
+    row.status = row.status || (row.type === 'Outbound Occupy' ? 'Allocated' : 'Shipped');
+  }
+  return row;
+}
+
+function detailRow(label, valueHtml) {
+  return `<div class="label">${label}</div><div class="value">${valueHtml}</div>`;
+}
+
+function openRecordDetail(index) {
+  const r = recordListCache[index];
+  if (!r) return;
+  const after = `Total ${r.after.total} · Locked ${r.after.locked} · Available ${r.after.available}`;
+  let html = `<div class="record-detail-grid">
+    ${detailRow('Time', r.time)}
+    ${detailRow('Warehouse', r.warehouse)}
+    ${detailRow('Zone', r.zone)}
+    ${detailRow('SKU ID', r.sku)}
+    ${detailRow('Qty', r.qty)}
+    ${detailRow('After Change', after)}
+    ${detailRow('Type', r.type)}
+    ${detailRow('Operator', r.operator)}
+  </div>`;
+
+  if (r.type === 'Purchase Inbound' || r.type === 'Manual Inbound') {
+    const po = r.purchaseOrderNo
+      ? `<a class="btn-link" href="#" onclick="event.preventDefault();showToast('Open purchase order: ${r.purchaseOrderNo}')">${r.purchaseOrderNo}</a>`
+      : '—';
+    html += `<div class="record-detail-section"><h4>Inbound</h4><div class="record-detail-grid">
+      ${detailRow('Inbound No.', r.inboundNo)}
+      ${detailRow('Inbound Type', r.inboundType)}
+      ${detailRow('Purchase Order No.', po)}
+    </div></div>`;
+  }
+
+  if (r.type && r.type.includes('Manual Adjustment')) {
+    html += `<div class="record-detail-section"><h4>Inventory Adjustment</h4><div class="record-detail-grid">
+      ${detailRow('Adjustment No.', r.order)}
+      ${detailRow('Direction', r.direction)}
+      ${detailRow('Adjustment Qty', r.adjQty)}
+      ${detailRow('Adjustment Type', r.adjType)}
+      ${detailRow('Reason', r.reason)}
+      ${detailRow('Attachment', r.attachment)}
+    </div></div>`;
+  }
+
+  if (r.type === 'Outbound Occupy' || r.type === 'Outbound Deduct') {
+    html += `<div class="record-detail-section"><h4>Outbound</h4><div class="record-detail-grid">
+      ${detailRow('Outbound No.', r.outboundNo)}
+      ${detailRow('Related Order No.', r.relatedOrderNo)}
+      ${detailRow('Tracking No.', r.trackingNo)}
+      ${detailRow('Status', r.status)}
+    </div></div>`;
+  }
+
+  document.getElementById('record-detail-body').innerHTML = html;
+  openModal('record-detail-modal');
 }
 
 // ========== Utilities ==========

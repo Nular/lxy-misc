@@ -420,7 +420,7 @@
         <div class="page" id="page-record">
           <div class="page-header">
             <h1 class="page-title">Inventory Record</h1>
-            <p class="page-subtitle">Track inventory changes: inbound, outbound occupy, deduct, manual adjustment</p>
+            <p class="page-subtitle">Track inventory changes: inbound, outbound occupy, deduct, manual adjustment. Click a row for detail.</p>
           </div>
           <div class="page-body">
             <div class="tabs" id="record-tabs">
@@ -759,6 +759,20 @@
       <div class="modal-footer">
         <button class="btn" onclick="closeModal('adj-modal')">Cancel</button>
         <button class="btn btn-primary" onclick="submitAdjustment()">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Inventory Record Detail -->
+  <div class="modal-overlay" id="record-detail-modal">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <span class="modal-title">Record Detail</span>
+        <button class="modal-close" onclick="closeModal('record-detail-modal')">&times;</button>
+      </div>
+      <div class="modal-body" id="record-detail-body"></div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="closeModal('record-detail-modal')">Close</button>
       </div>
     </div>
   </div>
