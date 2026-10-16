@@ -130,17 +130,18 @@
 - 关联单号：入库单号（采购入库可附采购单号为次要信息）。
 - 变更后列：Total / Locked / Available；total、available 上升用绿色↑标识。
 
-### 6.2 出库占用流水
+### 6.2 出库流水
 
-流水 Tab：**Outbound Occupy**
+流水 Tab：**Outbound**
 
-类型：出库占用。确认导入后：available↓、locked↑、total 不变。关联出库单号。预检零流水，整单失败不写半截。
+**子筛**：全部 / **Outbound Deduct** / **Outbound Occupy**
 
-### 6.3 出库扣减流水
+| 类型 | 说明 |
+|------|------|
+| Outbound Occupy | 确认导入后 available↓、locked↑、total 不变；关联出库单号 |
+| Outbound Deduct | 发货确认 locked↓、total↓；打包/发运不写流水 |
 
-流水 Tab：**Outbound Deduct**
-
-类型：出库扣减。发货确认：locked↓、total↓。打包/发运不写。
+出库详情扩展字段含：**Shipment No.**（未发运可为「—」）、关联订单号、状态等。
 
 ### 6.4 手动调整流水
 
