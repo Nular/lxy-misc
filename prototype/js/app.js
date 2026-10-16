@@ -105,7 +105,6 @@ let manualRecords = [];
 const MANAGER_ASSIGNED_WH = 'SH-001';
 const WH_SWITCH_MAX = 3;
 const WH_SWITCH_WINDOW_MS = 60000;
-const WH_SWITCH_BLOCKED_PAGES = ['warehouse-management', 'zone-management'];
 let whSwitchTimestamps = [];
 
 function getUserRole() {
@@ -165,27 +164,56 @@ function isAnyModalOpen() {
   return !!document.querySelector('.modal-overlay.show');
 }
 
-function isWarehouseSwitchBlockedPage() {
-  const active = document.querySelector('.page.active');
-  if (!active) return false;
-  const pageId = active.id.replace('page-', '');
-  return WH_SWITCH_BLOCKED_PAGES.includes(pageId);
+function getWarehouseScopeLabel() {
+  const scope = getWarehouseScope();
+  if (scope === 'all') return 'All warehouses';
+  const wh = getWarehouseById(scope);
+  return wh ? wh.name : scope;
 }
 
-function onSidebarWarehouseChange(value) {
-  const select = document.getElementById('sidebar-wh-select');
+function isDashboardPageActive() {
+  return document.getElementById('page-home')?.classList.contains('active');
+}
+
+function syncDashboardWarehouseSelect() {
+  const select = document.getElementById('dashboard-wh-select');
+  if (!select || !isAdminUser()) return;
+  const scope = getWarehouseScope();
+  select.innerHTML = '<option value="all">All</option>' +
+    warehouses.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
+  select.value = scope === 'all' ? 'all' : scope;
+}
+
+function updateSidebarWarehouseDisplay() {
+  const display = document.getElementById('sidebar-wh-display');
+  const hint = document.getElementById('sidebar-wh-hint');
+  if (display) display.textContent = getWarehouseScopeLabel();
+  if (hint) {
+    hint.textContent = isAdminUser() ? 'Switch on Dashboard' : 'Assigned warehouse';
+    hint.style.display = isAdminUser() ? '' : 'none';
+  }
+}
+
+function revertDashboardWarehouseSelect() {
+  const select = document.getElementById('dashboard-wh-select');
+  const prev = getWarehouseScope();
+  if (select) select.value = prev === 'all' ? 'all' : prev;
+}
+
+function onDashboardWarehouseChange(value) {
   const prev = getWarehouseScope();
 
   if (value === prev || (value === 'all' && prev === 'all')) return;
 
-  if (isAnyModalOpen()) {
-    showToast('Close open dialogs before switching warehouse.', 'warning');
-    if (select) select.value = prev === 'all' ? 'all' : prev;
+  if (!isDashboardPageActive()) {
+    showToast('Warehouse context can only be changed on the Dashboard.', 'warning');
+    revertDashboardWarehouseSelect();
     return;
   }
-  if (isWarehouseSwitchBlockedPage()) {
-    showToast('Leave Warehouse / Zone setup before switching context.', 'warning');
-    if (select) select.value = prev === 'all' ? 'all' : prev;
+
+  if (isAnyModalOpen()) {
+    showToast('Close open dialogs before switching warehouse.', 'warning');
+    revertDashboardWarehouseSelect();
     return;
   }
 
@@ -193,7 +221,7 @@ function onSidebarWarehouseChange(value) {
   whSwitchTimestamps = whSwitchTimestamps.filter(t => now - t < WH_SWITCH_WINDOW_MS);
   if (whSwitchTimestamps.length >= WH_SWITCH_MAX) {
     showToast('Warehouse switch limit: up to 3 times per minute.', 'warning');
-    if (select) select.value = prev === 'all' ? 'all' : prev;
+    revertDashboardWarehouseSelect();
     return;
   }
   whSwitchTimestamps.push(now);
@@ -202,7 +230,7 @@ function onSidebarWarehouseChange(value) {
   applyRoleAndScopeUI();
   refreshAllScopedViews();
   const label = value === 'all' ? 'All warehouses' : (getWarehouseById(value)?.name || value);
-  showToast(`Warehouse context: ${label}`, 'success');
+  showToast(`Loading data for: ${label}`, 'success');
 }
 
 function applyWarehouseScopeToFilters() {
@@ -224,13 +252,6 @@ function refreshAllScopedViews() {
   renderRecords();
 }
 
-function populateSidebarWarehouseSelect() {
-  const select = document.getElementById('sidebar-wh-select');
-  if (!select) return;
-  select.innerHTML = '<option value="all">All</option>' +
-    warehouses.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
-}
-
 function applyRoleAndScopeUI() {
   const admin = isAdminUser();
   document.querySelectorAll('.nav-warehouses-group').forEach(el => {
@@ -240,23 +261,10 @@ function applyRoleAndScopeUI() {
     el.style.display = admin ? '' : 'none';
   });
 
-  const select = document.getElementById('sidebar-wh-select');
-  const staticEl = document.getElementById('sidebar-wh-static');
-  if (admin) {
-    if (select) {
-      select.hidden = false;
-      populateSidebarWarehouseSelect();
-      const scope = getWarehouseScope();
-      select.value = scope === 'all' ? 'all' : scope;
-    }
-    if (staticEl) staticEl.hidden = true;
-  } else {
-    if (select) select.hidden = true;
-    if (staticEl) {
-      staticEl.hidden = false;
-      const wh = getWarehouseById(MANAGER_ASSIGNED_WH);
-      staticEl.textContent = wh ? wh.name : MANAGER_ASSIGNED_WH;
-    }
+  updateSidebarWarehouseDisplay();
+  syncDashboardWarehouseSelect();
+
+  if (!admin) {
     const active = document.querySelector('.page.active');
     if (active) {
       const pageId = active.id.replace('page-', '');
@@ -388,6 +396,8 @@ function navigateTo(pageId) {
 
 // ========== Home / Dashboard ==========
 function renderHome() {
+  syncDashboardWarehouseSelect();
+  updateSidebarWarehouseDisplay();
   const scopedWh = warehousesInScope(warehouses);
   const totalStock = scopedWh.reduce((s, w) => s + w.total, 0);
   const totalLocked = scopedWh.reduce((s, w) => s + w.locked, 0);

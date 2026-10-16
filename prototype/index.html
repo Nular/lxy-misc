@@ -27,9 +27,9 @@
       <!-- Sidebar -->
       <nav class="sidebar" id="sidebar">
         <div class="sidebar-context" id="sidebar-wh-context">
-          <span class="sidebar-context-label">Warehouse</span>
-          <select id="sidebar-wh-select" class="sidebar-wh-select" onchange="onSidebarWarehouseChange(this.value)" aria-label="Warehouse context"></select>
-          <div id="sidebar-wh-static" class="sidebar-wh-static" hidden></div>
+          <span class="sidebar-context-label">Current warehouse</span>
+          <div id="sidebar-wh-display" class="sidebar-wh-static">—</div>
+          <span class="sidebar-context-hint" id="sidebar-wh-hint">Switch on Dashboard</span>
         </div>
 
         <div class="nav-item active" data-page="home">
@@ -67,9 +67,16 @@
       <main class="content">
         <!-- ========== HOME / DASHBOARD ========== -->
         <div class="page active" id="page-home">
-          <div class="page-header">
-            <h1 class="page-title">Dashboard</h1>
-            <p class="page-subtitle">Warehouse inventory overview and recent activity</p>
+          <div class="page-header dashboard-page-header">
+            <div class="dashboard-page-header-text">
+              <h1 class="page-title">Dashboard</h1>
+              <p class="page-subtitle">Warehouse inventory overview and recent activity</p>
+            </div>
+            <div class="dashboard-wh-switcher admin-only-action" id="dashboard-wh-switcher-wrap">
+              <label for="dashboard-wh-select">Warehouse context</label>
+              <select id="dashboard-wh-select" class="dashboard-wh-select" onchange="onDashboardWarehouseChange(this.value)" aria-label="Warehouse context on dashboard"></select>
+              <span class="dashboard-wh-switcher-hint">Context can only be changed here (reloads scoped data).</span>
+            </div>
           </div>
           <div class="page-body dashboard-body">
             <div class="dashboard-kpi-row" id="dashboard-kpi"></div>
