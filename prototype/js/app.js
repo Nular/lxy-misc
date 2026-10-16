@@ -74,7 +74,7 @@ const spuData = [
   {
     productId: 'PRD-10001', productName: 'Wireless Bluetooth Earbuds Pro',
     skuCount: 3, total: 2580, locked: 420, available: 2160,
-    warehouse: '-', zoneName: '-',
+    warehouse: '-', zone: '-',
     skus: [
       { skuId: 'SKU-10001-BK', spec: 'Black', total: 1200, locked: 200, available: 1000, warehouse: 'Shanghai Main Warehouse', zone: 'Main Storage' },
       { skuId: 'SKU-10001-WH', spec: 'White', total: 980, locked: 150, available: 830, warehouse: 'Shanghai Main Warehouse', zone: 'Main Storage' },
@@ -84,7 +84,7 @@ const spuData = [
   {
     productId: 'PRD-10002', productName: 'Smart Watch Series X',
     skuCount: 2, total: 1560, locked: 280, available: 1280,
-    warehouse: 'Shanghai Main Warehouse', zoneName: 'Main Storage',
+    warehouse: 'Shanghai Main Warehouse', zone: 'Storage Zone',
     skus: [
       { skuId: 'SKU-10002-42', spec: '42mm Silver', total: 900, locked: 160, available: 740, warehouse: 'Shanghai Main Warehouse', zone: 'Main Storage' },
       { skuId: 'SKU-10002-46', spec: '46mm Black', total: 660, locked: 120, available: 540, warehouse: 'Shanghai Main Warehouse', zone: 'Main Storage' }
@@ -93,7 +93,7 @@ const spuData = [
   {
     productId: 'PRD-10003', productName: 'Portable Power Bank 20000mAh',
     skuCount: 1, total: 3200, locked: 560, available: 2640,
-    warehouse: 'Beijing Distribution Center', zoneName: 'Cold Storage',
+    warehouse: 'Beijing Distribution Center', zone: 'Storage Zone',
     skus: [
       { skuId: 'SKU-10003-01', spec: 'Standard', total: 3200, locked: 560, available: 2640, warehouse: 'Beijing Distribution Center', zone: 'Cold Storage' }
     ]
@@ -101,6 +101,12 @@ const spuData = [
 ];
 
 let manualRecords = [];
+
+const MANAGER_ASSIGNED_WH = 'SH-001';
+const WH_SWITCH_MAX = 3;
+const WH_SWITCH_WINDOW_MS = 60000;
+const WH_SWITCH_BLOCKED_PAGES = ['warehouse-management', 'zone-management'];
+let whSwitchTimestamps = [];
 
 function getUserRole() {
   return localStorage.getItem('wms_role') || 'admin';
@@ -110,12 +116,173 @@ function isAdminUser() {
   return getUserRole() === 'admin';
 }
 
+function normalizeWarehouseId(id) {
+  if (!id || id === 'all') return id;
+  if (String(id).includes('-')) return id;
+  const m = String(id).match(/^([A-Za-z]{2})(\d{3})$/);
+  if (m) return `${m[1].toUpperCase()}-${m[2]}`;
+  return id;
+}
+
+function getWarehouseById(id) {
+  const nid = normalizeWarehouseId(id);
+  return warehouses.find(w => w.id === nid || w.id === id);
+}
+
+function skuWarehouseId(sku) {
+  if (sku.warehouseCode) return normalizeWarehouseId(sku.warehouseCode);
+  const wh = warehouses.find(w => w.name === sku.warehouse);
+  return wh ? wh.id : normalizeWarehouseId(sku.warehouse);
+}
+
+function recordWarehouseId(r) {
+  return normalizeWarehouseId(r.warehouse);
+}
+
+function getWarehouseScope() {
+  if (!isAdminUser()) return MANAGER_ASSIGNED_WH;
+  const scope = localStorage.getItem('wms_wh_scope') || 'all';
+  return scope === 'all' ? 'all' : normalizeWarehouseId(scope);
+}
+
+function setWarehouseScope(scope) {
+  localStorage.setItem('wms_wh_scope', scope === 'all' ? 'all' : normalizeWarehouseId(scope));
+}
+
+function rowInWarehouseScope(whId) {
+  const scope = getWarehouseScope();
+  if (scope === 'all') return true;
+  return normalizeWarehouseId(whId) === scope;
+}
+
+function warehousesInScope(list) {
+  const scope = getWarehouseScope();
+  if (scope === 'all') return list;
+  return list.filter(w => w.id === scope);
+}
+
+function isAnyModalOpen() {
+  return !!document.querySelector('.modal-overlay.show');
+}
+
+function isWarehouseSwitchBlockedPage() {
+  const active = document.querySelector('.page.active');
+  if (!active) return false;
+  const pageId = active.id.replace('page-', '');
+  return WH_SWITCH_BLOCKED_PAGES.includes(pageId);
+}
+
+function onSidebarWarehouseChange(value) {
+  const select = document.getElementById('sidebar-wh-select');
+  const prev = getWarehouseScope();
+
+  if (value === prev || (value === 'all' && prev === 'all')) return;
+
+  if (isAnyModalOpen()) {
+    showToast('Close open dialogs before switching warehouse.', 'warning');
+    if (select) select.value = prev === 'all' ? 'all' : prev;
+    return;
+  }
+  if (isWarehouseSwitchBlockedPage()) {
+    showToast('Leave Warehouse / Zone setup before switching context.', 'warning');
+    if (select) select.value = prev === 'all' ? 'all' : prev;
+    return;
+  }
+
+  const now = Date.now();
+  whSwitchTimestamps = whSwitchTimestamps.filter(t => now - t < WH_SWITCH_WINDOW_MS);
+  if (whSwitchTimestamps.length >= WH_SWITCH_MAX) {
+    showToast('Warehouse switch limit: up to 3 times per minute.', 'warning');
+    if (select) select.value = prev === 'all' ? 'all' : prev;
+    return;
+  }
+  whSwitchTimestamps.push(now);
+  setWarehouseScope(value);
+  applyWarehouseScopeToFilters();
+  applyRoleAndScopeUI();
+  refreshAllScopedViews();
+  const label = value === 'all' ? 'All warehouses' : (getWarehouseById(value)?.name || value);
+  showToast(`Warehouse context: ${label}`, 'success');
+}
+
+function applyWarehouseScopeToFilters() {
+  const scope = getWarehouseScope();
+  const whVal = scope === 'all' ? '' : scope;
+  ['zone-filter-warehouse', 'spu-filter-warehouse', 'sku-filter-warehouse', 'record-filter-warehouse'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && scope !== 'all') el.value = whVal;
+  });
+  if (scope !== 'all') lockedZoneWarehouse = scope;
+}
+
+function refreshAllScopedViews() {
+  renderHome();
+  renderWarehouses();
+  renderZones();
+  renderSpuTable();
+  renderSkuTable();
+  renderRecords();
+}
+
+function populateSidebarWarehouseSelect() {
+  const select = document.getElementById('sidebar-wh-select');
+  if (!select) return;
+  select.innerHTML = '<option value="all">All</option>' +
+    warehouses.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
+}
+
+function applyRoleAndScopeUI() {
+  const admin = isAdminUser();
+  document.querySelectorAll('.nav-warehouses-group').forEach(el => {
+    el.style.display = admin ? '' : 'none';
+  });
+  document.querySelectorAll('.admin-only-action').forEach(el => {
+    el.style.display = admin ? '' : 'none';
+  });
+
+  const select = document.getElementById('sidebar-wh-select');
+  const staticEl = document.getElementById('sidebar-wh-static');
+  if (admin) {
+    if (select) {
+      select.hidden = false;
+      populateSidebarWarehouseSelect();
+      const scope = getWarehouseScope();
+      select.value = scope === 'all' ? 'all' : scope;
+    }
+    if (staticEl) staticEl.hidden = true;
+  } else {
+    if (select) select.hidden = true;
+    if (staticEl) {
+      staticEl.hidden = false;
+      const wh = getWarehouseById(MANAGER_ASSIGNED_WH);
+      staticEl.textContent = wh ? wh.name : MANAGER_ASSIGNED_WH;
+    }
+    const active = document.querySelector('.page.active');
+    if (active) {
+      const pageId = active.id.replace('page-', '');
+      if (pageId === 'warehouse-management' || pageId === 'zone-management') {
+        navigateTo('home');
+      }
+    }
+  }
+
+  const hideFilters = getWarehouseScope() !== 'all';
+  document.querySelectorAll('.filter-wh-scope').forEach(el => {
+    el.style.display = hideFilters ? 'none' : '';
+  });
+}
+
 function setUserRole(role) {
   localStorage.setItem('wms_role', role);
   const sel = document.getElementById('role-select');
   if (sel) sel.value = role;
-  renderSkuTable();
-  showToast(role === 'admin' ? 'Role: Admin' : 'Role: Warehouse Manager (no inventory adjustment)', 'info');
+  applyRoleAndScopeUI();
+  applyWarehouseScopeToFilters();
+  refreshAllScopedViews();
+  const extra = role === 'admin'
+    ? 'Full warehouse access.'
+    : 'Scoped to assigned warehouse; Warehouses menu hidden.';
+  showToast(role === 'admin' ? `Role: Admin. ${extra}` : `Role: Warehouse Manager. ${extra}`, 'info');
 }
 
 function initUserRole() {
@@ -183,6 +350,8 @@ document.addEventListener('DOMContentLoaded', () => {
   renderSkuTable();
   renderRecords();
   populateWarehouseSelects();
+  applyRoleAndScopeUI();
+  applyWarehouseScopeToFilters();
 });
 
 // ========== Navigation ==========
@@ -197,6 +366,7 @@ function initNavigation() {
   document.querySelectorAll('.nav-item.parent').forEach(item => {
     item.addEventListener('click', (e) => {
       const group = item.dataset.group;
+      if (group === 'purchase-order') navigateTo('purchase-order');
       if (group === 'inbound') navigateTo('inbound');
       if (group === 'outbound') navigateTo('outbound');
     });
@@ -218,16 +388,18 @@ function navigateTo(pageId) {
 
 // ========== Home / Dashboard ==========
 function renderHome() {
-  const totalStock = warehouses.reduce((s, w) => s + w.total, 0);
-  const totalLocked = warehouses.reduce((s, w) => s + w.locked, 0);
-  const totalAvailable = warehouses.reduce((s, w) => s + w.available, 0);
-  const activeWarehouses = warehouses.filter(w => w.status === 'enable').length;
+  const scopedWh = warehousesInScope(warehouses);
+  const totalStock = scopedWh.reduce((s, w) => s + w.total, 0);
+  const totalLocked = scopedWh.reduce((s, w) => s + w.locked, 0);
+  const totalAvailable = scopedWh.reduce((s, w) => s + w.available, 0);
+  const activeWarehouses = scopedWh.filter(w => w.status === 'enable').length;
+  const whCountLabel = getWarehouseScope() === 'all' ? scopedWh.length : 1;
 
   document.getElementById('dashboard-kpi').innerHTML = `
     <div class="kpi-card total">
       <span class="kpi-label">Total Inventory</span>
       <span class="kpi-value">${totalStock.toLocaleString()}</span>
-      <span class="kpi-sub">Across ${warehouses.length} warehouses</span>
+      <span class="kpi-sub">Across ${whCountLabel} warehouse${whCountLabel === 1 ? '' : 's'}</span>
     </div>
     <div class="kpi-card locked">
       <span class="kpi-label">Locked Inventory</span>
@@ -242,14 +414,20 @@ function renderHome() {
     <div class="kpi-card warehouses">
       <span class="kpi-label">Active Warehouses</span>
       <span class="kpi-value">${activeWarehouses}</span>
-      <span class="kpi-sub">${warehouses.length} total registered</span>
+      <span class="kpi-sub">${scopedWh.length} in current context</span>
     </div>
   `;
 
-  document.getElementById('dashboard-warehouse-table').innerHTML = warehouses
+  const whTableTarget = isAdminUser() ? 'warehouse-management' : 'spu-sku-inventory';
+  const whViewAll = document.getElementById('dashboard-wh-view-all');
+  if (whViewAll) {
+    whViewAll.onclick = () => navigateTo(whTableTarget);
+    whViewAll.style.display = isAdminUser() ? '' : 'none';
+  }
+  document.getElementById('dashboard-warehouse-table').innerHTML = scopedWh
     .filter(w => w.total > 0)
     .map(w => `
-      <tr onclick="navigateTo('warehouse-management')" style="cursor:pointer">
+      <tr onclick="navigateTo('${whTableTarget}')" style="cursor:pointer">
         <td><strong>${w.id}</strong><br><span style="color:#999;font-size:11px">${w.name}</span></td>
         <td>${getStatusTag(w.status)}</td>
         <td>${w.total.toLocaleString()}</td>
@@ -263,7 +441,8 @@ function renderHome() {
     ...recordData.occupy,
     ...recordData.deduct,
     ...recordData.unfreeze
-  ].sort((a, b) => b.time.localeCompare(a.time)).slice(0, 6);
+  ].filter(r => rowInWarehouseScope(recordWarehouseId(r)))
+    .sort((a, b) => b.time.localeCompare(a.time)).slice(0, 6);
 
   const typeClass = {
     'Purchase Inbound': 'type-inbound', 'Manual Adjustment': 'type-inbound',
@@ -281,11 +460,12 @@ function renderHome() {
   `).join('');
 
   const quickLinks = [
-    { page: 'warehouse-management', icon: '🏭', title: 'Warehouses', desc: 'Manage warehouse master data' },
-    { page: 'zone-management', icon: '📦', title: 'Zones', desc: 'Configure storage zones' },
+    { page: 'warehouse-management', icon: '🏭', title: 'Warehouses', desc: 'Manage warehouse master data', adminOnly: true },
+    { page: 'zone-management', icon: '📦', title: 'Zones', desc: 'Configure storage zones', adminOnly: true },
+    { page: 'purchase-order', icon: '📝', title: 'Purchase Order', desc: 'Create and track purchase orders' },
     { page: 'spu-sku-inventory', icon: '📊', title: 'Inventory', desc: 'View SPU/SKU stock levels' },
     { page: 'record', icon: '📋', title: 'Records', desc: 'Track inventory transactions' }
-  ];
+  ].filter(q => !q.adminOnly || isAdminUser());
 
   document.getElementById('dashboard-quick-access').innerHTML = quickLinks.map(q => `
     <div class="quick-card" onclick="navigateTo('${q.page}')">
@@ -332,14 +512,15 @@ function getStatusTag(status) {
 
 function renderWarehouses() {
   const tbody = document.getElementById('warehouse-table-body');
-  document.getElementById('wh-total').textContent = warehouses.length;
+  const scoped = warehousesInScope(warehouses);
+  document.getElementById('wh-total').textContent = scoped.length;
 
-  if (warehouses.length === 0) {
+  if (scoped.length === 0) {
     tbody.innerHTML = `<tr><td colspan="12"><div class="empty-state"><div class="icon">📦</div><p>No data</p><button class="btn btn-primary" onclick="openCreateWarehouse()">Add Warehouse</button></div></td></tr>`;
     return;
   }
 
-  tbody.innerHTML = warehouses.map(wh => `
+  tbody.innerHTML = scoped.map(wh => `
     <tr onclick="openEditWarehouse('${wh.id}')">
       <td>${wh.id}</td>
       <td>${wh.name}</td>
@@ -377,6 +558,10 @@ function resetWarehouseFilters() {
 }
 
 function openCreateWarehouse() {
+  if (!isAdminUser()) {
+    showToast('Admin only.', 'error');
+    return;
+  }
   currentWarehouseEdit = null;
   document.getElementById('warehouse-modal-title').textContent = 'Create Warehouse';
   document.getElementById('warehouse-submit-btn').textContent = 'Create';
@@ -554,8 +739,11 @@ function getZoneTypeTag(type) {
 function renderZones() {
   const tbody = document.getElementById('zone-table-body');
   const whFilter = document.getElementById('zone-filter-warehouse').value;
+  const scope = getWarehouseScope();
+  let effectiveWh = whFilter;
+  if (!effectiveWh && scope !== 'all') effectiveWh = scope;
   let filtered = zones;
-  if (whFilter) filtered = zones.filter(z => z.whId === whFilter);
+  if (effectiveWh) filtered = zones.filter(z => z.whId === effectiveWh);
 
   document.getElementById('zone-total').textContent = filtered.length;
 
@@ -564,7 +752,6 @@ function renderZones() {
       <td>${z.whId}</td>
       <td>${z.code}</td>
       <td>${getZoneTypeTag(z.type)}</td>
-      <td>${z.name}</td>
       <td>${getStatusTag(z.status)}</td>
       <td>${z.total.toLocaleString()}</td>
       <td>${z.locked.toLocaleString()}</td>
@@ -596,6 +783,10 @@ function resetZoneFilters() {
 }
 
 function openCreateZone() {
+  if (!isAdminUser()) {
+    showToast('Admin only.', 'error');
+    return;
+  }
   currentZoneEdit = null;
   document.getElementById('zone-modal-title').textContent = 'Create Zone';
   document.getElementById('zone-submit-btn').textContent = 'Create';
@@ -628,7 +819,6 @@ function openEditZone(code) {
   document.getElementById('zone-type').disabled = true;
   document.getElementById('zone-code').value = z.code;
   document.getElementById('zone-code').readOnly = true;
-  document.getElementById('zone-name').value = z.name;
   document.getElementById('zone-status').value = z.status;
 
   document.getElementById('zone-form').closest('.modal-body').classList.remove('view-mode');
@@ -646,7 +836,6 @@ function openViewZone(code) {
 function submitZone() {
   const whId = document.getElementById('zone-wh-id').value;
   const zoneType = document.getElementById('zone-type').value;
-  const zoneName = document.getElementById('zone-name').value || zoneType;
   const zoneCode = document.getElementById('zone-code').value;
   const status = document.getElementById('zone-status').value;
 
@@ -656,7 +845,7 @@ function submitZone() {
       document.getElementById('zone-status').value = 'disable';
       return;
     }
-    currentZoneEdit.name = zoneName;
+    currentZoneEdit.name = zoneType;
     currentZoneEdit.status = status;
     closeModal('zone-modal');
     renderZones();
@@ -666,7 +855,7 @@ function submitZone() {
       showToast('Please fill in required fields.', 'error');
       return;
     }
-    zones.push({ whId, code: zoneCode, type: zoneType, name: zoneName, status, total: 0, locked: 0, available: 0 });
+    zones.push({ whId, code: zoneCode, type: zoneType, name: zoneType, status, total: 0, locked: 0, available: 0 });
     const wh = warehouses.find(w => w.id === whId);
     if (wh) wh.zoneCount++;
     closeModal('zone-modal');
@@ -721,19 +910,38 @@ function initInventoryTabs() {
   });
 }
 
+function spuSkusInScope(spu) {
+  const scope = getWarehouseScope();
+  if (scope === 'all') return spu.skus;
+  return spu.skus.filter(s => {
+    const wh = warehouses.find(w => w.name === s.warehouse);
+    const whId = wh ? wh.id : normalizeWarehouseId(s.warehouse);
+    return whId === scope;
+  });
+}
+
 function renderSpuTable() {
   const tbody = document.getElementById('spu-table-body');
-  tbody.innerHTML = spuData.map((spu, idx) => `
+  const rows = [];
+  spuData.forEach((spu, idx) => {
+    const skus = spuSkusInScope(spu);
+    if (getWarehouseScope() !== 'all' && skus.length === 0) return;
+    const total = skus.reduce((s, x) => s + x.total, 0);
+    const locked = skus.reduce((s, x) => s + x.locked, 0);
+    const available = skus.reduce((s, x) => s + x.available, 0);
+    const whLabel = getWarehouseScope() === 'all' ? spu.warehouse : (getWarehouseById(getWarehouseScope())?.name || '—');
+    const zoneLabel = skus.length === 1 ? skus[0].zone : (skus.length > 1 ? '—' : spu.zone);
+    rows.push(`
     <tr>
       <td><span class="expand-icon" onclick="toggleSpuExpand(${idx}, this)">▶</span></td>
       <td>${spu.productId}</td>
       <td>${spu.productName}</td>
-      <td>${spu.skuCount}</td>
-      <td>${spu.total.toLocaleString()}</td>
-      <td>${spu.locked.toLocaleString()}</td>
-      <td>${spu.available.toLocaleString()}</td>
-      <td>${spu.warehouse}</td>
-      <td>${spu.zoneName}</td>
+      <td>${skus.length}</td>
+      <td>${total.toLocaleString()}</td>
+      <td>${locked.toLocaleString()}</td>
+      <td>${available.toLocaleString()}</td>
+      <td>${whLabel}</td>
+      <td>${zoneLabel}</td>
     </tr>
     <tr class="sku-subtable" id="spu-expand-${idx}" style="display:none">
       <td colspan="9">
@@ -744,7 +952,7 @@ function renderSpuTable() {
             </tr>
           </thead>
           <tbody>
-            ${spu.skus.map(s => `
+            ${skus.map(s => `
               <tr>
                 <td>${s.skuId}</td><td>${s.spec}</td>
                 <td>${s.total}</td><td>${s.locked}</td><td>${s.available}</td>
@@ -755,7 +963,9 @@ function renderSpuTable() {
         </table>
       </td>
     </tr>
-  `).join('');
+  `);
+  });
+  tbody.innerHTML = rows.join('') || '<tr><td colspan="9" style="text-align:center;color:#999">No inventory in current warehouse context</td></tr>';
 }
 
 function toggleSpuExpand(idx, el) {
@@ -767,7 +977,8 @@ function toggleSpuExpand(idx, el) {
 
 function renderSkuTable() {
   const tbody = document.getElementById('sku-table-body');
-  tbody.innerHTML = skuData.map(s => `
+  const scopedSku = skuData.filter(s => rowInWarehouseScope(skuWarehouseId(s)));
+  tbody.innerHTML = scopedSku.map(s => `
     <tr>
       <td>${s.skuId}</td>
       <td>${s.spec}</td>
@@ -785,7 +996,7 @@ function renderSkuTable() {
         : `<span class="text-muted" title="Admin only" style="color:#999;cursor:not-allowed">Admin only</span>`}
       </td>
     </tr>
-  `).join('');
+  `).join('') || '<tr><td colspan="12" style="text-align:center;color:#999">No SKU rows in current warehouse context</td></tr>';
 }
 
 function openAdjustment(skuId, zoneCode) {
@@ -937,6 +1148,8 @@ function renderRecords() {
   } else if (currentRecordTab === 'manual') {
     data = allManual.sort((a, b) => b.time.localeCompare(a.time));
   }
+
+  data = data.filter(r => rowInWarehouseScope(recordWarehouseId(r)));
 
   recordListCache = data.map(enrichRecordDetail);
 
@@ -1101,6 +1314,11 @@ function populateWarehouseSelects() {
   if (lockedZoneWarehouse) {
     document.getElementById('zone-filter-warehouse').value = lockedZoneWarehouse;
   }
+  applyWarehouseScopeToFilters();
+  const hideFilters = getWarehouseScope() !== 'all';
+  document.querySelectorAll('.filter-wh-scope').forEach(el => {
+    el.style.display = hideFilters ? 'none' : '';
+  });
 }
 
 function openModal(id) {
