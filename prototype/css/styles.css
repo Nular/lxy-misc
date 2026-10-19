@@ -1278,6 +1278,34 @@ tbody tr.selected {
   border: 1px solid #ffd591;
 }
 
+.suggest-wrap {
+  position: relative;
+}
+
+.search-suggest {
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  right: 0;
+  top: 100%;
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  max-height: calc(5 * 32px);
+  overflow-y: auto;
+  box-shadow: var(--shadow);
+}
+
+.suggest-item {
+  padding: 7px 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.suggest-item:hover {
+  background: #e6f4ff;
+}
+
 .kpi-card {
   background: #fff;
   border: 1px solid var(--border-color);

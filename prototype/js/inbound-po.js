@@ -1,26 +1,49 @@
-// Purchase Order & Inbound Receipt module (aligned with KickBazar WMS foundation)
+// Purchase Order & Inbound Receipt (aligned with foundation: codes, records, inventory)
+
+const MAX_IMPORT_JOBS = 2;
+const MAX_SKU_LINES = 10000;
+let inboundImportJobs = 0;
+let poImportJobs = 0;
+
+const PO_HEAD_STATUSES = [
+  'Draft', 'Processing', 'Created', 'Pending Shipment', 'Partially Shipped',
+  'Shipped', 'Partially Received', 'Received', 'Partially Stocked In', 'Stocked In'
+];
+
+const PO_STATUS_TAG = {
+  Draft: 'tag-disable',
+  Processing: 'tag-warning',
+  Created: 'tag-normal',
+  'Pending Shipment': 'tag-normal',
+  'Partially Shipped': 'tag-cold',
+  Shipped: 'tag-normal',
+  'Partially Received': 'tag-cold',
+  Received: 'tag-normal',
+  'Partially Stocked In': 'tag-cold',
+  'Stocked In': 'tag-enable'
+};
 
 let purchaseOrders = [
   {
-    orderNo: 'PO-20260820-0001',
+    orderNo: 'PO-20260820001',
     name: 'Earbuds restock Aug',
     warehouseCode: 'SH001',
     status: 'Partially Stocked In',
     creationMethod: 'Import Created',
     supplier: 'Shenzhen Acme Electronics',
     trackingNo: 'SF1234567890',
-    linkedReceipts: ['IN-20260821-0001'],
+    linkedReceipts: ['IN-20260821001'],
     createdAt: '2026-08-20 10:00:00',
     lines: [
       { skuId: 'SKU-10001-BK', productName: 'Wireless Bluetooth Earbuds Pro', spec: 'Black; M', qty: 200, unitPrice: '12.50', lineStatus: 'Stocked In' },
-      { skuId: 'SKU-10001-WH', productName: 'Wireless Bluetooth Earbuds Pro', spec: 'White; L', qty: 150, unitPrice: '12.50', lineStatus: 'Pending Receipt' }
+      { skuId: 'SKU-10001-WH', productName: 'Wireless Bluetooth Earbuds Pro', spec: 'White; L', qty: 150, unitPrice: '12.50', lineStatus: 'Received' }
     ]
   },
   {
-    orderNo: 'PO-20260818-0002',
+    orderNo: 'PO-20260818002',
     name: 'Power bank batch',
     warehouseCode: 'BJ001',
-    status: 'Created',
+    status: 'Pending Shipment',
     creationMethod: 'Manual Entry',
     supplier: 'Beijing Power Co.',
     trackingNo: '',
@@ -29,25 +52,39 @@ let purchaseOrders = [
     lines: [
       { skuId: 'SKU-10003-01', productName: 'Portable Power Bank 20000mAh', spec: 'Standard', qty: 500, unitPrice: '8.00', lineStatus: 'Pending Shipment' }
     ]
+  },
+  {
+    orderNo: 'PO-20260821088',
+    name: 'Watch restock',
+    warehouseCode: 'SH001',
+    status: 'Shipped',
+    creationMethod: 'Manual Entry',
+    supplier: 'Acme Watch Ltd',
+    trackingNo: 'YT998877',
+    linkedReceipts: [],
+    createdAt: '2026-08-21 08:12:00',
+    lines: [
+      { skuId: 'SKU-10002-42', productName: 'Smart Watch Series X', spec: '42mm Silver', qty: 150, unitPrice: '89.00', lineStatus: 'Shipped' }
+    ]
   }
 ];
 
 let inboundReceipts = [
   {
-    receiptNo: 'IN-20260821-0001',
+    receiptNo: 'IN-20260821001',
     receiptType: 'Purchase Receipt',
     status: 'Stocked In',
     warehouseCode: 'SH001',
     zoneCode: 'SH001STO',
-    purchaseOrderNo: 'PO-20260820-0001',
+    purchaseOrderNo: 'PO-20260820001',
     progress: 100,
     updatedAt: '2026-08-21 09:32:15',
     lines: [
-      { skuId: 'SKU-10001-BK', productName: 'Wireless Bluetooth Earbuds Pro', spec: 'Black; M', receiptQty: 200, zoneCode: 'SH001STO' }
+      { skuId: 'SKU-10001-BK', productName: 'Wireless Bluetooth Earbuds Pro', spec: 'Black; M', orderQty: 200, receiptQty: 200, zoneCode: 'SH001STO' }
     ]
   },
   {
-    receiptNo: 'IN-20260822-0003',
+    receiptNo: 'IN-20260822003',
     receiptType: 'Manual Receipt',
     status: 'Draft',
     warehouseCode: 'SH001',
@@ -58,16 +95,16 @@ let inboundReceipts = [
     lines: []
   },
   {
-    receiptNo: 'IN-20260823-0004',
+    receiptNo: 'IN-20260823004',
     receiptType: 'Purchase Receipt',
     status: 'Processing',
     warehouseCode: 'SH001',
     zoneCode: 'SH001STO',
-    purchaseOrderNo: 'PO-20260820-0001',
+    purchaseOrderNo: 'PO-20260820001',
     progress: 45,
     updatedAt: '2026-08-23 08:05:00',
     lines: [
-      { skuId: 'SKU-10001-WH', productName: 'Wireless Bluetooth Earbuds Pro', spec: 'White; L', receiptQty: 80, zoneCode: 'SH001STO' }
+      { skuId: 'SKU-10001-WH', productName: 'Wireless Bluetooth Earbuds Pro', spec: 'White; L', orderQty: 150, receiptQty: 80, zoneCode: 'SH001STO' }
     ]
   }
 ];
@@ -78,45 +115,101 @@ let receiptEditorSource = 'po';
 let poEditorLines = [];
 let receiptEditorLines = [];
 
-const PO_STATUS_TAG = {
-  Draft: 'tag-disable',
-  Created: 'tag-normal',
-  Processing: 'tag-warning',
-  'Partially Stocked In': 'tag-cold',
-  'Stocked In': 'tag-enable'
-};
-
-function nextDocNo(prefix, datePart) {
-  const d = datePart || new Date().toISOString().slice(0, 10).replace(/-/g, '');
+function nextDocNo(prefix) {
+  const d = new Date().toISOString().slice(0, 10).replace(/-/g, '');
   const list = prefix === 'PO' ? purchaseOrders : inboundReceipts;
   const key = prefix === 'PO' ? 'orderNo' : 'receiptNo';
-  const sameDay = list.filter(x => x[key].includes(d)).length + 1;
-  return `${prefix}-${d}-${String(sameDay).padStart(4, '0')}`;
+  const re = new RegExp('^' + prefix + '-' + d + '(\\d{3})$');
+  let max = 0;
+  list.forEach(x => {
+    const m = String(x[key]).match(re);
+    if (m) max = Math.max(max, parseInt(m[1], 10));
+  });
+  return `${prefix}-${d}${String(max + 1).padStart(3, '0')}`;
 }
 
 function getInboundWarehouseScope() {
   const scope = getWarehouseScope();
-  if (scope === 'all') return warehouses[0] ? formatCanonicalWarehouseCode(warehouses[0].id) : 'SH001';
-  return formatCanonicalWarehouseCode(scope);
+  if (scope === 'all') return warehouses[0] ? normalizeWarehouseId(warehouses[0].id) : 'SH001';
+  return normalizeWarehouseId(scope);
 }
 
 function getDefaultStorageZoneCode(whCode) {
-  const whId = normalizeWarehouseId(whCode.replace(/([A-Z]{2})(\d{3})/, '$1-$2'));
-  const z = zones.find(zn => zn.whId === whId && zn.type === 'Storage Zone');
-  if (z) return formatCanonicalWarehouseCode(z.whId) + 'STO';
-  return whCode + 'STO';
+  const code = normalizeWarehouseId(whCode);
+  const z = zones.find(zn => normalizeWarehouseId(zn.whId) === code && zn.type === 'Storage Zone');
+  if (z) return normalizeWarehouseId(z.code.replace(/STO$/i, '')) + 'STO';
+  return code + 'STO';
 }
 
 function poMatchesScope(po) {
   const scope = getWarehouseScope();
   if (scope === 'all') return true;
-  return formatCanonicalWarehouseCode(po.warehouseCode) === formatCanonicalWarehouseCode(scope);
+  return normalizeWarehouseId(po.warehouseCode) === normalizeWarehouseId(scope);
 }
 
 function receiptMatchesScope(r) {
   const scope = getWarehouseScope();
   if (scope === 'all') return true;
-  return formatCanonicalWarehouseCode(r.warehouseCode) === formatCanonicalWarehouseCode(scope);
+  return normalizeWarehouseId(r.warehouseCode) === normalizeWarehouseId(scope);
+}
+
+function bindSearchSuggest(inputId, panelId, getValues) {
+  const input = document.getElementById(inputId);
+  const panel = document.getElementById(panelId);
+  if (!input || !panel) return;
+  const render = () => {
+    const kw = (input.value || '').trim().toLowerCase();
+    let vals = getValues();
+    if (kw) vals = vals.filter(v => v.toLowerCase().includes(kw));
+    vals = vals.slice(0, 20);
+    if (!vals.length) {
+      panel.hidden = true;
+      return;
+    }
+    panel.innerHTML = vals.map(v => `<div class="suggest-item" data-v="${v}">${v}</div>`).join('');
+    panel.hidden = false;
+  };
+  input.addEventListener('focus', render);
+  input.addEventListener('input', render);
+  panel.addEventListener('mousedown', e => {
+    const item = e.target.closest('.suggest-item');
+    if (!item) return;
+    input.value = item.dataset.v;
+    panel.hidden = true;
+    if (inputId === 'po-search-keyword') searchPurchaseOrders();
+    else searchInboundReceipts();
+  });
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.suggest-wrap')) panel.hidden = true;
+  });
+}
+
+function initPoInboundSuggest() {
+  bindSearchSuggest('po-search-keyword', 'po-search-suggest', () => {
+    const field = document.getElementById('po-search-field').value;
+    const rows = purchaseOrders.filter(poMatchesScope);
+    if (field === 'linkedReceipt') return [...new Set(rows.flatMap(p => p.linkedReceipts))];
+    return rows.map(p => p.orderNo);
+  });
+  bindSearchSuggest('inbound-search-keyword', 'inbound-search-suggest', () => {
+    const field = document.getElementById('inbound-search-field').value;
+    const rows = inboundReceipts.filter(receiptMatchesScope);
+    if (field === 'purchaseOrder') return [...new Set(rows.map(r => r.purchaseOrderNo).filter(Boolean))];
+    return rows.map(r => r.receiptNo);
+  });
+}
+
+function rankByKeyword(rows, kw, getVal) {
+  const k = kw.toLowerCase();
+  return rows.sort((a, b) => {
+    const va = getVal(a).toLowerCase();
+    const vb = getVal(b).toLowerCase();
+    const ea = va === k;
+    const eb = vb === k;
+    if (ea && !eb) return -1;
+    if (!ea && eb) return 1;
+    return 0;
+  });
 }
 
 function renderPurchaseOrderList() {
@@ -125,8 +218,7 @@ function renderPurchaseOrderList() {
   const field = document.getElementById('po-search-field').value;
   const kw = (document.getElementById('po-search-keyword').value || '').trim().toLowerCase();
   const method = document.getElementById('po-filter-method').value;
-  const statusSel = document.getElementById('po-filter-status');
-  const statuses = statusSel ? Array.from(statusSel.selectedOptions).map(o => o.value) : [];
+  const status = document.getElementById('po-filter-status').value;
 
   let rows = purchaseOrders.filter(poMatchesScope);
   if (kw) {
@@ -134,21 +226,20 @@ function renderPurchaseOrderList() {
       if (field === 'orderNo') return po.orderNo.toLowerCase().includes(kw);
       return po.linkedReceipts.some(r => r.toLowerCase().includes(kw));
     });
-    rows.sort((a, b) => {
-      const exactA = (field === 'orderNo' ? a.orderNo : a.linkedReceipts.join(',')).toLowerCase() === kw;
-      const exactB = (field === 'orderNo' ? b.orderNo : b.linkedReceipts.join(',')).toLowerCase() === kw;
-      if (exactA && !exactB) return -1;
-      if (!exactA && exactB) return 1;
-      return b.createdAt.localeCompare(a.createdAt);
-    });
-  } else {
-    rows.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    rankByKeyword(rows, kw, po => (field === 'orderNo' ? po.orderNo : po.linkedReceipts.join(',')));
   }
+  rows.sort((a, b) => {
+    if (kw) return 0;
+    return b.createdAt.localeCompare(a.createdAt);
+  });
   if (method) rows = rows.filter(po => po.creationMethod === method);
-  if (statuses.length) rows = rows.filter(po => statuses.includes(po.status));
+  if (status) rows = rows.filter(po => po.status === status);
 
   document.getElementById('po-list-total').textContent = rows.length;
-  tbody.innerHTML = rows.map(po => `
+  tbody.innerHTML = rows.map(po => {
+    const processing = po.status === 'Processing';
+    const locked = processing || po.status === 'Stocked In';
+    return `
     <tr>
       <td><strong>${po.orderNo}</strong></td>
       <td>${po.name}</td>
@@ -160,13 +251,12 @@ function renderPurchaseOrderList() {
       <td>${po.createdAt}</td>
       <td>
         <div class="action-links">
-          <a onclick="openPurchaseOrderEditor('${po.orderNo}')">Edit</a>
-          <a onclick="viewPurchaseOrder('${po.orderNo}')">View</a>
-          <a class="danger ${po.status === 'Processing' || po.status === 'Stocked In' ? 'disabled' : ''}" onclick="deletePurchaseOrder('${po.orderNo}')">Delete</a>
+          ${processing ? `<a onclick="showPoProgress('${po.orderNo}')">View Progress</a>` : `<a onclick="openPurchaseOrderEditor('${po.orderNo}')">${locked ? 'View' : 'Edit'}</a>`}
+          <a class="danger ${locked || po.linkedReceipts.length ? 'disabled' : ''}" onclick="deletePurchaseOrder('${po.orderNo}')">Delete</a>
         </div>
       </td>
-    </tr>
-  `).join('') || '<tr><td colspan="9" style="text-align:center;color:#999">No data</td></tr>';
+    </tr>`;
+  }).join('') || '<tr><td colspan="9" style="text-align:center;color:#999">No data</td></tr>';
 }
 
 function renderInboundReceiptList() {
@@ -183,13 +273,7 @@ function renderInboundReceiptList() {
       if (field === 'receiptNo') return r.receiptNo.toLowerCase().includes(kw);
       return (r.purchaseOrderNo || '').toLowerCase().includes(kw);
     });
-    rows.sort((a, b) => {
-      const va = field === 'receiptNo' ? a.receiptNo : (a.purchaseOrderNo || '');
-      const vb = field === 'receiptNo' ? b.receiptNo : (b.purchaseOrderNo || '');
-      if (va.toLowerCase() === kw && vb.toLowerCase() !== kw) return -1;
-      if (va.toLowerCase() !== kw && vb.toLowerCase() === kw) return 1;
-      return b.updatedAt.localeCompare(a.updatedAt);
-    });
+    rankByKeyword(rows, kw, r => (field === 'receiptNo' ? r.receiptNo : (r.purchaseOrderNo || '')));
   } else {
     rows.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   }
@@ -209,8 +293,7 @@ function renderInboundReceiptList() {
       <td>${r.updatedAt}</td>
       <td>
         <div class="action-links">
-          <a onclick="openReceiptEditor('${r.receiptNo}')">${r.status === 'Stocked In' ? 'View' : 'Edit'}</a>
-          ${r.status === 'Processing' ? '<a onclick="showReceiptProgress(\'' + r.receiptNo + '\')">View Progress</a>' : ''}
+          ${r.status === 'Processing' ? `<a onclick="showReceiptProgress('${r.receiptNo}')">View Progress</a>` : `<a onclick="openReceiptEditor('${r.receiptNo}')">${r.status === 'Stocked In' ? 'View' : 'Edit'}</a>`}
           <a class="danger ${r.status !== 'Draft' ? 'disabled' : ''}" onclick="deleteInboundReceipt('${r.receiptNo}')">Delete</a>
         </div>
       </td>
@@ -226,7 +309,7 @@ function searchPurchaseOrders() {
 function resetPurchaseOrderFilters() {
   document.getElementById('po-search-keyword').value = '';
   document.getElementById('po-filter-method').value = '';
-  if (document.getElementById('po-filter-status')) document.getElementById('po-filter-status').selectedIndex = -1;
+  document.getElementById('po-filter-status').value = '';
   renderPurchaseOrderList();
 }
 
@@ -264,11 +347,10 @@ function openPurchaseOrderEditor(orderNo) {
 
 function viewPurchaseOrder(orderNo) {
   openPurchaseOrderEditor(orderNo);
-  showToast('Stocked In / Processing PO is view-only in product', 'info');
 }
 
 function poAddSampleLine() {
-  if (poEditorLines.length >= 10000) {
+  if (poEditorLines.length >= MAX_SKU_LINES) {
     showToast('You have already uploaded 10,000 records. Adding new data will clear all existing data.', 'warning');
     return;
   }
@@ -287,6 +369,42 @@ function renderPoEditorLines() {
   document.getElementById('po-editor-lines').innerHTML = poEditorLines.map(l => `
     <tr><td>${l.skuId}</td><td>${l.productName}</td><td>${l.spec}</td><td>${l.qty}</td><td>${l.unitPrice}</td><td>${l.lineStatus}</td></tr>
   `).join('') || '<tr><td colspan="6" style="text-align:center;color:#999">No SKU lines — use Add Products or Import</td></tr>';
+}
+
+function countActiveJobs(kind) {
+  if (kind === 'po') return poImportJobs + purchaseOrders.filter(p => p.status === 'Processing').length;
+  return inboundImportJobs + inboundReceipts.filter(r => r.status === 'Processing').length;
+}
+
+function startPoImport() {
+  if (countActiveJobs('po') >= MAX_IMPORT_JOBS) {
+    showToast('At most 2 import jobs can run at the same time.', 'warning');
+    return;
+  }
+  poImportJobs++;
+  const bar = document.getElementById('po-import-progress');
+  const fill = document.getElementById('po-import-fill');
+  const label = document.getElementById('po-import-pct');
+  bar.hidden = false;
+  let pct = 0;
+  const timer = setInterval(() => {
+    pct += 20;
+    if (pct > 100) pct = 100;
+    fill.style.width = pct + '%';
+    label.textContent = pct + '%';
+    if (pct >= 100) {
+      clearInterval(timer);
+      poImportJobs--;
+      poAddSampleLine();
+      bar.hidden = true;
+      showToast('PO import completed (demo)', 'success');
+    }
+  }, 350);
+}
+
+function showPoProgress(orderNo) {
+  showToast(`Import in progress for ${orderNo}`, 'info');
+  openPurchaseOrderEditor(orderNo);
 }
 
 function savePurchaseOrderDraft() {
@@ -332,7 +450,7 @@ function persistPoFromForm(status) {
 
 function deletePurchaseOrder(orderNo) {
   const po = purchaseOrders.find(p => p.orderNo === orderNo);
-  if (!po || po.status === 'Processing' || po.status === 'Stocked In') return;
+  if (!po || po.status === 'Processing' || po.status === 'Stocked In' || po.linkedReceipts.length) return;
   purchaseOrders = purchaseOrders.filter(p => p.orderNo !== orderNo);
   renderPurchaseOrderList();
   showToast('Deleted successfully.', 'success');
@@ -340,8 +458,7 @@ function deletePurchaseOrder(orderNo) {
 
 function populateReceiptPoSelect() {
   const sel = document.getElementById('receipt-po-select');
-  const wh = getInboundWarehouseScope();
-  const eligible = purchaseOrders.filter(p => poMatchesScope(p) && ['Created', 'Partially Stocked In'].includes(p.status));
+  const eligible = purchaseOrders.filter(p => poMatchesScope(p) && !['Draft', 'Processing', 'Stocked In'].includes(p.status));
   sel.innerHTML = '<option value="">— None —</option>' +
     eligible.map(p => `<option value="${p.orderNo}">${p.orderNo} — ${p.name}</option>`).join('');
 }
@@ -358,7 +475,7 @@ function openReceiptEditor(receiptNo) {
   if (currentReceiptEdit) {
     document.getElementById('receipt-type').value = currentReceiptEdit.receiptType;
     document.getElementById('receipt-po-select').value = currentReceiptEdit.purchaseOrderNo || '';
-    receiptEditorLines = currentReceiptEdit.lines.map(l => ({ ...l }));
+    receiptEditorLines = currentReceiptEdit.lines.map(l => ({ ...l, orderQty: l.orderQty || l.receiptQty || 0 }));
   } else {
     const draft = localStorage.getItem('receipt_draft_type');
     document.getElementById('receipt-type').value = draft || 'Purchase Receipt';
@@ -377,17 +494,26 @@ function setReceiptSource(source) {
   document.getElementById('receipt-po-group').style.display = source === 'po' ? '' : 'none';
   document.getElementById('receipt-source-import').hidden = source !== 'import';
   if (source === 'po') document.getElementById('receipt-type').value = 'Purchase Receipt';
-  if (source === 'products') document.getElementById('receipt-type').value = 'Manual Receipt';
+  if (source === 'products' || source === 'import') document.getElementById('receipt-type').value = 'Manual Receipt';
+}
+
+function reconVariance(line) {
+  const o = Number(line.orderQty) || 0;
+  const r = Number(line.receiptQty) || 0;
+  if (!o && !r) return '—';
+  return String(r - o);
 }
 
 function renderReceiptEditorLines() {
   document.getElementById('receipt-editor-lines').innerHTML = receiptEditorLines.map((l, i) => `
     <tr>
       <td>${l.skuId}</td><td>${l.productName}</td><td>${l.spec}</td>
-      <td><input type="number" min="1" max="9999999" value="${l.receiptQty}" onchange="receiptEditorLines[${i}].receiptQty=parseInt(this.value,10)||0"></td>
+      <td>${l.orderQty ?? '—'}</td>
+      <td><input type="number" min="1" max="9999999" value="${l.receiptQty}" onchange="receiptEditorLines[${i}].receiptQty=parseInt(this.value,10)||0;renderReceiptEditorLines()"></td>
+      <td>${reconVariance(l)}</td>
       <td>${l.zoneCode}</td>
     </tr>
-  `).join('') || '<tr><td colspan="5" style="text-align:center;color:#999">No lines — link PO, add products, or import</td></tr>';
+  `).join('') || '<tr><td colspan="7" style="text-align:center;color:#999">No lines — link PO, add products, or import</td></tr>';
 }
 
 document.addEventListener('change', e => {
@@ -400,6 +526,7 @@ document.addEventListener('change', e => {
         skuId: l.skuId,
         productName: l.productName,
         spec: l.spec,
+        orderQty: l.qty,
         receiptQty: l.qty,
         zoneCode: getDefaultStorageZoneCode(po.warehouseCode)
       }));
@@ -411,6 +538,16 @@ document.addEventListener('change', e => {
 });
 
 function startReceiptImport() {
+  if (countActiveJobs('in') >= MAX_IMPORT_JOBS) {
+    showToast('At most 2 import jobs can run at the same time.', 'warning');
+    return;
+  }
+  const file = document.getElementById('receipt-import-file');
+  if (!file.files.length) {
+    showToast('The imported file contains invalid fields. Please re-upload.', 'error');
+    return;
+  }
+  inboundImportJobs++;
   document.getElementById('receipt-import-progress').hidden = false;
   let pct = 0;
   const fill = document.getElementById('receipt-import-fill');
@@ -422,10 +559,12 @@ function startReceiptImport() {
     label.textContent = pct + '%';
     if (pct >= 100) {
       clearInterval(timer);
+      inboundImportJobs--;
       receiptEditorLines.push({
         skuId: 'SKU-10001-WH',
         productName: 'Wireless Bluetooth Earbuds Pro',
         spec: 'White; L',
+        orderQty: 0,
         receiptQty: 50,
         zoneCode: getDefaultStorageZoneCode(getInboundWarehouseScope())
       });
@@ -485,27 +624,23 @@ function persistReceipt(status, writeInventory) {
 
   closeModal('receipt-editor-modal');
   renderInboundReceiptList();
+  renderPurchaseOrderList();
   renderHome();
   showToast(writeInventory ? 'Stocked in. Inventory & inbound records updated.' : 'Receipt saved.', 'success');
 }
 
 function writeInboundInventoryAndRecord(receiptNo, receipt, line) {
-  const whId = normalizeWarehouseId(receipt.warehouseCode.replace(/([A-Z]{2})(\d{3})/, '$1-$2'));
-  const wh = warehouses.find(w => w.id === whId);
-  const whName = wh ? wh.name : receipt.warehouseCode;
-  let sku = skuData.find(s => s.skuId === line.skuId && s.zoneCode.replace(/-/g, '').includes(line.zoneCode.slice(-3)));
-  if (!sku) {
-    sku = skuData.find(s => s.skuId === line.skuId);
-  }
+  let sku = skuData.find(s => s.skuId === line.skuId && normalizeWarehouseId(s.warehouseCode) === receipt.warehouseCode);
+  if (!sku) sku = skuData.find(s => s.skuId === line.skuId);
   if (sku) {
     sku.total += line.receiptQty;
     sku.available = sku.total - sku.locked;
   }
   const recordType = receipt.receiptType === 'Purchase Receipt' ? 'Purchase Inbound' : 'Manual Inbound';
-  const row = {
+  recordData.inbound.unshift({
     time: new Date().toISOString().slice(0, 19).replace('T', ' '),
     warehouse: receipt.warehouseCode,
-    zone: `${line.zoneCode} (Storage)`,
+    zone: `${line.zoneCode} (Storage Zone)`,
     sku: line.skuId,
     qty: '+' + line.receiptQty,
     after: sku ? { total: sku.total, locked: sku.locked, available: sku.available } : { total: line.receiptQty, locked: 0, available: line.receiptQty },
@@ -516,8 +651,21 @@ function writeInboundInventoryAndRecord(receiptNo, receipt, line) {
     inboundNo: receiptNo,
     inboundType: receipt.receiptType === 'Purchase Receipt' ? 'Purchase' : 'Manual',
     purchaseOrderNo: receipt.purchaseOrderNo || null
+  });
+}
+
+function rollupPoStatus(po) {
+  const ranks = {
+    'Stocked In': 4, Received: 3, Shipped: 2, 'Pending Shipment': 1, Created: 0, Draft: 0
   };
-  recordData.inbound.unshift(row);
+  const statuses = po.lines.map(l => l.lineStatus);
+  const unique = [...new Set(statuses)];
+  if (unique.length === 1 && PO_HEAD_STATUSES.includes(unique[0])) return unique[0];
+  if (statuses.some(s => s === 'Stocked In') && statuses.some(s => s !== 'Stocked In')) return 'Partially Stocked In';
+  if (statuses.some(s => s === 'Received') && statuses.some(s => s !== 'Received' && s !== 'Stocked In')) return 'Partially Received';
+  if (statuses.some(s => s === 'Shipped') && statuses.some(s => s === 'Pending Shipment')) return 'Partially Shipped';
+  const top = statuses.sort((a, b) => (ranks[b] || 0) - (ranks[a] || 0))[0];
+  return top || po.status;
 }
 
 function updatePoAfterStockIn(poNo, lines) {
@@ -527,11 +675,7 @@ function updatePoAfterStockIn(poNo, lines) {
     const pl = po.lines.find(l => l.skuId === line.skuId);
     if (pl) pl.lineStatus = 'Stocked In';
   });
-  const allIn = po.lines.every(l => l.lineStatus === 'Stocked In');
-  po.status = allIn ? 'Stocked In' : 'Partially Stocked In';
-  if (!po.linkedReceipts.includes(lines.receiptNo)) {
-    /* linked on persist */
-  }
+  po.status = rollupPoStatus(po);
 }
 
 function deleteInboundReceipt(receiptNo) {
@@ -548,5 +692,6 @@ function showReceiptProgress(receiptNo) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  initPoInboundSuggest();
   if (document.getElementById('po-table-body')) renderPurchaseOrderList();
 });

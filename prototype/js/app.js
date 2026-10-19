@@ -3,7 +3,7 @@
 // ========== Mock Data ==========
 let warehouses = [
   {
-    id: 'SH-001', name: 'Shanghai Main Warehouse', attribute: 'normal', status: 'enable',
+    id: 'SH001', name: 'Shanghai Main Warehouse', attribute: 'normal', status: 'enable',
     zoneCount: 5, total: 12580, locked: 2340, available: 10240,
     address: 'China, Shanghai, Pudong, No.888 Zhangyang Road',
     owner: 'Zhang Wei', contact: 'Li Ming', phone: '+86 138 0013 8000',
@@ -12,7 +12,7 @@ let warehouses = [
     weighing: 'compliant', fire: 'compliant', hasStock: true, hasPendingOrders: false
   },
   {
-    id: 'BJ-001', name: 'Beijing Distribution Center', attribute: 'cold chain', status: 'enable',
+    id: 'BJ001', name: 'Beijing Distribution Center', attribute: 'cold chain', status: 'enable',
     zoneCount: 3, total: 8920, locked: 1560, available: 7360,
     address: 'China, Beijing, Chaoyang, No.15 Jianguo Road',
     owner: 'Wang Fang', contact: 'Chen Hua', phone: '+86 139 0013 9000',
@@ -21,7 +21,7 @@ let warehouses = [
     weighing: 'pending', fire: 'compliant', hasStock: true, hasPendingOrders: false
   },
   {
-    id: 'GZ-001', name: 'Guangzhou South Hub', attribute: 'fireproof', status: 'disable',
+    id: 'GZ001', name: 'Guangzhou South Hub', attribute: 'fireproof', status: 'disable',
     zoneCount: 3, total: 0, locked: 0, available: 0,
     address: 'China, Guangdong, Guangzhou, No.100 Tianhe Road',
     owner: 'Liu Yang', contact: 'Liu Yang', phone: '+86 137 0013 7000',
@@ -30,7 +30,7 @@ let warehouses = [
     weighing: 'pending', fire: 'pending', hasStock: false, hasPendingOrders: false
   },
   {
-    id: 'SG-001', name: 'Singapore Regional Warehouse', attribute: 'thermostatic', status: 'enable',
+    id: 'SG001', name: 'Singapore Regional Warehouse', attribute: 'thermostatic', status: 'enable',
     zoneCount: 4, total: 4560, locked: 890, available: 3670,
     address: 'Singapore, Central, 10 Anson Road',
     owner: 'Tan Wei Ming', contact: 'Tan Wei Ming', phone: '+65 9123 4567',
@@ -39,7 +39,7 @@ let warehouses = [
     weighing: 'compliant', fire: 'compliant', hasStock: true, hasPendingOrders: true
   },
   {
-    id: 'SH-002', name: 'Shanghai Backup Warehouse', attribute: 'normal', status: 'disable',
+    id: 'SH002', name: 'Shanghai Backup Warehouse', attribute: 'normal', status: 'disable',
     zoneCount: 3, total: 0, locked: 0, available: 0,
     address: 'China, Shanghai, Minhang, No.200 Humin Road',
     owner: 'Zhao Lei', contact: 'Zhao Lei', phone: '+86 136 0013 6000',
@@ -50,24 +50,24 @@ let warehouses = [
 ];
 
 let zones = [
-  { whId: 'SH-001', code: 'SH-001-RCV', type: 'Receiving Zone', name: 'Receiving Zone', status: 'disable', total: 120, locked: 0, available: 120 },
-  { whId: 'SH-001', code: 'SH-001-STO', type: 'Storage Zone', name: 'Main Storage', status: 'enable', total: 12200, locked: 2300, available: 9900 },
-  { whId: 'SH-001', code: 'SH-001-SHP', type: 'Shipping Zone', name: 'Shipping Zone', status: 'disable', total: 180, locked: 40, available: 140 },
-  { whId: 'SH-001', code: 'SH-001-DMG', type: 'Damaged Goods Zone', name: 'Damaged Goods', status: 'disable', total: 80, locked: 0, available: 80 },
-  { whId: 'SH-001', code: 'SH-001-PKG', type: 'Packing Zone', name: 'Packing Zone', status: 'disable', total: 0, locked: 0, available: 0 },
-  { whId: 'BJ-001', code: 'BJ-001-RCV', type: 'Receiving Zone', name: 'Receiving Zone', status: 'disable', total: 0, locked: 0, available: 0 },
-  { whId: 'BJ-001', code: 'BJ-001-STO', type: 'Storage Zone', name: 'Cold Storage', status: 'enable', total: 8920, locked: 1560, available: 7360 },
-  { whId: 'BJ-001', code: 'BJ-001-SHP', type: 'Shipping Zone', name: 'Shipping Zone', status: 'disable', total: 0, locked: 0, available: 0 },
-  { whId: 'GZ-001', code: 'GZ-001-RCV', type: 'Receiving Zone', name: 'Receiving Zone', status: 'disable', total: 0, locked: 0, available: 0 },
-  { whId: 'GZ-001', code: 'GZ-001-STO', type: 'Storage Zone', name: 'Storage Zone', status: 'enable', total: 0, locked: 0, available: 0 },
-  { whId: 'GZ-001', code: 'GZ-001-SHP', type: 'Shipping Zone', name: 'Shipping Zone', status: 'disable', total: 0, locked: 0, available: 0 },
-  { whId: 'SG-001', code: 'SG-001-RCV', type: 'Receiving Zone', name: 'Receiving Zone', status: 'disable', total: 50, locked: 0, available: 50 },
-  { whId: 'SG-001', code: 'SG-001-STO', type: 'Storage Zone', name: 'Storage Zone', status: 'enable', total: 4200, locked: 800, available: 3400 },
-  { whId: 'SG-001', code: 'SG-001-SHP', type: 'Shipping Zone', name: 'Shipping Zone', status: 'disable', total: 200, locked: 60, available: 140 },
-  { whId: 'SG-001', code: 'SG-001-RTN', type: 'Returns Zone', name: 'Returns Zone', status: 'disable', total: 110, locked: 30, available: 80 },
-  { whId: 'SH-002', code: 'SH-002-RCV', type: 'Receiving Zone', name: 'Receiving Zone', status: 'disable', total: 0, locked: 0, available: 0 },
-  { whId: 'SH-002', code: 'SH-002-STO', type: 'Storage Zone', name: 'Storage Zone', status: 'enable', total: 0, locked: 0, available: 0 },
-  { whId: 'SH-002', code: 'SH-002-SHP', type: 'Shipping Zone', name: 'Shipping Zone', status: 'disable', total: 0, locked: 0, available: 0 }
+  { whId: 'SH001', code: 'SH001RCV', type: 'Receiving Zone', name: 'Receiving Zone', status: 'disable', total: 120, locked: 0, available: 120 },
+  { whId: 'SH001', code: 'SH001STO', type: 'Storage Zone', name: 'Main Storage', status: 'enable', total: 12200, locked: 2300, available: 9900 },
+  { whId: 'SH001', code: 'SH001SHP', type: 'Shipping Zone', name: 'Shipping Zone', status: 'disable', total: 180, locked: 40, available: 140 },
+  { whId: 'SH001', code: 'SH001DMG', type: 'Damaged Goods Zone', name: 'Damaged Goods', status: 'disable', total: 80, locked: 0, available: 80 },
+  { whId: 'SH001', code: 'SH001PKG', type: 'Packing Zone', name: 'Packing Zone', status: 'disable', total: 0, locked: 0, available: 0 },
+  { whId: 'BJ001', code: 'BJ001RCV', type: 'Receiving Zone', name: 'Receiving Zone', status: 'disable', total: 0, locked: 0, available: 0 },
+  { whId: 'BJ001', code: 'BJ001STO', type: 'Storage Zone', name: 'Cold Storage', status: 'enable', total: 8920, locked: 1560, available: 7360 },
+  { whId: 'BJ001', code: 'BJ001SHP', type: 'Shipping Zone', name: 'Shipping Zone', status: 'disable', total: 0, locked: 0, available: 0 },
+  { whId: 'GZ001', code: 'GZ001RCV', type: 'Receiving Zone', name: 'Receiving Zone', status: 'disable', total: 0, locked: 0, available: 0 },
+  { whId: 'GZ001', code: 'GZ001STO', type: 'Storage Zone', name: 'Storage Zone', status: 'enable', total: 0, locked: 0, available: 0 },
+  { whId: 'GZ001', code: 'GZ001SHP', type: 'Shipping Zone', name: 'Shipping Zone', status: 'disable', total: 0, locked: 0, available: 0 },
+  { whId: 'SG001', code: 'SG001RCV', type: 'Receiving Zone', name: 'Receiving Zone', status: 'disable', total: 50, locked: 0, available: 50 },
+  { whId: 'SG001', code: 'SG001STO', type: 'Storage Zone', name: 'Storage Zone', status: 'enable', total: 4200, locked: 800, available: 3400 },
+  { whId: 'SG001', code: 'SG001SHP', type: 'Shipping Zone', name: 'Shipping Zone', status: 'disable', total: 200, locked: 60, available: 140 },
+  { whId: 'SG001', code: 'SG001RTN', type: 'Returns Zone', name: 'Returns Zone', status: 'disable', total: 110, locked: 30, available: 80 },
+  { whId: 'SH002', code: 'SH002RCV', type: 'Receiving Zone', name: 'Receiving Zone', status: 'disable', total: 0, locked: 0, available: 0 },
+  { whId: 'SH002', code: 'SH002STO', type: 'Storage Zone', name: 'Storage Zone', status: 'enable', total: 0, locked: 0, available: 0 },
+  { whId: 'SH002', code: 'SH002SHP', type: 'Shipping Zone', name: 'Shipping Zone', status: 'disable', total: 0, locked: 0, available: 0 }
 ];
 
 const spuData = [
@@ -102,7 +102,7 @@ const spuData = [
 
 let manualRecords = [];
 
-const MANAGER_ASSIGNED_WH = 'SH-001';
+const MANAGER_ASSIGNED_WH = 'SH001';
 const WH_SWITCH_MAX = 3;
 const WH_SWITCH_WINDOW_MS = 60000;
 let whSwitchTimestamps = [];
@@ -117,10 +117,13 @@ function isAdminUser() {
 
 function normalizeWarehouseId(id) {
   if (!id || id === 'all') return id;
-  if (String(id).includes('-')) return id;
-  const m = String(id).match(/^([A-Za-z]{2})(\d{3})$/);
-  if (m) return `${m[1].toUpperCase()}-${m[2]}`;
-  return id;
+  return String(id).replace(/-/g, '').toUpperCase();
+}
+
+function generateWarehouseCode(region) {
+  const r = String(region || 'SH').replace(/[^A-Za-z]/g, '').slice(0, 2).toUpperCase() || 'SH';
+  const n = warehouses.filter(w => String(w.id).startsWith(r)).length + 1;
+  return r + String(n).padStart(3, '0');
 }
 
 function getWarehouseById(id) {
@@ -330,28 +333,28 @@ let currentAdjSkuId = null;
 
 const recordData = {
   inbound: [
-    { time: '2026-08-21 09:32:15', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10001-BK', qty: '+200', after: { total: 1200, locked: 200, available: 1000 }, type: 'Purchase Inbound', order: 'IN-20260821001', operator: 'Zhang Wei', sub: 'purchase', inboundNo: 'IN-20260821001', inboundType: 'Purchase', purchaseOrderNo: 'PO-20260821088' },
-    { time: '2026-08-20 14:18:42', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10002-42', qty: '+150', after: { total: 900, locked: 160, available: 740 }, type: 'Purchase Inbound', order: 'IN-20260820003', operator: 'Li Ming', sub: 'purchase' },
-    { time: '2026-08-18 16:22:08', warehouse: 'SG-001', zone: 'SG-001-STO (Storage)', sku: 'SKU-10004-01', qty: '+100', after: { total: 450, locked: 80, available: 370 }, type: 'Purchase Inbound', order: 'IN-20260818002', operator: 'Tan Wei Ming', sub: 'purchase' },
-    { time: '2026-08-18 08:00:00', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10002-42', qty: '+100', after: { total: 900, locked: 160, available: 740 }, type: 'Purchase Inbound', order: 'IN-20260818001', operator: 'Admin', sub: 'purchase' },
-    { time: '2026-08-19 11:00:00', warehouse: 'BJ-001', zone: 'BJ-001-STO (Storage)', sku: 'SKU-10003-01', qty: '+80', after: { total: 3280, locked: 560, available: 2720 }, type: 'Manual Inbound', order: 'IN-20260819005', operator: 'Admin', sub: 'manual', inboundNo: 'IN-20260819005', inboundType: 'Manual', purchaseOrderNo: null }
+    { time: '2026-08-21 09:32:15', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10001-BK', qty: '+200', after: { total: 1200, locked: 200, available: 1000 }, type: 'Purchase Inbound', order: 'IN-20260821001', operator: 'Zhang Wei', sub: 'purchase', inboundNo: 'IN-20260821001', inboundType: 'Purchase', purchaseOrderNo: 'PO-20260821088' },
+    { time: '2026-08-20 14:18:42', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10002-42', qty: '+150', after: { total: 900, locked: 160, available: 740 }, type: 'Purchase Inbound', order: 'IN-20260820003', operator: 'Li Ming', sub: 'purchase' },
+    { time: '2026-08-18 16:22:08', warehouse: 'SG001', zone: 'SG001STO (Storage Zone)', sku: 'SKU-10004-01', qty: '+100', after: { total: 450, locked: 80, available: 370 }, type: 'Purchase Inbound', order: 'IN-20260818002', operator: 'Tan Wei Ming', sub: 'purchase' },
+    { time: '2026-08-18 08:00:00', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10002-42', qty: '+100', after: { total: 900, locked: 160, available: 740 }, type: 'Purchase Inbound', order: 'IN-20260818001', operator: 'Admin', sub: 'purchase' },
+    { time: '2026-08-19 11:00:00', warehouse: 'BJ001', zone: 'BJ001STO (Storage Zone)', sku: 'SKU-10003-01', qty: '+80', after: { total: 3280, locked: 560, available: 2720 }, type: 'Manual Inbound', order: 'IN-20260819005', operator: 'Admin', sub: 'manual', inboundNo: 'IN-20260819005', inboundType: 'Manual', purchaseOrderNo: null }
   ],
   manual: [
-    { time: '2026-08-19 10:05:30', warehouse: 'BJ-001', zone: 'BJ-001-STO (Storage)', sku: 'SKU-10003-01', qty: '+500', after: { total: 3200, locked: 560, available: 2640 }, type: 'Manual Adjustment', order: 'ADJ-20260819001', operator: 'Admin', sub: 'manual', direction: 'Increase', adjQty: '500', adjType: 'Inventory Gain (盘盈)', reason: 'Cycle count surplus confirmed by supervisor.', attachment: 'count-sheet-0819.pdf' },
-    { time: '2026-08-17 15:20:11', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10001-WH', qty: '-10', after: { total: 970, locked: 150, available: 820 }, type: 'Manual Adjustment (Decrease)', order: 'ADJ-20260817002', operator: 'Admin', sub: 'manual', direction: 'Decrease', adjQty: '10', adjType: 'Damage (报损)', reason: 'Carton crushed in storage aisle.', attachment: '—' }
+    { time: '2026-08-19 10:05:30', warehouse: 'BJ001', zone: 'BJ001STO (Storage Zone)', sku: 'SKU-10003-01', qty: '+500', after: { total: 3200, locked: 560, available: 2640 }, type: 'Manual Adjustment', order: 'ADJ-20260819001', operator: 'Admin', sub: 'manual', direction: 'Increase', adjQty: '500', adjType: 'Inventory Gain (盘盈)', reason: 'Cycle count surplus confirmed by supervisor.', attachment: 'count-sheet-0819.pdf' },
+    { time: '2026-08-17 15:20:11', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10001-WH', qty: '-10', after: { total: 970, locked: 150, available: 820 }, type: 'Manual Adjustment (Decrease)', order: 'ADJ-20260817002', operator: 'Admin', sub: 'manual', direction: 'Decrease', adjQty: '10', adjType: 'Damage (报损)', reason: 'Carton crushed in storage aisle.', attachment: '—' }
   ],
   occupy: [
-    { time: '2026-08-21 11:45:22', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10001-BK', qty: '50', after: { total: 1200, locked: 200, available: 1000 }, type: 'Outbound Occupy', order: 'OUT-20260821005', operator: 'System', outboundNo: 'OUT-20260821005', relatedOrderNo: 'SO-20260821001', shipmentNo: '—', status: 'Allocated' },
-    { time: '2026-08-21 10:30:18', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10002-42', qty: '30', after: { total: 900, locked: 160, available: 740 }, type: 'Outbound Occupy', order: 'OUT-20260821003', operator: 'System' },
-    { time: '2026-08-20 15:12:55', warehouse: 'BJ-001', zone: 'BJ-001-STO (Storage)', sku: 'SKU-10003-01', qty: '100', after: { total: 3200, locked: 560, available: 2640 }, type: 'Outbound Occupy', order: 'OUT-20260820008', operator: 'System' }
+    { time: '2026-08-21 11:45:22', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10001-BK', qty: '50', after: { total: 1200, locked: 200, available: 1000 }, type: 'Outbound Occupy', order: 'OUT-20260821005', operator: 'System', outboundNo: 'OUT-20260821005', relatedOrderNo: 'SO-20260821001', shipmentNo: '—', status: 'Allocated' },
+    { time: '2026-08-21 10:30:18', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10002-42', qty: '30', after: { total: 900, locked: 160, available: 740 }, type: 'Outbound Occupy', order: 'OUT-20260821003', operator: 'System' },
+    { time: '2026-08-20 15:12:55', warehouse: 'BJ001', zone: 'BJ001STO (Storage Zone)', sku: 'SKU-10003-01', qty: '100', after: { total: 3200, locked: 560, available: 2640 }, type: 'Outbound Occupy', order: 'OUT-20260820008', operator: 'System' }
   ],
   deduct: [
-    { time: '2026-08-21 14:20:33', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10001-WH', qty: '-25', after: { total: 980, locked: 150, available: 830 }, type: 'Outbound Deduct', order: 'OUT-20260820012', operator: 'Li Ming', outboundNo: 'OUT-20260820012', relatedOrderNo: 'SO-20260820012', shipmentNo: 'SHP-SF1029384756', status: 'Shipped' },
-    { time: '2026-08-20 17:05:41', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10001-BK', qty: '-40', after: { total: 1000, locked: 150, available: 850 }, type: 'Outbound Deduct', order: 'OUT-20260819015', operator: 'Zhang Wei' }
+    { time: '2026-08-21 14:20:33', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10001-WH', qty: '-25', after: { total: 980, locked: 150, available: 830 }, type: 'Outbound Deduct', order: 'OUT-20260820012', operator: 'Li Ming', outboundNo: 'OUT-20260820012', relatedOrderNo: 'SO-20260820012', shipmentNo: 'SHP-SF1029384756', status: 'Shipped' },
+    { time: '2026-08-20 17:05:41', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10001-BK', qty: '-40', after: { total: 1000, locked: 150, available: 850 }, type: 'Outbound Deduct', order: 'OUT-20260819015', operator: 'Zhang Wei' }
   ],
   unfreeze: [
-    { time: '2026-08-20 09:15:28', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10002-46', qty: '20', after: { total: 660, locked: 100, available: 560 }, type: 'Unfreeze', order: 'OUT-20260819010', operator: 'System' },
-    { time: '2026-08-19 11:42:17', warehouse: 'BJ-001', zone: 'BJ-001-STO (Storage)', sku: 'SKU-10003-01', qty: '50', after: { total: 3200, locked: 510, available: 2690 }, type: 'Unfreeze', order: 'OUT-20260818005', operator: 'System' }
+    { time: '2026-08-20 09:15:28', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10002-46', qty: '20', after: { total: 660, locked: 100, available: 560 }, type: 'Unfreeze', order: 'OUT-20260819010', operator: 'System' },
+    { time: '2026-08-19 11:42:17', warehouse: 'BJ001', zone: 'BJ001STO (Storage Zone)', sku: 'SKU-10003-01', qty: '50', after: { total: 3200, locked: 510, available: 2690 }, type: 'Unfreeze', order: 'OUT-20260818005', operator: 'System' }
   ]
 };
 
@@ -735,7 +738,7 @@ function submitWarehouse() {
       showToast('Warehouse updated.', 'success');
     }
   } else {
-    const newId = 'SH-' + String(warehouses.length + 1).padStart(3, '0');
+    const newId = generateWarehouseCode(document.getElementById('wh-state').value || 'SH');
     const newWh = {
       id: newId, name, attribute: document.getElementById('wh-attribute').value, status: 'disable',
       zoneCount: 3, total: 0, locked: 0, available: 0,
@@ -751,9 +754,9 @@ function submitWarehouse() {
     warehouses.unshift(newWh);
 
     zones.push(
-      { whId: newId, code: `${newId}-RCV`, type: 'Receiving Zone', name: 'Receiving Zone', status: 'disable', total: 0, locked: 0, available: 0 },
-      { whId: newId, code: `${newId}-STO`, type: 'Storage Zone', name: 'Storage Zone', status: 'enable', total: 0, locked: 0, available: 0 },
-      { whId: newId, code: `${newId}-SHP`, type: 'Shipping Zone', name: 'Shipping Zone', status: 'disable', total: 0, locked: 0, available: 0 }
+      { whId: newId, code: `${newId}RCV`, type: 'Receiving Zone', name: 'Receiving Zone', status: 'disable', total: 0, locked: 0, available: 0 },
+      { whId: newId, code: `${newId}STO`, type: 'Storage Zone', name: 'Storage Zone', status: 'enable', total: 0, locked: 0, available: 0 },
+      { whId: newId, code: `${newId}SHP`, type: 'Shipping Zone', name: 'Shipping Zone', status: 'disable', total: 0, locked: 0, available: 0 }
     );
 
     closeModal('warehouse-modal');
