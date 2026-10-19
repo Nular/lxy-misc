@@ -1193,6 +1193,32 @@ tbody tr.selected {
   background: #fafafa;
 }
 
+.ob-upload-box {
+  margin: 12px 0;
+  padding: 28px 12px;
+  text-align: center;
+  border: 1px dashed var(--border-color);
+  border-radius: 8px;
+  color: var(--primary);
+  cursor: pointer;
+  background: #fafafa;
+}
+
+.ob-bar {
+  height: 8px;
+  background: #f0f0f0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 12px 0;
+}
+
+.ob-bar > div {
+  height: 100%;
+  width: 0;
+  background: var(--primary);
+  transition: width 0.2s;
+}
+
 .ob-preview {
   margin-top: 12px;
   max-height: 160px;

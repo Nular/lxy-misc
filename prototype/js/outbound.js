@@ -246,18 +246,23 @@ function detailActions(tab) {
       <button class="btn btn-primary" onclick="openImportTracking()">Import Tracking No.</button>
     </span>`;
   }
-  if (tab === 'ready_to_pick') return `<span></span><button class="btn btn-primary" onclick="advanceSelected('ready_to_pick','ready_to_pack','Ready to Pack')">Batch Complete Picking</button>`;
-  if (tab === 'ready_to_pack') return `<span></span><button class="btn btn-primary" onclick="advanceSelected('ready_to_pack','ready_to_ship','Ready to Ship')">Batch Complete Packing</button>`;
-  if (tab === 'ready_to_ship') return `<span></span><button class="btn btn-primary" onclick="confirmSelectedShipment()">Batch Confirm Shipment</button>`;
+  if (tab === 'ready_to_pick') {
+    return `<span></span><span>
+      <button class="btn" onclick="printPickList()">Print Pick List</button>
+      <button class="btn btn-primary" onclick="askAdvance('ready_to_pick','ready_to_pack','Confirm completing picking for the selected row(s)?')">Batch Complete Picking</button>
+    </span>`;
+  }
+  if (tab === 'ready_to_pack') return `<span></span><button class="btn btn-primary" onclick="askAdvance('ready_to_pack','ready_to_ship','Confirm completing packing for the selected row(s)?')">Batch Complete Packing</button>`;
+  if (tab === 'ready_to_ship') return `<span></span><button class="btn btn-primary" onclick="askConfirmShipment()">Batch Confirm Shipment</button>`;
   if (tab === 'on_hold') return `<span></span><button class="btn btn-primary" onclick="reallocateSelected(false)">Batch Re-allocate</button>`;
   return '';
 }
 
 function lineAction(l) {
   if (l.status === 'allocated' || l.status === 'shipped') return `<a class="btn-link" onclick="viewOutboundLine('${l.id}')">View</a>`;
-  if (l.status === 'ready_to_pick') return `<a class="btn-link" onclick="advanceLine('${l.id}')">Complete Picking</a>`;
-  if (l.status === 'ready_to_pack') return `<a class="btn-link" onclick="advanceLine('${l.id}')">Complete Packing</a>`;
-  if (l.status === 'ready_to_ship') return `<a class="btn-link" onclick="confirmShipment('${l.id}')">Confirm Shipment</a>`;
+  if (l.status === 'ready_to_pick') return `<a class="btn-link" onclick="askAdvance('ready_to_pick','ready_to_pack','Confirm completing picking for the selected row(s)?','${l.id}')">Complete Picking</a>`;
+  if (l.status === 'ready_to_pack') return `<a class="btn-link" onclick="askAdvance('ready_to_pack','ready_to_ship','Confirm completing packing for the selected row(s)?','${l.id}')">Complete Packing</a>`;
+  if (l.status === 'ready_to_ship') return `<a class="btn-link" onclick="askConfirmShipment('${l.id}')">Confirm Shipment</a>`;
   if (l.status === 'on_hold') return `<a class="btn-link" onclick="reallocateLine('${l.id}')">Re-allocate</a>`;
   return '';
 }
@@ -273,14 +278,47 @@ function toggleHoldChecks(on) {
   document.querySelectorAll('.ob-hold-check').forEach(el => { el.checked = on; });
 }
 
-function advanceLine(id) {
-  const line = outboundLines.find(l => l.id === id);
-  if (!line) return;
-  const next = { ready_to_pick: 'ready_to_pack', ready_to_pack: 'ready_to_ship' }[line.status];
-  if (!next) return;
-  line.status = next;
-  showToast(`${line.orderNo} / ${line.productName} moved to ${OB_STATUS[next].label}`, 'success');
-  renderOutboundDetail();
+let outboundConfirmAction = null;
+
+function askOutboundConfirm(title, message, action) {
+  outboundConfirmAction = action;
+  document.getElementById('ob-confirm-title').textContent = title;
+  document.getElementById('ob-confirm-msg').textContent = message;
+  openModal('ob-confirm-modal');
+}
+
+function runOutboundConfirm() {
+  const action = outboundConfirmAction;
+  outboundConfirmAction = null;
+  closeModal('ob-confirm-modal');
+  if (action) action();
+}
+
+function askAdvance(from, to, message, onlyId) {
+  const ids = onlyId ? [onlyId] : selectedLineIds();
+  if (!ids.length) {
+    showToast('Select at least one line.', 'warning');
+    return;
+  }
+  askOutboundConfirm('Confirm', message, () => {
+    const moved = [];
+    outboundLines.filter(l => ids.includes(l.id) && l.status === from).forEach(l => {
+      l.status = to;
+      moved.push(l);
+    });
+    const label = OB_STATUS[to].label;
+    showToast(moved.length === 1
+      ? `${moved[0].orderNo} / ${moved[0].productName} moved to ${label}`
+      : `The data has been moved to ${label}`, 'success');
+    currentObTab = to;
+    renderOutboundDetail();
+  });
+}
+
+function printPickList() {
+  const ids = selectedLineIds();
+  const lines = outboundLines.filter(l => l.outboundNo === currentOutboundNo && l.status === 'ready_to_pick' && (!ids.length || ids.includes(l.id)));
+  showToast(`Print pick list: ${lines.length} line(s)`, 'success');
 }
 
 function advanceSelected(from, to, label) {
@@ -307,13 +345,15 @@ function confirmShipment(id) {
   renderOutboundDetail();
 }
 
-function confirmSelectedShipment() {
-  const ids = selectedLineIds();
+function askConfirmShipment(onlyId) {
+  const ids = onlyId ? [onlyId] : selectedLineIds();
   if (!ids.length) {
     showToast('Select at least one line.', 'warning');
     return;
   }
-  ids.forEach(confirmShipment);
+  askOutboundConfirm('Confirm shipment', 'Confirm marking the selected row(s) as shipped?', () => {
+    ids.forEach(confirmShipment);
+  });
 }
 
 function tryAllocate(line) {
@@ -337,14 +377,24 @@ function tryAllocate(line) {
   return true;
 }
 
+function showAllocateResult(rows) {
+  document.getElementById('ob-result-body').innerHTML = rows.map(r => `
+    <p>${r.ok ? '✓' : '!'} ${r.orderNo} / ${r.productName}<br>
+    <span class="hint">${r.ok ? 'Success: Moved to Allocated.' : 'Failed: Insufficient stock; row remains On Hold.'}</span></p>
+  `).join('') || '<p>No rows.</p>';
+  openModal('ob-result-modal');
+}
+
 function reallocateLine(id) {
-  const line = outboundLines.find(l => l.id === id);
-  if (!line) return;
-  const ok = tryAllocate(line);
-  showToast(ok ? `${line.orderNo} allocated` : `${line.orderNo} still on hold`, ok ? 'success' : 'warning');
-  refreshAfterInventoryChange();
-  if (document.getElementById('page-outbound-detail').classList.contains('active')) renderOutboundDetail();
-  renderOnHold();
+  askOutboundConfirm('Re-allocate', 'Confirm retrying allocation for the selected row(s)?', () => {
+    const line = outboundLines.find(l => l.id === id);
+    if (!line) return;
+    const ok = tryAllocate(line);
+    refreshAfterInventoryChange();
+    if (document.getElementById('page-outbound-detail').classList.contains('active')) renderOutboundDetail();
+    renderOnHold();
+    showAllocateResult([{ ok, orderNo: line.orderNo, productName: line.productName }]);
+  });
 }
 
 function reallocateSelected(fromHoldPage) {
@@ -355,15 +405,19 @@ function reallocateSelected(fromHoldPage) {
     showToast('Select at least one line.', 'warning');
     return;
   }
-  let ok = 0;
-  ids.forEach(id => {
-    const line = outboundLines.find(l => l.id === id && l.status === 'on_hold');
-    if (line && tryAllocate(line)) ok += 1;
+  askOutboundConfirm('Re-allocate', 'Confirm retrying allocation for the selected row(s)?', () => {
+    const rows = [];
+    ids.forEach(id => {
+      const line = outboundLines.find(l => l.id === id && l.status === 'on_hold');
+      if (!line) return;
+      const ok = tryAllocate(line);
+      rows.push({ ok, orderNo: line.orderNo, productName: line.productName });
+    });
+    refreshAfterInventoryChange();
+    renderOnHold();
+    if (document.getElementById('page-outbound-detail').classList.contains('active')) renderOutboundDetail();
+    showAllocateResult(rows);
   });
-  showToast(`Allocated ${ok} / ${ids.length}`, ok ? 'success' : 'warning');
-  refreshAfterInventoryChange();
-  renderOnHold();
-  if (document.getElementById('page-outbound-detail').classList.contains('active')) renderOutboundDetail();
 }
 
 function viewOutboundLine(id) {
@@ -385,8 +439,16 @@ function viewOutboundLine(id) {
 }
 
 function exportShippingOrder() {
-  const lines = outboundLines.filter(l => l.outboundNo === currentOutboundNo && (currentObTab === 'all' || l.status === currentObTab));
-  showToast(`Exported ShippingOrder_${lines[0] ? formatCanonicalWarehouseCode(lines[0].warehouseId) : 'WH'}_${ymd()}.csv (${lines.length} lines)`, 'success');
+  const lines = outboundLines.filter(l => l.outboundNo === currentOutboundNo && l.status === 'allocated');
+  document.getElementById('ob-export-count').textContent = `${lines.length} records.`;
+  openModal('ob-export-modal');
+}
+
+function confirmExportShippingOrder() {
+  const ext = document.getElementById('ob-export-format').value;
+  const batch = outboundBatches.find(b => b.outboundNo === currentOutboundNo);
+  closeModal('ob-export-modal');
+  showToast(`Export successful. ShippingOrder_${batch ? batch.warehouseCode : 'WH'}_${ymd()}.${ext}`, 'success');
 }
 
 function renderOnHold() {
@@ -416,8 +478,14 @@ function openImportOrders() {
   select.innerHTML = list.map(w => `<option value="${w.id}">${formatCanonicalWarehouseCode(w.id)} — ${w.name}</option>`).join('');
   document.getElementById('ob-import-wh-wrap').style.display = scope === 'all' ? '' : 'none';
   obOrderCsv = '';
-  document.getElementById('ob-import-preview').textContent = '';
+  document.getElementById('ob-import-step-upload').hidden = false;
+  document.getElementById('ob-import-step-progress').hidden = true;
+  document.getElementById('ob-import-preview').hidden = true;
+  document.getElementById('ob-import-file-msg').textContent = '';
   document.getElementById('ob-import-btn').disabled = true;
+  document.getElementById('ob-import-btn').textContent = 'Import';
+  document.getElementById('ob-import-btn').onclick = runImportOrders;
+  document.getElementById('ob-import-cancel').disabled = false;
   openModal('ob-import-modal');
 }
 
@@ -427,7 +495,9 @@ function fillSampleOrderCsv() {
     'SO-NEW-01,2026-08-21 10:00:00,PRD-10001,SKU-10001-BK,Wireless Bluetooth Earbuds Pro,Black; M,1',
     'SO-NEW-02,2026-08-21 10:01:00,PRD-10004,SKU-10004-01,USB-C Flash Drive,128GB,3'
   ].join('\n');
+  document.getElementById('ob-import-preview').hidden = false;
   document.getElementById('ob-import-preview').textContent = obOrderCsv;
+  document.getElementById('ob-import-file-msg').textContent = 'Upload successful. 2 orders found. Ready to import.';
   document.getElementById('ob-import-btn').disabled = false;
 }
 
@@ -438,8 +508,13 @@ function onOutboundFilePicked(input, kind) {
   reader.onload = () => {
     if (kind === 'orders') {
       obOrderCsv = String(reader.result || '');
+      document.getElementById('ob-import-preview').hidden = false;
       document.getElementById('ob-import-preview').textContent = obOrderCsv.slice(0, 800);
-      document.getElementById('ob-import-btn').disabled = !obOrderCsv.includes('SKU ID');
+      const ok = obOrderCsv.includes('SKU ID');
+      document.getElementById('ob-import-btn').disabled = !ok;
+      document.getElementById('ob-import-file-msg').textContent = ok
+        ? 'Upload successful. Ready to import.'
+        : 'The imported file contains invalid fields. Please re-upload.';
     } else {
       obTrackCsv = String(reader.result || '');
       document.getElementById('ob-track-preview').textContent = obTrackCsv.slice(0, 800);
@@ -467,14 +542,24 @@ function runImportOrders() {
     showToast('No data rows.', 'error');
     return;
   }
+  document.getElementById('ob-import-step-upload').hidden = true;
+  document.getElementById('ob-import-preview').hidden = true;
+  document.getElementById('ob-import-step-progress').hidden = false;
+  document.getElementById('ob-import-btn').disabled = true;
+  document.getElementById('ob-import-btn').textContent = 'Importing';
+  document.getElementById('ob-import-cancel').disabled = true;
   const wh = document.getElementById('ob-import-wh').value;
   const outboundNo = nextDocNo('OB', wh);
   let allocated = 0;
   let held = 0;
+  let ignored = 0;
   const seen = new Set();
   rows.forEach(r => {
     const key = `${r['Order No']}|${r['SKU ID']}`;
-    if (seen.has(key)) return;
+    if (seen.has(key)) {
+      ignored += 1;
+      return;
+    }
     seen.add(key);
     const line = {
       id: 'L' + Date.now() + Math.random().toString(16).slice(2, 6),
@@ -505,11 +590,25 @@ function runImportOrders() {
     warehouseId: wh,
     warehouseCode: formatCanonicalWarehouseCode(wh)
   });
-  closeModal('ob-import-modal');
-  showToast(`Import done. Allocated ${allocated}, On Hold ${held}. ${outboundNo}`, 'success');
-  refreshAfterInventoryChange();
-  renderOutboundBatches();
-  openOutboundDetail(outboundNo);
+  let pct = 0;
+  const timer = setInterval(() => {
+    pct = Math.min(100, pct + 25);
+    document.getElementById('ob-import-bar').style.width = pct + '%';
+    document.getElementById('ob-import-progress-text').textContent =
+      `Processing ${pct}% · Allocated ${allocated} · On Hold ${held} · Ignore ${ignored}`;
+    if (pct < 100) return;
+    clearInterval(timer);
+    document.getElementById('ob-import-progress-title').textContent = 'Import successful';
+    document.getElementById('ob-import-btn').disabled = false;
+    document.getElementById('ob-import-btn').textContent = 'Confirm';
+    document.getElementById('ob-import-btn').onclick = () => {
+      closeModal('ob-import-modal');
+      document.getElementById('ob-import-btn').onclick = runImportOrders;
+      refreshAfterInventoryChange();
+      renderOutboundBatches();
+      openOutboundDetail(outboundNo);
+    };
+  }, 250);
 }
 
 function openImportTracking() {

@@ -547,21 +547,21 @@
                 <input type="text" id="ob-filter-keyword" placeholder="Contains">
               </div>
               <div class="filter-item">
-                <label>Imported from</label>
-                <input type="date" id="ob-filter-from">
+                <label>Imported period</label>
+                <input type="date" id="ob-filter-from" aria-label="Start date">
               </div>
               <div class="filter-item">
-                <label>Imported to</label>
-                <input type="date" id="ob-filter-to">
+                <label>to</label>
+                <input type="date" id="ob-filter-to" aria-label="End date">
               </div>
               <div class="filter-actions">
-                <button class="btn btn-primary" onclick="searchOutboundBatches()">Search</button>
+                <button class="btn btn-primary" onclick="searchOutboundBatches()">Confirm</button>
                 <button class="btn" onclick="resetOutboundBatchFilters()">Reset</button>
               </div>
             </div>
             <div class="toolbar">
-              <span class="hint" id="ob-import-scope-hint"></span>
-              <button class="btn btn-primary" onclick="openImportOrders()">Import Orders</button>
+              <span class="hint" id="ob-import-scope-hint">The selected warehouse applies only to this import. Switching context later does not change existing outbound records.</span>
+              <button class="btn btn-primary" onclick="openImportOrders()">Import Order</button>
             </div>
             <div class="table-wrapper">
               <table>
@@ -911,20 +911,26 @@
         <button class="modal-close" onclick="closeModal('ob-import-modal')">&times;</button>
       </div>
       <div class="modal-body">
-        <p class="hint">CSV header: Order No, Order Time, Product ID, SKU ID, Product Name, Specification, Qty. Allocation uses the warehouse below and Storage Zone only. A line is allocated in full or placed On Hold.</p>
-        <div class="form-group" id="ob-import-wh-wrap">
-          <label>Warehouse</label>
-          <select id="ob-import-wh"></select>
+        <div id="ob-import-step-upload">
+          <p class="hint">Header must include Order No, Order Time, Product ID, SKU ID, Product Name, Specification, Qty. A line is allocated in full or placed On Hold.</p>
+          <div class="form-group" id="ob-import-wh-wrap">
+            <label>Warehouse</label>
+            <select id="ob-import-wh"></select>
+          </div>
+          <div class="ob-upload-box" onclick="document.getElementById('ob-import-file').click()">+ Click to upload</div>
+          <input type="file" id="ob-import-file" accept=".csv,text/csv,.xlsx,.xls" hidden onchange="onOutboundFilePicked(this, 'orders')">
+          <button class="btn" type="button" onclick="fillSampleOrderCsv()">Use sample file</button>
+          <p id="ob-import-file-msg" class="hint"></p>
         </div>
-        <div class="form-group">
-          <label>File</label>
-          <input type="file" id="ob-import-file" accept=".csv,text/csv" onchange="onOutboundFilePicked(this, 'orders')">
+        <div id="ob-import-step-progress" hidden>
+          <p id="ob-import-progress-title">Importing</p>
+          <div class="ob-bar"><div id="ob-import-bar"></div></div>
+          <p id="ob-import-progress-text"></p>
         </div>
-        <button class="btn" type="button" onclick="fillSampleOrderCsv()">Use sample file</button>
-        <pre id="ob-import-preview" class="ob-preview"></pre>
+        <pre id="ob-import-preview" class="ob-preview" hidden></pre>
       </div>
       <div class="modal-footer">
-        <button class="btn" onclick="closeModal('ob-import-modal')">Cancel</button>
+        <button class="btn" id="ob-import-cancel" onclick="closeModal('ob-import-modal')">Cancel</button>
         <button class="btn btn-primary" id="ob-import-btn" disabled onclick="runImportOrders()">Import</button>
       </div>
     </div>
@@ -945,6 +951,58 @@
       <div class="modal-footer">
         <button class="btn" onclick="closeModal('ob-track-modal')">Cancel</button>
         <button class="btn btn-primary" id="ob-track-btn" disabled onclick="runImportTracking()">Import</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="ob-export-modal">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <span class="modal-title">Export Shipping Order</span>
+        <button class="modal-close" onclick="closeModal('ob-export-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <label>Please select export format</label>
+        <select id="ob-export-format">
+          <option value="xlsx">xlsx</option>
+          <option value="xls">xls</option>
+          <option value="csv">csv</option>
+        </select>
+        <p class="hint" id="ob-export-count"></p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('ob-export-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="confirmExportShippingOrder()">Export</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="ob-confirm-modal">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <span class="modal-title" id="ob-confirm-title">Confirm</span>
+        <button class="modal-close" onclick="closeModal('ob-confirm-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="ob-confirm-msg"></p>
+        <p class="hint">Review the selected rows before continuing.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('ob-confirm-modal')">Cancel</button>
+        <button class="btn btn-primary" id="ob-confirm-ok" onclick="runOutboundConfirm()">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="ob-result-modal">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <span class="modal-title">Allocation result</span>
+        <button class="modal-close" onclick="closeModal('ob-result-modal')">&times;</button>
+      </div>
+      <div class="modal-body" id="ob-result-body"></div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="closeModal('ob-result-modal')">Done</button>
       </div>
     </div>
   </div>
