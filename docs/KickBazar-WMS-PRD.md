@@ -88,7 +88,45 @@ Purchase Order 与 Dashboard Quick Link「采购单」跳转目标一致，不�
 ### 3.2 创建仓库
 
 创建成功后 status=Disable，自动生成 RCV/STO/SHP 三区；仅存储区可启用，其他区启用 Toast：`Not available in this version.`  
-字段与校验同飞书原稿 §3.2（Warehouse Code 系统生成，创建表单不填）。
+创建表单**不展示、不可填 Warehouse Code**；提交成功后由系统按 **§3.2.1** 生成。其余字段与校验同飞书原稿 §3.2。
+
+#### 3.2.1 Warehouse Code 生成规则（`warehouse_code`）
+
+> **历史说明**：飞书 §3.2 原稿仅写「区域/城市代码 + 流水号、例 SH001」；本节为可落地的**唯一规范**，与 §4 库区编码、库存主键、URL 参数一致。
+
+| 项 | 规则 |
+|----|------|
+| 字段 | `warehouse_code`（列表列名 Warehouse Code） |
+| 生成时机 | 创建仓库**事务内**、入库前生成；失败则整单回滚 |
+| 唯一性 | **全系统唯一**；生成后**永久不可修改** |
+| 字符集 | 大写字母 A–Z + 数字 0–9，**无连字符、无空格** |
+| 格式（MVP） | **`{REGION}{SEQ}`，固定 5 位** |
+| `REGION` | 2 位区域简码，由创建时地址「国家 + 省/州」映射（配置表维护，见下） |
+| `SEQ` | 3 位数字 `001`–`999`，在**同一 `REGION` 下**单调递增分配 |
+
+**REGION 映射示例**（配置表可扩展，创建时地址不完整则禁止提交或 Toast：`Please enter a valid address.`）：
+
+| 国家/地区 | 省/州（示例） | REGION |
+|-----------|---------------|--------|
+| CN | 上海 (SH) | `SH` |
+| CN | 北京 (BJ) | `BJ` |
+| CN | 广东 (GD) | `GZ` |
+| SG | — | `SG` |
+| 其他 | 按配置 | 2 位码；未配置可用 `ZZ` 并由运营补全配置 |
+
+**编号示例**：
+
+- 上海市第 1 个仓库 → `SH001`；同 REGION 第 2 个 → `SH002`。
+- 新加坡第 1 个仓库 → `SG001`。
+
+**与库区编码**：默认三区 Zone Code = `warehouse_code` + `zone_type_code`（3 位类型码），见 §4.0。例：仓 `SH001` 的存储区 → `SH001STO`。
+
+**接口与前端**：
+
+- 查询、库存主键、Dashboard 上下文、`Stock` 跳转参数名均为 **`warehouse_code`**，值为 canonical 形式（如 `SH001`）。
+- UI 若展示为 `SH-001` 仅作**可读性格式化**，不得作为第二套主键；写入接口前须归一为 5 位无连字符形式。
+
+**并发**：同一 `REGION` 的序号分配须在 DB 层通过事务 + 唯一索引（`warehouse_code`）或 REGION 计数器行锁，避免重复编号。
 
 ### 3.3 编辑仓库
 
@@ -113,7 +151,7 @@ Purchase Order 与 Dashboard Quick Link「采购单」跳转目标一致，不�
 | 中文 | 英文 | 字段 | 说明 |
 |------|------|------|------|
 | 仓库 Code | Warehouse Code | warehouse_code | 唯一 |
-| 库区编码 | Zone Code | zone_code | 仓内唯一；规则 `{warehouse_code}{type_code}`，如 SH001STO |
+| 库区编码 | Zone Code | zone_code | 仓内唯一；**`zone_code` = `warehouse_code` + `zone_type_code`**（均无连字符），如 `SH001` + `STO` → `SH001STO` |
 | 库区 | Zone | zone | **八类类型之一**（展示层**无 Zone Name**） |
 | 状态 | Status | status | Enable / Disable |
 | 实物/锁定/未锁定 | Total / Locked / Available | 聚合 | 同仓库列表口径 |
@@ -123,7 +161,22 @@ Purchase Order 与 Dashboard Quick Link「采购单」跳转目标一致，不�
 
 ### 4.1 创建库区
 
-字段：Warehouse Code（下拉）、**Zone 类型**（该仓未占用类型）、Zone Code（系统生成，表单只读）、Status。后五类库区规则同飞书 §4.1。
+字段：Warehouse Code（下拉）、**Zone 类型**（该仓未占用类型）、Zone Code（系统生成，表单只读）、Status。
+
+**Zone Code 生成**：`zone_code = warehouse_code + zone_type_code`。`zone_type_code` 为 3 位大写字母，与库区类型固定对应：
+
+| 库区类型 | zone_type_code |
+|----------|----------------|
+| Receiving Zone | RCV |
+| Storage Zone | STO |
+| Shipping Zone | SHP |
+| Damaged Goods Zone | DMG |
+| Packing Zone | PKG |
+| Returns Zone | RTN |
+| Quarantine Zone | HLD |
+| Special Zone | SPC |
+
+建仓自动生成的三区编码示例（仓 `SH001`）：`SH001RCV`、`SH001STO`、`SH001SHP`。后五类库区规则同飞书 §4.1（不得重复类型、每仓最多 8 类）。
 
 ### 4.2 编辑库区
 
@@ -330,6 +383,6 @@ Purchase Order 与 Dashboard Quick Link「采购单」跳转目标一致，不�
 |----|-------------|------------------------|
 | 库存调整权限 | Admin + 仓管所属仓 | 演示开关为 Admin only |
 | Dashboard 六项 Pending KPI | 全文要求 | 部分 KPI 简化，待迭代 |
-| Zone Code 展示 | SH001STO | 演示或含连字符 SH-001-STO，上线前统一 |
+| Warehouse / Zone Code | PRD：`SH001`、`SH001STO`（无连字符） | HTML 原型演示数据仍用 `SH-001`、`SH-001-STO`，实现须按 §3.2.1 / §4.1 归一 |
 | Record Tab 顺序 | All 首位 | 一致 |
 | Opening 子筛 | 不单独 Opening | 一致 |
