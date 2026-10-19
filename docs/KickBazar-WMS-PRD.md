@@ -1,203 +1,293 @@
 # KickBazar WMS 产品需求说明（仓库与库存）
 
 > **文档说明**  
-> 与飞书主 PRD 同源。**第 1–4 章**（模块目标、角色与权限、仓库管理、仓库库区管理）沿用飞书当前正文，本文件不重复粘贴。  
-> **第 5–8 章**为在原稿基础上**直接改写**后的正文（含 SKU 库存初始化、SKU 库存调整单、手动调整流水），合并飞书时请**用下文第 5–8 章整体替换**飞书对应章节，勿再单独叠一份「增量补充」。
+> 本文档为 WMS **仓库与库存**模块 PRD 正文（第 1–8 章），与飞书主 PRD 同源。  
+> **2026-10 修订**：仓库上下文仅在 **Dashboard** 切换、侧栏只读展示；**Purchase Order** 侧栏一级导航；库区 **去掉 Zone Name**；Record Tab 与全局筛选联动见第 6、7 章。  
+> 原型（库存）：https://itkaop.axshare.com/?id=5yfdzj&p=spu_sku_inventory&sc=3&g=1  
+> 原型（流水）：https://itkaop.axshare.com/?id=jo37v4&p=inventory_record&sc=3&g=1  
+> Home：https://itkaop.axshare.com/?g=1&id=foz25t&p=dashboard  
+> 离线单页：`export/KickBazar-WMS.html`
 
-原型（库存）：https://itkaop.axshare.com/?id=5yfdzj&p=spu_sku_inventory&sc=3&g=1  
-原型（流水）：https://itkaop.axshare.com/?id=jo37v4&p=inventory_record&sc=3&g=1  
-离线 HTML：`export/KickBazar-WMS-Inventory.html`、`export/KickBazar-WMS-Inventory-Record.html`
+---
+
+## 1 模块目标
+
+### 1.1 产品目标
+
+建立仓内库存基础模型，实现：
+
+1. 能创建、维护仓库；每个仓具备收货区、存储区、待发货区。
+2. SKU 库存查询：支持运营、仓管查看 SKU 的实物 / 已锁定 / 未锁定、所在仓库、所属位置（本期粒度为库区）、当前库存状态。
+3. 能按入库、出库占用、出库扣减查看流水，追溯到单号与库区。
+
+### 1.2 核心库存规则
+
+**系统统一库存口径：实物库存 = 已锁定库存 + 未锁定库存**
+
+| 中文 | 英文 | 字段 | 是否落库 | 说明 |
+|------|------|------|----------|------|
+| 实物库存 | Total | total | 是 | 仓库已有库存 |
+| 已锁定库存 | Locked | locked | 是 | 已下单未发货预占 |
+| 未锁定库存 | Available | available | **否** | 实时计算 `total - locked` |
+
+- Available 不落库；并发更新时对 SQL UPDATE 校验 `(total - locked) >= 需求量`（出库占用、扣减等见 §8.2）。
+- **空间模型（本期）**：库存粒度 = **仓库 × 库区（Zone）**；库位 Bin Location 五段模型预留，货架/层/列本期仅建档或不做。
+
+**库区分区（Zone）**：收货区 RCV、存储区 STO、待发货区 SHP 为建仓默认三区；另可建档 DMG/PKG/RTN/HLD/SPC 等（细则见 §4）。**对用户展示仅「库区类型 Zone + Zone Code」**，不设独立「库区名称 / Zone Name」字段（见 §4）。
+
+**SKU 条码**：WMS 只读同步 Seller/Admin 商品库；主条码展示规则 EAN → UPC → PAN-13（见飞书 1.2 条码表）。
+
+### 1.3 系统模块与侧栏导航
+
+**侧栏顺序（本期）：**
+
+| 顺序 | 一级目录 | 说明 |
+|------|----------|------|
+| — | **Current warehouse**（侧栏顶部） | **只读展示**当前仓库上下文名称；Admin 提示「Switch on Dashboard」 |
+| 1 | Home | Dashboard |
+| 2 | Inventory | SPU/SKU inventory、Record |
+| 3 | **Purchase Order** | 采购单列表入口（位于 Inbound **之上**） |
+| 4 | Inbound | 入库单 |
+| 5 | Outbound | 出库单 |
+| 6 | **Warehouses** | **仅 Admin**：Warehouse Management、Zone Management |
+
+Purchase Order 与 Dashboard Quick Link「采购单」跳转目标一致，不在 WMS 重复维护 PO 主数据。
+
+---
+
+## 2 角色与权限
+
+| 角色 | 主路径 | 仓库上下文 | 导航与写操作 |
+|------|--------|------------|--------------|
+| **管理员（Admin）** | 建仓、管库区；库存与流水核对；仓库停用→启用 | 在 **Home（Dashboard）** 选择 **All** 或指定 **Warehouse**；切换后全系统列表/指标按新范围刷新 | 可见 **Warehouses**；库存调整见 §5.3 |
+| **仓库管理员（Warehouse Manager）** | 库存查看、流水、入出库作业 | **仅所属 Warehouse**，不可 All；侧栏只读展示所属仓 | **不展示 Warehouses**；不可建仓/删仓/管库区主数据；库存调整**仅限所属仓**（§5.3） |
+
+### 2.1 仓库上下文（全局数据范围）
+
+1. **切换入口唯一**：仅 **Dashboard 页头**提供「Warehouse context」选择器（Admin：All + 仓库列表；仓管无切换器）。
+2. **侧栏**：全角色展示 **Current warehouse**（All 时文案如「All warehouses」）；**不提供下拉切换**。Admin 附加提示：**Switch on Dashboard**。
+3. **性能**：切换仓库触发多聚合查询（库存、流水、Dashboard 指标），故**禁止**在 Inventory、Record、Zone 等业务列表页提供切换器。
+4. **筛选 UI 联动**：当上下文为**指定仓库**时，Inventory、Record、Zone Management 等页 **隐藏 Warehouse 筛选**；接口仍强制注入 `warehouse_code`（及用户 id），忽略前端越权参数。
+5. **切换限制（建议）**：存在未关闭弹窗时禁止切换；可选频控（如每分钟 3 次）；失败保持原上下文并 Toast。
+
+**商品与条码**：商品只读 C 端 Seller 库；SKU 条码仅缓存与展示，不在 WMS 建品、不在 WMS 维护条码主数据。
+
+---
+
+## 3 仓库管理
+
+入口：`Warehouses → Warehouse Management`。**仅 Admin** 可访问（仓管无侧栏入口；URL 直链不可操作，提示 Admin only）。
+
+### 3.1 仓库列表
+
+筛选/搜索：Warehouse Code、Warehouse、属性、状态；**点击「搜索」后刷新**（非实时）。列表列含 Warehouse Code、Warehouse、Attribute、Status、Zone count（双击进库区管理）、Total、Locked、Available、Address、Owner、Contact/Phone、Operation（Edit/Delete/View/Stock）。
+
+- **Stock**：新标签打开 SPU/SKU Inventory，URL 带 `warehouse_code`；若用户已在 Dashboard 选定单仓，则与全局上下文一致（Warehouse 筛选隐藏时由上下文注入）。
+- 删除、空态、分页等规则同飞书原稿 §3.1。
+
+### 3.2 创建仓库
+
+创建成功后 status=Disable，自动生成 RCV/STO/SHP 三区；仅存储区可启用，其他区启用 Toast：`Not available in this version.`  
+字段与校验同飞书原稿 §3.2（Warehouse Code 系统生成，创建表单不填）。
+
+### 3.3 编辑仓库
+
+不可改 Warehouse Code；Disable→Enable 仅 Admin；Zone Count 旁「Manage Zones」跳转库区管理（带仓筛选）。同飞书 §3.3。
+
+### 3.4 删除仓库
+
+有库存或未完成 PO/入出库单时拒绝删除。同飞书 §3.4。
+
+### 3.5 查看仓库库存
+
+同 §3.1 Stock 跳转规则。
+
+---
+
+## 4 仓库库区管理
+
+入口：`Warehouses → Zone Management`。**仅 Admin**。从仓库列表 Zone count 双击或「Manage Zones」进入时，锁定该仓 Warehouse Code 筛选（可清除后看全部，若全局上下文为单仓则与 §2.1 联动）。
+
+### 4.0 字段说明（列表）
+
+| 中文 | 英文 | 字段 | 说明 |
+|------|------|------|------|
+| 仓库 Code | Warehouse Code | warehouse_code | 唯一 |
+| 库区编码 | Zone Code | zone_code | 仓内唯一；规则 `{warehouse_code}{type_code}`，如 SH001STO |
+| 库区 | Zone | zone | **八类类型之一**（展示层**无 Zone Name**） |
+| 状态 | Status | status | Enable / Disable |
+| 实物/锁定/未锁定 | Total / Locked / Available | 聚合 | 同仓库列表口径 |
+| 操作 | Operation | Edit / Delete / View | |
+
+**不展示、不维护**：库区名称 / Zone Name。
+
+### 4.1 创建库区
+
+字段：Warehouse Code（下拉）、**Zone 类型**（该仓未占用类型）、Zone Code（系统生成，表单只读）、Status。后五类库区规则同飞书 §4.1。
+
+### 4.2 编辑库区
+
+可改：Status。不可改：Warehouse Code、Zone Code、**Zone 类型**。
+
+### 4.3 删除库区
+
+有库存或未完成单据时拒绝。同飞书 §4.3。
 
 ---
 
 ## 5 库存查看
 
-本模块可以支持 SKU/SPU 两种视图查看当前商品库存。
+本模块支持 SKU/SPU 两种视图。
 
-入口：「Inventory」-「SPU/SKU inventory」。页内 Tab：`SPU` | `SKU`。  
-默认则按照入库时间倒序显示全部信息，前端网页最多展示 5000 条数据。
+入口：「Inventory」→「SPU/SKU inventory」。Tab：`SPU` | `SKU`。默认按入库时间倒序；前端最多展示 5000 条。
+
+**全局筛选**：当仓库上下文 **≠ All** 时，**隐藏 Warehouse 筛选**（§2.1）；查询范围由 `warehouse_code` 注入。
 
 ### 5.0 库存行与 SKU 主数据
 
-- 系统按 **仓库 × 库区** 为每个 SKU 维护独立库存行；主键：**SKU ID + Warehouse Code + Zone Code**。
-- SKU 展示字段来自 Admin/Seller 商品库（WMS **只读**同步，不在 WMS 建品、不在 WMS 维护条码主数据）：**SKU ID**、**Specification**、**Product Name**、条码缓存（EAN/UPC/PAN，展示规则见 1.2）。
-- **初始化**：每个仓库、每个库区，对 Admin 已下发的 SKU 生成库存行时，**Total = 0**、**Locked = 0**；**Available = 0**（Available 不落库，实时计算 `total - locked`）。
-- 入库上架、出库占用/扣减、**库存调整单**（见 5.3）写账后，按业务规则更新 total、locked。
+- 主键：**SKU ID + Warehouse Code + Zone Code**。
+- 初始化：Total=0、Locked=0；Available 实时计算。
+- 写账：入库、出库占用/扣减、库存调整单（§5.3）更新 total、locked。
 
 ### 5.1 SPU 视图
 
-筛选：
+筛选：Warehouse（上下文为 All 时显示）、Zone、Product ID、Product Name、In Stock Only。
 
-| 中文 | 英文 | 规则 |
-|------|------|------|
-| 仓库 Code/名称 | Warehouse | 下拉，全部/指定；含停用仓（看历史库存） |
-| 库区 | Zone | 关联 Warehouse；Zone Code + Zone Type |
-| 商品编码 | Product ID | 精准搜索 |
-| 商品名称 | Product Name | 模糊搜索 |
-| 仅显示有货 | In Stock Only | 默认关；开：`total>0` 或 `available>0` |
-
-表格：一行一个 SPU 和位置（主键 Product ID + Warehouse + Zone）。列：Product ID、Product Name、SKU Count、Total、Locked、Available、Warehouse、Zone（多位置时 Warehouse/Zone 显示「-」）。  
-点击 Product 旁组件：展开 SKU 子表（SKU ID、Specification、Total、Locked、Available、Warehouse、Zone）。  
-可排序：Total、Locked、Available。
-
-空态：无仓 / 无库存 / 筛选无匹配 — Unassigned Warehouse / Out of Stock / No Matching Results。
+表格列：Product ID、Product Name、SKU Count、Total、Locked、Available、Warehouse、**Zone（类型）**（多位置时可为「-」）。  
+展开子表：SKU ID、Specification、Total、Locked、Available、Warehouse、Zone。
 
 ### 5.2 SKU 视图
 
-筛选：与 5.1 一致，并增加 **SKU ID**（精准搜索）。
+筛选：同 5.1 + SKU ID。
 
-表格：一行一个 SKU 和位置（主键 SKU ID + Warehouse + Zone）。列：
+表格列：SKU ID、Specification、Product Name、Total、Locked、Available、Warehouse、**Zone**、Zone Code、Primary Barcode、PAN、Operation（库存调整 §5.3）。
 
-| 中文 | 英文 | 说明 |
-|------|------|------|
-| SKU ID | SKU ID | |
-| 规格 | Specification | |
-| 商品名称 | Product Name | 含商品图占位；Product ID 不在列表展示 |
-| 实物库存 | Total | 筛选范围内合计，可排序 |
-| 已锁定库存 | Locked | 可排序 |
-| 未锁定库存 | Available | 可排序 |
-| 仓库 | Warehouse | |
-| 库区 | Zone | Zone Type |
-| 库区编码 | Zone Code | |
-| 主条码 | Primary Barcode | 欧洲码优先，无则美国码，再平台码；悬停展示已缓存全部类型 |
-| 平台码 | PAN | |
-| 操作 | Operation | **库存调整**（见 5.3） |
-
-条码规则同 1.2；本期不做条码增删改页面。
-
-从仓库列表 **Stock** 跳转：新标签打开本页，URL 带 `warehouse_code`，筛选栏自动选中该仓并刷新；参数丢失则展示全部并提示手动选择仓库。
+从仓库 **Stock** 跳转：URL 带 `warehouse_code`；参数丢失则展示全部并提示手动选择（若已实现全局单仓上下文，则以上下文为准）。
 
 ### 5.3 库存调整（库存调整单）
 
-**入口**：SKU 视图 → Operation →「库存调整」（界面英文：**Inventory Adjustment**）。
-
-**弹窗标题**：Inventory Adjustment（库存调整单）
+**入口**：SKU 视图 → Operation → Inventory Adjustment。
 
 | 中文 | 英文 | 必填 | 说明 |
 |------|------|------|------|
-| SKU | SKU | 默认 | 只读 |
-| 仓库/库区 | Warehouse / Zone | 默认 | 只读；Warehouse Code + Zone Code（及库区类型名） |
-| 调前数量 | Qty Before | 默认 | 只读；当前 Total |
-| 调整方向 | Direction | 是 | 单选：增加 Increase / 减少 Decrease |
-| 调整数量 | Adjustment Qty | 是 | 正整数；**减少**时须校验 `Available ≥ 调整数量` |
-| 调整类型 | Adjustment Type | 是 | 盘盈、盘亏、报溢、报损、录入纠错（红字纠错） |
-| 原因说明 | Reason | 是 | 最多 200 字 |
-| 附件 | Attachment | 否 | 选填上传 |
+| SKU / 仓库库区 / 调前数量 | — | 默认 | 只读 |
+| 调整方向 | Direction | 是 | Increase / Decrease |
+| 调整数量 | Adjustment Qty | 是 | 减少时 `Available ≥  qty` |
+| 调整类型 | Adjustment Type | 是 | 盘盈、盘亏、报溢、报损、录入纠错 |
+| 原因说明 | Reason | 是 | ≤200 字 |
+| 附件 | Attachment | 否 | 选填 |
 
-**写账规则**（与全系统口径一致：实物 = 锁定 + 未锁定）：
+**写账**：
 
-| 调整方向 | Total | Locked | Available |
-|----------|-------|--------|-----------|
+| 方向 | Total | Locked | Available |
+|------|-------|--------|-----------|
 | 增加 | ↑ | 不变 | ↑ |
 | 减少 | ↓ | 不变 | ↓ |
 
-- 库存变更与流水写入**同一事务**；失败整单回滚，禁止半截流水或脏库存。
-- 关联单号：系统生成库存调整单号 **ADJ-YYYYMMDDnnn**。
-- 成功 Toast：`Inventory adjusted successfully.`（可提示查看 Record → **Manual Adjustment** Tab）。
-- **权限**：**仅 Admin** 可发起库存调整；仓库管理员仅可查看库存与流水，Operation 展示「Admin only」且接口拒绝写账。
-- 停用仓、停用库区不可作为新调整目标。
+- 单号：**ADJ-YYYYMMDDnnn**；与流水同一事务。
+- 成功 Toast：`Inventory adjusted successfully.`（提示 Record → **Manual Adjustment**）。
+- **权限**：**Admin**；**仓库管理员仅限所属仓库**（非所属仓接口拒绝）。停用仓/库区不可作为调整目标。
 
 ---
 
 ## 6 库存流水
 
-**只读展示**。禁止在流水页直接修改库存数字或手工抹账。  
-盘盈、盘亏、报溢、报损、录入纠错等库存更正，须通过 **5.3 库存调整单**（仅 Admin）提交后由系统写账并**自动生成流水**（见 **6.4**）。  
-移库、报损作业、打包/发运**不写**库存流水、不出现在任何 Tab。
+**只读**；禁止在流水页改库存。盘盈盘亏等须经 **§5.3 调整单** 写账。移库、打包/发运不写流水。
 
-入口：Record。四个 Tab：**Inbound**、**Outbound**、**Manual Adjustment**、**All**。（本期不做 Unfreeze Tab）
+入口：**Record**。
 
-共用筛选：时间（默认近 7 天）、Warehouse、Zone、SKU ID、关联单号、操作人。
+**Tab 顺序**：**All** | **Inbound** | **Outbound** | **Manual Adjustment**。（本期不做 Unfreeze Tab）
 
-库存类流水共用列：时间（精确到秒）、仓库、库区（编码+类型）、SKU ID、数量、变更后实物/锁定/未锁定、类型、关联单号、操作人。关联单号一期只展示文本，不强制跳转。账记在库区。
+**共用筛选**：时间（默认近 7 天）、Warehouse、Zone、SKU ID、关联单号、操作人。  
+当仓库上下文 **≠ All** 时：**隐藏 Warehouse 筛选**。
 
-开启事务注解；严禁在事务里吞异常、严禁在事务里调外部接口；库存变更与流水写入同一事务边界。
+**共用列**：时间、仓库、库区（编码+类型）、SKU ID、数量、变更后 Total/Locked/Available（含↑↓规则）、类型、关联单号、操作人。  
+支持 **行点击 / View** 打开**流水详情**（入库/出库/调整扩展字段分块）；关联单号一期文本展示，不强制跳转。
 
-### 6.1 入库流水
+### 6.1 入库流水（Tab：Inbound）
 
-流水 Tab：**Inbound**
+**类型**：手动入库（Manual Inbound）、采购入库（Purchase Inbound）。期初场景统一走入库单上架，**不单独 Opening 类型/子筛**（若业务后续启用再开子筛）。
 
-**类型**：**手动入库**、**采购入库**（含原「期初」场景，统一通过入库单确认上架，不再单独 Opening 类型/子筛）。
+**子筛**：All / **Manual** / **Purchase**
 
-**子筛**：全部 / **Manual（手动入库）** / **Purchase（采购入库）**
+- **不含**库存调整单流水（调整单仅 §6.4）。
+- 采购入库详情可含 Purchase Order No.（次要信息）。
 
-| 类型（英文） | 类型（中文） | 写账触发 | 本模块 |
-|--------------|--------------|----------|--------|
-| Manual Inbound | 手动入库 | 入库模块-手动入库单确认上架 | 只读展示；Inbound → Manual |
-| Purchase Inbound | 采购入库 | 入库模块-采购入库单确认上架 | 只读展示；Inbound → Purchase |
+### 6.2 出库流水（Tab：Outbound）
 
-- 与 **5.3 库存调整单**、**6.4 Manual Adjustment Tab** 区分：调整单流水不进 Inbound，仅进 Manual Adjustment Tab。
-- 关联单号：入库单号（采购入库可附采购单号为次要信息）。
-- 变更后列：Total / Locked / Available；total、available 上升用绿色↑标识。
-
-### 6.2 出库流水
-
-流水 Tab：**Outbound**
-
-**子筛**：全部 / **Outbound Deduct** / **Outbound Occupy**
+**子筛**：All / **Outbound Deduct** / **Outbound Occupy**
 
 | 类型 | 说明 |
 |------|------|
-| Outbound Occupy | 确认导入后 available↓、locked↑、total 不变；关联出库单号 |
-| Outbound Deduct | 发货确认 locked↓、total↓；打包/发运不写流水 |
+| Outbound Occupy | available↓、locked↑、total 不变 |
+| Outbound Deduct | locked↓、total↓ |
 
-出库详情扩展字段含：**Shipment No.**（未发运可为「—」）、关联订单号、状态等。
+出库详情含 Outbound No.、Related Order No.、**Shipment No.**、Status 等。
 
-### 6.4 手动调整流水
+### 6.4 手动调整流水（Tab：Manual Adjustment）
 
-流水 Tab：**Manual Adjustment**（位于 Outbound Deduct 之后、All 之前）
+仅 **§5.3 调整单** 产生流水：
 
-仅展示 **5.3 库存调整单** 产生的流水（增加与减少均在本 Tab，不混入 Inbound）。
+| 类型 | Qty |
+|------|-----|
+| Manual Adjustment | 正数 + |
+| Manual Adjustment (Decrease) | 负数 - |
 
-| 类型（英文） | 类型（中文） | Qty |
-|--------------|--------------|-----|
-| Manual Adjustment | 人工调整入库 | 正数，带 + |
-| Manual Adjustment (Decrease) | 人工调整出库 | 负数，带 - |
-
-- 写账：增加时 total↑、available↑；减少时 total↓、available↓；locked 均不变。
-- 关联单号：**ADJ-** 调整单号；操作人一般为 Admin。
+关联单号：ADJ-*；locked 不变。
 
 ---
 
 ## 7 Home（Dashboard）
 
-侧栏：Home。权限与全局 Warehouse 选择器规则同原 PRD 第 7 章（管理员可选 All；仓管仅所属仓）。页面只读，不在此页写账。
+侧栏：Home。**管理员、仓库管理员**均可访问。
+
+**页面定位**：只读总览；不在此页写账。口径：**实物 = 锁定 + 未锁定**。
+
+### 7.0 仓库上下文选择器（全局联动）
+
+| 角色 | 位置 | 可选值 | 切换后 |
+|------|------|--------|--------|
+| Admin | **Dashboard 页头** Warehouse context | All、各仓库 | 刷新本页指标；更新**全局上下文**（侧栏名称、各模块默认范围） |
+| 仓管 | 无 | 固定所属仓 | 侧栏只读展示所属仓 |
+
+- 侧栏 **Current warehouse** 仅展示，不可切换。
+- 切换触发多聚合查询，故**仅允许在 Dashboard 切换**（§2.1）。
+- 卡片与列表数据均受当前上下文约束；选 All 为全系统汇总，选单仓为该仓汇总。
 
 ### 7.1 关键指标卡片
 
-（与原 PRD 一致：Total Inventory、Pending Inbound、Pending Allocation、Pending Picking、Pending Packing、Shipped Today；统计规则与跳转不变。）
+六项只读：**Total Inventory**、**Pending Inbound**、**Pending Allocation**、**Pending Picking**、**Pending Packing**、**Shipped Today**。
 
-Total Inventory 点击跳转：Inventory → SPU/SKU Inventory，当前仓库，**默认 SKU Tab**。
+- Total Inventory = 当前视图 Σ total。
+- Pending / Shipped 指标来自入出库模块聚合；首页不改状态。
+- 点击卡片跳转对应模块并带入**当前仓库**筛选（与 §2.1 一致）。
+- Total Inventory → Inventory → SPU/SKU，**默认 SKU Tab**。
+- 非实时推送；进入页、**切换仓库**、返回 Home 时刷新。失败 Toast：`Failed to load dashboard metrics.`
 
 ### 7.2 快捷入口（Quick Links）
 
-（与原 PRD 一致；Operations + Warehouse Setup 区块不变。）
+**通用（全角色）**：Purchase Orders、Inbound、Outbound（与侧栏 **Purchase Order** 目标一致）。
+
+**Warehouse Setup (Admin Only)**（仅 Admin）：Warehouse Management、Zone Management。若 Dashboard 已选指定仓，进入 Zone Management 时**锁定 warehouse_code**。
+
+仓管不展示 Warehouse Setup 区块。
 
 ### 7.3 今日作业（Today's Operations）
 
-只读。数据来源于库存流水，当日摘要；默认最近 20 条；View All → Record → All Tab，时间=今日，仓库=当前视图。
+来源于库存流水；默认当日、最近 20 条。View All → Record → **All**，时间=今日，仓库=当前上下文。
 
-列表列：时间、类型、仓库、库区、SKU、数量、关联单号、操作人。
-
-**类型**（在原枚举基础上增加手动调整，与 Record 同口径）：
-
-| 类型 | 英文 | 来源 |
-|------|------|------|
-| 采购入库 | Purchase Inbound | 入库流水（Inbound） |
-| 人工调整入库 | Manual Adjustment | 5.3 调整单-增加 |
-| 人工调整出库 | Manual Adjustment (Decrease) | 5.3 调整单-减少 |
-| 出库占用 | Outbound Occupy | 出库占用流水 |
-| 出库扣减 | Outbound Deduct | 出库扣减流水 |
-
-打包/发运不出现在本列表。数量：正数绿色，负数红色。
+类型与 Record 同口径（含 Purchase Inbound、Manual Adjustment ±、Outbound Occupy/Deduct）。打包/发运不出现。
 
 ### 7.4 仓库库存概况（Warehouse Inventory Breakdown）
 
-（与原 PRD 一致。）
+- 选 **指定仓库**时展示库区分布表（Zone、Total、Locked、Available）及 Locked/Available 比例条。
+- 选 **All** 时提示：`Select a warehouse to view breakdown.`
+- 点击汇总或库区行 → Inventory，带入当前仓（及库区）。
 
 ### 7.5 数据一致性与权限
 
-（与原 PRD 一致；Today's Operations 与 Record 同条件子集。）
+- 所有查询接口强制注入**登录用户 id**，忽略前端伪造用户 id。
+- Total Inventory 与 Inventory 同范围 total 之和一致；Today's Operations 与 Record 同条件子集；Breakdown 与按库区聚合一致。
 
 ---
 
@@ -205,22 +295,41 @@ Total Inventory 点击跳转：Inventory → SPU/SKU Inventory，当前仓库，
 
 ### 8.1 库区写入（入出库遵守）
 
-（与原 PRD 一致：入库上架进存储区；出库推荐启用存储区且 available>0；停用仓/区不可作新作业目标。）
+入库上架进**存储区**；出库推荐启用存储区且 available>0；停用仓/区不可作新作业目标。细则同飞书 §8.1。
 
 ### 8.2 写账与流水 Tab
 
-| 事件 | 实物 | 锁定 | 未锁定 | 流水 |
-|------|------|------|--------|------|
-| 采购确认上架（含原期初，统一入库单） | ↑ | — | ↑ | Inbound |
-| 采购单创建/确认/关单/回写 | 不变 | 不变 | 不变 | 仅采购单流水 |
-| 出库确认导入 | — | ↑ | ↓ | 出库占用 |
-| 拣货确认（出库扣减） | ↓ | ↓ | — | 出库扣减 |
-| **库存调整-增加** | ↑ | — | ↑ | Manual Adjustment |
-| **库存调整-减少** | ↓ | — | ↓ | Manual Adjustment |
+| 事件 | 实物 | 锁定 | 未锁定 | 流水 Tab |
+|------|------|------|--------|----------|
+| 采购/手动入库确认上架 | ↑ | — | ↑ | Inbound |
+| 采购单状态流转（未上架） | 不变 | 不变 | 不变 | 仅 PO |
+| 出库确认导入 | — | ↑ | ↓ | Outbound Occupy |
+| 出库扣减 | ↓ | ↓ | — | Outbound Deduct |
+| 库存调整-增加 | ↑ | — | ↑ | Manual Adjustment |
+| 库存调整-减少 | ↓ | — | ↓ | Manual Adjustment |
 | 打包/发运 | 不变 | 不变 | 不变 | 不写 |
 
-所有库存增减动作，库存变更与对应流水必须在同一业务事务内完成。
+库存变更与流水同一事务，禁止账实不符。
 
-### 8.3 本侧提供
+### 8.3 本侧提供与 `warehouse_context`
 
-（与原 PRD 一致：仓库/库区主数据、出库推荐、删仓前校验等。）
+- 仓库/库区主数据；出库推荐（仓 + SKU + 存储区 + enable + available>0）。
+- 删仓前：无库存且无未完成 PO/入出库单。
+
+**`warehouse_context`（Admin 可为 `all` 或 `warehouse_code`；仓管固定所属仓）：**
+
+- 列表/聚合 API 在单仓上下文下**强制** `warehouse_code`；与前端隐藏 Warehouse 筛选一致。
+- 上下文切换仅在 **Dashboard** 触发（专用接口或 Dashboard 聚合刷新）；Inventory/Record 列表接口**不得**附带切换副作用。
+- **`Warehouses/*`**：Admin only；仓管可调库存/流水/所属仓调整单与入出库（按角色配置）。
+
+---
+
+## 附录：与原型差异（实现跟踪）
+
+| 项 | PRD（本文） | 当前 HTML 原型（演示） |
+|----|-------------|------------------------|
+| 库存调整权限 | Admin + 仓管所属仓 | 演示开关为 Admin only |
+| Dashboard 六项 Pending KPI | 全文要求 | 部分 KPI 简化，待迭代 |
+| Zone Code 展示 | SH001STO | 演示或含连字符 SH-001-STO，上线前统一 |
+| Record Tab 顺序 | All 首位 | 一致 |
+| Opening 子筛 | 不单独 Opening | 一致 |
