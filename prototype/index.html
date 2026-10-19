@@ -46,9 +46,8 @@
         <div class="nav-item sub" data-page="spu-sku-inventory">SPU/SKU inventory</div>
         <div class="nav-item sub" data-page="record">Record</div>
 
-        <div class="nav-item parent" data-group="inbound">
-          <span>Inbound</span>
-        </div>
+        <div class="nav-item" data-page="purchase-order">Purchase Order</div>
+        <div class="nav-item" data-page="inbound">Inbound</div>
 
         <div class="nav-item parent" data-group="outbound">
           <span>Outbound</span>
@@ -511,19 +510,165 @@
           </div>
         </div>
 
-        <!-- ========== PURCHASE ORDER PLACEHOLDER ========== -->
+        <!-- ========== PURCHASE ORDER ========== -->
         <div class="page" id="page-purchase-order">
-          <div class="placeholder-page">
-            <h2>Purchase Order</h2>
-            <p>Module under development — not in current prototype scope</p>
+          <div class="page-header">
+            <h1 class="page-title">Purchase Order</h1>
+            <p class="page-subtitle">Create and track purchase orders; link to inbound receipts</p>
+          </div>
+          <div class="page-body">
+            <div class="filter-bar module-filter-bar">
+              <div class="filter-item">
+                <label>Search by</label>
+                <select id="po-search-field">
+                  <option value="orderNo">Order No.</option>
+                  <option value="linkedReceipt">Linked Receipt No.</option>
+                </select>
+              </div>
+              <div class="filter-item filter-grow">
+                <label>Keyword</label>
+                <div class="suggest-wrap">
+                  <input type="text" id="po-search-keyword" placeholder="Search or leave empty for all" autocomplete="off">
+                  <div id="po-search-suggest" class="search-suggest" hidden></div>
+                </div>
+              </div>
+              <div class="filter-item">
+                <label>Status</label>
+                <select id="po-filter-status">
+                  <option value="">All</option>
+                  <option value="Draft">Draft</option>
+                  <option value="Processing">Processing</option>
+                  <option value="Created">Created</option>
+                  <option value="Pending Shipment">Pending Shipment</option>
+                  <option value="Partially Shipped">Partially Shipped</option>
+                  <option value="Shipped">Shipped</option>
+                  <option value="Partially Received">Partially Received</option>
+                  <option value="Received">Received</option>
+                  <option value="Partially Stocked In">Partially Stocked In</option>
+                  <option value="Stocked In">Stocked In</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <label>Creation Method</label>
+                <select id="po-filter-method">
+                  <option value="">All</option>
+                  <option value="Manual Entry">Manual Entry</option>
+                  <option value="Import Created">Import Created</option>
+                </select>
+              </div>
+              <div class="filter-actions">
+                <button class="btn btn-primary" onclick="searchPurchaseOrders()">Search</button>
+                <button class="btn" onclick="resetPurchaseOrderFilters()">Reset</button>
+              </div>
+            </div>
+            <div class="toolbar">
+              <span>Total <strong id="po-list-total">0</strong></span>
+              <button class="btn btn-primary" onclick="openPurchaseOrderEditor()">+ Create Purchase Order</button>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Order No.</th>
+                    <th>Name</th>
+                    <th>Warehouse</th>
+                    <th>Status</th>
+                    <th>Creation Method</th>
+                    <th>Linked Receipts</th>
+                    <th>Supplier</th>
+                    <th>Created</th>
+                    <th>Operation</th>
+                  </tr>
+                </thead>
+                <tbody id="po-table-body"></tbody>
+              </table>
+            </div>
+            <div class="pagination-bar">
+              <span>Rows</span>
+              <select id="po-page-size" onchange="renderPurchaseOrderList()">
+                <option value="20">20/page</option>
+                <option value="50">50/page</option>
+                <option value="100">100/page</option>
+                <option value="500">500/page</option>
+              </select>
+            </div>
           </div>
         </div>
 
-        <!-- ========== INBOUND PLACEHOLDER ========== -->
+        <!-- ========== INBOUND RECEIPT ========== -->
         <div class="page" id="page-inbound">
-          <div class="placeholder-page">
-            <h2>Inbound</h2>
-            <p>Module under development — not in current prototype scope</p>
+          <div class="page-header">
+            <h1 class="page-title">Inbound</h1>
+            <p class="page-subtitle">Inbound receipts (上架入库); writes inventory on Stocked In</p>
+          </div>
+          <div class="page-body">
+            <div class="filter-bar module-filter-bar">
+              <div class="filter-item">
+                <label>Search by</label>
+                <select id="inbound-search-field">
+                  <option value="receiptNo">Receipt No.</option>
+                  <option value="purchaseOrder">Related Purchase Order No.</option>
+                </select>
+              </div>
+              <div class="filter-item filter-grow">
+                <label>Keyword</label>
+                <div class="suggest-wrap">
+                  <input type="text" id="inbound-search-keyword" placeholder="Search or leave empty for all" autocomplete="off">
+                  <div id="inbound-search-suggest" class="search-suggest" hidden></div>
+                </div>
+              </div>
+              <div class="filter-item">
+                <label>Status</label>
+                <select id="inbound-filter-status">
+                  <option value="">All</option>
+                  <option value="Draft">Draft</option>
+                  <option value="Processing">Processing</option>
+                  <option value="Stocked In">Stocked In</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <label>Receipt Type</label>
+                <select id="inbound-filter-type">
+                  <option value="">All</option>
+                  <option value="Purchase Receipt">Purchase Receipt</option>
+                  <option value="Manual Receipt">Manual Receipt</option>
+                </select>
+              </div>
+              <div class="filter-actions">
+                <button class="btn btn-primary" onclick="searchInboundReceipts()">Search</button>
+                <button class="btn" onclick="resetInboundFilters()">Reset</button>
+              </div>
+            </div>
+            <div class="toolbar">
+              <span>Total <strong id="inbound-list-total">0</strong></span>
+              <button class="btn btn-primary" onclick="openReceiptEditor()">+ Create Receipt</button>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Receipt No.</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Warehouse</th>
+                    <th>Related PO</th>
+                    <th>Lines</th>
+                    <th>Progress</th>
+                    <th>Updated</th>
+                    <th>Operation</th>
+                  </tr>
+                </thead>
+                <tbody id="inbound-table-body"></tbody>
+              </table>
+            </div>
+            <div class="pagination-bar">
+              <select id="inbound-page-size" onchange="renderInboundReceiptList()">
+                <option value="20">20/page</option>
+                <option value="50">50/page</option>
+                <option value="100">100/page</option>
+                <option value="500">500/page</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -836,7 +981,7 @@
           </div>
           <div class="form-group">
             <label>Zone Code <span class="required">*</span></label>
-            <input type="text" placeholder="e.g. SH-001-DMG" id="zone-code">
+            <input type="text" placeholder="e.g. SH001DMG" id="zone-code">
             <span class="hint">Unique within warehouse. Cannot be changed after creation.</span>
           </div>
           <div class="form-group">
@@ -912,7 +1057,95 @@
     </div>
   </div>
 
-  <div class="modal-overlay" id="ob-import-modal">
+  <!-- Purchase Order Editor -->
+  <div class="modal-overlay" id="po-editor-modal">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <span class="modal-title" id="po-editor-title">Create Purchase Order</span>
+        <button class="modal-close" onclick="closeModal('po-editor-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="editor-mode-hint" id="po-editor-hint">Creation: Manual Entry or Import (mutually exclusive with the other mode in full product).</div>
+        <form class="form-grid" id="po-editor-form">
+          <div class="form-group"><label>Order Name</label><input type="text" id="po-name" maxlength="200" placeholder="Purchase order name"></div>
+          <div class="form-group"><label>Warehouse</label><input class="readonly" id="po-warehouse" readonly></div>
+          <div class="form-group"><label>Supplier <span class="required">*</span></label><input type="text" id="po-supplier" maxlength="200"></div>
+          <div class="form-group"><label>Tracking No.</label><input type="text" id="po-tracking" placeholder="Logistics tracking"></div>
+        </form>
+        <div class="editor-lines-toolbar">
+          <button type="button" class="btn" onclick="poAddSampleLine()">Add Products (demo)</button>
+          <button type="button" class="btn" onclick="startPoImport()">Import</button>
+        </div>
+        <div class="import-progress" id="po-import-progress" hidden>
+          <div class="progress-label">Importing… <span id="po-import-pct">0%</span></div>
+          <div class="progress-track"><div class="progress-fill" id="po-import-fill"></div></div>
+        </div>
+        <div class="table-wrapper editor-lines-table">
+          <table>
+            <thead>
+              <tr>
+                <th>SKU ID</th><th>Product Name</th><th>Specification</th><th>Qty</th><th>Unit Price</th><th>Line Status</th>
+              </tr>
+            </thead>
+            <tbody id="po-editor-lines"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('po-editor-modal')">Cancel</button>
+        <button class="btn" onclick="savePurchaseOrderDraft()">Save Draft</button>
+        <button class="btn btn-primary" onclick="savePurchaseOrderCreated()">Save &amp; Created</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Inbound Receipt Editor -->
+  <div class="modal-overlay" id="receipt-editor-modal">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <span class="modal-title" id="receipt-editor-title">Create Receipt</span>
+        <button class="modal-close" onclick="closeModal('receipt-editor-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="receipt-source-tabs">
+          <button type="button" class="source-tab active" data-source="po" onclick="setReceiptSource('po')">Link Purchase Order</button>
+          <button type="button" class="source-tab" data-source="products" onclick="setReceiptSource('products')">Add Products</button>
+          <button type="button" class="source-tab" data-source="import" onclick="setReceiptSource('import')">Import</button>
+        </div>
+        <form class="form-grid" id="receipt-editor-form">
+          <div class="form-group"><label>Receipt Type</label><select id="receipt-type"><option value="Purchase Receipt">Purchase Receipt</option><option value="Manual Receipt">Manual Receipt</option></select></div>
+          <div class="form-group"><label>Warehouse</label><input class="readonly" id="receipt-warehouse" readonly></div>
+          <div class="form-group" id="receipt-po-group"><label>Related PO</label><select id="receipt-po-select"></select></div>
+          <div class="form-group"><label>Default Zone (Storage)</label><input class="readonly" id="receipt-zone" readonly></div>
+        </form>
+        <div id="receipt-source-import" class="source-panel" hidden>
+          <input type="file" id="receipt-import-file" accept=".csv,.xlsx">
+          <button type="button" class="btn btn-primary" id="receipt-import-btn" disabled onclick="startReceiptImport()">Import</button>
+        </div>
+        <div class="table-wrapper editor-lines-table">
+          <table>
+            <thead>
+              <tr>
+                <th>SKU ID</th><th>Product Name</th><th>Spec</th><th>Order Qty</th><th>Receipt Qty</th><th>Variance</th><th>Zone</th>
+              </tr>
+            </thead>
+            <tbody id="receipt-editor-lines"></tbody>
+          </table>
+        </div>
+        <div class="import-progress" id="receipt-import-progress" hidden>
+          <div class="progress-label">Importing… <span id="receipt-import-pct">0%</span></div>
+          <div class="progress-track"><div class="progress-fill" id="receipt-import-fill"></div></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('receipt-editor-modal')">Cancel</button>
+        <button class="btn" onclick="saveReceiptDraft()">Save Draft</button>
+        <button class="btn btn-primary" onclick="confirmReceiptStockIn()">Confirm Stock-In</button>
+      </div>
+    </div>
+  </div>
+
+<div class="modal-overlay" id="ob-import-modal">
     <div class="modal modal-md">
       <div class="modal-header">
         <span class="modal-title">Import Orders</span>
@@ -1042,9 +1275,11 @@
     </div>
   </div>
 
+  
   <div class="toast-container" id="toast-container"></div>
 
   <script src="js/app.js"></script>
+  <script src="js/inbound-po.js"></script>
   <script src="js/outbound.js"></script>
 </body>
 </html>

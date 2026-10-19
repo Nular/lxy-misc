@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=1440">
-  <title>KickBazar WMS - Prototype</title>
+  <title>KickBazar WMS</title>
   <style>
 /* KickBazar WMS Prototype - 1440x900 */
 :root {
@@ -156,6 +156,111 @@ body {
   margin-left: auto;
   font-size: 10px;
   color: var(--text-muted);
+}
+
+.sidebar-context {
+  margin: 0 12px 12px;
+  padding: 10px 12px;
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+}
+
+.sidebar-context-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.sidebar-context-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.sidebar-role-badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #e6f4ff;
+  color: #1677ff;
+  font-weight: 500;
+}
+
+.sidebar-wh-select {
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 13px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: #fff;
+}
+
+.nav-admin-tag {
+  font-size: 10px;
+  color: #999;
+  margin-left: 4px;
+  font-weight: 400;
+}
+
+.sidebar-wh-static {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.35;
+}
+
+.sidebar-context-hint {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.3;
+}
+
+.dashboard-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.dashboard-wh-switcher {
+  flex-shrink: 0;
+  min-width: 260px;
+  max-width: 320px;
+  padding: 12px 14px;
+  background: var(--bg-gray);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+}
+
+.dashboard-wh-switcher label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: var(--text-primary);
+}
+
+.dashboard-wh-select {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 13px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: #fff;
+}
+
+.dashboard-wh-switcher-hint {
+  display: block;
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.35;
 }
 
 /* Content */
@@ -953,6 +1058,451 @@ tbody tr.selected {
   gap: 16px;
 }
 
+.dashboard-kpi-row-6 {
+  grid-template-columns: repeat(6, 1fr);
+}
+
+.dashboard-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dashboard-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.dashboard-section-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dashboard-admin-pill {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #fff1f0;
+  color: #cf1322;
+  border: 1px solid #ffccc7;
+}
+
+.dashboard-task-row,
+.dashboard-admin-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.dashboard-admin-row {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.dashboard-task-card,
+.dashboard-admin-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.dashboard-task-card:hover,
+.dashboard-admin-card:hover {
+  box-shadow: var(--shadow);
+  border-color: #d9d9d9;
+}
+
+.dashboard-admin-card {
+  border-color: #b37feb;
+  background: linear-gradient(180deg, #faf5ff 0%, #fff 100%);
+}
+
+.dashboard-task-title {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.dashboard-task-arrow {
+  color: #999;
+  font-size: 18px;
+}
+
+.dashboard-task-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: #f5f5f5;
+  flex-shrink: 0;
+}
+
+.task-icon-po { background: #e6f4ff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%231677ff' viewBox='0 0 24 24'%3E%3Cpath d='M7 3h10a2 2 0 0 1 2 2v16l-5-2.5L9 21V5a2 2 0 0 1 2-2z'/%3E%3C/svg%3E") center/22px no-repeat; }
+.task-icon-in { background: #e6fffb url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%2313c2c2' viewBox='0 0 24 24'%3E%3Cpath d='M12 4l8 6v10H4V10l8-6z'/%3E%3C/svg%3E") center/22px no-repeat; }
+.task-icon-out { background: #fff7e6 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23fa8c16' viewBox='0 0 24 24'%3E%3Cpath d='M4 12h12m0 0l-4-4m4 4l-4 4'/%3E%3C/svg%3E") center/22px no-repeat; }
+.task-icon-wh { background: #f9f0ff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23722ed1' viewBox='0 0 24 24'%3E%3Cpath d='M3 21V9l9-6 9 6v12H3z'/%3E%3C/svg%3E") center/22px no-repeat; }
+.task-icon-zone { background: #f9f0ff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23722ed1' viewBox='0 0 24 24'%3E%3Cpath d='M4 6h16v4H4V6zm0 6h10v4H4v-4z'/%3E%3C/svg%3E") center/22px no-repeat; }
+
+.kpi-card.kpi-total { border-top: 3px solid #1677ff; }
+.kpi-card.kpi-total .kpi-value { color: #1677ff; }
+.kpi-card.kpi-pending-inbound { border-top: 3px solid #13c2c2; }
+.kpi-card.kpi-pending-inbound .kpi-value { color: #13c2c2; }
+.kpi-card.kpi-allocation { border-top: 3px solid #fa8c16; }
+.kpi-card.kpi-allocation .kpi-value { color: #fa8c16; }
+.kpi-card.kpi-picking { border-top: 3px solid #d48806; }
+.kpi-card.kpi-picking .kpi-value { color: #d48806; }
+.kpi-card.kpi-packing { border-top: 3px solid #722ed1; }
+.kpi-card.kpi-packing .kpi-value { color: #722ed1; }
+.kpi-card.kpi-shipped { border-top: 3px solid #52c41a; }
+.kpi-card.kpi-shipped .kpi-value { color: #52c41a; }
+
+.kpi-card[class*="kpi-"] {
+  cursor: pointer;
+}
+
+.dashboard-ops-panel {
+  margin-top: 4px;
+}
+
+.dashboard-ops-table {
+  max-height: none;
+}
+
+.dashboard-ops-table .qty-up {
+  color: #52c41a;
+  font-weight: 600;
+}
+
+.dashboard-ops-table .qty-down {
+  color: #ff4d4f;
+  font-weight: 600;
+}
+
+.dashboard-empty {
+  text-align: center;
+  color: #999;
+  padding: 24px;
+}
+
+.dashboard-ops-row {
+  cursor: pointer;
+}
+
+.dashboard-ops-row:hover {
+  background: #fafafa;
+}
+
+/* Inbound / PO module */
+.module-filter-bar .filter-grow {
+  flex: 1;
+  min-width: 200px;
+}
+
+.receipt-source-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.source-tab {
+  padding: 8px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.source-tab.active {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: #e6f4ff;
+}
+
+.editor-mode-hint,
+.editor-lines-toolbar {
+  margin-bottom: 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.editor-lines-toolbar {
+  display: flex;
+  gap: 8px;
+}
+
+.editor-lines-table {
+  max-height: 240px;
+  overflow: auto;
+}
+
+.mini-progress {
+  width: 80px;
+  height: 6px;
+  background: #f0f0f0;
+  border-radius: 3px;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+.mini-progress div {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 3px;
+}
+
+.progress-track {
+  height: 8px;
+  background: #f0f0f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 0;
+  background: var(--primary);
+  transition: width 0.3s;
+}
+
+.progress-label {
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.tag-warning {
+  background: #fff7e6;
+  color: #d48806;
+  border: 1px solid #ffd591;
+}
+
+.suggest-wrap {
+  position: relative;
+}
+
+.search-suggest {
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  right: 0;
+  top: 100%;
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  max-height: calc(5 * 32px);
+  overflow-y: auto;
+  box-shadow: var(--shadow);
+}
+
+.suggest-item {
+  padding: 7px 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.suggest-item:hover {
+  background: #e6f4ff;
+}
+
+.kpi-card {
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: box-shadow 0.2s;
+}
+
+.kpi-card:hover {
+  box-shadow: var(--shadow);
+}
+
+.kpi-card .kpi-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.kpi-card .kpi-value {
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.kpi-card .kpi-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.kpi-card.total { border-top: 3px solid var(--primary); }
+.kpi-card.locked { border-top: 3px solid var(--warning); }
+.kpi-card.available { border-top: 3px solid var(--success); }
+.kpi-card.warehouses { border-top: 3px solid #722ed1; }
+
+.kpi-card.total .kpi-value { color: var(--primary); }
+.kpi-card.locked .kpi-value { color: var(--warning); }
+.kpi-card.available .kpi-value { color: var(--success); }
+.kpi-card.warehouses .kpi-value { color: #722ed1; }
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.dashboard-panel {
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+  background: #fafafa;
+}
+
+.panel-header h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.dashboard-table {
+  border: none;
+  border-radius: 0;
+  max-height: 260px;
+}
+
+.dashboard-table table {
+  font-size: 12px;
+}
+
+.dashboard-table th,
+.dashboard-table td {
+  padding: 10px 16px;
+}
+
+.quick-access-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  padding: 16px 20px 20px;
+}
+
+.quick-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.quick-card:hover {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+.quick-card .quick-icon {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.quick-card .quick-title {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.quick-card .quick-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.quick-card:hover .quick-desc {
+  color: var(--primary);
+  opacity: 0.8;
+}
+
+.ob-flow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.ob-flow span {
+  font-size: 12px;
+  padding: 6px 10px;
+  background: #f5f5f5;
+  border-radius: 4px;
+  color: #555;
+}
+
+.ob-picklist {
+  font-size: 13px;
+}
+
+.ob-picklist table {
+  width: 100%;
+}
+
+.ob-upload-box {
+  margin: 12px 0;
+  padding: 28px 12px;
+  text-align: center;
+  border: 1px dashed var(--border-color);
+  border-radius: 8px;
+  color: var(--primary);
+  cursor: pointer;
+  background: #fafafa;
+}
+
+.ob-bar {
+  height: 8px;
+  background: #f0f0f0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 12px 0;
+}
+
+.ob-bar > div {
+  height: 100%;
+  width: 0;
+  background: var(--primary);
+  transition: width 0.2s;
+}
+
+.ob-preview {
+  margin-top: 12px;
+  max-height: 160px;
+  overflow: auto;
+  background: #fafafa;
+  border: 1px solid var(--border-color);
+  padding: 8px;
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
 .kpi-card {
   background: #fff;
   border: 1px solid var(--border-color);
@@ -1105,6 +1655,15 @@ tbody tr.selected {
     <div class="main-layout">
       <!-- Sidebar -->
       <nav class="sidebar" id="sidebar">
+        <div class="sidebar-context" id="sidebar-wh-context">
+          <div class="sidebar-context-top">
+            <span class="sidebar-context-label">Warehouse</span>
+            <span class="sidebar-role-badge admin-only-action" id="sidebar-role-badge">Admin</span>
+          </div>
+          <select id="sidebar-wh-select" class="sidebar-wh-select admin-only-action" onchange="onDashboardWarehouseChange(this.value)" aria-label="Warehouse context"></select>
+          <div id="sidebar-wh-display" class="sidebar-wh-static" hidden>—</div>
+        </div>
+
         <div class="nav-item active" data-page="home">
           <span>Home</span>
         </div>
@@ -1116,20 +1675,23 @@ tbody tr.selected {
         <div class="nav-item sub" data-page="spu-sku-inventory">SPU/SKU inventory</div>
         <div class="nav-item sub" data-page="record">Record</div>
 
-        <div class="nav-item parent" data-group="inbound">
-          <span>Inbound</span>
-        </div>
+        <div class="nav-item" data-page="purchase-order">Purchase Order</div>
+        <div class="nav-item" data-page="inbound">Inbound</div>
 
         <div class="nav-item parent" data-group="outbound">
           <span>Outbound</span>
-        </div>
-
-        <div class="nav-item parent" data-group="warehouses">
-          <span>Warehouses</span>
           <span class="chevron">▼</span>
         </div>
-        <div class="nav-item sub" data-page="warehouse-management">Warehouse Management</div>
-        <div class="nav-item sub" data-page="zone-management">Zone Management</div>
+        <div class="nav-item sub" data-page="outbound-orders">Outbound Orders</div>
+        <div class="nav-item sub" data-page="outbound-onhold">On Hold Orders</div>
+
+        <div class="nav-item parent nav-warehouses-group" data-group="warehouses">
+          <span>Warehouses</span>
+          <span class="nav-admin-tag">Admin</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="nav-item sub nav-warehouses-group" data-page="warehouse-management">Warehouse Management</div>
+        <div class="nav-item sub nav-warehouses-group" data-page="zone-management">Zone Management</div>
       </nav>
 
       <!-- Content Area -->
@@ -1141,57 +1703,43 @@ tbody tr.selected {
             <p class="page-subtitle">Warehouse inventory overview and recent activity</p>
           </div>
           <div class="page-body dashboard-body">
-            <div class="dashboard-kpi-row" id="dashboard-kpi"></div>
+            <div class="dashboard-kpi-row dashboard-kpi-row-6" id="dashboard-kpi"></div>
 
-            <div class="dashboard-grid">
-              <div class="dashboard-panel">
-                <div class="panel-header">
-                  <h3>Warehouse Inventory</h3>
-                  <a class="btn-link" onclick="navigateTo('warehouse-management')">View All →</a>
-                </div>
-                <div class="table-wrapper dashboard-table">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Warehouse</th>
-                        <th>Status</th>
-                        <th>Total</th>
-                        <th>Locked</th>
-                        <th>Available</th>
-                      </tr>
-                    </thead>
-                    <tbody id="dashboard-warehouse-table"></tbody>
-                  </table>
-                </div>
-              </div>
-
-              <div class="dashboard-panel">
-                <div class="panel-header">
-                  <h3>Recent Activity</h3>
-                  <a class="btn-link" onclick="navigateTo('record')">View All →</a>
-                </div>
-                <div class="table-wrapper dashboard-table">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Time</th>
-                        <th>Type</th>
-                        <th>SKU</th>
-                        <th>Qty</th>
-                        <th>Order</th>
-                      </tr>
-                    </thead>
-                    <tbody id="dashboard-activity-table"></tbody>
-                  </table>
-                </div>
-              </div>
+            <div class="dashboard-section">
+              <h3 class="dashboard-section-title">Quick Actions</h3>
+              <div class="dashboard-task-row" id="dashboard-main-tasks"></div>
             </div>
 
-            <div class="dashboard-panel">
-              <div class="panel-header">
-                <h3>Quick Access</h3>
+            <div class="dashboard-section admin-only-action" id="dashboard-admin-setup">
+              <div class="dashboard-section-title-row">
+                <h3 class="dashboard-section-title">Warehouse Setup</h3>
+                <span class="dashboard-admin-pill">Admin Only</span>
               </div>
-              <div class="quick-access-grid" id="dashboard-quick-access"></div>
+              <div class="dashboard-admin-row" id="dashboard-admin-tasks"></div>
+            </div>
+
+            <div class="dashboard-panel dashboard-ops-panel">
+              <div class="panel-header">
+                <h3>Today&apos;s Operations</h3>
+                <a class="btn-link" onclick="navigateToRecordToday()">View All →</a>
+              </div>
+              <div class="table-wrapper dashboard-table dashboard-ops-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Time</th>
+                      <th>Type</th>
+                      <th>Warehouse</th>
+                      <th>Zone</th>
+                      <th>SKU</th>
+                      <th>Qty</th>
+                      <th>Order No.</th>
+                      <th>Operator</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dashboard-activity-table"></tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
@@ -1240,7 +1788,7 @@ tbody tr.selected {
             </div>
             <div class="toolbar">
               <span></span>
-              <button class="btn btn-primary" onclick="openCreateWarehouse()">+ Add Warehouse</button>
+              <button class="btn btn-primary admin-only-action" onclick="openCreateWarehouse()">+ Add Warehouse</button>
             </div>
             <div class="table-wrapper">
               <table>
@@ -1292,7 +1840,7 @@ tbody tr.selected {
           </div>
           <div class="page-body">
             <div class="filter-bar">
-              <div class="filter-item">
+              <div class="filter-item filter-wh-scope">
                 <label>Warehouse ID</label>
                 <select id="zone-filter-warehouse">
                   <option value="">All</option>
@@ -1331,7 +1879,7 @@ tbody tr.selected {
             </div>
             <div class="toolbar">
               <span></span>
-              <button class="btn btn-primary" onclick="openCreateZone()">+ Add Zone</button>
+              <button class="btn btn-primary admin-only-action" onclick="openCreateZone()">+ Add Zone</button>
             </div>
             <div class="table-wrapper">
               <table>
@@ -1340,7 +1888,6 @@ tbody tr.selected {
                     <th>Warehouse ID</th>
                     <th>Zone Code</th>
                     <th>Zone</th>
-                    <th>Zone Name</th>
                     <th>Status</th>
                     <th>Total</th>
                     <th>Locked</th>
@@ -1379,7 +1926,7 @@ tbody tr.selected {
             <!-- SPU View -->
             <div id="inv-view-spu">
               <div class="filter-bar">
-                <div class="filter-item">
+                <div class="filter-item filter-wh-scope">
                   <label>Warehouse ID/Name</label>
                   <select id="spu-filter-warehouse"><option value="">All</option></select>
                 </div>
@@ -1416,7 +1963,7 @@ tbody tr.selected {
                       <th>Locked</th>
                       <th>Available</th>
                       <th>Warehouse</th>
-                      <th>Zone Name</th>
+                      <th>Zone</th>
                     </tr>
                   </thead>
                   <tbody id="spu-table-body"></tbody>
@@ -1427,7 +1974,7 @@ tbody tr.selected {
             <!-- SKU View -->
             <div id="inv-view-sku" style="display:none">
               <div class="filter-bar">
-                <div class="filter-item">
+                <div class="filter-item filter-wh-scope">
                   <label>Warehouse ID/Name</label>
                   <select id="sku-filter-warehouse"><option value="">All</option></select>
                 </div>
@@ -1518,7 +2065,7 @@ tbody tr.selected {
                   <option>Custom</option>
                 </select>
               </div>
-              <div class="filter-item">
+              <div class="filter-item filter-wh-scope">
                 <label>Warehouse</label>
                 <select id="record-filter-warehouse"><option value="">All</option></select>
               </div>
@@ -1592,19 +2139,300 @@ tbody tr.selected {
           </div>
         </div>
 
-        <!-- ========== INBOUND PLACEHOLDER ========== -->
-        <div class="page" id="page-inbound">
-          <div class="placeholder-page">
-            <h2>Inbound</h2>
-            <p>Module under development — not in current prototype scope</p>
+        <!-- ========== PURCHASE ORDER ========== -->
+        <div class="page" id="page-purchase-order">
+          <div class="page-header">
+            <h1 class="page-title">Purchase Order</h1>
+            <p class="page-subtitle">Create and track purchase orders; link to inbound receipts</p>
+          </div>
+          <div class="page-body">
+            <div class="filter-bar module-filter-bar">
+              <div class="filter-item">
+                <label>Search by</label>
+                <select id="po-search-field">
+                  <option value="orderNo">Order No.</option>
+                  <option value="linkedReceipt">Linked Receipt No.</option>
+                </select>
+              </div>
+              <div class="filter-item filter-grow">
+                <label>Keyword</label>
+                <div class="suggest-wrap">
+                  <input type="text" id="po-search-keyword" placeholder="Search or leave empty for all" autocomplete="off">
+                  <div id="po-search-suggest" class="search-suggest" hidden></div>
+                </div>
+              </div>
+              <div class="filter-item">
+                <label>Status</label>
+                <select id="po-filter-status">
+                  <option value="">All</option>
+                  <option value="Draft">Draft</option>
+                  <option value="Processing">Processing</option>
+                  <option value="Created">Created</option>
+                  <option value="Pending Shipment">Pending Shipment</option>
+                  <option value="Partially Shipped">Partially Shipped</option>
+                  <option value="Shipped">Shipped</option>
+                  <option value="Partially Received">Partially Received</option>
+                  <option value="Received">Received</option>
+                  <option value="Partially Stocked In">Partially Stocked In</option>
+                  <option value="Stocked In">Stocked In</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <label>Creation Method</label>
+                <select id="po-filter-method">
+                  <option value="">All</option>
+                  <option value="Manual Entry">Manual Entry</option>
+                  <option value="Import Created">Import Created</option>
+                </select>
+              </div>
+              <div class="filter-actions">
+                <button class="btn btn-primary" onclick="searchPurchaseOrders()">Search</button>
+                <button class="btn" onclick="resetPurchaseOrderFilters()">Reset</button>
+              </div>
+            </div>
+            <div class="toolbar">
+              <span>Total <strong id="po-list-total">0</strong></span>
+              <button class="btn btn-primary" onclick="openPurchaseOrderEditor()">+ Create Purchase Order</button>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Order No.</th>
+                    <th>Name</th>
+                    <th>Warehouse</th>
+                    <th>Status</th>
+                    <th>Creation Method</th>
+                    <th>Linked Receipts</th>
+                    <th>Supplier</th>
+                    <th>Created</th>
+                    <th>Operation</th>
+                  </tr>
+                </thead>
+                <tbody id="po-table-body"></tbody>
+              </table>
+            </div>
+            <div class="pagination-bar">
+              <span>Rows</span>
+              <select id="po-page-size" onchange="renderPurchaseOrderList()">
+                <option value="20">20/page</option>
+                <option value="50">50/page</option>
+                <option value="100">100/page</option>
+                <option value="500">500/page</option>
+              </select>
+            </div>
           </div>
         </div>
 
-        <!-- ========== OUTBOUND PLACEHOLDER ========== -->
-        <div class="page" id="page-outbound">
-          <div class="placeholder-page">
-            <h2>Outbound</h2>
-            <p>Module under development — not in current prototype scope</p>
+        <!-- ========== INBOUND RECEIPT ========== -->
+        <div class="page" id="page-inbound">
+          <div class="page-header">
+            <h1 class="page-title">Inbound</h1>
+            <p class="page-subtitle">Inbound receipts (上架入库); writes inventory on Stocked In</p>
+          </div>
+          <div class="page-body">
+            <div class="filter-bar module-filter-bar">
+              <div class="filter-item">
+                <label>Search by</label>
+                <select id="inbound-search-field">
+                  <option value="receiptNo">Receipt No.</option>
+                  <option value="purchaseOrder">Related Purchase Order No.</option>
+                </select>
+              </div>
+              <div class="filter-item filter-grow">
+                <label>Keyword</label>
+                <div class="suggest-wrap">
+                  <input type="text" id="inbound-search-keyword" placeholder="Search or leave empty for all" autocomplete="off">
+                  <div id="inbound-search-suggest" class="search-suggest" hidden></div>
+                </div>
+              </div>
+              <div class="filter-item">
+                <label>Status</label>
+                <select id="inbound-filter-status">
+                  <option value="">All</option>
+                  <option value="Draft">Draft</option>
+                  <option value="Processing">Processing</option>
+                  <option value="Stocked In">Stocked In</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <label>Receipt Type</label>
+                <select id="inbound-filter-type">
+                  <option value="">All</option>
+                  <option value="Purchase Receipt">Purchase Receipt</option>
+                  <option value="Manual Receipt">Manual Receipt</option>
+                </select>
+              </div>
+              <div class="filter-actions">
+                <button class="btn btn-primary" onclick="searchInboundReceipts()">Search</button>
+                <button class="btn" onclick="resetInboundFilters()">Reset</button>
+              </div>
+            </div>
+            <div class="toolbar">
+              <span>Total <strong id="inbound-list-total">0</strong></span>
+              <button class="btn btn-primary" onclick="openReceiptEditor()">+ Create Receipt</button>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Receipt No.</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Warehouse</th>
+                    <th>Related PO</th>
+                    <th>Lines</th>
+                    <th>Progress</th>
+                    <th>Updated</th>
+                    <th>Operation</th>
+                  </tr>
+                </thead>
+                <tbody id="inbound-table-body"></tbody>
+              </table>
+            </div>
+            <div class="pagination-bar">
+              <select id="inbound-page-size" onchange="renderInboundReceiptList()">
+                <option value="20">20/page</option>
+                <option value="50">50/page</option>
+                <option value="100">100/page</option>
+                <option value="500">500/page</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========== OUTBOUND ORDERS ========== -->
+        <div class="page" id="page-outbound-orders">
+          <div class="page-header">
+            <h1 class="page-title">Outbound Orders</h1>
+            <p class="page-subtitle">Import Admin-exported orders. One import creates one Outbound No. Stock is occupied on allocate and deducted only after the courier pickup (Confirm Shipment).</p>
+          </div>
+          <div class="page-body">
+            <div class="ob-flow" aria-hidden="true">
+              <span>1 Import orders</span>
+              <span>2 Allocate or On Hold</span>
+              <span>3 Export → fill Tracking No. → import</span>
+              <span>4 Print pick list</span>
+              <span>5 Pick → Pack</span>
+              <span>6 Confirm Shipment</span>
+            </div>
+            <div class="filter-bar">
+              <div class="filter-item">
+                <label>Search by</label>
+                <select id="ob-filter-field">
+                  <option value="outboundNo">Outbound No.</option>
+                  <option value="status">Batch Status</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <label>Keyword</label>
+                <input type="text" id="ob-filter-keyword" placeholder="Contains">
+              </div>
+              <div class="filter-item">
+                <label>Imported period</label>
+                <input type="date" id="ob-filter-from" aria-label="Start date">
+              </div>
+              <div class="filter-item">
+                <label>to</label>
+                <input type="date" id="ob-filter-to" aria-label="End date">
+              </div>
+              <div class="filter-actions">
+                <button class="btn btn-primary" onclick="searchOutboundBatches()">Confirm</button>
+                <button class="btn" onclick="resetOutboundBatchFilters()">Reset</button>
+              </div>
+            </div>
+            <div class="toolbar">
+              <span class="hint" id="ob-import-scope-hint">The selected warehouse applies only to this import. Switching context later does not change existing outbound records.</span>
+              <button class="btn btn-primary" onclick="openImportOrders()">Import Order</button>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Outbound No.</th>
+                    <th>Imported At</th>
+                    <th>Source File</th>
+                    <th>Warehouse</th>
+                    <th>Orders</th>
+                    <th>SKU Count</th>
+                    <th>Total Units</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="ob-batch-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========== OUTBOUND DETAIL ========== -->
+        <div class="page" id="page-outbound-detail">
+          <div class="page-header">
+            <div class="dashboard-page-header">
+              <div>
+                <h1 class="page-title" id="ob-detail-title">Outbound Detail</h1>
+                <p class="page-subtitle" id="ob-detail-sub"></p>
+              </div>
+              <button class="btn" onclick="navigateTo('outbound-orders')">Back</button>
+            </div>
+          </div>
+          <div class="page-body">
+            <div class="tabs" id="ob-line-tabs"></div>
+            <div class="toolbar" id="ob-detail-actions"></div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width:36px"><input type="checkbox" id="ob-check-all" onchange="toggleOutboundChecks(this.checked)"></th>
+                    <th>Outbound No.</th>
+                    <th>Order No.</th>
+                    <th>Order Time</th>
+                    <th>Product</th>
+                    <th>Specification</th>
+                    <th>Qty</th>
+                    <th>Zone</th>
+                    <th>Shipment No.</th>
+                    <th>Tracking No.</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="ob-line-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========== ON HOLD ========== -->
+        <div class="page" id="page-outbound-onhold">
+          <div class="page-header">
+            <h1 class="page-title">On Hold Orders</h1>
+            <p class="page-subtitle">Lines that failed allocation. Re-allocate uses the original warehouse and storage zone only.</p>
+          </div>
+          <div class="page-body">
+            <div class="toolbar">
+              <span></span>
+              <button class="btn btn-primary" onclick="reallocateSelected(true)">Batch Re-allocate</button>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width:36px"><input type="checkbox" onchange="toggleHoldChecks(this.checked)"></th>
+                    <th>Outbound No.</th>
+                    <th>Order No.</th>
+                    <th>SKU</th>
+                    <th>Product</th>
+                    <th>Qty</th>
+                    <th>Warehouse</th>
+                    <th>Reason</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="ob-hold-body"></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </main>
@@ -1781,12 +2609,8 @@ tbody tr.selected {
             </select>
           </div>
           <div class="form-group">
-            <label>Zone Name</label>
-            <input type="text" placeholder="Default same as Zone type" id="zone-name">
-          </div>
-          <div class="form-group">
             <label>Zone Code <span class="required">*</span></label>
-            <input type="text" placeholder="e.g. SH-001-DMG" id="zone-code">
+            <input type="text" placeholder="e.g. SH001DMG" id="zone-code">
             <span class="hint">Unique within warehouse. Cannot be changed after creation.</span>
           </div>
           <div class="form-group">
@@ -1862,6 +2686,225 @@ tbody tr.selected {
     </div>
   </div>
 
+  <!-- Purchase Order Editor -->
+  <div class="modal-overlay" id="po-editor-modal">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <span class="modal-title" id="po-editor-title">Create Purchase Order</span>
+        <button class="modal-close" onclick="closeModal('po-editor-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="editor-mode-hint" id="po-editor-hint">Creation: Manual Entry or Import (mutually exclusive with the other mode in full product).</div>
+        <form class="form-grid" id="po-editor-form">
+          <div class="form-group"><label>Order Name</label><input type="text" id="po-name" maxlength="200" placeholder="Purchase order name"></div>
+          <div class="form-group"><label>Warehouse</label><input class="readonly" id="po-warehouse" readonly></div>
+          <div class="form-group"><label>Supplier <span class="required">*</span></label><input type="text" id="po-supplier" maxlength="200"></div>
+          <div class="form-group"><label>Tracking No.</label><input type="text" id="po-tracking" placeholder="Logistics tracking"></div>
+        </form>
+        <div class="editor-lines-toolbar">
+          <button type="button" class="btn" onclick="poAddSampleLine()">Add Products (demo)</button>
+          <button type="button" class="btn" onclick="startPoImport()">Import</button>
+        </div>
+        <div class="import-progress" id="po-import-progress" hidden>
+          <div class="progress-label">Importing… <span id="po-import-pct">0%</span></div>
+          <div class="progress-track"><div class="progress-fill" id="po-import-fill"></div></div>
+        </div>
+        <div class="table-wrapper editor-lines-table">
+          <table>
+            <thead>
+              <tr>
+                <th>SKU ID</th><th>Product Name</th><th>Specification</th><th>Qty</th><th>Unit Price</th><th>Line Status</th>
+              </tr>
+            </thead>
+            <tbody id="po-editor-lines"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('po-editor-modal')">Cancel</button>
+        <button class="btn" onclick="savePurchaseOrderDraft()">Save Draft</button>
+        <button class="btn btn-primary" onclick="savePurchaseOrderCreated()">Save &amp; Created</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Inbound Receipt Editor -->
+  <div class="modal-overlay" id="receipt-editor-modal">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <span class="modal-title" id="receipt-editor-title">Create Receipt</span>
+        <button class="modal-close" onclick="closeModal('receipt-editor-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="receipt-source-tabs">
+          <button type="button" class="source-tab active" data-source="po" onclick="setReceiptSource('po')">Link Purchase Order</button>
+          <button type="button" class="source-tab" data-source="products" onclick="setReceiptSource('products')">Add Products</button>
+          <button type="button" class="source-tab" data-source="import" onclick="setReceiptSource('import')">Import</button>
+        </div>
+        <form class="form-grid" id="receipt-editor-form">
+          <div class="form-group"><label>Receipt Type</label><select id="receipt-type"><option value="Purchase Receipt">Purchase Receipt</option><option value="Manual Receipt">Manual Receipt</option></select></div>
+          <div class="form-group"><label>Warehouse</label><input class="readonly" id="receipt-warehouse" readonly></div>
+          <div class="form-group" id="receipt-po-group"><label>Related PO</label><select id="receipt-po-select"></select></div>
+          <div class="form-group"><label>Default Zone (Storage)</label><input class="readonly" id="receipt-zone" readonly></div>
+        </form>
+        <div id="receipt-source-import" class="source-panel" hidden>
+          <input type="file" id="receipt-import-file" accept=".csv,.xlsx">
+          <button type="button" class="btn btn-primary" id="receipt-import-btn" disabled onclick="startReceiptImport()">Import</button>
+        </div>
+        <div class="table-wrapper editor-lines-table">
+          <table>
+            <thead>
+              <tr>
+                <th>SKU ID</th><th>Product Name</th><th>Spec</th><th>Order Qty</th><th>Receipt Qty</th><th>Variance</th><th>Zone</th>
+              </tr>
+            </thead>
+            <tbody id="receipt-editor-lines"></tbody>
+          </table>
+        </div>
+        <div class="import-progress" id="receipt-import-progress" hidden>
+          <div class="progress-label">Importing… <span id="receipt-import-pct">0%</span></div>
+          <div class="progress-track"><div class="progress-fill" id="receipt-import-fill"></div></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('receipt-editor-modal')">Cancel</button>
+        <button class="btn" onclick="saveReceiptDraft()">Save Draft</button>
+        <button class="btn btn-primary" onclick="confirmReceiptStockIn()">Confirm Stock-In</button>
+      </div>
+    </div>
+  </div>
+
+<div class="modal-overlay" id="ob-import-modal">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <span class="modal-title">Import Orders</span>
+        <button class="modal-close" onclick="closeModal('ob-import-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="ob-import-step-upload">
+          <p class="hint">Header must include Order No, Order Time, Product ID, SKU ID, Product Name, Specification, Qty. A line is allocated in full or placed On Hold.</p>
+          <div class="form-group" id="ob-import-wh-wrap">
+            <label>Warehouse</label>
+            <select id="ob-import-wh"></select>
+          </div>
+          <div class="ob-upload-box" onclick="document.getElementById('ob-import-file').click()">+ Click to upload</div>
+          <input type="file" id="ob-import-file" accept=".csv,text/csv,.xlsx,.xls" hidden onchange="onOutboundFilePicked(this, 'orders')">
+          <button class="btn" type="button" onclick="fillSampleOrderCsv()">Use sample file</button>
+          <p id="ob-import-file-msg" class="hint"></p>
+        </div>
+        <div id="ob-import-step-progress" hidden>
+          <p id="ob-import-progress-title">Importing</p>
+          <div class="ob-bar"><div id="ob-import-bar"></div></div>
+          <p id="ob-import-progress-text"></p>
+        </div>
+        <pre id="ob-import-preview" class="ob-preview" hidden></pre>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" id="ob-import-cancel" onclick="closeModal('ob-import-modal')">Cancel</button>
+        <button class="btn btn-primary" id="ob-import-btn" disabled onclick="runImportOrders()">Import</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="ob-track-modal">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <span class="modal-title">Import Tracking No.</span>
+        <button class="modal-close" onclick="closeModal('ob-track-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="hint">Use the file from Export Shipping Order after filling Tracking No. Required columns: Order No, SKU ID, Tracking No. One Tracking No. creates one Shipment No. Matching Allocated lines move to Ready to Pick. Inventory is unchanged.</p>
+        <input type="file" id="ob-track-file" accept=".csv,text/csv" onchange="onOutboundFilePicked(this, 'track')">
+        <button class="btn" type="button" onclick="fillSampleTrackCsv()">Use sample for selected Allocated lines</button>
+        <pre id="ob-track-preview" class="ob-preview"></pre>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('ob-track-modal')">Cancel</button>
+        <button class="btn btn-primary" id="ob-track-btn" disabled onclick="runImportTracking()">Import</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="ob-export-modal">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <span class="modal-title">Export Shipping Order</span>
+        <button class="modal-close" onclick="closeModal('ob-export-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <label>Please select export format</label>
+        <select id="ob-export-format">
+          <option value="xlsx">xlsx</option>
+          <option value="xls">xls</option>
+          <option value="csv">csv</option>
+        </select>
+        <p class="hint" id="ob-export-count"></p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('ob-export-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="confirmExportShippingOrder()">Export</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="ob-confirm-modal">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <span class="modal-title" id="ob-confirm-title">Confirm</span>
+        <button class="modal-close" onclick="closeModal('ob-confirm-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="ob-confirm-msg"></p>
+        <p class="hint">Review the selected rows before continuing.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('ob-confirm-modal')">Cancel</button>
+        <button class="btn btn-primary" id="ob-confirm-ok" onclick="runOutboundConfirm()">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="ob-result-modal">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <span class="modal-title">Allocation result</span>
+        <button class="modal-close" onclick="closeModal('ob-result-modal')">&times;</button>
+      </div>
+      <div class="modal-body" id="ob-result-body"></div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="closeModal('ob-result-modal')">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="ob-picklist-modal">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <span class="modal-title">Pick List (PDF preview)</span>
+        <button class="modal-close" onclick="closeModal('ob-picklist-modal')">&times;</button>
+      </div>
+      <div class="modal-body" id="ob-picklist-body"></div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('ob-picklist-modal')">Close</button>
+        <button class="btn btn-primary" onclick="printPickListWindow()">Print / Save PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="ob-line-modal">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <span class="modal-title">Line Detail</span>
+        <button class="modal-close" onclick="closeModal('ob-line-modal')">&times;</button>
+      </div>
+      <div class="modal-body" id="ob-line-detail"></div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="closeModal('ob-line-modal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  
   <div class="toast-container" id="toast-container"></div>
 
   <script>
@@ -1870,7 +2913,7 @@ tbody tr.selected {
 // ========== Mock Data ==========
 let warehouses = [
   {
-    id: 'SH-001', name: 'Shanghai Main Warehouse', attribute: 'normal', status: 'enable',
+    id: 'SH001', name: 'Shanghai Main Warehouse', attribute: 'normal', status: 'enable',
     zoneCount: 5, total: 12580, locked: 2340, available: 10240,
     address: 'China, Shanghai, Pudong, No.888 Zhangyang Road',
     owner: 'Zhang Wei', contact: 'Li Ming', phone: '+86 138 0013 8000',
@@ -1879,7 +2922,7 @@ let warehouses = [
     weighing: 'compliant', fire: 'compliant', hasStock: true, hasPendingOrders: false
   },
   {
-    id: 'BJ-001', name: 'Beijing Distribution Center', attribute: 'cold chain', status: 'enable',
+    id: 'BJ001', name: 'Beijing Distribution Center', attribute: 'cold chain', status: 'enable',
     zoneCount: 3, total: 8920, locked: 1560, available: 7360,
     address: 'China, Beijing, Chaoyang, No.15 Jianguo Road',
     owner: 'Wang Fang', contact: 'Chen Hua', phone: '+86 139 0013 9000',
@@ -1888,7 +2931,7 @@ let warehouses = [
     weighing: 'pending', fire: 'compliant', hasStock: true, hasPendingOrders: false
   },
   {
-    id: 'GZ-001', name: 'Guangzhou South Hub', attribute: 'fireproof', status: 'disable',
+    id: 'GZ001', name: 'Guangzhou South Hub', attribute: 'fireproof', status: 'disable',
     zoneCount: 3, total: 0, locked: 0, available: 0,
     address: 'China, Guangdong, Guangzhou, No.100 Tianhe Road',
     owner: 'Liu Yang', contact: 'Liu Yang', phone: '+86 137 0013 7000',
@@ -1897,7 +2940,7 @@ let warehouses = [
     weighing: 'pending', fire: 'pending', hasStock: false, hasPendingOrders: false
   },
   {
-    id: 'SG-001', name: 'Singapore Regional Warehouse', attribute: 'thermostatic', status: 'enable',
+    id: 'SG001', name: 'Singapore Regional Warehouse', attribute: 'thermostatic', status: 'enable',
     zoneCount: 4, total: 4560, locked: 890, available: 3670,
     address: 'Singapore, Central, 10 Anson Road',
     owner: 'Tan Wei Ming', contact: 'Tan Wei Ming', phone: '+65 9123 4567',
@@ -1906,7 +2949,7 @@ let warehouses = [
     weighing: 'compliant', fire: 'compliant', hasStock: true, hasPendingOrders: true
   },
   {
-    id: 'SH-002', name: 'Shanghai Backup Warehouse', attribute: 'normal', status: 'disable',
+    id: 'SH002', name: 'Shanghai Backup Warehouse', attribute: 'normal', status: 'disable',
     zoneCount: 3, total: 0, locked: 0, available: 0,
     address: 'China, Shanghai, Minhang, No.200 Humin Road',
     owner: 'Zhao Lei', contact: 'Zhao Lei', phone: '+86 136 0013 6000',
@@ -1917,31 +2960,31 @@ let warehouses = [
 ];
 
 let zones = [
-  { whId: 'SH-001', code: 'SH-001-RCV', type: 'Receiving Zone', name: 'Receiving Zone', status: 'disable', total: 120, locked: 0, available: 120 },
-  { whId: 'SH-001', code: 'SH-001-STO', type: 'Storage Zone', name: 'Main Storage', status: 'enable', total: 12200, locked: 2300, available: 9900 },
-  { whId: 'SH-001', code: 'SH-001-SHP', type: 'Shipping Zone', name: 'Shipping Zone', status: 'disable', total: 180, locked: 40, available: 140 },
-  { whId: 'SH-001', code: 'SH-001-DMG', type: 'Damaged Goods Zone', name: 'Damaged Goods', status: 'disable', total: 80, locked: 0, available: 80 },
-  { whId: 'SH-001', code: 'SH-001-PKG', type: 'Packing Zone', name: 'Packing Zone', status: 'disable', total: 0, locked: 0, available: 0 },
-  { whId: 'BJ-001', code: 'BJ-001-RCV', type: 'Receiving Zone', name: 'Receiving Zone', status: 'disable', total: 0, locked: 0, available: 0 },
-  { whId: 'BJ-001', code: 'BJ-001-STO', type: 'Storage Zone', name: 'Cold Storage', status: 'enable', total: 8920, locked: 1560, available: 7360 },
-  { whId: 'BJ-001', code: 'BJ-001-SHP', type: 'Shipping Zone', name: 'Shipping Zone', status: 'disable', total: 0, locked: 0, available: 0 },
-  { whId: 'GZ-001', code: 'GZ-001-RCV', type: 'Receiving Zone', name: 'Receiving Zone', status: 'disable', total: 0, locked: 0, available: 0 },
-  { whId: 'GZ-001', code: 'GZ-001-STO', type: 'Storage Zone', name: 'Storage Zone', status: 'enable', total: 0, locked: 0, available: 0 },
-  { whId: 'GZ-001', code: 'GZ-001-SHP', type: 'Shipping Zone', name: 'Shipping Zone', status: 'disable', total: 0, locked: 0, available: 0 },
-  { whId: 'SG-001', code: 'SG-001-RCV', type: 'Receiving Zone', name: 'Receiving Zone', status: 'disable', total: 50, locked: 0, available: 50 },
-  { whId: 'SG-001', code: 'SG-001-STO', type: 'Storage Zone', name: 'Storage Zone', status: 'enable', total: 4200, locked: 800, available: 3400 },
-  { whId: 'SG-001', code: 'SG-001-SHP', type: 'Shipping Zone', name: 'Shipping Zone', status: 'disable', total: 200, locked: 60, available: 140 },
-  { whId: 'SG-001', code: 'SG-001-RTN', type: 'Returns Zone', name: 'Returns Zone', status: 'disable', total: 110, locked: 30, available: 80 },
-  { whId: 'SH-002', code: 'SH-002-RCV', type: 'Receiving Zone', name: 'Receiving Zone', status: 'disable', total: 0, locked: 0, available: 0 },
-  { whId: 'SH-002', code: 'SH-002-STO', type: 'Storage Zone', name: 'Storage Zone', status: 'enable', total: 0, locked: 0, available: 0 },
-  { whId: 'SH-002', code: 'SH-002-SHP', type: 'Shipping Zone', name: 'Shipping Zone', status: 'disable', total: 0, locked: 0, available: 0 }
+  { whId: 'SH001', code: 'SH001RCV', type: 'Receiving Zone', name: 'Receiving Zone', status: 'disable', total: 120, locked: 0, available: 120 },
+  { whId: 'SH001', code: 'SH001STO', type: 'Storage Zone', name: 'Main Storage', status: 'enable', total: 12200, locked: 2300, available: 9900 },
+  { whId: 'SH001', code: 'SH001SHP', type: 'Shipping Zone', name: 'Shipping Zone', status: 'disable', total: 180, locked: 40, available: 140 },
+  { whId: 'SH001', code: 'SH001DMG', type: 'Damaged Goods Zone', name: 'Damaged Goods', status: 'disable', total: 80, locked: 0, available: 80 },
+  { whId: 'SH001', code: 'SH001PKG', type: 'Packing Zone', name: 'Packing Zone', status: 'disable', total: 0, locked: 0, available: 0 },
+  { whId: 'BJ001', code: 'BJ001RCV', type: 'Receiving Zone', name: 'Receiving Zone', status: 'disable', total: 0, locked: 0, available: 0 },
+  { whId: 'BJ001', code: 'BJ001STO', type: 'Storage Zone', name: 'Cold Storage', status: 'enable', total: 8920, locked: 1560, available: 7360 },
+  { whId: 'BJ001', code: 'BJ001SHP', type: 'Shipping Zone', name: 'Shipping Zone', status: 'disable', total: 0, locked: 0, available: 0 },
+  { whId: 'GZ001', code: 'GZ001RCV', type: 'Receiving Zone', name: 'Receiving Zone', status: 'disable', total: 0, locked: 0, available: 0 },
+  { whId: 'GZ001', code: 'GZ001STO', type: 'Storage Zone', name: 'Storage Zone', status: 'enable', total: 0, locked: 0, available: 0 },
+  { whId: 'GZ001', code: 'GZ001SHP', type: 'Shipping Zone', name: 'Shipping Zone', status: 'disable', total: 0, locked: 0, available: 0 },
+  { whId: 'SG001', code: 'SG001RCV', type: 'Receiving Zone', name: 'Receiving Zone', status: 'disable', total: 50, locked: 0, available: 50 },
+  { whId: 'SG001', code: 'SG001STO', type: 'Storage Zone', name: 'Storage Zone', status: 'enable', total: 4200, locked: 800, available: 3400 },
+  { whId: 'SG001', code: 'SG001SHP', type: 'Shipping Zone', name: 'Shipping Zone', status: 'disable', total: 200, locked: 60, available: 140 },
+  { whId: 'SG001', code: 'SG001RTN', type: 'Returns Zone', name: 'Returns Zone', status: 'disable', total: 110, locked: 30, available: 80 },
+  { whId: 'SH002', code: 'SH002RCV', type: 'Receiving Zone', name: 'Receiving Zone', status: 'disable', total: 0, locked: 0, available: 0 },
+  { whId: 'SH002', code: 'SH002STO', type: 'Storage Zone', name: 'Storage Zone', status: 'enable', total: 0, locked: 0, available: 0 },
+  { whId: 'SH002', code: 'SH002SHP', type: 'Shipping Zone', name: 'Shipping Zone', status: 'disable', total: 0, locked: 0, available: 0 }
 ];
 
 const spuData = [
   {
     productId: 'PRD-10001', productName: 'Wireless Bluetooth Earbuds Pro',
     skuCount: 3, total: 2580, locked: 420, available: 2160,
-    warehouse: '-', zoneName: '-',
+    warehouse: '-', zone: '-',
     skus: [
       { skuId: 'SKU-10001-BK', spec: 'Black', total: 1200, locked: 200, available: 1000, warehouse: 'Shanghai Main Warehouse', zone: 'Main Storage' },
       { skuId: 'SKU-10001-WH', spec: 'White', total: 980, locked: 150, available: 830, warehouse: 'Shanghai Main Warehouse', zone: 'Main Storage' },
@@ -1951,7 +2994,7 @@ const spuData = [
   {
     productId: 'PRD-10002', productName: 'Smart Watch Series X',
     skuCount: 2, total: 1560, locked: 280, available: 1280,
-    warehouse: 'Shanghai Main Warehouse', zoneName: 'Main Storage',
+    warehouse: 'Shanghai Main Warehouse', zone: 'Storage Zone',
     skus: [
       { skuId: 'SKU-10002-42', spec: '42mm Silver', total: 900, locked: 160, available: 740, warehouse: 'Shanghai Main Warehouse', zone: 'Main Storage' },
       { skuId: 'SKU-10002-46', spec: '46mm Black', total: 660, locked: 120, available: 540, warehouse: 'Shanghai Main Warehouse', zone: 'Main Storage' }
@@ -1960,7 +3003,7 @@ const spuData = [
   {
     productId: 'PRD-10003', productName: 'Portable Power Bank 20000mAh',
     skuCount: 1, total: 3200, locked: 560, available: 2640,
-    warehouse: 'Beijing Distribution Center', zoneName: 'Cold Storage',
+    warehouse: 'Beijing Distribution Center', zone: 'Storage Zone',
     skus: [
       { skuId: 'SKU-10003-01', spec: 'Standard', total: 3200, locked: 560, available: 2640, warehouse: 'Beijing Distribution Center', zone: 'Cold Storage' }
     ]
@@ -1968,6 +3011,11 @@ const spuData = [
 ];
 
 let manualRecords = [];
+
+const MANAGER_ASSIGNED_WH = 'SH001';
+const WH_SWITCH_MAX = 3;
+const WH_SWITCH_WINDOW_MS = 60000;
+let whSwitchTimestamps = [];
 
 function getUserRole() {
   return localStorage.getItem('wms_role') || 'admin';
@@ -1977,12 +3025,202 @@ function isAdminUser() {
   return getUserRole() === 'admin';
 }
 
+function normalizeWarehouseId(id) {
+  if (!id || id === 'all') return id;
+  return String(id).replace(/-/g, '').toUpperCase();
+}
+
+function generateWarehouseCode(region) {
+  const r = String(region || 'SH').replace(/[^A-Za-z]/g, '').slice(0, 2).toUpperCase() || 'SH';
+  const n = warehouses.filter(w => String(w.id).startsWith(r)).length + 1;
+  return r + String(n).padStart(3, '0');
+}
+
+function getWarehouseById(id) {
+  const nid = normalizeWarehouseId(id);
+  return warehouses.find(w => w.id === nid || w.id === id);
+}
+
+function skuWarehouseId(sku) {
+  if (sku.warehouseCode) return normalizeWarehouseId(sku.warehouseCode);
+  const wh = warehouses.find(w => w.name === sku.warehouse);
+  return wh ? wh.id : normalizeWarehouseId(sku.warehouse);
+}
+
+function recordWarehouseId(r) {
+  return normalizeWarehouseId(r.warehouse);
+}
+
+function getWarehouseScope() {
+  if (!isAdminUser()) return MANAGER_ASSIGNED_WH;
+  const scope = localStorage.getItem('wms_wh_scope') || 'all';
+  return scope === 'all' ? 'all' : normalizeWarehouseId(scope);
+}
+
+function setWarehouseScope(scope) {
+  localStorage.setItem('wms_wh_scope', scope === 'all' ? 'all' : normalizeWarehouseId(scope));
+}
+
+function rowInWarehouseScope(whId) {
+  const scope = getWarehouseScope();
+  if (scope === 'all') return true;
+  return normalizeWarehouseId(whId) === scope;
+}
+
+function warehousesInScope(list) {
+  const scope = getWarehouseScope();
+  if (scope === 'all') return list;
+  return list.filter(w => w.id === scope);
+}
+
+function isAnyModalOpen() {
+  return !!document.querySelector('.modal-overlay.show');
+}
+
+function getWarehouseScopeLabel() {
+  const scope = getWarehouseScope();
+  if (scope === 'all') return 'All warehouses';
+  const wh = getWarehouseById(scope);
+  return wh ? wh.name : scope;
+}
+
+function isDashboardPageActive() {
+  return document.getElementById('page-home')?.classList.contains('active');
+}
+
+function formatCanonicalWarehouseCode(id) {
+  if (!id) return id;
+  return String(normalizeWarehouseId(id)).replace(/-/g, '');
+}
+
+function formatDashboardZone(zone) {
+  if (!zone) return zone;
+  const codePart = zone.split(' ')[0];
+  return codePart.replace(/-/g, '');
+}
+
+function syncDashboardWarehouseSelect() {
+  const select = document.getElementById('sidebar-wh-select');
+  if (!select || !isAdminUser()) return;
+  const scope = getWarehouseScope();
+  select.innerHTML = '<option value="all">All warehouses</option>' +
+    warehouses.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
+  select.value = scope === 'all' ? 'all' : scope;
+}
+
+function updateSidebarWarehouseDisplay() {
+  const select = document.getElementById('sidebar-wh-select');
+  const display = document.getElementById('sidebar-wh-display');
+  if (isAdminUser()) {
+    if (select) select.hidden = false;
+    if (display) display.hidden = true;
+    syncDashboardWarehouseSelect();
+  } else {
+    if (select) select.hidden = true;
+    if (display) {
+      display.hidden = false;
+      display.textContent = getWarehouseScopeLabel();
+    }
+  }
+}
+
+function revertDashboardWarehouseSelect() {
+  const select = document.getElementById('sidebar-wh-select');
+  const prev = getWarehouseScope();
+  if (select) select.value = prev === 'all' ? 'all' : prev;
+}
+
+function onDashboardWarehouseChange(value) {
+  const prev = getWarehouseScope();
+
+  if (value === prev || (value === 'all' && prev === 'all')) return;
+
+  if (!isDashboardPageActive()) {
+    showToast('Return to Dashboard (Home) before switching warehouse context.', 'warning');
+    revertDashboardWarehouseSelect();
+    return;
+  }
+
+  if (isAnyModalOpen()) {
+    showToast('Close open dialogs before switching warehouse.', 'warning');
+    revertDashboardWarehouseSelect();
+    return;
+  }
+
+  const now = Date.now();
+  whSwitchTimestamps = whSwitchTimestamps.filter(t => now - t < WH_SWITCH_WINDOW_MS);
+  if (whSwitchTimestamps.length >= WH_SWITCH_MAX) {
+    showToast('Warehouse switch limit: up to 3 times per minute.', 'warning');
+    revertDashboardWarehouseSelect();
+    return;
+  }
+  whSwitchTimestamps.push(now);
+  setWarehouseScope(value);
+  applyWarehouseScopeToFilters();
+  applyRoleAndScopeUI();
+  refreshAllScopedViews();
+  const label = value === 'all' ? 'All warehouses' : (getWarehouseById(value)?.name || value);
+  showToast(`Loading data for: ${label}`, 'success');
+}
+
+function applyWarehouseScopeToFilters() {
+  const scope = getWarehouseScope();
+  const whVal = scope === 'all' ? '' : scope;
+  ['zone-filter-warehouse', 'spu-filter-warehouse', 'sku-filter-warehouse', 'record-filter-warehouse'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el && scope !== 'all') el.value = whVal;
+  });
+  if (scope !== 'all') lockedZoneWarehouse = scope;
+}
+
+function refreshAllScopedViews() {
+  renderHome();
+  renderWarehouses();
+  renderZones();
+  renderSpuTable();
+  renderSkuTable();
+  renderRecords();
+}
+
+function applyRoleAndScopeUI() {
+  const admin = isAdminUser();
+  document.querySelectorAll('.nav-warehouses-group').forEach(el => {
+    el.style.display = admin ? '' : 'none';
+  });
+  document.querySelectorAll('.admin-only-action').forEach(el => {
+    el.style.display = admin ? '' : 'none';
+  });
+
+  updateSidebarWarehouseDisplay();
+  syncDashboardWarehouseSelect();
+
+  if (!admin) {
+    const active = document.querySelector('.page.active');
+    if (active) {
+      const pageId = active.id.replace('page-', '');
+      if (pageId === 'warehouse-management' || pageId === 'zone-management') {
+        navigateTo('home');
+      }
+    }
+  }
+
+  const hideFilters = getWarehouseScope() !== 'all';
+  document.querySelectorAll('.filter-wh-scope').forEach(el => {
+    el.style.display = hideFilters ? 'none' : '';
+  });
+}
+
 function setUserRole(role) {
   localStorage.setItem('wms_role', role);
   const sel = document.getElementById('role-select');
   if (sel) sel.value = role;
-  renderSkuTable();
-  showToast(role === 'admin' ? 'Role: Admin' : 'Role: Warehouse Manager (no inventory adjustment)', 'info');
+  applyRoleAndScopeUI();
+  applyWarehouseScopeToFilters();
+  refreshAllScopedViews();
+  const extra = role === 'admin'
+    ? 'Full warehouse access.'
+    : 'Scoped to assigned warehouse; Warehouses menu hidden.';
+  showToast(role === 'admin' ? `Role: Admin. ${extra}` : `Role: Warehouse Manager. ${extra}`, 'info');
 }
 
 function initUserRole() {
@@ -2005,28 +3243,28 @@ let currentAdjSkuId = null;
 
 const recordData = {
   inbound: [
-    { time: '2026-08-21 09:32:15', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10001-BK', qty: '+200', after: { total: 1200, locked: 200, available: 1000 }, type: 'Purchase Inbound', order: 'IN-20260821001', operator: 'Zhang Wei', sub: 'purchase', inboundNo: 'IN-20260821001', inboundType: 'Purchase', purchaseOrderNo: 'PO-20260821088' },
-    { time: '2026-08-20 14:18:42', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10002-42', qty: '+150', after: { total: 900, locked: 160, available: 740 }, type: 'Purchase Inbound', order: 'IN-20260820003', operator: 'Li Ming', sub: 'purchase' },
-    { time: '2026-08-18 16:22:08', warehouse: 'SG-001', zone: 'SG-001-STO (Storage)', sku: 'SKU-10004-01', qty: '+100', after: { total: 450, locked: 80, available: 370 }, type: 'Purchase Inbound', order: 'IN-20260818002', operator: 'Tan Wei Ming', sub: 'purchase' },
-    { time: '2026-08-18 08:00:00', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10002-42', qty: '+100', after: { total: 900, locked: 160, available: 740 }, type: 'Purchase Inbound', order: 'IN-20260818001', operator: 'Admin', sub: 'purchase' },
-    { time: '2026-08-19 11:00:00', warehouse: 'BJ-001', zone: 'BJ-001-STO (Storage)', sku: 'SKU-10003-01', qty: '+80', after: { total: 3280, locked: 560, available: 2720 }, type: 'Manual Inbound', order: 'IN-20260819005', operator: 'Admin', sub: 'manual', inboundNo: 'IN-20260819005', inboundType: 'Manual', purchaseOrderNo: null }
+    { time: '2026-08-21 09:32:15', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10001-BK', qty: '+200', after: { total: 1200, locked: 200, available: 1000 }, type: 'Purchase Inbound', order: 'IN-20260821001', operator: 'Zhang Wei', sub: 'purchase', inboundNo: 'IN-20260821001', inboundType: 'Purchase', purchaseOrderNo: 'PO-20260821088' },
+    { time: '2026-08-20 14:18:42', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10002-42', qty: '+150', after: { total: 900, locked: 160, available: 740 }, type: 'Purchase Inbound', order: 'IN-20260820003', operator: 'Li Ming', sub: 'purchase' },
+    { time: '2026-08-18 16:22:08', warehouse: 'SG001', zone: 'SG001STO (Storage Zone)', sku: 'SKU-10004-01', qty: '+100', after: { total: 450, locked: 80, available: 370 }, type: 'Purchase Inbound', order: 'IN-20260818002', operator: 'Tan Wei Ming', sub: 'purchase' },
+    { time: '2026-08-18 08:00:00', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10002-42', qty: '+100', after: { total: 900, locked: 160, available: 740 }, type: 'Purchase Inbound', order: 'IN-20260818001', operator: 'Admin', sub: 'purchase' },
+    { time: '2026-08-19 11:00:00', warehouse: 'BJ001', zone: 'BJ001STO (Storage Zone)', sku: 'SKU-10003-01', qty: '+80', after: { total: 3280, locked: 560, available: 2720 }, type: 'Manual Inbound', order: 'IN-20260819005', operator: 'Admin', sub: 'manual', inboundNo: 'IN-20260819005', inboundType: 'Manual', purchaseOrderNo: null }
   ],
   manual: [
-    { time: '2026-08-19 10:05:30', warehouse: 'BJ-001', zone: 'BJ-001-STO (Storage)', sku: 'SKU-10003-01', qty: '+500', after: { total: 3200, locked: 560, available: 2640 }, type: 'Manual Adjustment', order: 'ADJ-20260819001', operator: 'Admin', sub: 'manual', direction: 'Increase', adjQty: '500', adjType: 'Inventory Gain (盘盈)', reason: 'Cycle count surplus confirmed by supervisor.', attachment: 'count-sheet-0819.pdf' },
-    { time: '2026-08-17 15:20:11', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10001-WH', qty: '-10', after: { total: 970, locked: 150, available: 820 }, type: 'Manual Adjustment (Decrease)', order: 'ADJ-20260817002', operator: 'Admin', sub: 'manual', direction: 'Decrease', adjQty: '10', adjType: 'Damage (报损)', reason: 'Carton crushed in storage aisle.', attachment: '—' }
+    { time: '2026-08-19 10:05:30', warehouse: 'BJ001', zone: 'BJ001STO (Storage Zone)', sku: 'SKU-10003-01', qty: '+500', after: { total: 3200, locked: 560, available: 2640 }, type: 'Manual Adjustment', order: 'ADJ-20260819001', operator: 'Admin', sub: 'manual', direction: 'Increase', adjQty: '500', adjType: 'Inventory Gain (盘盈)', reason: 'Cycle count surplus confirmed by supervisor.', attachment: 'count-sheet-0819.pdf' },
+    { time: '2026-08-17 15:20:11', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10001-WH', qty: '-10', after: { total: 970, locked: 150, available: 820 }, type: 'Manual Adjustment (Decrease)', order: 'ADJ-20260817002', operator: 'Admin', sub: 'manual', direction: 'Decrease', adjQty: '10', adjType: 'Damage (报损)', reason: 'Carton crushed in storage aisle.', attachment: '—' }
   ],
   occupy: [
-    { time: '2026-08-21 11:45:22', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10001-BK', qty: '50', after: { total: 1200, locked: 200, available: 1000 }, type: 'Outbound Occupy', order: 'OUT-20260821005', operator: 'System', outboundNo: 'OUT-20260821005', relatedOrderNo: 'SO-20260821001', shipmentNo: '—', status: 'Allocated' },
-    { time: '2026-08-21 10:30:18', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10002-42', qty: '30', after: { total: 900, locked: 160, available: 740 }, type: 'Outbound Occupy', order: 'OUT-20260821003', operator: 'System' },
-    { time: '2026-08-20 15:12:55', warehouse: 'BJ-001', zone: 'BJ-001-STO (Storage)', sku: 'SKU-10003-01', qty: '100', after: { total: 3200, locked: 560, available: 2640 }, type: 'Outbound Occupy', order: 'OUT-20260820008', operator: 'System' }
+    { time: '2026-08-21 11:45:22', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10001-BK', qty: '50', after: { total: 1200, locked: 200, available: 1000 }, type: 'Outbound Occupy', order: 'OUT-20260821005', operator: 'System', outboundNo: 'OUT-20260821005', relatedOrderNo: 'SO-20260821001', shipmentNo: '—', status: 'Allocated' },
+    { time: '2026-08-21 10:30:18', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10002-42', qty: '30', after: { total: 900, locked: 160, available: 740 }, type: 'Outbound Occupy', order: 'OUT-20260821003', operator: 'System' },
+    { time: '2026-08-20 15:12:55', warehouse: 'BJ001', zone: 'BJ001STO (Storage Zone)', sku: 'SKU-10003-01', qty: '100', after: { total: 3200, locked: 560, available: 2640 }, type: 'Outbound Occupy', order: 'OUT-20260820008', operator: 'System' }
   ],
   deduct: [
-    { time: '2026-08-21 14:20:33', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10001-WH', qty: '-25', after: { total: 980, locked: 150, available: 830 }, type: 'Outbound Deduct', order: 'OUT-20260820012', operator: 'Li Ming', outboundNo: 'OUT-20260820012', relatedOrderNo: 'SO-20260820012', shipmentNo: 'SHP-SF1029384756', status: 'Shipped' },
-    { time: '2026-08-20 17:05:41', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10001-BK', qty: '-40', after: { total: 1000, locked: 150, available: 850 }, type: 'Outbound Deduct', order: 'OUT-20260819015', operator: 'Zhang Wei' }
+    { time: '2026-08-21 14:20:33', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10001-WH', qty: '-25', after: { total: 980, locked: 150, available: 830 }, type: 'Outbound Deduct', order: 'OUT-20260820012', operator: 'Li Ming', outboundNo: 'OUT-20260820012', relatedOrderNo: 'SO-20260820012', shipmentNo: 'SHP-SF1029384756', status: 'Shipped' },
+    { time: '2026-08-20 17:05:41', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10001-BK', qty: '-40', after: { total: 1000, locked: 150, available: 850 }, type: 'Outbound Deduct', order: 'OUT-20260819015', operator: 'Zhang Wei' }
   ],
   unfreeze: [
-    { time: '2026-08-20 09:15:28', warehouse: 'SH-001', zone: 'SH-001-STO (Storage)', sku: 'SKU-10002-46', qty: '20', after: { total: 660, locked: 100, available: 560 }, type: 'Unfreeze', order: 'OUT-20260819010', operator: 'System' },
-    { time: '2026-08-19 11:42:17', warehouse: 'BJ-001', zone: 'BJ-001-STO (Storage)', sku: 'SKU-10003-01', qty: '50', after: { total: 3200, locked: 510, available: 2690 }, type: 'Unfreeze', order: 'OUT-20260818005', operator: 'System' }
+    { time: '2026-08-20 09:15:28', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10002-46', qty: '20', after: { total: 660, locked: 100, available: 560 }, type: 'Unfreeze', order: 'OUT-20260819010', operator: 'System' },
+    { time: '2026-08-19 11:42:17', warehouse: 'BJ001', zone: 'BJ001STO (Storage Zone)', sku: 'SKU-10003-01', qty: '50', after: { total: 3200, locked: 510, available: 2690 }, type: 'Unfreeze', order: 'OUT-20260818005', operator: 'System' }
   ]
 };
 
@@ -2050,6 +3288,8 @@ document.addEventListener('DOMContentLoaded', () => {
   renderSkuTable();
   renderRecords();
   populateWarehouseSelects();
+  applyRoleAndScopeUI();
+  applyWarehouseScopeToFilters();
 });
 
 // ========== Navigation ==========
@@ -2064,8 +3304,7 @@ function initNavigation() {
   document.querySelectorAll('.nav-item.parent').forEach(item => {
     item.addEventListener('click', (e) => {
       const group = item.dataset.group;
-      if (group === 'inbound') navigateTo('inbound');
-      if (group === 'outbound') navigateTo('outbound');
+      if (group === 'outbound') navigateTo('outbound-orders');
     });
   });
 }
@@ -2081,86 +3320,141 @@ function navigateTo(pageId) {
   if (navItem) navItem.classList.add('active');
 
   if (pageId === 'home') renderHome();
+  if (pageId === 'purchase-order' && typeof renderPurchaseOrderList === 'function') renderPurchaseOrderList();
+  if (pageId === 'inbound' && typeof renderInboundReceiptList === 'function') renderInboundReceiptList();
 }
 
 // ========== Home / Dashboard ==========
+const DASHBOARD_PENDING_DEMO = {
+  inbound: 3,
+  allocation: 12,
+  picking: 8,
+  packing: 5,
+  shipped: 156
+};
+
+function getDashboardPendingMetrics(scopedWh) {
+  const factor = getWarehouseScope() === 'all' ? 1 : (scopedWh.length === 1 ? 0.35 : 1);
+  const f = (n) => Math.max(0, Math.round(n * factor));
+  return {
+    inbound: f(DASHBOARD_PENDING_DEMO.inbound),
+    allocation: f(DASHBOARD_PENDING_DEMO.allocation),
+    picking: f(DASHBOARD_PENDING_DEMO.picking),
+    packing: f(DASHBOARD_PENDING_DEMO.packing),
+    shipped: f(DASHBOARD_PENDING_DEMO.shipped)
+  };
+}
+
+function navigateToRecordToday() {
+  currentRecordTab = 'all';
+  document.querySelectorAll('#record-tabs .tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.recordTab === 'all');
+  });
+  updateRecordSubTabs();
+  navigateTo('record');
+  renderRecords();
+}
+
 function renderHome() {
-  const totalStock = warehouses.reduce((s, w) => s + w.total, 0);
-  const totalLocked = warehouses.reduce((s, w) => s + w.locked, 0);
-  const totalAvailable = warehouses.reduce((s, w) => s + w.available, 0);
-  const activeWarehouses = warehouses.filter(w => w.status === 'enable').length;
+  updateSidebarWarehouseDisplay();
+  const scopedWh = warehousesInScope(warehouses);
+  const totalStock = scopedWh.reduce((s, w) => s + w.total, 0);
+  const pending = getDashboardPendingMetrics(scopedWh);
 
   document.getElementById('dashboard-kpi').innerHTML = `
-    <div class="kpi-card total">
+    <div class="kpi-card kpi-total" onclick="navigateTo('spu-sku-inventory')" title="Go to Inventory">
       <span class="kpi-label">Total Inventory</span>
       <span class="kpi-value">${totalStock.toLocaleString()}</span>
-      <span class="kpi-sub">Across ${warehouses.length} warehouses</span>
     </div>
-    <div class="kpi-card locked">
-      <span class="kpi-label">Locked Inventory</span>
-      <span class="kpi-value">${totalLocked.toLocaleString()}</span>
-      <span class="kpi-sub">Reserved for outbound orders</span>
+    <div class="kpi-card kpi-pending-inbound" onclick="navigateTo('inbound')">
+      <span class="kpi-label">Pending Inbound</span>
+      <span class="kpi-value">${pending.inbound}</span>
+      <span class="kpi-sub">vehicles</span>
     </div>
-    <div class="kpi-card available">
-      <span class="kpi-label">Available Inventory</span>
-      <span class="kpi-value">${totalAvailable.toLocaleString()}</span>
-      <span class="kpi-sub">Total − Locked (real-time)</span>
+    <div class="kpi-card kpi-allocation" onclick="navigateTo('outbound-orders')">
+      <span class="kpi-label">Pending Allocation</span>
+      <span class="kpi-value">${pending.allocation}</span>
+      <span class="kpi-sub">orders</span>
     </div>
-    <div class="kpi-card warehouses">
-      <span class="kpi-label">Active Warehouses</span>
-      <span class="kpi-value">${activeWarehouses}</span>
-      <span class="kpi-sub">${warehouses.length} total registered</span>
+    <div class="kpi-card kpi-picking" onclick="navigateTo('outbound-orders')">
+      <span class="kpi-label">Pending Picking</span>
+      <span class="kpi-value">${pending.picking}</span>
+      <span class="kpi-sub">orders</span>
+    </div>
+    <div class="kpi-card kpi-packing" onclick="navigateTo('outbound-orders')">
+      <span class="kpi-label">Pending Packing</span>
+      <span class="kpi-value">${pending.packing}</span>
+      <span class="kpi-sub">orders</span>
+    </div>
+    <div class="kpi-card kpi-shipped" onclick="navigateTo('outbound-orders')">
+      <span class="kpi-label">Shipped Today</span>
+      <span class="kpi-value">${pending.shipped}</span>
+      <span class="kpi-sub">orders</span>
     </div>
   `;
 
-  document.getElementById('dashboard-warehouse-table').innerHTML = warehouses
-    .filter(w => w.total > 0)
-    .map(w => `
-      <tr onclick="navigateTo('warehouse-management')" style="cursor:pointer">
-        <td><strong>${w.id}</strong><br><span style="color:#999;font-size:11px">${w.name}</span></td>
-        <td>${getStatusTag(w.status)}</td>
-        <td>${w.total.toLocaleString()}</td>
-        <td>${w.locked.toLocaleString()}</td>
-        <td>${w.available.toLocaleString()}</td>
-      </tr>
-    `).join('') || '<tr><td colspan="5" style="text-align:center;color:#999">No inventory data</td></tr>';
+  document.getElementById('dashboard-main-tasks').innerHTML = [
+    { page: 'purchase-order', title: 'Purchase Orders', icon: 'task-icon-po' },
+    { page: 'inbound', title: 'Inbound', icon: 'task-icon-in' },
+    { page: 'outbound-orders', title: 'Outbound', icon: 'task-icon-out' }
+  ].map(t => `
+    <button type="button" class="dashboard-task-card" onclick="navigateTo('${t.page}')">
+      <span class="dashboard-task-icon ${t.icon}" aria-hidden="true"></span>
+      <span class="dashboard-task-title">${t.title}</span>
+      <span class="dashboard-task-arrow" aria-hidden="true">→</span>
+    </button>
+  `).join('');
+
+  document.getElementById('dashboard-admin-tasks').innerHTML = [
+    { page: 'warehouse-management', title: 'Warehouse Management', icon: 'task-icon-wh' },
+    { page: 'zone-management', title: 'Zone Management', icon: 'task-icon-zone' }
+  ].map(t => `
+    <button type="button" class="dashboard-admin-card" onclick="navigateTo('${t.page}')">
+      <span class="dashboard-task-icon ${t.icon}" aria-hidden="true"></span>
+      <span class="dashboard-task-title">${t.title}</span>
+      <span class="dashboard-task-arrow" aria-hidden="true">→</span>
+    </button>
+  `).join('');
 
   const allRecords = [
     ...recordData.inbound,
+    ...recordData.manual,
     ...recordData.occupy,
-    ...recordData.deduct,
-    ...recordData.unfreeze
-  ].sort((a, b) => b.time.localeCompare(a.time)).slice(0, 6);
+    ...recordData.deduct
+  ].filter(r => rowInWarehouseScope(recordWarehouseId(r)))
+    .sort((a, b) => b.time.localeCompare(a.time))
+    .slice(0, 20);
 
   const typeClass = {
-    'Purchase Inbound': 'type-inbound', 'Manual Adjustment': 'type-inbound',
-    'Outbound Occupy': 'type-occupy', 'Outbound Deduct': 'type-deduct', 'Unfreeze': 'type-unfreeze'
+    'Purchase Inbound': 'type-inbound',
+    'Manual Inbound': 'type-inbound',
+    'Manual Adjustment': 'type-manual',
+    'Manual Adjustment (Decrease)': 'type-manual',
+    'Outbound Occupy': 'type-occupy',
+    'Outbound Deduct': 'type-deduct'
   };
 
-  document.getElementById('dashboard-activity-table').innerHTML = allRecords.map(r => `
-    <tr onclick="navigateTo('record')" style="cursor:pointer">
-      <td>${r.time.split(' ')[0]}<br><span style="color:#999;font-size:11px">${r.time.split(' ')[1]}</span></td>
-      <td class="${typeClass[r.type] || ''}">${r.type}</td>
-      <td>${r.sku}</td>
-      <td style="font-weight:500">${r.qty}</td>
-      <td>${r.order}</td>
-    </tr>
-  `).join('');
-
-  const quickLinks = [
-    { page: 'warehouse-management', icon: '🏭', title: 'Warehouses', desc: 'Manage warehouse master data' },
-    { page: 'zone-management', icon: '📦', title: 'Zones', desc: 'Configure storage zones' },
-    { page: 'spu-sku-inventory', icon: '📊', title: 'Inventory', desc: 'View SPU/SKU stock levels' },
-    { page: 'record', icon: '📋', title: 'Records', desc: 'Track inventory transactions' }
-  ];
-
-  document.getElementById('dashboard-quick-access').innerHTML = quickLinks.map(q => `
-    <div class="quick-card" onclick="navigateTo('${q.page}')">
-      <span class="quick-icon">${q.icon}</span>
-      <span class="quick-title">${q.title}</span>
-      <span class="quick-desc">${q.desc}</span>
-    </div>
-  `).join('');
+  const tbody = document.getElementById('dashboard-activity-table');
+  if (!allRecords.length) {
+    tbody.innerHTML = '<tr><td colspan="8" class="dashboard-empty">No operations today.</td></tr>';
+  } else {
+    tbody.innerHTML = allRecords.map(r => {
+      const qtyClass = r.qty.startsWith('+') ? 'qty-up' : r.qty.startsWith('-') ? 'qty-down' : '';
+      const timeParts = r.time.split(' ');
+      return `
+      <tr class="dashboard-ops-row" onclick="navigateTo('record')" title="View in Record">
+        <td>${timeParts[1] || r.time}</td>
+        <td class="${typeClass[r.type] || ''}">${r.type}</td>
+        <td>${formatCanonicalWarehouseCode(r.warehouse)}</td>
+        <td>${formatDashboardZone(r.zone)}</td>
+        <td>${r.sku}</td>
+        <td class="${qtyClass}">${r.qty}</td>
+        <td>${r.order}</td>
+        <td>${r.operator}</td>
+      </tr>
+    `;
+    }).join('');
+  }
 }
 
 function navigateToZones(warehouseId) {
@@ -2199,14 +3493,15 @@ function getStatusTag(status) {
 
 function renderWarehouses() {
   const tbody = document.getElementById('warehouse-table-body');
-  document.getElementById('wh-total').textContent = warehouses.length;
+  const scoped = warehousesInScope(warehouses);
+  document.getElementById('wh-total').textContent = scoped.length;
 
-  if (warehouses.length === 0) {
+  if (scoped.length === 0) {
     tbody.innerHTML = `<tr><td colspan="12"><div class="empty-state"><div class="icon">📦</div><p>No data</p><button class="btn btn-primary" onclick="openCreateWarehouse()">Add Warehouse</button></div></td></tr>`;
     return;
   }
 
-  tbody.innerHTML = warehouses.map(wh => `
+  tbody.innerHTML = scoped.map(wh => `
     <tr onclick="openEditWarehouse('${wh.id}')">
       <td>${wh.id}</td>
       <td>${wh.name}</td>
@@ -2244,6 +3539,10 @@ function resetWarehouseFilters() {
 }
 
 function openCreateWarehouse() {
+  if (!isAdminUser()) {
+    showToast('Admin only.', 'error');
+    return;
+  }
   currentWarehouseEdit = null;
   document.getElementById('warehouse-modal-title').textContent = 'Create Warehouse';
   document.getElementById('warehouse-submit-btn').textContent = 'Create';
@@ -2349,7 +3648,7 @@ function submitWarehouse() {
       showToast('Warehouse updated.', 'success');
     }
   } else {
-    const newId = 'SH-' + String(warehouses.length + 1).padStart(3, '0');
+    const newId = generateWarehouseCode(document.getElementById('wh-state').value || 'SH');
     const newWh = {
       id: newId, name, attribute: document.getElementById('wh-attribute').value, status: 'disable',
       zoneCount: 3, total: 0, locked: 0, available: 0,
@@ -2365,9 +3664,9 @@ function submitWarehouse() {
     warehouses.unshift(newWh);
 
     zones.push(
-      { whId: newId, code: `${newId}-RCV`, type: 'Receiving Zone', name: 'Receiving Zone', status: 'disable', total: 0, locked: 0, available: 0 },
-      { whId: newId, code: `${newId}-STO`, type: 'Storage Zone', name: 'Storage Zone', status: 'enable', total: 0, locked: 0, available: 0 },
-      { whId: newId, code: `${newId}-SHP`, type: 'Shipping Zone', name: 'Shipping Zone', status: 'disable', total: 0, locked: 0, available: 0 }
+      { whId: newId, code: `${newId}RCV`, type: 'Receiving Zone', name: 'Receiving Zone', status: 'disable', total: 0, locked: 0, available: 0 },
+      { whId: newId, code: `${newId}STO`, type: 'Storage Zone', name: 'Storage Zone', status: 'enable', total: 0, locked: 0, available: 0 },
+      { whId: newId, code: `${newId}SHP`, type: 'Shipping Zone', name: 'Shipping Zone', status: 'disable', total: 0, locked: 0, available: 0 }
     );
 
     closeModal('warehouse-modal');
@@ -2421,8 +3720,11 @@ function getZoneTypeTag(type) {
 function renderZones() {
   const tbody = document.getElementById('zone-table-body');
   const whFilter = document.getElementById('zone-filter-warehouse').value;
+  const scope = getWarehouseScope();
+  let effectiveWh = whFilter;
+  if (!effectiveWh && scope !== 'all') effectiveWh = scope;
   let filtered = zones;
-  if (whFilter) filtered = zones.filter(z => z.whId === whFilter);
+  if (effectiveWh) filtered = zones.filter(z => z.whId === effectiveWh);
 
   document.getElementById('zone-total').textContent = filtered.length;
 
@@ -2431,7 +3733,6 @@ function renderZones() {
       <td>${z.whId}</td>
       <td>${z.code}</td>
       <td>${getZoneTypeTag(z.type)}</td>
-      <td>${z.name}</td>
       <td>${getStatusTag(z.status)}</td>
       <td>${z.total.toLocaleString()}</td>
       <td>${z.locked.toLocaleString()}</td>
@@ -2463,6 +3764,10 @@ function resetZoneFilters() {
 }
 
 function openCreateZone() {
+  if (!isAdminUser()) {
+    showToast('Admin only.', 'error');
+    return;
+  }
   currentZoneEdit = null;
   document.getElementById('zone-modal-title').textContent = 'Create Zone';
   document.getElementById('zone-submit-btn').textContent = 'Create';
@@ -2495,7 +3800,6 @@ function openEditZone(code) {
   document.getElementById('zone-type').disabled = true;
   document.getElementById('zone-code').value = z.code;
   document.getElementById('zone-code').readOnly = true;
-  document.getElementById('zone-name').value = z.name;
   document.getElementById('zone-status').value = z.status;
 
   document.getElementById('zone-form').closest('.modal-body').classList.remove('view-mode');
@@ -2513,7 +3817,6 @@ function openViewZone(code) {
 function submitZone() {
   const whId = document.getElementById('zone-wh-id').value;
   const zoneType = document.getElementById('zone-type').value;
-  const zoneName = document.getElementById('zone-name').value || zoneType;
   const zoneCode = document.getElementById('zone-code').value;
   const status = document.getElementById('zone-status').value;
 
@@ -2523,7 +3826,7 @@ function submitZone() {
       document.getElementById('zone-status').value = 'disable';
       return;
     }
-    currentZoneEdit.name = zoneName;
+    currentZoneEdit.name = zoneType;
     currentZoneEdit.status = status;
     closeModal('zone-modal');
     renderZones();
@@ -2533,7 +3836,7 @@ function submitZone() {
       showToast('Please fill in required fields.', 'error');
       return;
     }
-    zones.push({ whId, code: zoneCode, type: zoneType, name: zoneName, status, total: 0, locked: 0, available: 0 });
+    zones.push({ whId, code: zoneCode, type: zoneType, name: zoneType, status, total: 0, locked: 0, available: 0 });
     const wh = warehouses.find(w => w.id === whId);
     if (wh) wh.zoneCount++;
     closeModal('zone-modal');
@@ -2588,19 +3891,38 @@ function initInventoryTabs() {
   });
 }
 
+function spuSkusInScope(spu) {
+  const scope = getWarehouseScope();
+  if (scope === 'all') return spu.skus;
+  return spu.skus.filter(s => {
+    const wh = warehouses.find(w => w.name === s.warehouse);
+    const whId = wh ? wh.id : normalizeWarehouseId(s.warehouse);
+    return whId === scope;
+  });
+}
+
 function renderSpuTable() {
   const tbody = document.getElementById('spu-table-body');
-  tbody.innerHTML = spuData.map((spu, idx) => `
+  const rows = [];
+  spuData.forEach((spu, idx) => {
+    const skus = spuSkusInScope(spu);
+    if (getWarehouseScope() !== 'all' && skus.length === 0) return;
+    const total = skus.reduce((s, x) => s + x.total, 0);
+    const locked = skus.reduce((s, x) => s + x.locked, 0);
+    const available = skus.reduce((s, x) => s + x.available, 0);
+    const whLabel = getWarehouseScope() === 'all' ? spu.warehouse : (getWarehouseById(getWarehouseScope())?.name || '—');
+    const zoneLabel = skus.length === 1 ? skus[0].zone : (skus.length > 1 ? '—' : spu.zone);
+    rows.push(`
     <tr>
       <td><span class="expand-icon" onclick="toggleSpuExpand(${idx}, this)">▶</span></td>
       <td>${spu.productId}</td>
       <td>${spu.productName}</td>
-      <td>${spu.skuCount}</td>
-      <td>${spu.total.toLocaleString()}</td>
-      <td>${spu.locked.toLocaleString()}</td>
-      <td>${spu.available.toLocaleString()}</td>
-      <td>${spu.warehouse}</td>
-      <td>${spu.zoneName}</td>
+      <td>${skus.length}</td>
+      <td>${total.toLocaleString()}</td>
+      <td>${locked.toLocaleString()}</td>
+      <td>${available.toLocaleString()}</td>
+      <td>${whLabel}</td>
+      <td>${zoneLabel}</td>
     </tr>
     <tr class="sku-subtable" id="spu-expand-${idx}" style="display:none">
       <td colspan="9">
@@ -2611,7 +3933,7 @@ function renderSpuTable() {
             </tr>
           </thead>
           <tbody>
-            ${spu.skus.map(s => `
+            ${skus.map(s => `
               <tr>
                 <td>${s.skuId}</td><td>${s.spec}</td>
                 <td>${s.total}</td><td>${s.locked}</td><td>${s.available}</td>
@@ -2622,7 +3944,9 @@ function renderSpuTable() {
         </table>
       </td>
     </tr>
-  `).join('');
+  `);
+  });
+  tbody.innerHTML = rows.join('') || '<tr><td colspan="9" style="text-align:center;color:#999">No inventory in current warehouse context</td></tr>';
 }
 
 function toggleSpuExpand(idx, el) {
@@ -2634,7 +3958,8 @@ function toggleSpuExpand(idx, el) {
 
 function renderSkuTable() {
   const tbody = document.getElementById('sku-table-body');
-  tbody.innerHTML = skuData.map(s => `
+  const scopedSku = skuData.filter(s => rowInWarehouseScope(skuWarehouseId(s)));
+  tbody.innerHTML = scopedSku.map(s => `
     <tr>
       <td>${s.skuId}</td>
       <td>${s.spec}</td>
@@ -2652,7 +3977,7 @@ function renderSkuTable() {
         : `<span class="text-muted" title="Admin only" style="color:#999;cursor:not-allowed">Admin only</span>`}
       </td>
     </tr>
-  `).join('');
+  `).join('') || '<tr><td colspan="12" style="text-align:center;color:#999">No SKU rows in current warehouse context</td></tr>';
 }
 
 function openAdjustment(skuId, zoneCode) {
@@ -2804,6 +4129,8 @@ function renderRecords() {
   } else if (currentRecordTab === 'manual') {
     data = allManual.sort((a, b) => b.time.localeCompare(a.time));
   }
+
+  data = data.filter(r => rowInWarehouseScope(recordWarehouseId(r)));
 
   recordListCache = data.map(enrichRecordDetail);
 
@@ -2968,6 +4295,11 @@ function populateWarehouseSelects() {
   if (lockedZoneWarehouse) {
     document.getElementById('zone-filter-warehouse').value = lockedZoneWarehouse;
   }
+  applyWarehouseScopeToFilters();
+  const hideFilters = getWarehouseScope() !== 'all';
+  document.querySelectorAll('.filter-wh-scope').forEach(el => {
+    el.style.display = hideFilters ? 'none' : '';
+  });
 }
 
 function openModal(id) {
@@ -2986,6 +4318,1431 @@ function showToast(message, type = 'info') {
   container.appendChild(toast);
   setTimeout(() => toast.remove(), 4000);
 }
+
+
+// Purchase Order & Inbound Receipt (aligned with foundation: codes, records, inventory)
+
+const MAX_IMPORT_JOBS = 2;
+const MAX_SKU_LINES = 10000;
+let inboundImportJobs = 0;
+let poImportJobs = 0;
+
+const PO_HEAD_STATUSES = [
+  'Draft', 'Processing', 'Created', 'Pending Shipment', 'Partially Shipped',
+  'Shipped', 'Partially Received', 'Received', 'Partially Stocked In', 'Stocked In'
+];
+
+const PO_STATUS_TAG = {
+  Draft: 'tag-disable',
+  Processing: 'tag-warning',
+  Created: 'tag-normal',
+  'Pending Shipment': 'tag-normal',
+  'Partially Shipped': 'tag-cold',
+  Shipped: 'tag-normal',
+  'Partially Received': 'tag-cold',
+  Received: 'tag-normal',
+  'Partially Stocked In': 'tag-cold',
+  'Stocked In': 'tag-enable'
+};
+
+let purchaseOrders = [
+  {
+    orderNo: 'PO-20260820001',
+    name: 'Earbuds restock Aug',
+    warehouseCode: 'SH001',
+    status: 'Partially Stocked In',
+    creationMethod: 'Import Created',
+    supplier: 'Shenzhen Acme Electronics',
+    trackingNo: 'SF1234567890',
+    linkedReceipts: ['IN-20260821001'],
+    createdAt: '2026-08-20 10:00:00',
+    lines: [
+      { skuId: 'SKU-10001-BK', productName: 'Wireless Bluetooth Earbuds Pro', spec: 'Black; M', qty: 200, unitPrice: '12.50', lineStatus: 'Stocked In' },
+      { skuId: 'SKU-10001-WH', productName: 'Wireless Bluetooth Earbuds Pro', spec: 'White; L', qty: 150, unitPrice: '12.50', lineStatus: 'Received' }
+    ]
+  },
+  {
+    orderNo: 'PO-20260818002',
+    name: 'Power bank batch',
+    warehouseCode: 'BJ001',
+    status: 'Pending Shipment',
+    creationMethod: 'Manual Entry',
+    supplier: 'Beijing Power Co.',
+    trackingNo: '',
+    linkedReceipts: [],
+    createdAt: '2026-08-18 14:30:00',
+    lines: [
+      { skuId: 'SKU-10003-01', productName: 'Portable Power Bank 20000mAh', spec: 'Standard', qty: 500, unitPrice: '8.00', lineStatus: 'Pending Shipment' }
+    ]
+  },
+  {
+    orderNo: 'PO-20260821088',
+    name: 'Watch restock',
+    warehouseCode: 'SH001',
+    status: 'Shipped',
+    creationMethod: 'Manual Entry',
+    supplier: 'Acme Watch Ltd',
+    trackingNo: 'YT998877',
+    linkedReceipts: [],
+    createdAt: '2026-08-21 08:12:00',
+    lines: [
+      { skuId: 'SKU-10002-42', productName: 'Smart Watch Series X', spec: '42mm Silver', qty: 150, unitPrice: '89.00', lineStatus: 'Shipped' }
+    ]
+  }
+];
+
+let inboundReceipts = [
+  {
+    receiptNo: 'IN-20260821001',
+    receiptType: 'Purchase Receipt',
+    status: 'Stocked In',
+    warehouseCode: 'SH001',
+    zoneCode: 'SH001STO',
+    purchaseOrderNo: 'PO-20260820001',
+    progress: 100,
+    updatedAt: '2026-08-21 09:32:15',
+    lines: [
+      { skuId: 'SKU-10001-BK', productName: 'Wireless Bluetooth Earbuds Pro', spec: 'Black; M', orderQty: 200, receiptQty: 200, zoneCode: 'SH001STO' }
+    ]
+  },
+  {
+    receiptNo: 'IN-20260822003',
+    receiptType: 'Manual Receipt',
+    status: 'Draft',
+    warehouseCode: 'SH001',
+    zoneCode: 'SH001STO',
+    purchaseOrderNo: '',
+    progress: 0,
+    updatedAt: '2026-08-22 11:20:00',
+    lines: []
+  },
+  {
+    receiptNo: 'IN-20260823004',
+    receiptType: 'Purchase Receipt',
+    status: 'Processing',
+    warehouseCode: 'SH001',
+    zoneCode: 'SH001STO',
+    purchaseOrderNo: 'PO-20260820001',
+    progress: 45,
+    updatedAt: '2026-08-23 08:05:00',
+    lines: [
+      { skuId: 'SKU-10001-WH', productName: 'Wireless Bluetooth Earbuds Pro', spec: 'White; L', orderQty: 150, receiptQty: 80, zoneCode: 'SH001STO' }
+    ]
+  }
+];
+
+let currentPoEdit = null;
+let currentReceiptEdit = null;
+let receiptEditorSource = 'po';
+let poEditorLines = [];
+let receiptEditorLines = [];
+
+function nextDocNo(prefix) {
+  const d = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  const list = prefix === 'PO' ? purchaseOrders : inboundReceipts;
+  const key = prefix === 'PO' ? 'orderNo' : 'receiptNo';
+  const re = new RegExp('^' + prefix + '-' + d + '(\\d{3})$');
+  let max = 0;
+  list.forEach(x => {
+    const m = String(x[key]).match(re);
+    if (m) max = Math.max(max, parseInt(m[1], 10));
+  });
+  return `${prefix}-${d}${String(max + 1).padStart(3, '0')}`;
+}
+
+function getInboundWarehouseScope() {
+  const scope = getWarehouseScope();
+  if (scope === 'all') return warehouses[0] ? normalizeWarehouseId(warehouses[0].id) : 'SH001';
+  return normalizeWarehouseId(scope);
+}
+
+function getDefaultStorageZoneCode(whCode) {
+  const code = normalizeWarehouseId(whCode);
+  const z = zones.find(zn => normalizeWarehouseId(zn.whId) === code && zn.type === 'Storage Zone');
+  if (z) return normalizeWarehouseId(z.code.replace(/STO$/i, '')) + 'STO';
+  return code + 'STO';
+}
+
+function poMatchesScope(po) {
+  const scope = getWarehouseScope();
+  if (scope === 'all') return true;
+  return normalizeWarehouseId(po.warehouseCode) === normalizeWarehouseId(scope);
+}
+
+function receiptMatchesScope(r) {
+  const scope = getWarehouseScope();
+  if (scope === 'all') return true;
+  return normalizeWarehouseId(r.warehouseCode) === normalizeWarehouseId(scope);
+}
+
+function bindSearchSuggest(inputId, panelId, getValues) {
+  const input = document.getElementById(inputId);
+  const panel = document.getElementById(panelId);
+  if (!input || !panel) return;
+  const render = () => {
+    const kw = (input.value || '').trim().toLowerCase();
+    let vals = getValues();
+    if (kw) vals = vals.filter(v => v.toLowerCase().includes(kw));
+    vals = vals.slice(0, 20);
+    if (!vals.length) {
+      panel.hidden = true;
+      return;
+    }
+    panel.innerHTML = vals.map(v => `<div class="suggest-item" data-v="${v}">${v}</div>`).join('');
+    panel.hidden = false;
+  };
+  input.addEventListener('focus', render);
+  input.addEventListener('input', render);
+  panel.addEventListener('mousedown', e => {
+    const item = e.target.closest('.suggest-item');
+    if (!item) return;
+    input.value = item.dataset.v;
+    panel.hidden = true;
+    if (inputId === 'po-search-keyword') searchPurchaseOrders();
+    else searchInboundReceipts();
+  });
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.suggest-wrap')) panel.hidden = true;
+  });
+}
+
+function initPoInboundSuggest() {
+  bindSearchSuggest('po-search-keyword', 'po-search-suggest', () => {
+    const field = document.getElementById('po-search-field').value;
+    const rows = purchaseOrders.filter(poMatchesScope);
+    if (field === 'linkedReceipt') return [...new Set(rows.flatMap(p => p.linkedReceipts))];
+    return rows.map(p => p.orderNo);
+  });
+  bindSearchSuggest('inbound-search-keyword', 'inbound-search-suggest', () => {
+    const field = document.getElementById('inbound-search-field').value;
+    const rows = inboundReceipts.filter(receiptMatchesScope);
+    if (field === 'purchaseOrder') return [...new Set(rows.map(r => r.purchaseOrderNo).filter(Boolean))];
+    return rows.map(r => r.receiptNo);
+  });
+}
+
+function rankByKeyword(rows, kw, getVal) {
+  const k = kw.toLowerCase();
+  return rows.sort((a, b) => {
+    const va = getVal(a).toLowerCase();
+    const vb = getVal(b).toLowerCase();
+    const ea = va === k;
+    const eb = vb === k;
+    if (ea && !eb) return -1;
+    if (!ea && eb) return 1;
+    return 0;
+  });
+}
+
+function renderPurchaseOrderList() {
+  const tbody = document.getElementById('po-table-body');
+  if (!tbody) return;
+  const field = document.getElementById('po-search-field').value;
+  const kw = (document.getElementById('po-search-keyword').value || '').trim().toLowerCase();
+  const method = document.getElementById('po-filter-method').value;
+  const status = document.getElementById('po-filter-status').value;
+
+  let rows = purchaseOrders.filter(poMatchesScope);
+  if (kw) {
+    rows = rows.filter(po => {
+      if (field === 'orderNo') return po.orderNo.toLowerCase().includes(kw);
+      return po.linkedReceipts.some(r => r.toLowerCase().includes(kw));
+    });
+    rankByKeyword(rows, kw, po => (field === 'orderNo' ? po.orderNo : po.linkedReceipts.join(',')));
+  }
+  rows.sort((a, b) => {
+    if (kw) return 0;
+    return b.createdAt.localeCompare(a.createdAt);
+  });
+  if (method) rows = rows.filter(po => po.creationMethod === method);
+  if (status) rows = rows.filter(po => po.status === status);
+
+  document.getElementById('po-list-total').textContent = rows.length;
+  tbody.innerHTML = rows.map(po => {
+    const processing = po.status === 'Processing';
+    const locked = processing || po.status === 'Stocked In';
+    return `
+    <tr>
+      <td><strong>${po.orderNo}</strong></td>
+      <td>${po.name}</td>
+      <td>${po.warehouseCode}</td>
+      <td><span class="tag ${PO_STATUS_TAG[po.status] || 'tag-normal'}">${po.status}</span></td>
+      <td>${po.creationMethod}</td>
+      <td>${po.linkedReceipts.length ? po.linkedReceipts.join(', ') : '—'}</td>
+      <td>${po.supplier}</td>
+      <td>${po.createdAt}</td>
+      <td>
+        <div class="action-links">
+          ${processing ? `<a onclick="showPoProgress('${po.orderNo}')">View Progress</a>` : `<a onclick="openPurchaseOrderEditor('${po.orderNo}')">${locked ? 'View' : 'Edit'}</a>`}
+          <a class="danger ${locked || po.linkedReceipts.length ? 'disabled' : ''}" onclick="deletePurchaseOrder('${po.orderNo}')">Delete</a>
+        </div>
+      </td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="9" style="text-align:center;color:#999">No data</td></tr>';
+}
+
+function renderInboundReceiptList() {
+  const tbody = document.getElementById('inbound-table-body');
+  if (!tbody) return;
+  const field = document.getElementById('inbound-search-field').value;
+  const kw = (document.getElementById('inbound-search-keyword').value || '').trim().toLowerCase();
+  const status = document.getElementById('inbound-filter-status').value;
+  const type = document.getElementById('inbound-filter-type').value;
+
+  let rows = inboundReceipts.filter(receiptMatchesScope);
+  if (kw) {
+    rows = rows.filter(r => {
+      if (field === 'receiptNo') return r.receiptNo.toLowerCase().includes(kw);
+      return (r.purchaseOrderNo || '').toLowerCase().includes(kw);
+    });
+    rankByKeyword(rows, kw, r => (field === 'receiptNo' ? r.receiptNo : (r.purchaseOrderNo || '')));
+  } else {
+    rows.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+  }
+  if (status) rows = rows.filter(r => r.status === status);
+  if (type) rows = rows.filter(r => r.receiptType === type);
+
+  document.getElementById('inbound-list-total').textContent = rows.length;
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td><strong>${r.receiptNo}</strong></td>
+      <td>${r.receiptType}</td>
+      <td><span class="tag ${r.status === 'Stocked In' ? 'tag-enable' : r.status === 'Processing' ? 'tag-warning' : 'tag-disable'}">${r.status}</span></td>
+      <td>${r.warehouseCode}</td>
+      <td>${r.purchaseOrderNo || '—'}</td>
+      <td>${r.lines.length}</td>
+      <td>${r.status === 'Processing' ? `<div class="mini-progress"><div style="width:${r.progress}%"></div></div> ${r.progress}%` : r.status === 'Stocked In' ? '100%' : '—'}</td>
+      <td>${r.updatedAt}</td>
+      <td>
+        <div class="action-links">
+          ${r.status === 'Processing' ? `<a onclick="showReceiptProgress('${r.receiptNo}')">View Progress</a>` : `<a onclick="openReceiptEditor('${r.receiptNo}')">${r.status === 'Stocked In' ? 'View' : 'Edit'}</a>`}
+          <a class="danger ${r.status !== 'Draft' ? 'disabled' : ''}" onclick="deleteInboundReceipt('${r.receiptNo}')">Delete</a>
+        </div>
+      </td>
+    </tr>
+  `).join('') || '<tr><td colspan="9" style="text-align:center;color:#999">No data</td></tr>';
+}
+
+function searchPurchaseOrders() {
+  renderPurchaseOrderList();
+  showToast('Purchase order search applied', 'success');
+}
+
+function resetPurchaseOrderFilters() {
+  document.getElementById('po-search-keyword').value = '';
+  document.getElementById('po-filter-method').value = '';
+  document.getElementById('po-filter-status').value = '';
+  renderPurchaseOrderList();
+}
+
+function searchInboundReceipts() {
+  renderInboundReceiptList();
+  showToast('Inbound receipt search applied', 'success');
+}
+
+function resetInboundFilters() {
+  document.getElementById('inbound-search-keyword').value = '';
+  document.getElementById('inbound-filter-status').value = '';
+  document.getElementById('inbound-filter-type').value = '';
+  renderInboundReceiptList();
+}
+
+function openPurchaseOrderEditor(orderNo) {
+  const wh = getInboundWarehouseScope();
+  currentPoEdit = orderNo ? purchaseOrders.find(p => p.orderNo === orderNo) : null;
+  document.getElementById('po-editor-title').textContent = currentPoEdit ? 'Edit Purchase Order' : 'Create Purchase Order';
+  document.getElementById('po-warehouse').value = wh;
+  if (currentPoEdit) {
+    document.getElementById('po-name').value = currentPoEdit.name;
+    document.getElementById('po-supplier').value = currentPoEdit.supplier;
+    document.getElementById('po-tracking').value = currentPoEdit.trackingNo || '';
+    poEditorLines = currentPoEdit.lines.map(l => ({ ...l }));
+  } else {
+    document.getElementById('po-name').value = localStorage.getItem('po_draft_name') || '';
+    document.getElementById('po-supplier').value = localStorage.getItem('po_draft_supplier') || '';
+    document.getElementById('po-tracking').value = '';
+    poEditorLines = [];
+  }
+  renderPoEditorLines();
+  openModal('po-editor-modal');
+}
+
+function viewPurchaseOrder(orderNo) {
+  openPurchaseOrderEditor(orderNo);
+}
+
+function poAddSampleLine() {
+  if (poEditorLines.length >= MAX_SKU_LINES) {
+    showToast('You have already uploaded 10,000 records. Adding new data will clear all existing data.', 'warning');
+    return;
+  }
+  poEditorLines.push({
+    skuId: 'SKU-10002-42',
+    productName: 'Smart Watch Series X',
+    spec: '42mm Silver',
+    qty: 100,
+    unitPrice: '89.00',
+    lineStatus: 'Pending Shipment'
+  });
+  renderPoEditorLines();
+}
+
+function renderPoEditorLines() {
+  document.getElementById('po-editor-lines').innerHTML = poEditorLines.map(l => `
+    <tr><td>${l.skuId}</td><td>${l.productName}</td><td>${l.spec}</td><td>${l.qty}</td><td>${l.unitPrice}</td><td>${l.lineStatus}</td></tr>
+  `).join('') || '<tr><td colspan="6" style="text-align:center;color:#999">No SKU lines — use Add Products or Import</td></tr>';
+}
+
+function countActiveJobs(kind) {
+  if (kind === 'po') return poImportJobs + purchaseOrders.filter(p => p.status === 'Processing').length;
+  return inboundImportJobs + inboundReceipts.filter(r => r.status === 'Processing').length;
+}
+
+function startPoImport() {
+  if (countActiveJobs('po') >= MAX_IMPORT_JOBS) {
+    showToast('At most 2 import jobs can run at the same time.', 'warning');
+    return;
+  }
+  poImportJobs++;
+  const bar = document.getElementById('po-import-progress');
+  const fill = document.getElementById('po-import-fill');
+  const label = document.getElementById('po-import-pct');
+  bar.hidden = false;
+  let pct = 0;
+  const timer = setInterval(() => {
+    pct += 20;
+    if (pct > 100) pct = 100;
+    fill.style.width = pct + '%';
+    label.textContent = pct + '%';
+    if (pct >= 100) {
+      clearInterval(timer);
+      poImportJobs--;
+      poAddSampleLine();
+      bar.hidden = true;
+      showToast('PO import completed (demo)', 'success');
+    }
+  }, 350);
+}
+
+function showPoProgress(orderNo) {
+  showToast(`Import in progress for ${orderNo}`, 'info');
+  openPurchaseOrderEditor(orderNo);
+}
+
+function savePurchaseOrderDraft() {
+  persistPoFromForm('Draft');
+}
+
+function savePurchaseOrderCreated() {
+  persistPoFromForm('Created');
+}
+
+function persistPoFromForm(status) {
+  const supplier = document.getElementById('po-supplier').value.trim();
+  if (!supplier) {
+    showToast('Please enter supplier.', 'error');
+    return;
+  }
+  const payload = {
+    name: document.getElementById('po-name').value.trim() || 'Untitled PO',
+    warehouseCode: getInboundWarehouseScope(),
+    supplier,
+    trackingNo: document.getElementById('po-tracking').value.trim(),
+    creationMethod: 'Manual Entry',
+    linkedReceipts: currentPoEdit ? currentPoEdit.linkedReceipts : [],
+    lines: poEditorLines,
+    createdAt: new Date().toISOString().slice(0, 19).replace('T', ' ')
+  };
+  localStorage.setItem('po_draft_name', payload.name);
+  localStorage.setItem('po_draft_supplier', payload.supplier);
+
+  if (currentPoEdit) {
+    Object.assign(currentPoEdit, payload, { status });
+  } else {
+    purchaseOrders.unshift({
+      orderNo: nextDocNo('PO'),
+      status,
+      ...payload
+    });
+  }
+  closeModal('po-editor-modal');
+  renderPurchaseOrderList();
+  showToast('Purchase order saved.', 'success');
+}
+
+function deletePurchaseOrder(orderNo) {
+  const po = purchaseOrders.find(p => p.orderNo === orderNo);
+  if (!po || po.status === 'Processing' || po.status === 'Stocked In' || po.linkedReceipts.length) return;
+  purchaseOrders = purchaseOrders.filter(p => p.orderNo !== orderNo);
+  renderPurchaseOrderList();
+  showToast('Deleted successfully.', 'success');
+}
+
+function populateReceiptPoSelect() {
+  const sel = document.getElementById('receipt-po-select');
+  const eligible = purchaseOrders.filter(p => poMatchesScope(p) && !['Draft', 'Processing', 'Stocked In'].includes(p.status));
+  sel.innerHTML = '<option value="">— None —</option>' +
+    eligible.map(p => `<option value="${p.orderNo}">${p.orderNo} — ${p.name}</option>`).join('');
+}
+
+function openReceiptEditor(receiptNo) {
+  const wh = getInboundWarehouseScope();
+  const zone = getDefaultStorageZoneCode(wh);
+  currentReceiptEdit = receiptNo ? inboundReceipts.find(r => r.receiptNo === receiptNo) : null;
+  document.getElementById('receipt-editor-title').textContent = currentReceiptEdit ? (currentReceiptEdit.status === 'Stocked In' ? 'View Receipt' : 'Edit Receipt') : 'Create Receipt';
+  document.getElementById('receipt-warehouse').value = wh;
+  document.getElementById('receipt-zone').value = zone + ' (Storage Zone)';
+  populateReceiptPoSelect();
+
+  if (currentReceiptEdit) {
+    document.getElementById('receipt-type').value = currentReceiptEdit.receiptType;
+    document.getElementById('receipt-po-select').value = currentReceiptEdit.purchaseOrderNo || '';
+    receiptEditorLines = currentReceiptEdit.lines.map(l => ({ ...l, orderQty: l.orderQty || l.receiptQty || 0 }));
+  } else {
+    const draft = localStorage.getItem('receipt_draft_type');
+    document.getElementById('receipt-type').value = draft || 'Purchase Receipt';
+    receiptEditorLines = [];
+  }
+  renderReceiptEditorLines();
+  setReceiptSource('po');
+  openModal('receipt-editor-modal');
+}
+
+function setReceiptSource(source) {
+  receiptEditorSource = source;
+  document.querySelectorAll('.receipt-source-tabs .source-tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.source === source);
+  });
+  document.getElementById('receipt-po-group').style.display = source === 'po' ? '' : 'none';
+  document.getElementById('receipt-source-import').hidden = source !== 'import';
+  if (source === 'po') document.getElementById('receipt-type').value = 'Purchase Receipt';
+  if (source === 'products' || source === 'import') document.getElementById('receipt-type').value = 'Manual Receipt';
+}
+
+function reconVariance(line) {
+  const o = Number(line.orderQty) || 0;
+  const r = Number(line.receiptQty) || 0;
+  if (!o && !r) return '—';
+  return String(r - o);
+}
+
+function renderReceiptEditorLines() {
+  document.getElementById('receipt-editor-lines').innerHTML = receiptEditorLines.map((l, i) => `
+    <tr>
+      <td>${l.skuId}</td><td>${l.productName}</td><td>${l.spec}</td>
+      <td>${l.orderQty ?? '—'}</td>
+      <td><input type="number" min="1" max="9999999" value="${l.receiptQty}" onchange="receiptEditorLines[${i}].receiptQty=parseInt(this.value,10)||0;renderReceiptEditorLines()"></td>
+      <td>${reconVariance(l)}</td>
+      <td>${l.zoneCode}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="7" style="text-align:center;color:#999">No lines — link PO, add products, or import</td></tr>';
+}
+
+document.addEventListener('change', e => {
+  if (e.target.id === 'receipt-po-select') {
+    const po = purchaseOrders.find(p => p.orderNo === e.target.value);
+    if (!po) return;
+    receiptEditorLines = po.lines
+      .filter(l => l.lineStatus !== 'Stocked In')
+      .map(l => ({
+        skuId: l.skuId,
+        productName: l.productName,
+        spec: l.spec,
+        orderQty: l.qty,
+        receiptQty: l.qty,
+        zoneCode: getDefaultStorageZoneCode(po.warehouseCode)
+      }));
+    renderReceiptEditorLines();
+  }
+  if (e.target.id === 'receipt-import-file') {
+    document.getElementById('receipt-import-btn').disabled = !e.target.files.length;
+  }
+});
+
+function startReceiptImport() {
+  if (countActiveJobs('in') >= MAX_IMPORT_JOBS) {
+    showToast('At most 2 import jobs can run at the same time.', 'warning');
+    return;
+  }
+  const file = document.getElementById('receipt-import-file');
+  if (!file.files.length) {
+    showToast('The imported file contains invalid fields. Please re-upload.', 'error');
+    return;
+  }
+  inboundImportJobs++;
+  document.getElementById('receipt-import-progress').hidden = false;
+  let pct = 0;
+  const fill = document.getElementById('receipt-import-fill');
+  const label = document.getElementById('receipt-import-pct');
+  const timer = setInterval(() => {
+    pct += 15;
+    if (pct > 100) pct = 100;
+    fill.style.width = pct + '%';
+    label.textContent = pct + '%';
+    if (pct >= 100) {
+      clearInterval(timer);
+      inboundImportJobs--;
+      receiptEditorLines.push({
+        skuId: 'SKU-10001-WH',
+        productName: 'Wireless Bluetooth Earbuds Pro',
+        spec: 'White; L',
+        orderQty: 0,
+        receiptQty: 50,
+        zoneCode: getDefaultStorageZoneCode(getInboundWarehouseScope())
+      });
+      renderReceiptEditorLines();
+      showToast('Import completed (demo)', 'success');
+      document.getElementById('receipt-import-progress').hidden = true;
+    }
+  }, 400);
+}
+
+function saveReceiptDraft() {
+  persistReceipt('Draft');
+}
+
+function confirmReceiptStockIn() {
+  if (receiptEditorLines.length === 0) {
+    showToast('Add at least one SKU line before stock-in.', 'error');
+    return;
+  }
+  persistReceipt('Stocked In', true);
+}
+
+function persistReceipt(status, writeInventory) {
+  const wh = getInboundWarehouseScope();
+  const zoneCode = getDefaultStorageZoneCode(wh);
+  const poNo = document.getElementById('receipt-po-select').value;
+  const payload = {
+    receiptType: document.getElementById('receipt-type').value,
+    warehouseCode: wh,
+    zoneCode,
+    purchaseOrderNo: poNo,
+    progress: status === 'Processing' ? 45 : status === 'Stocked In' ? 100 : 0,
+    updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+    lines: receiptEditorLines
+  };
+  localStorage.setItem('receipt_draft_type', payload.receiptType);
+
+  let receiptNo;
+  if (currentReceiptEdit) {
+    Object.assign(currentReceiptEdit, payload, { status });
+    receiptNo = currentReceiptEdit.receiptNo;
+  } else {
+    receiptNo = nextDocNo('IN');
+    inboundReceipts.unshift({ receiptNo, status, ...payload });
+  }
+
+  if (poNo) {
+    const po = purchaseOrders.find(p => p.orderNo === poNo);
+    if (po && !po.linkedReceipts.includes(receiptNo)) po.linkedReceipts.push(receiptNo);
+  }
+  if (writeInventory && status === 'Stocked In') {
+    payload.lines.forEach(line => {
+      writeInboundInventoryAndRecord(receiptNo, payload, line);
+    });
+    if (poNo) updatePoAfterStockIn(poNo, payload.lines);
+  }
+
+  closeModal('receipt-editor-modal');
+  renderInboundReceiptList();
+  renderPurchaseOrderList();
+  renderHome();
+  showToast(writeInventory ? 'Stocked in. Inventory & inbound records updated.' : 'Receipt saved.', 'success');
+}
+
+function writeInboundInventoryAndRecord(receiptNo, receipt, line) {
+  let sku = skuData.find(s => s.skuId === line.skuId && normalizeWarehouseId(s.warehouseCode) === receipt.warehouseCode);
+  if (!sku) sku = skuData.find(s => s.skuId === line.skuId);
+  if (sku) {
+    sku.total += line.receiptQty;
+    sku.available = sku.total - sku.locked;
+  }
+  const recordType = receipt.receiptType === 'Purchase Receipt' ? 'Purchase Inbound' : 'Manual Inbound';
+  recordData.inbound.unshift({
+    time: new Date().toISOString().slice(0, 19).replace('T', ' '),
+    warehouse: receipt.warehouseCode,
+    zone: `${line.zoneCode} (Storage Zone)`,
+    sku: line.skuId,
+    qty: '+' + line.receiptQty,
+    after: sku ? { total: sku.total, locked: sku.locked, available: sku.available } : { total: line.receiptQty, locked: 0, available: line.receiptQty },
+    type: recordType,
+    order: receiptNo,
+    operator: isAdminUser() ? 'Admin' : 'Warehouse Manager',
+    sub: receipt.receiptType === 'Purchase Receipt' ? 'purchase' : 'manual',
+    inboundNo: receiptNo,
+    inboundType: receipt.receiptType === 'Purchase Receipt' ? 'Purchase' : 'Manual',
+    purchaseOrderNo: receipt.purchaseOrderNo || null
+  });
+}
+
+function rollupPoStatus(po) {
+  const ranks = {
+    'Stocked In': 4, Received: 3, Shipped: 2, 'Pending Shipment': 1, Created: 0, Draft: 0
+  };
+  const statuses = po.lines.map(l => l.lineStatus);
+  const unique = [...new Set(statuses)];
+  if (unique.length === 1 && PO_HEAD_STATUSES.includes(unique[0])) return unique[0];
+  if (statuses.some(s => s === 'Stocked In') && statuses.some(s => s !== 'Stocked In')) return 'Partially Stocked In';
+  if (statuses.some(s => s === 'Received') && statuses.some(s => s !== 'Received' && s !== 'Stocked In')) return 'Partially Received';
+  if (statuses.some(s => s === 'Shipped') && statuses.some(s => s === 'Pending Shipment')) return 'Partially Shipped';
+  const top = statuses.sort((a, b) => (ranks[b] || 0) - (ranks[a] || 0))[0];
+  return top || po.status;
+}
+
+function updatePoAfterStockIn(poNo, lines) {
+  const po = purchaseOrders.find(p => p.orderNo === poNo);
+  if (!po) return;
+  lines.forEach(line => {
+    const pl = po.lines.find(l => l.skuId === line.skuId);
+    if (pl) pl.lineStatus = 'Stocked In';
+  });
+  po.status = rollupPoStatus(po);
+}
+
+function deleteInboundReceipt(receiptNo) {
+  const r = inboundReceipts.find(x => x.receiptNo === receiptNo);
+  if (!r || r.status !== 'Draft') return;
+  inboundReceipts = inboundReceipts.filter(x => x.receiptNo !== receiptNo);
+  renderInboundReceiptList();
+  showToast('Deleted successfully.', 'success');
+}
+
+function showReceiptProgress(receiptNo) {
+  showToast(`Import in progress for ${receiptNo}`, 'info');
+  openReceiptEditor(receiptNo);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initPoInboundSuggest();
+  if (document.getElementById('po-table-body')) renderPurchaseOrderList();
+});
+
+
+// Outbound orders — aligned with inventory: occupy on allocate, deduct on ship.
+
+const OB_STATUS = {
+  allocated: { label: 'Allocated', cls: 'tag-sto' },
+  ready_to_pick: { label: 'Ready to Pick', cls: 'tag-rcv' },
+  ready_to_pack: { label: 'Ready to Pack', cls: 'tag-normal' },
+  ready_to_ship: { label: 'Ready to Ship', cls: 'tag-shp' },
+  shipped: { label: 'Shipped', cls: 'tag-enable' },
+  on_hold: { label: 'On Hold', cls: 'tag-cold' }
+};
+
+const OB_TABS = ['all', 'allocated', 'ready_to_pick', 'ready_to_pack', 'ready_to_ship', 'shipped', 'on_hold'];
+
+let outboundBatches = [];
+let outboundLines = [];
+let obSeq = { OB: 1, SHP: 1 };
+let currentOutboundNo = null;
+let currentObTab = 'all';
+let obOrderCsv = '';
+let obTrackCsv = '';
+
+function ymd(date) {
+  const d = date || new Date();
+  return d.toISOString().slice(0, 10).replace(/-/g, '');
+}
+
+function nextDocNo(prefix, warehouseId) {
+  const code = formatCanonicalWarehouseCode(warehouseId);
+  const n = String(obSeq[prefix]++).padStart(4, '0');
+  return `${prefix}${code}${ymd()}${n}`;
+}
+
+function storageSku(warehouseId, skuId) {
+  const code = formatCanonicalWarehouseCode(warehouseId);
+  return skuData.find(s => formatCanonicalWarehouseCode(skuWarehouseId(s)) === code && /STO|Storage/i.test(s.zone + s.zoneCode));
+}
+
+function batchStatus(lines) {
+  if (!lines.length) return 'Pending Outbound';
+  const shipped = lines.filter(l => l.status === 'shipped').length;
+  const held = lines.filter(l => l.status === 'on_hold').length;
+  if (shipped === lines.length) return 'Fully Outbound';
+  if (shipped > 0 || held > 0) return 'Partially Outbound';
+  return 'Pending Outbound';
+}
+
+function pickListBarcode(skuId) {
+  const s = skuData.find(x => x.skuId === skuId);
+  const list = (s && s.barcodes) || [];
+  const ean = list.find(x => String(x).startsWith('EAN'));
+  if (ean) return ean;
+  const upc = list.find(x => String(x).startsWith('UPC'));
+  if (upc) return upc;
+  return '—';
+}
+
+function downloadTextFile(filename, text) {
+  const blob = new Blob([text], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function batchTag(status) {
+  if (status === 'Fully Outbound') return '<span class="tag tag-enable">Fully Outbound</span>';
+  if (status === 'Partially Outbound') return '<span class="tag tag-cold">Partially Outbound</span>';
+  return '<span class="tag tag-sto">Pending Outbound</span>';
+}
+
+function lineTag(status) {
+  const meta = OB_STATUS[status] || { label: status, cls: 'tag-normal' };
+  return `<span class="tag ${meta.cls}">${meta.label}</span>`;
+}
+
+function seedOutbound() {
+  const wh = 'SH-001';
+  const no = nextDocNo('OB', wh);
+  outboundBatches.push({
+    outboundNo: no,
+    importedAt: '2026-08-21 09:10:00',
+    sourceFile: 'pending-orders-0821.csv',
+    warehouseId: wh,
+    warehouseCode: formatCanonicalWarehouseCode(wh)
+  });
+  const samples = [
+    { orderNo: 'SO-20260821001', skuId: 'SKU-10001-BK', name: 'Wireless Bluetooth Earbuds Pro', spec: 'Black; M', qty: 2, status: 'allocated' },
+    { orderNo: 'SO-20260821002', skuId: 'SKU-10001-WH', name: 'Wireless Bluetooth Earbuds Pro', spec: 'White; L', qty: 1, status: 'ready_to_pick', tracking: 'SF1029384756' },
+    { orderNo: 'SO-20260821003', skuId: 'SKU-10004-01', name: 'USB-C Flash Drive', spec: '128GB', qty: 2, status: 'on_hold' }
+  ];
+  samples.forEach(s => {
+    const line = {
+      id: 'L' + (outboundLines.length + 1),
+      outboundNo: no,
+      orderNo: s.orderNo,
+      orderTime: '2026-08-21 08:40:00',
+      skuId: s.skuId,
+      productName: s.name,
+      spec: s.spec,
+      qty: s.qty,
+      warehouseId: wh,
+      zoneCode: s.status === 'on_hold' ? '—' : 'SH001STO',
+      zone: s.status === 'on_hold' ? '—' : 'Storage Zone',
+      shipmentNo: '—',
+      trackingNo: '—',
+      status: s.status,
+      holdReason: s.status === 'on_hold' ? 'Insufficient available inventory' : ''
+    };
+    if (s.tracking) {
+      line.trackingNo = s.tracking;
+      line.shipmentNo = nextDocNo('SHP', wh);
+    }
+    if (s.status !== 'on_hold') occupySku(wh, s.skuId, s.qty, no, s.orderNo);
+    outboundLines.push(line);
+  });
+}
+
+function occupySku(warehouseId, skuId, qty, outboundNo, orderNo) {
+  const sku = storageSku(warehouseId, skuId);
+  if (!sku || sku.available < qty) return false;
+  sku.locked += qty;
+  sku.available = sku.total - sku.locked;
+  recordData.occupy.unshift({
+    time: new Date().toISOString().slice(0, 19).replace('T', ' '),
+    warehouse: formatCanonicalWarehouseCode(warehouseId),
+    zone: `${formatCanonicalWarehouseCode(warehouseId)}STO (Storage)`,
+    sku: skuId,
+    qty: String(qty),
+    after: { total: sku.total, locked: sku.locked, available: sku.available },
+    type: 'Outbound Occupy',
+    order: outboundNo,
+    operator: 'System',
+    outboundNo,
+    relatedOrderNo: orderNo,
+    shipmentNo: '—',
+    status: 'Allocated'
+  });
+  return true;
+}
+
+function deductSku(line) {
+  const sku = storageSku(line.warehouseId, line.skuId);
+  if (!sku || sku.locked < line.qty) return false;
+  sku.locked -= line.qty;
+  sku.total -= line.qty;
+  sku.available = sku.total - sku.locked;
+  recordData.deduct.unshift({
+    time: new Date().toISOString().slice(0, 19).replace('T', ' '),
+    warehouse: formatCanonicalWarehouseCode(line.warehouseId),
+    zone: `${line.zoneCode} (${line.zone})`,
+    sku: line.skuId,
+    qty: '-' + line.qty,
+    after: { total: sku.total, locked: sku.locked, available: sku.available },
+    type: 'Outbound Deduct',
+    order: line.outboundNo,
+    operator: 'Warehouse',
+    outboundNo: line.outboundNo,
+    relatedOrderNo: line.orderNo,
+    shipmentNo: line.shipmentNo,
+    status: 'Shipped'
+  });
+  return true;
+}
+
+function refreshAfterInventoryChange() {
+  renderSkuTable();
+  renderRecords();
+  if (document.getElementById('page-home').classList.contains('active')) renderHome();
+}
+
+function renderOutboundBatches() {
+  const body = document.getElementById('ob-batch-body');
+  if (!body) return;
+  const field = document.getElementById('ob-filter-field').value;
+  const keyword = (document.getElementById('ob-filter-keyword').value || '').trim().toLowerCase();
+  const scope = getWarehouseScope();
+  let rows = outboundBatches.filter(b => scope === 'all' || b.warehouseId === scope);
+  if (keyword) {
+    rows = rows.filter(b => {
+      const lines = outboundLines.filter(l => l.outboundNo === b.outboundNo);
+      const status = batchStatus(lines);
+      const hay = field === 'status' ? status : b.outboundNo;
+      return hay.toLowerCase().includes(keyword);
+    });
+  }
+  const hint = document.getElementById('ob-import-scope-hint');
+  if (hint) {
+    hint.textContent = scope === 'all'
+      ? 'Context is All. Choose a warehouse in the import dialog.'
+      : `Import uses ${getWarehouseScopeLabel()}.`;
+  }
+  body.innerHTML = rows.map(b => {
+    const lines = outboundLines.filter(l => l.outboundNo === b.outboundNo);
+    const orders = new Set(lines.map(l => l.orderNo)).size;
+    const skus = new Set(lines.map(l => l.skuId)).size;
+    const units = lines.reduce((s, l) => s + l.qty, 0);
+    return `<tr>
+      <td>${b.outboundNo}</td>
+      <td>${b.importedAt}</td>
+      <td><a class="btn-link" href="#" onclick="event.preventDefault();showToast('Download ${b.sourceFile}')">${b.sourceFile}</a></td>
+      <td>${b.warehouseCode}</td>
+      <td>${orders}</td>
+      <td>${skus}</td>
+      <td>${units}</td>
+      <td>${batchTag(batchStatus(lines))}</td>
+      <td><a class="btn-link" onclick="openOutboundDetail('${b.outboundNo}')">View</a></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="9" style="text-align:center;color:#999">No outbound batches</td></tr>';
+}
+
+function searchOutboundBatches() { renderOutboundBatches(); }
+function resetOutboundBatchFilters() {
+  document.getElementById('ob-filter-keyword').value = '';
+  renderOutboundBatches();
+}
+
+function openOutboundDetail(no) {
+  currentOutboundNo = no;
+  currentObTab = 'all';
+  navigateTo('outbound-detail');
+  renderOutboundDetail();
+}
+
+function renderOutboundDetail() {
+  const batch = outboundBatches.find(b => b.outboundNo === currentOutboundNo);
+  const lines = outboundLines.filter(l => l.outboundNo === currentOutboundNo);
+  document.getElementById('ob-detail-title').textContent = currentOutboundNo || 'Outbound Detail';
+  document.getElementById('ob-detail-sub').textContent = batch
+    ? `${batch.warehouseCode} · ${batchStatus(lines)} · ${lines.length} lines`
+    : '';
+  document.getElementById('ob-line-tabs').innerHTML = OB_TABS.map(tab => {
+    const count = tab === 'all' ? lines.length : lines.filter(l => l.status === tab).length;
+    const label = tab === 'all' ? 'All' : OB_STATUS[tab].label;
+    return `<div class="tab ${tab === currentObTab ? 'active' : ''}" onclick="setOutboundTab('${tab}')">${label} (${count})</div>`;
+  }).join('');
+  const visible = currentObTab === 'all' ? lines : lines.filter(l => l.status === currentObTab);
+  document.getElementById('ob-detail-actions').innerHTML = detailActions(currentObTab);
+  document.getElementById('ob-line-body').innerHTML = visible.map(l => `
+    <tr>
+      <td><input type="checkbox" class="ob-line-check" value="${l.id}"></td>
+      <td>${l.outboundNo}</td>
+      <td>${l.orderNo}</td>
+      <td>${l.orderTime}</td>
+      <td title="${l.skuId}">${l.productName}</td>
+      <td>${l.spec}</td>
+      <td>${l.qty}</td>
+      <td>${l.zoneCode}</td>
+      <td>${l.shipmentNo}</td>
+      <td>${l.trackingNo}</td>
+      <td>${lineTag(l.status)}</td>
+      <td>${lineAction(l)}</td>
+    </tr>
+  `).join('') || '<tr><td colspan="12" style="text-align:center;color:#999">No lines in this tab</td></tr>';
+}
+
+function setOutboundTab(tab) {
+  currentObTab = tab;
+  renderOutboundDetail();
+}
+
+function detailActions(tab) {
+  if (tab === 'allocated') {
+    return `<span></span><span>
+      <button class="btn" onclick="exportShippingOrder()">Export Shipping Order</button>
+      <button class="btn btn-primary" onclick="openImportTracking()">Import Tracking No.</button>
+    </span>`;
+  }
+  if (tab === 'ready_to_pick') {
+    return `<span></span><span>
+      <button class="btn" onclick="printPickList()">Print Pick List</button>
+      <button class="btn btn-primary" onclick="askAdvance('ready_to_pick','ready_to_pack','Confirm completing picking for the selected row(s)?')">Batch Complete Picking</button>
+    </span>`;
+  }
+  if (tab === 'ready_to_pack') return `<span></span><button class="btn btn-primary" onclick="askAdvance('ready_to_pack','ready_to_ship','Confirm completing packing for the selected row(s)?')">Batch Complete Packing</button>`;
+  if (tab === 'ready_to_ship') return `<span></span><button class="btn btn-primary" onclick="askConfirmShipment()">Batch Confirm Shipment</button>`;
+  if (tab === 'on_hold') return `<span></span><button class="btn btn-primary" onclick="reallocateSelected(false)">Batch Re-allocate</button>`;
+  return '';
+}
+
+function lineAction(l) {
+  if (l.status === 'allocated' || l.status === 'shipped') return `<a class="btn-link" onclick="viewOutboundLine('${l.id}')">View</a>`;
+  if (l.status === 'ready_to_pick') return `<a class="btn-link" onclick="askAdvance('ready_to_pick','ready_to_pack','Confirm completing picking for the selected row(s)?','${l.id}')">Complete Picking</a>`;
+  if (l.status === 'ready_to_pack') return `<a class="btn-link" onclick="askAdvance('ready_to_pack','ready_to_ship','Confirm completing packing for the selected row(s)?','${l.id}')">Complete Packing</a>`;
+  if (l.status === 'ready_to_ship') return `<a class="btn-link" onclick="askConfirmShipment('${l.id}')">Confirm Shipment</a>`;
+  if (l.status === 'on_hold') return `<a class="btn-link" onclick="reallocateLine('${l.id}')">Re-allocate</a>`;
+  return '';
+}
+
+function selectedLineIds() {
+  return [...document.querySelectorAll('.ob-line-check:checked, .ob-hold-check:checked')].map(el => el.value);
+}
+
+function toggleOutboundChecks(on) {
+  document.querySelectorAll('.ob-line-check').forEach(el => { el.checked = on; });
+}
+function toggleHoldChecks(on) {
+  document.querySelectorAll('.ob-hold-check').forEach(el => { el.checked = on; });
+}
+
+let outboundConfirmAction = null;
+
+function askOutboundConfirm(title, message, action) {
+  outboundConfirmAction = action;
+  document.getElementById('ob-confirm-title').textContent = title;
+  document.getElementById('ob-confirm-msg').textContent = message;
+  openModal('ob-confirm-modal');
+}
+
+function runOutboundConfirm() {
+  const action = outboundConfirmAction;
+  outboundConfirmAction = null;
+  closeModal('ob-confirm-modal');
+  if (action) action();
+}
+
+function askAdvance(from, to, message, onlyId) {
+  const ids = onlyId ? [onlyId] : selectedLineIds();
+  if (!ids.length) {
+    showToast('Select at least one line.', 'warning');
+    return;
+  }
+  askOutboundConfirm('Confirm', message, () => {
+    const moved = [];
+    outboundLines.filter(l => ids.includes(l.id) && l.status === from).forEach(l => {
+      l.status = to;
+      moved.push(l);
+    });
+    const label = OB_STATUS[to].label;
+    showToast(moved.length === 1
+      ? `${moved[0].orderNo} / ${moved[0].productName} moved to ${label}`
+      : `The data has been moved to ${label}`, 'success');
+    currentObTab = to;
+    renderOutboundDetail();
+  });
+}
+
+function printPickList() {
+  const ids = selectedLineIds();
+  const lines = outboundLines.filter(l => l.outboundNo === currentOutboundNo && l.status === 'ready_to_pick' && (!ids.length || ids.includes(l.id)));
+  if (!lines.length) {
+    showToast('No Ready to Pick lines to print.', 'warning');
+    return;
+  }
+  const batch = outboundBatches.find(b => b.outboundNo === currentOutboundNo);
+  document.getElementById('ob-picklist-body').innerHTML = `
+    <div class="ob-picklist" id="ob-picklist-print">
+      <p><strong>Pick List</strong> · ${currentOutboundNo} · ${batch ? batch.warehouseCode : ''}</p>
+      <p class="hint">Barcode on the pick list: EAN, then UPC, otherwise —. PAN is not shown here. Save or print as PDF from the browser dialog.</p>
+      <table>
+        <thead><tr><th>Order No.</th><th>SKU</th><th>Product</th><th>Qty</th><th>Zone</th><th>Barcode</th></tr></thead>
+        <tbody>${lines.map(l => `<tr>
+          <td>${l.orderNo}</td><td>${l.skuId}</td><td>${l.productName}</td>
+          <td>${l.qty}</td><td>${l.zoneCode}</td><td>${pickListBarcode(l.skuId)}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>`;
+  openModal('ob-picklist-modal');
+}
+
+function printPickListWindow() {
+  const html = document.getElementById('ob-picklist-print').innerHTML;
+  const w = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html><html><head><title>Pick List</title>
+    <style>body{font-family:Arial,sans-serif;padding:24px} table{width:100%;border-collapse:collapse} th,td{border:1px solid #ddd;padding:8px;text-align:left}</style>
+    </head><body>${html}</body></html>`);
+  w.document.close();
+  w.focus();
+  w.print();
+}
+
+function advanceSelected(from, to, label) {
+  const ids = selectedLineIds();
+  if (!ids.length) {
+    showToast('Select at least one line.', 'warning');
+    return;
+  }
+  outboundLines.filter(l => ids.includes(l.id) && l.status === from).forEach(l => { l.status = to; });
+  showToast(`Selected lines moved to ${label}`, 'success');
+  renderOutboundDetail();
+}
+
+function confirmShipment(id) {
+  const line = outboundLines.find(l => l.id === id);
+  if (!line || line.status !== 'ready_to_ship') return;
+  if (!deductSku(line)) {
+    showToast('Insufficient locked stock. Entire line failed.', 'error');
+    return;
+  }
+  line.status = 'shipped';
+  showToast(`${line.orderNo} / ${line.productName} moved to Shipped`, 'success');
+  refreshAfterInventoryChange();
+  renderOutboundDetail();
+}
+
+function askConfirmShipment(onlyId) {
+  const ids = onlyId ? [onlyId] : selectedLineIds();
+  if (!ids.length) {
+    showToast('Select at least one line.', 'warning');
+    return;
+  }
+  askOutboundConfirm('Confirm shipment', 'Courier has collected the parcel. Confirm shipment and deduct locked stock?', () => {
+    ids.forEach(confirmShipment);
+  });
+}
+
+function tryAllocate(line) {
+  const sku = storageSku(line.warehouseId, line.skuId);
+  if (!sku || sku.available < line.qty) {
+    line.status = 'on_hold';
+    line.zone = '—';
+    line.zoneCode = '—';
+    line.holdReason = 'Insufficient available inventory';
+    return false;
+  }
+  if (!occupySku(line.warehouseId, line.skuId, line.qty, line.outboundNo, line.orderNo)) {
+    line.status = 'on_hold';
+    line.holdReason = 'Insufficient available inventory';
+    return false;
+  }
+  line.status = 'allocated';
+  line.zone = 'Storage Zone';
+  line.zoneCode = formatCanonicalWarehouseCode(line.warehouseId) + 'STO';
+  line.holdReason = '';
+  return true;
+}
+
+function showAllocateResult(rows) {
+  document.getElementById('ob-result-body').innerHTML = rows.map(r => `
+    <p>${r.ok ? '✓' : '!'} ${r.orderNo} / ${r.productName}<br>
+    <span class="hint">${r.ok ? 'Success: Moved to Allocated.' : 'Failed: Insufficient stock; row remains On Hold.'}</span></p>
+  `).join('') || '<p>No rows.</p>';
+  openModal('ob-result-modal');
+}
+
+function reallocateLine(id) {
+  askOutboundConfirm('Re-allocate', 'Confirm retrying allocation for the selected row(s)?', () => {
+    const line = outboundLines.find(l => l.id === id);
+    if (!line) return;
+    const ok = tryAllocate(line);
+    refreshAfterInventoryChange();
+    if (document.getElementById('page-outbound-detail').classList.contains('active')) renderOutboundDetail();
+    renderOnHold();
+    showAllocateResult([{ ok, orderNo: line.orderNo, productName: line.productName }]);
+  });
+}
+
+function reallocateSelected(fromHoldPage) {
+  const ids = fromHoldPage
+    ? [...document.querySelectorAll('.ob-hold-check:checked')].map(el => el.value)
+    : selectedLineIds();
+  if (!ids.length) {
+    showToast('Select at least one line.', 'warning');
+    return;
+  }
+  askOutboundConfirm('Re-allocate', 'Confirm retrying allocation for the selected row(s)?', () => {
+    const rows = [];
+    ids.forEach(id => {
+      const line = outboundLines.find(l => l.id === id && l.status === 'on_hold');
+      if (!line) return;
+      const ok = tryAllocate(line);
+      rows.push({ ok, orderNo: line.orderNo, productName: line.productName });
+    });
+    refreshAfterInventoryChange();
+    renderOnHold();
+    if (document.getElementById('page-outbound-detail').classList.contains('active')) renderOutboundDetail();
+    showAllocateResult(rows);
+  });
+}
+
+function viewOutboundLine(id) {
+  const l = outboundLines.find(x => x.id === id);
+  if (!l) return;
+  document.getElementById('ob-line-detail').innerHTML = `
+    <div class="record-detail-grid">
+      <div class="label">SKU</div><div class="value">${l.skuId}</div>
+      <div class="label">Product</div><div class="value">${l.productName}</div>
+      <div class="label">Qty</div><div class="value">${l.qty}</div>
+      <div class="label">Warehouse</div><div class="value">${formatCanonicalWarehouseCode(l.warehouseId)}</div>
+      <div class="label">Zone</div><div class="value">${l.zoneCode} ${l.zone}</div>
+      <div class="label">Outbound No.</div><div class="value">${l.outboundNo}</div>
+      <div class="label">Order No.</div><div class="value">${l.orderNo}</div>
+      <div class="label">Shipment No.</div><div class="value">${l.shipmentNo}</div>
+      <div class="label">Tracking No.</div><div class="value">${l.trackingNo}</div>
+    </div>`;
+  openModal('ob-line-modal');
+}
+
+function exportShippingOrder() {
+  const lines = outboundLines.filter(l => l.outboundNo === currentOutboundNo && l.status === 'allocated');
+  document.getElementById('ob-export-count').textContent = `${lines.length} records.`;
+  openModal('ob-export-modal');
+}
+
+function confirmExportShippingOrder() {
+  const ext = document.getElementById('ob-export-format').value;
+  const batch = outboundBatches.find(b => b.outboundNo === currentOutboundNo);
+  const lines = outboundLines.filter(l => l.outboundNo === currentOutboundNo && l.status === 'allocated');
+  const header = 'Outbound No,Order No,SKU ID,Product Name,Qty,Warehouse,Zone,Tracking No';
+  const csv = [header].concat(lines.map(l =>
+    [l.outboundNo, l.orderNo, l.skuId, l.productName, l.qty, formatCanonicalWarehouseCode(l.warehouseId), l.zoneCode, ''].join(',')
+  )).join('\n');
+  const name = `ShippingOrder_${batch ? batch.warehouseCode : 'WH'}_${ymd()}.${ext === 'csv' ? 'csv' : 'csv'}`;
+  downloadTextFile(name, csv);
+  closeModal('ob-export-modal');
+  showToast(`Export successful. Fill Tracking No. and import it on Allocated. File: ${name}`, 'success');
+}
+
+function renderOnHold() {
+  const body = document.getElementById('ob-hold-body');
+  if (!body) return;
+  const scope = getWarehouseScope();
+  const rows = outboundLines.filter(l => l.status === 'on_hold' && (scope === 'all' || l.warehouseId === scope));
+  body.innerHTML = rows.map(l => `
+    <tr>
+      <td><input type="checkbox" class="ob-hold-check" value="${l.id}"></td>
+      <td><a class="btn-link" onclick="openOutboundDetail('${l.outboundNo}')">${l.outboundNo}</a></td>
+      <td>${l.orderNo}</td>
+      <td>${l.skuId}</td>
+      <td>${l.productName}</td>
+      <td>${l.qty}</td>
+      <td>${formatCanonicalWarehouseCode(l.warehouseId)}</td>
+      <td>${l.holdReason}</td>
+      <td><a class="btn-link" onclick="reallocateLine('${l.id}')">Re-allocate</a></td>
+    </tr>
+  `).join('') || '<tr><td colspan="9" style="text-align:center;color:#999">No on-hold lines</td></tr>';
+}
+
+function openImportOrders() {
+  const select = document.getElementById('ob-import-wh');
+  const scope = getWarehouseScope();
+  const list = scope === 'all' ? warehouses : warehouses.filter(w => w.id === scope);
+  select.innerHTML = list.map(w => `<option value="${w.id}">${formatCanonicalWarehouseCode(w.id)} — ${w.name}</option>`).join('');
+  document.getElementById('ob-import-wh-wrap').style.display = scope === 'all' ? '' : 'none';
+  obOrderCsv = '';
+  document.getElementById('ob-import-step-upload').hidden = false;
+  document.getElementById('ob-import-step-progress').hidden = true;
+  document.getElementById('ob-import-preview').hidden = true;
+  document.getElementById('ob-import-file-msg').textContent = '';
+  document.getElementById('ob-import-btn').disabled = true;
+  document.getElementById('ob-import-btn').textContent = 'Import';
+  document.getElementById('ob-import-btn').onclick = runImportOrders;
+  document.getElementById('ob-import-cancel').disabled = false;
+  openModal('ob-import-modal');
+}
+
+function fillSampleOrderCsv() {
+  obOrderCsv = [
+    'Order No,Order Time,Product ID,SKU ID,Product Name,Specification,Qty',
+    'SO-NEW-01,2026-08-21 10:00:00,PRD-10001,SKU-10001-BK,Wireless Bluetooth Earbuds Pro,Black; M,1',
+    'SO-NEW-02,2026-08-21 10:01:00,PRD-10004,SKU-10004-01,USB-C Flash Drive,128GB,3'
+  ].join('\n');
+  document.getElementById('ob-import-preview').hidden = false;
+  document.getElementById('ob-import-preview').textContent = obOrderCsv;
+  document.getElementById('ob-import-file-msg').textContent = 'Upload successful. 2 orders found. Ready to import.';
+  document.getElementById('ob-import-btn').disabled = false;
+}
+
+function onOutboundFilePicked(input, kind) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    if (kind === 'orders') {
+      obOrderCsv = String(reader.result || '');
+      document.getElementById('ob-import-preview').hidden = false;
+      document.getElementById('ob-import-preview').textContent = obOrderCsv.slice(0, 800);
+      const ok = obOrderCsv.includes('SKU ID');
+      document.getElementById('ob-import-btn').disabled = !ok;
+      document.getElementById('ob-import-file-msg').textContent = ok
+        ? 'Upload successful. Ready to import.'
+        : 'The imported file contains invalid fields. Please re-upload.';
+    } else {
+      obTrackCsv = String(reader.result || '');
+      document.getElementById('ob-track-preview').textContent = obTrackCsv.slice(0, 800);
+      document.getElementById('ob-track-btn').disabled = !obTrackCsv.includes('Tracking');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function parseCsv(text) {
+  const lines = text.trim().split(/\r?\n/).filter(Boolean);
+  if (lines.length < 2) return [];
+  const headers = lines[0].split(',').map(h => h.trim());
+  return lines.slice(1).map(row => {
+    const cols = row.split(',');
+    const obj = {};
+    headers.forEach((h, i) => { obj[h] = (cols[i] || '').trim(); });
+    return obj;
+  });
+}
+
+function runImportOrders() {
+  const rows = parseCsv(obOrderCsv);
+  if (!rows.length) {
+    showToast('No data rows.', 'error');
+    return;
+  }
+  document.getElementById('ob-import-step-upload').hidden = true;
+  document.getElementById('ob-import-preview').hidden = true;
+  document.getElementById('ob-import-step-progress').hidden = false;
+  document.getElementById('ob-import-btn').disabled = true;
+  document.getElementById('ob-import-btn').textContent = 'Importing';
+  document.getElementById('ob-import-cancel').disabled = true;
+  const wh = document.getElementById('ob-import-wh').value;
+  const outboundNo = nextDocNo('OB', wh);
+  let allocated = 0;
+  let held = 0;
+  let ignored = 0;
+  const seen = new Set();
+  rows.forEach(r => {
+    const key = `${r['Order No']}|${r['SKU ID']}`;
+    if (seen.has(key)) {
+      ignored += 1;
+      return;
+    }
+    seen.add(key);
+    const line = {
+      id: 'L' + Date.now() + Math.random().toString(16).slice(2, 6),
+      outboundNo,
+      orderNo: r['Order No'],
+      orderTime: r['Order Time'] || '',
+      skuId: r['SKU ID'],
+      productName: r['Product Name'] || r['SKU ID'],
+      spec: r.Specification || '—',
+      qty: parseInt(r.Qty, 10) || 0,
+      warehouseId: wh,
+      zone: '—',
+      zoneCode: '—',
+      shipmentNo: '—',
+      trackingNo: '—',
+      status: 'on_hold',
+      holdReason: ''
+    };
+    if (line.qty <= 0) return;
+    if (tryAllocate(line)) allocated += 1;
+    else held += 1;
+    outboundLines.push(line);
+  });
+  outboundBatches.unshift({
+    outboundNo,
+    importedAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+    sourceFile: 'import.csv',
+    warehouseId: wh,
+    warehouseCode: formatCanonicalWarehouseCode(wh)
+  });
+  let pct = 0;
+  const timer = setInterval(() => {
+    pct = Math.min(100, pct + 25);
+    document.getElementById('ob-import-bar').style.width = pct + '%';
+    document.getElementById('ob-import-progress-text').textContent =
+      `Processing ${pct}% · Allocated ${allocated} · On Hold ${held} · Ignore ${ignored}`;
+    if (pct < 100) return;
+    clearInterval(timer);
+    document.getElementById('ob-import-progress-title').textContent = 'Import successful';
+    document.getElementById('ob-import-btn').disabled = false;
+    document.getElementById('ob-import-btn').textContent = 'Confirm';
+    document.getElementById('ob-import-btn').onclick = () => {
+      closeModal('ob-import-modal');
+      document.getElementById('ob-import-btn').onclick = runImportOrders;
+      refreshAfterInventoryChange();
+      renderOutboundBatches();
+      openOutboundDetail(outboundNo);
+    };
+  }, 250);
+}
+
+function openImportTracking() {
+  obTrackCsv = '';
+  document.getElementById('ob-track-preview').textContent = '';
+  document.getElementById('ob-track-btn').disabled = true;
+  openModal('ob-track-modal');
+}
+
+function fillSampleTrackCsv() {
+  const lines = outboundLines.filter(l => l.outboundNo === currentOutboundNo && l.status === 'allocated');
+  obTrackCsv = 'Outbound No,Order No,SKU ID,Tracking No\n' + lines.map((l, i) => `${l.outboundNo},${l.orderNo},${l.skuId},TRK${ymd()}${String(i + 1).padStart(4, '0')}`).join('\n');
+  document.getElementById('ob-track-preview').textContent = obTrackCsv || 'No allocated lines';
+  document.getElementById('ob-track-btn').disabled = !lines.length;
+}
+
+function runImportTracking() {
+  const rows = parseCsv(obTrackCsv);
+  let matched = 0;
+  let failed = 0;
+  const shipmentByTracking = {};
+  rows.forEach(r => {
+    const line = outboundLines.find(l =>
+      l.status === 'allocated' &&
+      l.orderNo === r['Order No'] &&
+      l.skuId === r['SKU ID'] &&
+      (!r['Outbound No'] || l.outboundNo === r['Outbound No']) &&
+      (!currentOutboundNo || l.outboundNo === currentOutboundNo)
+    );
+    if (!line) {
+      failed += 1;
+      return;
+    }
+    const tracking = r['Tracking No'];
+    if (!shipmentByTracking[tracking]) shipmentByTracking[tracking] = nextDocNo('SHP', line.warehouseId);
+    line.trackingNo = tracking;
+    line.shipmentNo = shipmentByTracking[tracking];
+    line.status = 'ready_to_pick';
+    matched += 1;
+  });
+  closeModal('ob-track-modal');
+  showToast(failed ? `Matched ${matched}. Failed ${failed}: data mismatch` : `Matched ${matched}. Moved to Ready to Pick`, failed ? 'warning' : 'success');
+  currentObTab = 'ready_to_pick';
+  renderOutboundDetail();
+}
+
+seedOutbound();
+
+document.addEventListener('DOMContentLoaded', () => {
+  const orig = navigateTo;
+  navigateTo = function (pageId) {
+    orig(pageId);
+    if (pageId === 'outbound-orders') renderOutboundBatches();
+    if (pageId === 'outbound-onhold') renderOnHold();
+    if (pageId === 'outbound-detail') renderOutboundDetail();
+  };
+});
 
   </script>
 </body>
