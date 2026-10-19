@@ -32,6 +32,7 @@
 
 - Available 不落库；并发更新时对 SQL UPDATE 校验 `(total - locked) >= 需求量`（出库占用、扣减等见 §8.2）。
 - **空间模型（本期）**：库存粒度 = **仓库 × 库区（Zone）**；库位 Bin Location 五段模型预留，货架/层/列本期仅建档或不做。
+- **仓库编码**：`warehouse_code` 系统生成规则见 **§3.2.1**（例 `SH001`）；库区编码见 **§4.0 / §4.1**（例 `SH001STO`）。
 
 **库区分区（Zone）**：收货区 RCV、存储区 STO、待发货区 SHP 为建仓默认三区；另可建档 DMG/PKG/RTN/HLD/SPC 等（细则见 §4）。**对用户展示仅「库区类型 Zone + Zone Code」**，不设独立「库区名称 / Zone Name」字段（见 §4）。
 
@@ -43,15 +44,14 @@
 
 | 顺序 | 一级目录 | 说明 |
 |------|----------|------|
-| — | **Current warehouse**（侧栏顶部） | **只读展示**当前仓库上下文名称；Admin 提示「Switch on Dashboard」 |
-| 1 | Home | Dashboard |
+| — | **Warehouse**（侧栏顶部） | Admin：**下拉**切换 All/指定仓（仅 Home 页生效）；仓管：只读所属仓 |
+| 1 | Home | Dashboard（§7） |
 | 2 | Inventory | SPU/SKU inventory、Record |
-| 3 | **Purchase Order** | 采购单列表入口（位于 Inbound **之上**） |
-| 4 | Inbound | 入库单 |
-| 5 | Outbound | 出库单 |
-| 6 | **Warehouses** | **仅 Admin**：Warehouse Management、Zone Management |
+| 3 | Inbound | 入库单 |
+| 4 | Outbound | 出库单 |
+| 5 | **Warehouses** | **仅 Admin**（可标注 Admin）：Warehouse Management、Zone Management |
 
-Purchase Order 与 Dashboard Quick Link「采购单」跳转目标一致，不在 WMS 重复维护 PO 主数据。
+**Purchase Orders** 入口在 Dashboard **Quick Actions**，不作为侧栏一级目录。
 
 ---
 
@@ -64,9 +64,9 @@ Purchase Order 与 Dashboard Quick Link「采购单」跳转目标一致，不�
 
 ### 2.1 仓库上下文（全局数据范围）
 
-1. **切换入口唯一**：仅 **Dashboard 页头**提供「Warehouse context」选择器（Admin：All + 仓库列表；仓管无切换器）。
-2. **侧栏**：全角色展示 **Current warehouse**（All 时文案如「All warehouses」）；**不提供下拉切换**。Admin 附加提示：**Switch on Dashboard**。
-3. **性能**：切换仓库触发多聚合查询（库存、流水、Dashboard 指标），故**禁止**在 Inventory、Record、Zone 等业务列表页提供切换器。
+1. **切换入口**：Admin 在 **侧栏 Warehouse 下拉**选择 All / 指定仓；**仅当用户位于 Home（Dashboard）时**允许切换（非 Home 页操作则 Toast 并回退选择）。
+2. **侧栏展示**：仓管无下拉，只读展示所属仓名称；Admin 旁可展示 **Admin** 角色标识。
+3. **性能**：切换仓库触发多聚合查询，故**不在** Inventory、Record、Zone 等业务页提供切换器。
 4. **筛选 UI 联动**：当上下文为**指定仓库**时，Inventory、Record、Zone Management 等页 **隐藏 Warehouse 筛选**；接口仍强制注入 `warehouse_code`（及用户 id），忽略前端越权参数。
 5. **切换限制（建议）**：存在未关闭弹窗时禁止切换；可选频控（如每分钟 3 次）；失败保持原上下文并 Toast。
 
@@ -294,50 +294,97 @@ Purchase Order 与 Dashboard Quick Link「采购单」跳转目标一致，不�
 
 侧栏：Home。**管理员、仓库管理员**均可访问。
 
-**页面定位**：只读总览；不在此页写账。口径：**实物 = 锁定 + 未锁定**。
+**页面定位**：只读总览；不在此页写账。口径：**实物 = 锁定 + 未锁定**。  
+**页面结构（自上而下，与原型一致）**：
+
+1. 页头：标题 Dashboard + 副标题 *Warehouse inventory overview and recent activity*
+2. **关键指标卡片**（一行 6 张）
+3. **Quick Actions**（一行 3 张任务卡）
+4. **Warehouse Setup (Admin Only)**（一行 2 张，仅 Admin）
+5. **Today's Operations**（全宽表格 = 当前上下文下的**库存流水摘要**）
 
 ### 7.0 仓库上下文选择器（全局联动）
 
 | 角色 | 位置 | 可选值 | 切换后 |
 |------|------|--------|--------|
-| Admin | **Dashboard 页头** Warehouse context | All、各仓库 | 刷新本页指标；更新**全局上下文**（侧栏名称、各模块默认范围） |
-| 仓管 | 无 | 固定所属仓 | 侧栏只读展示所属仓 |
+| Admin | **侧栏 Warehouse 下拉**（在 Home 页可操作） | All、各仓库 | 刷新 Dashboard 六项 KPI、今日作业表；更新**全局上下文**（各模块默认范围） |
+| 仓管 | 侧栏只读文案 | 固定所属仓 | — |
 
-- 侧栏 **Current warehouse** 仅展示，不可切换。
-- 切换触发多聚合查询，故**仅允许在 Dashboard 切换**（§2.1）。
-- 卡片与列表数据均受当前上下文约束；选 All 为全系统汇总，选单仓为该仓汇总。
+- 非 Home 页禁止切换上下文（§2.1）。
+- 选 **All** 时指标为全系统汇总；选**指定仓**时仅统计该 `warehouse_code`（展示用 canonical 码，如 `SH001`）。
 
 ### 7.1 关键指标卡片
 
-六项只读：**Total Inventory**、**Pending Inbound**、**Pending Allocation**、**Pending Picking**、**Pending Packing**、**Shipped Today**。
+**布局**：单行 **6** 张只读卡片，顺序固定：
 
-- Total Inventory = 当前视图 Σ total。
-- Pending / Shipped 指标来自入出库模块聚合；首页不改状态。
-- 点击卡片跳转对应模块并带入**当前仓库**筛选（与 §2.1 一致）。
-- Total Inventory → Inventory → SPU/SKU，**默认 SKU Tab**。
-- 非实时推送；进入页、**切换仓库**、返回 Home 时刷新。失败 Toast：`Failed to load dashboard metrics.`
+| # | 中文 | 英文 | 单位/说明 |
+|---|------|------|-----------|
+| 1 | 总库存 | Total Inventory | 件数；当前视图 Σ `total` |
+| 2 | 待入库 | Pending Inbound | **vehicles**（待收货/待上架任务数） |
+| 3 | 待分配 | Pending Allocation | orders |
+| 4 | 待拣货 | Pending Picking | orders |
+| 5 | 待打包 | Pending Packing | orders |
+| 6 | 今日已发货 | Shipped Today | orders（当日已完成发运） |
 
-### 7.2 快捷入口（Quick Links）
+- Pending / Shipped 来自入出库模块聚合；Dashboard **不改单据状态**。
+- **点击跳转**（带入当前仓库上下文）：
 
-**通用（全角色）**：Purchase Orders、Inbound、Outbound（与侧栏 **Purchase Order** 目标一致）。
+| 卡片 | 跳转 |
+|------|------|
+| Total Inventory | Inventory → SPU/SKU Inventory（**默认 SKU Tab**） |
+| Pending Inbound | Inbound（状态=待处理） |
+| Pending Allocation / Picking / Packing / Shipped Today | Outbound（对应状态筛选） |
 
-**Warehouse Setup (Admin Only)**（仅 Admin）：Warehouse Management、Zone Management。若 Dashboard 已选指定仓，进入 Zone Management 时**锁定 warehouse_code**。
+- 进入 Home、**切换仓库**、从其他页返回 Home 时刷新；无数据展示 `0`。失败 Toast：`Failed to load dashboard metrics.`
 
-仓管不展示 Warehouse Setup 区块。
+### 7.2 Quick Actions（主任务入口）
 
-### 7.3 今日作业（Today's Operations）
+**区块标题**：Quick Actions。一行 **3** 张大卡片（图标 + 文案 + 右箭头）：
 
-来源于库存流水；默认当日、最近 20 条。View All → Record → **All**，时间=今日，仓库=当前上下文。
+| 中文 | 英文 | 跳转 |
+|------|------|------|
+| 采购单 | Purchase Orders | 采购单列表 |
+| 入库 | Inbound | 入库单列表 |
+| 出库 | Outbound | 出库单列表 |
 
-类型与 Record 同口径（含 Purchase Inbound、Manual Adjustment ±、Outbound Occupy/Deduct）。打包/发运不出现。
+### 7.3 Warehouse Setup (Admin Only)
 
-### 7.4 仓库库存概况（Warehouse Inventory Breakdown）
+**仅 Admin 可见**；区块标题旁红色标签 **Admin Only**。一行 **2** 张紫色强调卡片：
 
-- 选 **指定仓库**时展示库区分布表（Zone、Total、Locked、Available）及 Locked/Available 比例条。
-- 选 **All** 时提示：`Select a warehouse to view breakdown.`
-- 点击汇总或库区行 → Inventory，带入当前仓（及库区）。
+| 中文 | 英文 | 跳转 |
+|------|------|------|
+| 仓库管理 | Warehouse Management | 仓库列表 |
+| 库区管理 | Zone Management | 库区列表（若上下文为指定仓，**锁定** `warehouse_code` 筛选） |
 
-### 7.5 数据一致性与权限
+仓管不展示本区块；URL 直链仓库管理页不可操作（Admin only）。
+
+### 7.4 Today's Operations（今日作业 / 流水表）
+
+**区块标题**：Today's Operations。内容为 **库存流水**在当前仓库上下文下的摘要（与 Record **同口径、同字段语义**，非独立数据源）。
+
+**表格列**（与 Record 列表对齐，本期首页不展示「变更后库存」列以节省空间）：
+
+| 列 | 说明 |
+|----|------|
+| Time | 当日流水，精确到秒（首页可仅展示时分秒） |
+| Type | 类型着色：入库绿、出库扣减红、占用橙等 |
+| Warehouse | `warehouse_code`（如 SH001） |
+| Zone | `zone_code`（如 SH001STO） |
+| SKU | SKU ID |
+| Qty | 正数绿色 `+200`，负数红色 `-25` |
+| Order No. | 关联单号（文本） |
+| Operator | 用户名或 System |
+
+- **默认**：当日 00:00:00 – 当前时间，最多 **20** 条，按时间倒序。
+- **View All →**：Record → **All** Tab，时间=今日，仓库=当前上下文。
+- **类型**：Purchase Inbound、Manual Inbound、Outbound Occupy、Outbound Deduct、Manual Adjustment（±）等；**不含**打包/发运类无流水事件。
+- **空态**：`No operations today.` / 单仓无数据：`No operations for this warehouse today.`
+
+### 7.5 仓库库存概况（可选扩展）
+
+本期 **主 Dashboard 不含**库区分布表；若产品后续在 Home 增加「Warehouse Inventory Breakdown」模块，规则如下：仅当选定单仓时展示 Zone 维度 Total/Locked/Available 及占比条；选 All 时文案 `Select a warehouse to view breakdown.` 点击行跳转 Inventory 并带入仓+库区筛选。
+
+### 7.6 数据一致性与权限
 
 - 所有查询接口强制注入**登录用户 id**，忽略前端伪造用户 id。
 - Total Inventory 与 Inventory 同范围 total 之和一致；Today's Operations 与 Record 同条件子集；Breakdown 与按库区聚合一致。
@@ -382,7 +429,7 @@ Purchase Order 与 Dashboard Quick Link「采购单」跳转目标一致，不�
 | 项 | PRD（本文） | 当前 HTML 原型（演示） |
 |----|-------------|------------------------|
 | 库存调整权限 | Admin + 仓管所属仓 | 演示开关为 Admin only |
-| Dashboard 六项 Pending KPI | 全文要求 | 部分 KPI 简化，待迭代 |
+| Dashboard 布局 | §7：6 KPI + Quick Actions + Admin Setup + Today's Operations 流水表 | 与 Axure/截图一致；Pending 指标原型为演示聚合数 |
 | Warehouse / Zone Code | PRD：`SH001`、`SH001STO`（无连字符） | HTML 原型演示数据仍用 `SH-001`、`SH-001-STO`，实现须按 §3.2.1 / §4.1 归一 |
 | Record Tab 顺序 | All 首位 | 一致 |
 | Opening 子筛 | 不单独 Opening | 一致 |

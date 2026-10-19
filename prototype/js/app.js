@@ -175,27 +175,44 @@ function isDashboardPageActive() {
   return document.getElementById('page-home')?.classList.contains('active');
 }
 
+function formatCanonicalWarehouseCode(id) {
+  if (!id) return id;
+  return String(normalizeWarehouseId(id)).replace(/-/g, '');
+}
+
+function formatDashboardZone(zone) {
+  if (!zone) return zone;
+  const codePart = zone.split(' ')[0];
+  return codePart.replace(/-/g, '');
+}
+
 function syncDashboardWarehouseSelect() {
-  const select = document.getElementById('dashboard-wh-select');
+  const select = document.getElementById('sidebar-wh-select');
   if (!select || !isAdminUser()) return;
   const scope = getWarehouseScope();
-  select.innerHTML = '<option value="all">All</option>' +
+  select.innerHTML = '<option value="all">All warehouses</option>' +
     warehouses.map(w => `<option value="${w.id}">${w.name}</option>`).join('');
   select.value = scope === 'all' ? 'all' : scope;
 }
 
 function updateSidebarWarehouseDisplay() {
+  const select = document.getElementById('sidebar-wh-select');
   const display = document.getElementById('sidebar-wh-display');
-  const hint = document.getElementById('sidebar-wh-hint');
-  if (display) display.textContent = getWarehouseScopeLabel();
-  if (hint) {
-    hint.textContent = isAdminUser() ? 'Switch on Dashboard' : 'Assigned warehouse';
-    hint.style.display = isAdminUser() ? '' : 'none';
+  if (isAdminUser()) {
+    if (select) select.hidden = false;
+    if (display) display.hidden = true;
+    syncDashboardWarehouseSelect();
+  } else {
+    if (select) select.hidden = true;
+    if (display) {
+      display.hidden = false;
+      display.textContent = getWarehouseScopeLabel();
+    }
   }
 }
 
 function revertDashboardWarehouseSelect() {
-  const select = document.getElementById('dashboard-wh-select');
+  const select = document.getElementById('sidebar-wh-select');
   const prev = getWarehouseScope();
   if (select) select.value = prev === 'all' ? 'all' : prev;
 }
@@ -206,7 +223,7 @@ function onDashboardWarehouseChange(value) {
   if (value === prev || (value === 'all' && prev === 'all')) return;
 
   if (!isDashboardPageActive()) {
-    showToast('Warehouse context can only be changed on the Dashboard.', 'warning');
+    showToast('Return to Dashboard (Home) before switching warehouse context.', 'warning');
     revertDashboardWarehouseSelect();
     return;
   }
@@ -374,7 +391,6 @@ function initNavigation() {
   document.querySelectorAll('.nav-item.parent').forEach(item => {
     item.addEventListener('click', (e) => {
       const group = item.dataset.group;
-      if (group === 'purchase-order') navigateTo('purchase-order');
       if (group === 'inbound') navigateTo('inbound');
       if (group === 'outbound') navigateTo('outbound');
     });
@@ -395,95 +411,136 @@ function navigateTo(pageId) {
 }
 
 // ========== Home / Dashboard ==========
+const DASHBOARD_PENDING_DEMO = {
+  inbound: 3,
+  allocation: 12,
+  picking: 8,
+  packing: 5,
+  shipped: 156
+};
+
+function getDashboardPendingMetrics(scopedWh) {
+  const factor = getWarehouseScope() === 'all' ? 1 : (scopedWh.length === 1 ? 0.35 : 1);
+  const f = (n) => Math.max(0, Math.round(n * factor));
+  return {
+    inbound: f(DASHBOARD_PENDING_DEMO.inbound),
+    allocation: f(DASHBOARD_PENDING_DEMO.allocation),
+    picking: f(DASHBOARD_PENDING_DEMO.picking),
+    packing: f(DASHBOARD_PENDING_DEMO.packing),
+    shipped: f(DASHBOARD_PENDING_DEMO.shipped)
+  };
+}
+
+function navigateToRecordToday() {
+  currentRecordTab = 'all';
+  document.querySelectorAll('#record-tabs .tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.recordTab === 'all');
+  });
+  updateRecordSubTabs();
+  navigateTo('record');
+  renderRecords();
+}
+
 function renderHome() {
-  syncDashboardWarehouseSelect();
   updateSidebarWarehouseDisplay();
   const scopedWh = warehousesInScope(warehouses);
   const totalStock = scopedWh.reduce((s, w) => s + w.total, 0);
-  const totalLocked = scopedWh.reduce((s, w) => s + w.locked, 0);
-  const totalAvailable = scopedWh.reduce((s, w) => s + w.available, 0);
-  const activeWarehouses = scopedWh.filter(w => w.status === 'enable').length;
-  const whCountLabel = getWarehouseScope() === 'all' ? scopedWh.length : 1;
+  const pending = getDashboardPendingMetrics(scopedWh);
 
   document.getElementById('dashboard-kpi').innerHTML = `
-    <div class="kpi-card total">
+    <div class="kpi-card kpi-total" onclick="navigateTo('spu-sku-inventory')" title="Go to Inventory">
       <span class="kpi-label">Total Inventory</span>
       <span class="kpi-value">${totalStock.toLocaleString()}</span>
-      <span class="kpi-sub">Across ${whCountLabel} warehouse${whCountLabel === 1 ? '' : 's'}</span>
     </div>
-    <div class="kpi-card locked">
-      <span class="kpi-label">Locked Inventory</span>
-      <span class="kpi-value">${totalLocked.toLocaleString()}</span>
-      <span class="kpi-sub">Reserved for outbound orders</span>
+    <div class="kpi-card kpi-pending-inbound" onclick="navigateTo('inbound')">
+      <span class="kpi-label">Pending Inbound</span>
+      <span class="kpi-value">${pending.inbound}</span>
+      <span class="kpi-sub">vehicles</span>
     </div>
-    <div class="kpi-card available">
-      <span class="kpi-label">Available Inventory</span>
-      <span class="kpi-value">${totalAvailable.toLocaleString()}</span>
-      <span class="kpi-sub">Total − Locked (real-time)</span>
+    <div class="kpi-card kpi-allocation" onclick="navigateTo('outbound')">
+      <span class="kpi-label">Pending Allocation</span>
+      <span class="kpi-value">${pending.allocation}</span>
+      <span class="kpi-sub">orders</span>
     </div>
-    <div class="kpi-card warehouses">
-      <span class="kpi-label">Active Warehouses</span>
-      <span class="kpi-value">${activeWarehouses}</span>
-      <span class="kpi-sub">${scopedWh.length} in current context</span>
+    <div class="kpi-card kpi-picking" onclick="navigateTo('outbound')">
+      <span class="kpi-label">Pending Picking</span>
+      <span class="kpi-value">${pending.picking}</span>
+      <span class="kpi-sub">orders</span>
+    </div>
+    <div class="kpi-card kpi-packing" onclick="navigateTo('outbound')">
+      <span class="kpi-label">Pending Packing</span>
+      <span class="kpi-value">${pending.packing}</span>
+      <span class="kpi-sub">orders</span>
+    </div>
+    <div class="kpi-card kpi-shipped" onclick="navigateTo('outbound')">
+      <span class="kpi-label">Shipped Today</span>
+      <span class="kpi-value">${pending.shipped}</span>
+      <span class="kpi-sub">orders</span>
     </div>
   `;
 
-  const whTableTarget = isAdminUser() ? 'warehouse-management' : 'spu-sku-inventory';
-  const whViewAll = document.getElementById('dashboard-wh-view-all');
-  if (whViewAll) {
-    whViewAll.onclick = () => navigateTo(whTableTarget);
-    whViewAll.style.display = isAdminUser() ? '' : 'none';
-  }
-  document.getElementById('dashboard-warehouse-table').innerHTML = scopedWh
-    .filter(w => w.total > 0)
-    .map(w => `
-      <tr onclick="navigateTo('${whTableTarget}')" style="cursor:pointer">
-        <td><strong>${w.id}</strong><br><span style="color:#999;font-size:11px">${w.name}</span></td>
-        <td>${getStatusTag(w.status)}</td>
-        <td>${w.total.toLocaleString()}</td>
-        <td>${w.locked.toLocaleString()}</td>
-        <td>${w.available.toLocaleString()}</td>
-      </tr>
-    `).join('') || '<tr><td colspan="5" style="text-align:center;color:#999">No inventory data</td></tr>';
+  document.getElementById('dashboard-main-tasks').innerHTML = [
+    { page: 'purchase-order', title: 'Purchase Orders', icon: 'task-icon-po' },
+    { page: 'inbound', title: 'Inbound', icon: 'task-icon-in' },
+    { page: 'outbound', title: 'Outbound', icon: 'task-icon-out' }
+  ].map(t => `
+    <button type="button" class="dashboard-task-card" onclick="navigateTo('${t.page}')">
+      <span class="dashboard-task-icon ${t.icon}" aria-hidden="true"></span>
+      <span class="dashboard-task-title">${t.title}</span>
+      <span class="dashboard-task-arrow" aria-hidden="true">→</span>
+    </button>
+  `).join('');
+
+  document.getElementById('dashboard-admin-tasks').innerHTML = [
+    { page: 'warehouse-management', title: 'Warehouse Management', icon: 'task-icon-wh' },
+    { page: 'zone-management', title: 'Zone Management', icon: 'task-icon-zone' }
+  ].map(t => `
+    <button type="button" class="dashboard-admin-card" onclick="navigateTo('${t.page}')">
+      <span class="dashboard-task-icon ${t.icon}" aria-hidden="true"></span>
+      <span class="dashboard-task-title">${t.title}</span>
+      <span class="dashboard-task-arrow" aria-hidden="true">→</span>
+    </button>
+  `).join('');
 
   const allRecords = [
     ...recordData.inbound,
+    ...recordData.manual,
     ...recordData.occupy,
-    ...recordData.deduct,
-    ...recordData.unfreeze
+    ...recordData.deduct
   ].filter(r => rowInWarehouseScope(recordWarehouseId(r)))
-    .sort((a, b) => b.time.localeCompare(a.time)).slice(0, 6);
+    .sort((a, b) => b.time.localeCompare(a.time))
+    .slice(0, 20);
 
   const typeClass = {
-    'Purchase Inbound': 'type-inbound', 'Manual Adjustment': 'type-inbound',
-    'Outbound Occupy': 'type-occupy', 'Outbound Deduct': 'type-deduct', 'Unfreeze': 'type-unfreeze'
+    'Purchase Inbound': 'type-inbound',
+    'Manual Inbound': 'type-inbound',
+    'Manual Adjustment': 'type-manual',
+    'Manual Adjustment (Decrease)': 'type-manual',
+    'Outbound Occupy': 'type-occupy',
+    'Outbound Deduct': 'type-deduct'
   };
 
-  document.getElementById('dashboard-activity-table').innerHTML = allRecords.map(r => `
-    <tr onclick="navigateTo('record')" style="cursor:pointer">
-      <td>${r.time.split(' ')[0]}<br><span style="color:#999;font-size:11px">${r.time.split(' ')[1]}</span></td>
-      <td class="${typeClass[r.type] || ''}">${r.type}</td>
-      <td>${r.sku}</td>
-      <td style="font-weight:500">${r.qty}</td>
-      <td>${r.order}</td>
-    </tr>
-  `).join('');
-
-  const quickLinks = [
-    { page: 'warehouse-management', icon: '🏭', title: 'Warehouses', desc: 'Manage warehouse master data', adminOnly: true },
-    { page: 'zone-management', icon: '📦', title: 'Zones', desc: 'Configure storage zones', adminOnly: true },
-    { page: 'purchase-order', icon: '📝', title: 'Purchase Order', desc: 'Create and track purchase orders' },
-    { page: 'spu-sku-inventory', icon: '📊', title: 'Inventory', desc: 'View SPU/SKU stock levels' },
-    { page: 'record', icon: '📋', title: 'Records', desc: 'Track inventory transactions' }
-  ].filter(q => !q.adminOnly || isAdminUser());
-
-  document.getElementById('dashboard-quick-access').innerHTML = quickLinks.map(q => `
-    <div class="quick-card" onclick="navigateTo('${q.page}')">
-      <span class="quick-icon">${q.icon}</span>
-      <span class="quick-title">${q.title}</span>
-      <span class="quick-desc">${q.desc}</span>
-    </div>
-  `).join('');
+  const tbody = document.getElementById('dashboard-activity-table');
+  if (!allRecords.length) {
+    tbody.innerHTML = '<tr><td colspan="8" class="dashboard-empty">No operations today.</td></tr>';
+  } else {
+    tbody.innerHTML = allRecords.map(r => {
+      const qtyClass = r.qty.startsWith('+') ? 'qty-up' : r.qty.startsWith('-') ? 'qty-down' : '';
+      const timeParts = r.time.split(' ');
+      return `
+      <tr class="dashboard-ops-row" onclick="navigateTo('record')" title="View in Record">
+        <td>${timeParts[1] || r.time}</td>
+        <td class="${typeClass[r.type] || ''}">${r.type}</td>
+        <td>${formatCanonicalWarehouseCode(r.warehouse)}</td>
+        <td>${formatDashboardZone(r.zone)}</td>
+        <td>${r.sku}</td>
+        <td class="${qtyClass}">${r.qty}</td>
+        <td>${r.order}</td>
+        <td>${r.operator}</td>
+      </tr>
+    `;
+    }).join('');
+  }
 }
 
 function navigateToZones(warehouseId) {

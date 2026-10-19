@@ -27,9 +27,12 @@
       <!-- Sidebar -->
       <nav class="sidebar" id="sidebar">
         <div class="sidebar-context" id="sidebar-wh-context">
-          <span class="sidebar-context-label">Current warehouse</span>
-          <div id="sidebar-wh-display" class="sidebar-wh-static">—</div>
-          <span class="sidebar-context-hint" id="sidebar-wh-hint">Switch on Dashboard</span>
+          <div class="sidebar-context-top">
+            <span class="sidebar-context-label">Warehouse</span>
+            <span class="sidebar-role-badge admin-only-action" id="sidebar-role-badge">Admin</span>
+          </div>
+          <select id="sidebar-wh-select" class="sidebar-wh-select admin-only-action" onchange="onDashboardWarehouseChange(this.value)" aria-label="Warehouse context"></select>
+          <div id="sidebar-wh-display" class="sidebar-wh-static" hidden>—</div>
         </div>
 
         <div class="nav-item active" data-page="home">
@@ -43,10 +46,6 @@
         <div class="nav-item sub" data-page="spu-sku-inventory">SPU/SKU inventory</div>
         <div class="nav-item sub" data-page="record">Record</div>
 
-        <div class="nav-item parent" data-page="purchase-order" data-group="purchase-order">
-          <span>Purchase Order</span>
-        </div>
-
         <div class="nav-item parent" data-group="inbound">
           <span>Inbound</span>
         </div>
@@ -57,6 +56,7 @@
 
         <div class="nav-item parent nav-warehouses-group" data-group="warehouses">
           <span>Warehouses</span>
+          <span class="nav-admin-tag">Admin</span>
           <span class="chevron">▼</span>
         </div>
         <div class="nav-item sub nav-warehouses-group" data-page="warehouse-management">Warehouse Management</div>
@@ -67,69 +67,48 @@
       <main class="content">
         <!-- ========== HOME / DASHBOARD ========== -->
         <div class="page active" id="page-home">
-          <div class="page-header dashboard-page-header">
-            <div class="dashboard-page-header-text">
-              <h1 class="page-title">Dashboard</h1>
-              <p class="page-subtitle">Warehouse inventory overview and recent activity</p>
-            </div>
-            <div class="dashboard-wh-switcher admin-only-action" id="dashboard-wh-switcher-wrap">
-              <label for="dashboard-wh-select">Warehouse context</label>
-              <select id="dashboard-wh-select" class="dashboard-wh-select" onchange="onDashboardWarehouseChange(this.value)" aria-label="Warehouse context on dashboard"></select>
-              <span class="dashboard-wh-switcher-hint">Context can only be changed here (reloads scoped data).</span>
-            </div>
+          <div class="page-header">
+            <h1 class="page-title">Dashboard</h1>
+            <p class="page-subtitle">Warehouse inventory overview and recent activity</p>
           </div>
           <div class="page-body dashboard-body">
-            <div class="dashboard-kpi-row" id="dashboard-kpi"></div>
+            <div class="dashboard-kpi-row dashboard-kpi-row-6" id="dashboard-kpi"></div>
 
-            <div class="dashboard-grid">
-              <div class="dashboard-panel">
-                <div class="panel-header">
-                  <h3>Warehouse Inventory</h3>
-                  <a class="btn-link" id="dashboard-wh-view-all" onclick="navigateTo('warehouse-management')">View All →</a>
-                </div>
-                <div class="table-wrapper dashboard-table">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Warehouse</th>
-                        <th>Status</th>
-                        <th>Total</th>
-                        <th>Locked</th>
-                        <th>Available</th>
-                      </tr>
-                    </thead>
-                    <tbody id="dashboard-warehouse-table"></tbody>
-                  </table>
-                </div>
-              </div>
-
-              <div class="dashboard-panel">
-                <div class="panel-header">
-                  <h3>Recent Activity</h3>
-                  <a class="btn-link" onclick="navigateTo('record')">View All →</a>
-                </div>
-                <div class="table-wrapper dashboard-table">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Time</th>
-                        <th>Type</th>
-                        <th>SKU</th>
-                        <th>Qty</th>
-                        <th>Order</th>
-                      </tr>
-                    </thead>
-                    <tbody id="dashboard-activity-table"></tbody>
-                  </table>
-                </div>
-              </div>
+            <div class="dashboard-section">
+              <h3 class="dashboard-section-title">Quick Actions</h3>
+              <div class="dashboard-task-row" id="dashboard-main-tasks"></div>
             </div>
 
-            <div class="dashboard-panel">
-              <div class="panel-header">
-                <h3>Quick Access</h3>
+            <div class="dashboard-section admin-only-action" id="dashboard-admin-setup">
+              <div class="dashboard-section-title-row">
+                <h3 class="dashboard-section-title">Warehouse Setup</h3>
+                <span class="dashboard-admin-pill">Admin Only</span>
               </div>
-              <div class="quick-access-grid" id="dashboard-quick-access"></div>
+              <div class="dashboard-admin-row" id="dashboard-admin-tasks"></div>
+            </div>
+
+            <div class="dashboard-panel dashboard-ops-panel">
+              <div class="panel-header">
+                <h3>Today&apos;s Operations</h3>
+                <a class="btn-link" onclick="navigateToRecordToday()">View All →</a>
+              </div>
+              <div class="table-wrapper dashboard-table dashboard-ops-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Time</th>
+                      <th>Type</th>
+                      <th>Warehouse</th>
+                      <th>Zone</th>
+                      <th>SKU</th>
+                      <th>Qty</th>
+                      <th>Order No.</th>
+                      <th>Operator</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dashboard-activity-table"></tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
