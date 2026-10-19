@@ -392,7 +392,7 @@ function initNavigation() {
     item.addEventListener('click', (e) => {
       const group = item.dataset.group;
       if (group === 'inbound') navigateTo('inbound');
-      if (group === 'outbound') navigateTo('outbound');
+      if (group === 'outbound') navigateTo('outbound-orders');
     });
   });
 }
@@ -457,22 +457,22 @@ function renderHome() {
       <span class="kpi-value">${pending.inbound}</span>
       <span class="kpi-sub">vehicles</span>
     </div>
-    <div class="kpi-card kpi-allocation" onclick="navigateTo('outbound')">
+    <div class="kpi-card kpi-allocation" onclick="navigateTo('outbound-orders')">
       <span class="kpi-label">Pending Allocation</span>
       <span class="kpi-value">${pending.allocation}</span>
       <span class="kpi-sub">orders</span>
     </div>
-    <div class="kpi-card kpi-picking" onclick="navigateTo('outbound')">
+    <div class="kpi-card kpi-picking" onclick="navigateTo('outbound-orders')">
       <span class="kpi-label">Pending Picking</span>
       <span class="kpi-value">${pending.picking}</span>
       <span class="kpi-sub">orders</span>
     </div>
-    <div class="kpi-card kpi-packing" onclick="navigateTo('outbound')">
+    <div class="kpi-card kpi-packing" onclick="navigateTo('outbound-orders')">
       <span class="kpi-label">Pending Packing</span>
       <span class="kpi-value">${pending.packing}</span>
       <span class="kpi-sub">orders</span>
     </div>
-    <div class="kpi-card kpi-shipped" onclick="navigateTo('outbound')">
+    <div class="kpi-card kpi-shipped" onclick="navigateTo('outbound-orders')">
       <span class="kpi-label">Shipped Today</span>
       <span class="kpi-value">${pending.shipped}</span>
       <span class="kpi-sub">orders</span>
@@ -482,7 +482,7 @@ function renderHome() {
   document.getElementById('dashboard-main-tasks').innerHTML = [
     { page: 'purchase-order', title: 'Purchase Orders', icon: 'task-icon-po' },
     { page: 'inbound', title: 'Inbound', icon: 'task-icon-in' },
-    { page: 'outbound', title: 'Outbound', icon: 'task-icon-out' }
+    { page: 'outbound-orders', title: 'Outbound', icon: 'task-icon-out' }
   ].map(t => `
     <button type="button" class="dashboard-task-card" onclick="navigateTo('${t.page}')">
       <span class="dashboard-task-icon ${t.icon}" aria-hidden="true"></span>

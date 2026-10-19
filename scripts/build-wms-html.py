@@ -6,12 +6,12 @@ ROOT = Path(__file__).resolve().parents[1]
 proto = ROOT / "prototype"
 html = (proto / "index.html").read_text(encoding="utf-8")
 css = (proto / "css" / "styles.css").read_text(encoding="utf-8")
-js = (proto / "js" / "app.js").read_text(encoding="utf-8")
+js = (proto / "js" / "app.js").read_text(encoding="utf-8") + "\n" + (proto / "js" / "outbound.js").read_text(encoding="utf-8")
 out = html.replace(
     '  <link rel="stylesheet" href="css/styles.css">\n',
     f"  <style>\n{css}\n  </style>\n",
 ).replace(
-    '  <script src="js/app.js"></script>\n',
+    '  <script src="js/app.js"></script>\n  <script src="js/outbound.js"></script>\n',
     f"  <script>\n{js}\n  </script>\n",
 )
 out = out.replace("<title>KickBazar WMS - Prototype</title>", "<title>KickBazar WMS</title>")

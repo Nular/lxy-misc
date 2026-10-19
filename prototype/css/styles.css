@@ -1193,6 +1193,17 @@ tbody tr.selected {
   background: #fafafa;
 }
 
+.ob-preview {
+  margin-top: 12px;
+  max-height: 160px;
+  overflow: auto;
+  background: #fafafa;
+  border: 1px solid var(--border-color);
+  padding: 8px;
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
 .kpi-card {
   background: #fff;
   border: 1px solid var(--border-color);

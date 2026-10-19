@@ -48,7 +48,7 @@
 | 1 | Home | Dashboard（§7） |
 | 2 | Inventory | SPU/SKU inventory、Record |
 | 3 | Inbound | 入库单 |
-| 4 | Outbound | 出库单 |
+| 4 | Outbound | Outbound Orders、On Hold Orders（见第 9 章） |
 | 5 | **Warehouses** | **仅 Admin**（可标注 Admin）：Warehouse Management、Zone Management |
 
 **Purchase Orders** 入口在 Dashboard **Quick Actions**，不作为侧栏一级目录。
@@ -424,6 +424,78 @@
 
 ---
 
+## 9 出库（Outbound）
+
+与库存基础模块对齐的出库作业。拣货、打包**不改库存**；**分配成功写占用流水**（locked↑、available↓、total 不变）；**确认发货写出库扣减流水**（total↓、locked↓、available 不变）。推荐库区仅 **Storage Zone（STO）** 且 Enable、`available ≥ 行数量`。停用仓/区不可作为新分配目标。
+
+### 9.1 相对原稿的修正
+
+| 原稿 | 定稿 |
+|------|------|
+| Shippment / Comfirm | **Shipment** / **Confirm** |
+| 筛选按钮叫 Confirm | 与基础模块一致，按钮为 **Search** |
+| Shipped 行操作仍是 Confirm Shipment | **View** |
+| 导入仓库「菜单栏指定」表述含糊 | **当前仓库上下文**；上下文为 All 时，导入弹窗必须选择仓库。已生成单据不随上下文切换改仓 |
+| 一行可按件数拆开发货 | **一行（Order No. + SKU ID）整行分配或整行挂起**，不拆数量 |
+| Tracking 与 Shipment 每行各生成一号 | **一个 Tracking No. 对应一个 Shipment No.**；同一包裹的多行可共用该对号码（合并发货） |
+| 发货单号在待拣货才生成 | **导入 Tracking 成功时生成**，随后进入 Ready to Pick |
+
+### 9.2 编码
+
+| 单据 | 规则 | 示例 |
+|------|------|------|
+| Outbound No. | `OB` + `warehouse_code` + `yyyyMMdd` + 4 位流水 | `OBSH001202608210001` |
+| Shipment No. | `SHP` + `warehouse_code` + `yyyyMMdd` + 4 位流水；**按 Tracking No. 生成一次** | `SHPSH001202608210001` |
+| Tracking No. | 承运商回传，WMS 不生成 | `SF1029384756` |
+
+`warehouse_code` 使用 §3.2.1 的 5 位码（`SH001`），不含连字符。
+
+### 9.3 行状态
+
+`Pending` 不是行状态。导入后每一行只进入 **Allocated** 或 **On Hold**。
+
+| 状态 | 进入条件 | 主动作 | 库存 |
+|------|----------|--------|------|
+| Allocated | 存储区 available 足够，整行锁定 | View；Export Shipping Order；Import Tracking No. | locked +N |
+| Ready to Pick | Tracking 导入成功 | Complete Picking | 不变 |
+| Ready to Pack | 拣货确认 | Complete Packing | 不变 |
+| Ready to Ship | 打包确认 | Confirm Shipment | 不变 |
+| Shipped | 发货确认成功 | View | total −N，locked −N |
+| On Hold | available 不足或重复重试仍不足 | Re-allocate | 不变 |
+
+批次状态（Outbound Orders 列表）：
+
+| 状态 | 规则 |
+|------|------|
+| Pending Outbound | 该批次尚无 Shipped 行 |
+| Partially Outbound | 部分行已 Shipped |
+| Fully Outbound | 全部行已 Shipped |
+
+### 9.4 页面
+
+**Outbound → Outbound Orders**
+
+- 筛选：Outbound No. 或 Batch Status + 关键字，与导入时间取交集；点击 **Search** 才查询。
+- **Import Orders**：CSV 表头 `Order No, Order Time, Product ID, SKU ID, Product Name, Specification, Qty`。同一 Order No. + SKU ID 重复行忽略。
+- 列表：Outbound No.、Imported At、Source File、Warehouse、Orders、SKU Count、Total Units、Status、View。
+
+**Outbound Detail**（View 进入）
+
+Tab：All、Allocated、Ready to Pick、Ready to Pack、Ready to Ship、Shipped、On Hold。  
+列：Outbound No.、Order No.、Order Time、Product、Specification、Qty、Zone（`zone_code`）、Shipment No.、Tracking No.、Status、Action。  
+批量按钮在未勾选时不可用；单行操作不要求勾选。
+
+**Outbound → On Hold Orders**
+
+跨批次列出 On Hold 行。Re-allocate 仍用**原仓库**的存储区；成功则回到该批次 Allocated，失败保持 On Hold。
+
+### 9.5 拆单与合单
+
+- **一单多 SKU**：有货的行可单独进入 Allocated 并最终发货；缺货行整行 On Hold。不把一行数量拆成先发一部分。
+- **合单**：导入 Tracking 时，多行填写相同 Tracking No.，系统只生成一个 Shipment No. 并都挂到这些行上。订单行仍各自独立，不合并订单事实。
+
+---
+
 ## 附录：与原型差异（实现跟踪）
 
 | 项 | PRD（本文） | 当前 HTML 原型（演示） |
@@ -433,3 +505,4 @@
 | Warehouse / Zone Code | PRD：`SH001`、`SH001STO`（无连字符） | HTML 原型演示数据仍用 `SH-001`、`SH-001-STO`，实现须按 §3.2.1 / §4.1 归一 |
 | Record Tab 顺序 | All 首位 | 一致 |
 | Opening 子筛 | 不单独 Opening | 一致 |
+| 出库作业 | §9：分配占用、发货扣减、Tracking 生成 Shipment | `prototype/js/outbound.js` 可走通导入、挂起重分配、拣货/打包/发货 |

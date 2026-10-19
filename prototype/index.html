@@ -52,7 +52,10 @@
 
         <div class="nav-item parent" data-group="outbound">
           <span>Outbound</span>
+          <span class="chevron">▼</span>
         </div>
+        <div class="nav-item sub" data-page="outbound-orders">Outbound Orders</div>
+        <div class="nav-item sub" data-page="outbound-onhold">On Hold Orders</div>
 
         <div class="nav-item parent nav-warehouses-group" data-group="warehouses">
           <span>Warehouses</span>
@@ -524,11 +527,130 @@
           </div>
         </div>
 
-        <!-- ========== OUTBOUND PLACEHOLDER ========== -->
-        <div class="page" id="page-outbound">
-          <div class="placeholder-page">
-            <h2>Outbound</h2>
-            <p>Module under development — not in current prototype scope</p>
+        <!-- ========== OUTBOUND ORDERS ========== -->
+        <div class="page" id="page-outbound-orders">
+          <div class="page-header">
+            <h1 class="page-title">Outbound Orders</h1>
+            <p class="page-subtitle">Import sales orders, allocate storage-zone stock, and track batch progress</p>
+          </div>
+          <div class="page-body">
+            <div class="filter-bar">
+              <div class="filter-item">
+                <label>Search by</label>
+                <select id="ob-filter-field">
+                  <option value="outboundNo">Outbound No.</option>
+                  <option value="status">Batch Status</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <label>Keyword</label>
+                <input type="text" id="ob-filter-keyword" placeholder="Contains">
+              </div>
+              <div class="filter-item">
+                <label>Imported from</label>
+                <input type="date" id="ob-filter-from">
+              </div>
+              <div class="filter-item">
+                <label>Imported to</label>
+                <input type="date" id="ob-filter-to">
+              </div>
+              <div class="filter-actions">
+                <button class="btn btn-primary" onclick="searchOutboundBatches()">Search</button>
+                <button class="btn" onclick="resetOutboundBatchFilters()">Reset</button>
+              </div>
+            </div>
+            <div class="toolbar">
+              <span class="hint" id="ob-import-scope-hint"></span>
+              <button class="btn btn-primary" onclick="openImportOrders()">Import Orders</button>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Outbound No.</th>
+                    <th>Imported At</th>
+                    <th>Source File</th>
+                    <th>Warehouse</th>
+                    <th>Orders</th>
+                    <th>SKU Count</th>
+                    <th>Total Units</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="ob-batch-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========== OUTBOUND DETAIL ========== -->
+        <div class="page" id="page-outbound-detail">
+          <div class="page-header">
+            <div class="dashboard-page-header">
+              <div>
+                <h1 class="page-title" id="ob-detail-title">Outbound Detail</h1>
+                <p class="page-subtitle" id="ob-detail-sub"></p>
+              </div>
+              <button class="btn" onclick="navigateTo('outbound-orders')">Back</button>
+            </div>
+          </div>
+          <div class="page-body">
+            <div class="tabs" id="ob-line-tabs"></div>
+            <div class="toolbar" id="ob-detail-actions"></div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width:36px"><input type="checkbox" id="ob-check-all" onchange="toggleOutboundChecks(this.checked)"></th>
+                    <th>Outbound No.</th>
+                    <th>Order No.</th>
+                    <th>Order Time</th>
+                    <th>Product</th>
+                    <th>Specification</th>
+                    <th>Qty</th>
+                    <th>Zone</th>
+                    <th>Shipment No.</th>
+                    <th>Tracking No.</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="ob-line-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========== ON HOLD ========== -->
+        <div class="page" id="page-outbound-onhold">
+          <div class="page-header">
+            <h1 class="page-title">On Hold Orders</h1>
+            <p class="page-subtitle">Lines that failed allocation. Re-allocate uses the original warehouse and storage zone only.</p>
+          </div>
+          <div class="page-body">
+            <div class="toolbar">
+              <span></span>
+              <button class="btn btn-primary" onclick="reallocateSelected(true)">Batch Re-allocate</button>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width:36px"><input type="checkbox" onchange="toggleHoldChecks(this.checked)"></th>
+                    <th>Outbound No.</th>
+                    <th>Order No.</th>
+                    <th>SKU</th>
+                    <th>Product</th>
+                    <th>Qty</th>
+                    <th>Warehouse</th>
+                    <th>Reason</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="ob-hold-body"></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </main>
@@ -782,8 +904,67 @@
     </div>
   </div>
 
+  <div class="modal-overlay" id="ob-import-modal">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <span class="modal-title">Import Orders</span>
+        <button class="modal-close" onclick="closeModal('ob-import-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="hint">CSV header: Order No, Order Time, Product ID, SKU ID, Product Name, Specification, Qty. Allocation uses the warehouse below and Storage Zone only. A line is allocated in full or placed On Hold.</p>
+        <div class="form-group" id="ob-import-wh-wrap">
+          <label>Warehouse</label>
+          <select id="ob-import-wh"></select>
+        </div>
+        <div class="form-group">
+          <label>File</label>
+          <input type="file" id="ob-import-file" accept=".csv,text/csv" onchange="onOutboundFilePicked(this, 'orders')">
+        </div>
+        <button class="btn" type="button" onclick="fillSampleOrderCsv()">Use sample file</button>
+        <pre id="ob-import-preview" class="ob-preview"></pre>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('ob-import-modal')">Cancel</button>
+        <button class="btn btn-primary" id="ob-import-btn" disabled onclick="runImportOrders()">Import</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="ob-track-modal">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <span class="modal-title">Import Tracking No.</span>
+        <button class="modal-close" onclick="closeModal('ob-track-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="hint">CSV header: Order No, SKU ID, Tracking No. One tracking number maps to one Shipment No. Matching lines move to Ready to Pick. Inventory is unchanged.</p>
+        <input type="file" id="ob-track-file" accept=".csv,text/csv" onchange="onOutboundFilePicked(this, 'track')">
+        <button class="btn" type="button" onclick="fillSampleTrackCsv()">Use sample for selected Allocated lines</button>
+        <pre id="ob-track-preview" class="ob-preview"></pre>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('ob-track-modal')">Cancel</button>
+        <button class="btn btn-primary" id="ob-track-btn" disabled onclick="runImportTracking()">Import</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="ob-line-modal">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <span class="modal-title">Line Detail</span>
+        <button class="modal-close" onclick="closeModal('ob-line-modal')">&times;</button>
+      </div>
+      <div class="modal-body" id="ob-line-detail"></div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="closeModal('ob-line-modal')">Close</button>
+      </div>
+    </div>
+  </div>
+
   <div class="toast-container" id="toast-container"></div>
 
   <script src="js/app.js"></script>
+  <script src="js/outbound.js"></script>
 </body>
 </html>
