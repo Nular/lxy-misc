@@ -1193,6 +1193,29 @@ tbody tr.selected {
   background: #fafafa;
 }
 
+.ob-flow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.ob-flow span {
+  font-size: 12px;
+  padding: 6px 10px;
+  background: #f5f5f5;
+  border-radius: 4px;
+  color: #555;
+}
+
+.ob-picklist {
+  font-size: 13px;
+}
+
+.ob-picklist table {
+  width: 100%;
+}
+
 .ob-upload-box {
   margin: 12px 0;
   padding: 28px 12px;

@@ -426,7 +426,11 @@
 
 ## 9 出库（Outbound）
 
-与库存基础模块对齐的出库作业。拣货、打包**不改库存**；**分配成功写占用流水**（locked↑、available↓、total 不变）；**确认发货写出库扣减流水**（total↓、locked↓、available 不变）。推荐库区仅 **Storage Zone（STO）** 且 Enable、`available ≥ 行数量`。停用仓/区不可作为新分配目标。
+与库存基础模块对齐的出库作业（交接会议 2026-10-12 + Axure 出库包）。
+
+**作业闭环：** Admin 导出待处理订单 → WMS **Import Order**（校验表头）→ 按当前仓 **Storage Zone** 整行分配 → 有货 **Allocated**（占用库存）/ 缺货 **On Hold** → Allocated 导出发货单，线下填 Tracking No. 再导入 → 系统按包裹生成 **Shipment No.**，行进入 **Ready to Pick** → 打印拣货单（PDF，可保存或打印）→ Complete Picking → Ready to Pack → Complete Packing → Ready to Ship → 快递员上门取件后 **Confirm Shipment** → Shipped，并扣减实物。
+
+拣货、打包**不改库存**；**分配成功写占用流水**（locked↑、available↓、total 不变）；**确认发货写出库扣减流水**（total↓、locked↓、available 不变）。推荐库区仅 **Storage Zone（STO）** 且 Enable、`available ≥ 行数量`。停用仓/区不可作为新分配目标。
 
 ### 9.1 相对原稿的修正
 
@@ -463,27 +467,34 @@
 | Shipped | 发货确认成功 | View | total −N，locked −N |
 | On Hold | available 不足或重复重试仍不足 | Re-allocate | 不变 |
 
-批次状态（Outbound Orders 列表）：
+批次状态（Outbound Orders 列表；**一次导入只生成一个 Outbound No.**，不论该批是否全部发出）：
 
 | 状态 | 规则 |
 |------|------|
-| Pending Outbound | 该批次尚无 Shipped 行 |
-| Partially Outbound | 部分行已 Shipped |
-| Fully Outbound | 全部行已 Shipped |
+| Pending Outbound | 本批尚无 On Hold、也尚无 Shipped（全部在 Allocated～Ready to Ship） |
+| Partially Outbound | 本批同时存在未完成结果：例如部分 On Hold、或已有部分 Shipped |
+| Fully Outbound | 本批全部行均为 Shipped |
+
+### 9.3.1 拣货单商品码
+
+拣货单为 **PDF**（浏览器 Print / Save as PDF）。商品码展示优先级与会议口径：**欧洲码（EAN）→ 美国码（UPC）→ 无则「—」**。拣货单不展示 PAN。SKU 主数据条码规则仍见 §1.2。
 
 ### 9.4 页面
 
 **Outbound → Outbound Orders**
 
-- 筛选：Outbound No. 或 Batch Status + 关键字，与导入时间取交集；点击 **Search** 才查询。
-- **Import Orders**：CSV 表头 `Order No, Order Time, Product ID, SKU ID, Product Name, Specification, Qty`。同一 Order No. + SKU ID 重复行忽略。
+- 筛选：Outbound No. 或 Batch Status + 关键字，与导入时间取交集；点击 **Confirm** 才查询（与 Axure 出库页一致）。
+- **Import Order**：CSV/Excel 表头须含 `Order No, Order Time, Product ID, SKU ID, Product Name, Specification, Qty`。同一 Order No. + SKU ID 重复行 Ignore。
+- **Export Shipping Order**（Allocated）：下载表格，线下填写 **Tracking No.** 后再 **Import Tracking No.**。
 - 列表：Outbound No.、Imported At、Source File、Warehouse、Orders、SKU Count、Total Units、Status、View。
 
 **Outbound Detail**（View 进入）
 
 Tab：All、Allocated、Ready to Pick、Ready to Pack、Ready to Ship、Shipped、On Hold。  
 列：Outbound No.、Order No.、Order Time、Product、Specification、Qty、Zone（`zone_code`）、Shipment No.、Tracking No.、Status、Action。  
-批量按钮在未勾选时不可用；单行操作不要求勾选。
+批量按钮在未勾选时不可用；单行操作不要求勾选。  
+**Print Pick List**：仅 Ready to Pick；条码见 §9.3.1。  
+**Confirm Shipment**：快递员已取件后操作；事务内扣减 locked/total 并写 Outbound Deduct。
 
 **Outbound → On Hold Orders**
 

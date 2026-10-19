@@ -38,9 +38,30 @@ function storageSku(warehouseId, skuId) {
 function batchStatus(lines) {
   if (!lines.length) return 'Pending Outbound';
   const shipped = lines.filter(l => l.status === 'shipped').length;
+  const held = lines.filter(l => l.status === 'on_hold').length;
   if (shipped === lines.length) return 'Fully Outbound';
-  if (shipped > 0) return 'Partially Outbound';
+  if (shipped > 0 || held > 0) return 'Partially Outbound';
   return 'Pending Outbound';
+}
+
+function pickListBarcode(skuId) {
+  const s = skuData.find(x => x.skuId === skuId);
+  const list = (s && s.barcodes) || [];
+  const ean = list.find(x => String(x).startsWith('EAN'));
+  if (ean) return ean;
+  const upc = list.find(x => String(x).startsWith('UPC'));
+  if (upc) return upc;
+  return '—';
+}
+
+function downloadTextFile(filename, text) {
+  const blob = new Blob([text], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 function batchTag(status) {
@@ -318,7 +339,35 @@ function askAdvance(from, to, message, onlyId) {
 function printPickList() {
   const ids = selectedLineIds();
   const lines = outboundLines.filter(l => l.outboundNo === currentOutboundNo && l.status === 'ready_to_pick' && (!ids.length || ids.includes(l.id)));
-  showToast(`Print pick list: ${lines.length} line(s)`, 'success');
+  if (!lines.length) {
+    showToast('No Ready to Pick lines to print.', 'warning');
+    return;
+  }
+  const batch = outboundBatches.find(b => b.outboundNo === currentOutboundNo);
+  document.getElementById('ob-picklist-body').innerHTML = `
+    <div class="ob-picklist" id="ob-picklist-print">
+      <p><strong>Pick List</strong> · ${currentOutboundNo} · ${batch ? batch.warehouseCode : ''}</p>
+      <p class="hint">Barcode on the pick list: EAN, then UPC, otherwise —. PAN is not shown here. Save or print as PDF from the browser dialog.</p>
+      <table>
+        <thead><tr><th>Order No.</th><th>SKU</th><th>Product</th><th>Qty</th><th>Zone</th><th>Barcode</th></tr></thead>
+        <tbody>${lines.map(l => `<tr>
+          <td>${l.orderNo}</td><td>${l.skuId}</td><td>${l.productName}</td>
+          <td>${l.qty}</td><td>${l.zoneCode}</td><td>${pickListBarcode(l.skuId)}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>`;
+  openModal('ob-picklist-modal');
+}
+
+function printPickListWindow() {
+  const html = document.getElementById('ob-picklist-print').innerHTML;
+  const w = window.open('', '_blank');
+  w.document.write(`<!DOCTYPE html><html><head><title>Pick List</title>
+    <style>body{font-family:Arial,sans-serif;padding:24px} table{width:100%;border-collapse:collapse} th,td{border:1px solid #ddd;padding:8px;text-align:left}</style>
+    </head><body>${html}</body></html>`);
+  w.document.close();
+  w.focus();
+  w.print();
 }
 
 function advanceSelected(from, to, label) {
@@ -351,7 +400,7 @@ function askConfirmShipment(onlyId) {
     showToast('Select at least one line.', 'warning');
     return;
   }
-  askOutboundConfirm('Confirm shipment', 'Confirm marking the selected row(s) as shipped?', () => {
+  askOutboundConfirm('Confirm shipment', 'Courier has collected the parcel. Confirm shipment and deduct locked stock?', () => {
     ids.forEach(confirmShipment);
   });
 }
@@ -447,8 +496,15 @@ function exportShippingOrder() {
 function confirmExportShippingOrder() {
   const ext = document.getElementById('ob-export-format').value;
   const batch = outboundBatches.find(b => b.outboundNo === currentOutboundNo);
+  const lines = outboundLines.filter(l => l.outboundNo === currentOutboundNo && l.status === 'allocated');
+  const header = 'Outbound No,Order No,SKU ID,Product Name,Qty,Warehouse,Zone,Tracking No';
+  const csv = [header].concat(lines.map(l =>
+    [l.outboundNo, l.orderNo, l.skuId, l.productName, l.qty, formatCanonicalWarehouseCode(l.warehouseId), l.zoneCode, ''].join(',')
+  )).join('\n');
+  const name = `ShippingOrder_${batch ? batch.warehouseCode : 'WH'}_${ymd()}.${ext === 'csv' ? 'csv' : 'csv'}`;
+  downloadTextFile(name, csv);
   closeModal('ob-export-modal');
-  showToast(`Export successful. ShippingOrder_${batch ? batch.warehouseCode : 'WH'}_${ymd()}.${ext}`, 'success');
+  showToast(`Export successful. Fill Tracking No. and import it on Allocated. File: ${name}`, 'success');
 }
 
 function renderOnHold() {
@@ -620,7 +676,7 @@ function openImportTracking() {
 
 function fillSampleTrackCsv() {
   const lines = outboundLines.filter(l => l.outboundNo === currentOutboundNo && l.status === 'allocated');
-  obTrackCsv = 'Order No,SKU ID,Tracking No\n' + lines.map((l, i) => `${l.orderNo},${l.skuId},TRK${ymd()}${String(i + 1).padStart(4, '0')}`).join('\n');
+  obTrackCsv = 'Outbound No,Order No,SKU ID,Tracking No\n' + lines.map((l, i) => `${l.outboundNo},${l.orderNo},${l.skuId},TRK${ymd()}${String(i + 1).padStart(4, '0')}`).join('\n');
   document.getElementById('ob-track-preview').textContent = obTrackCsv || 'No allocated lines';
   document.getElementById('ob-track-btn').disabled = !lines.length;
 }
@@ -631,7 +687,13 @@ function runImportTracking() {
   let failed = 0;
   const shipmentByTracking = {};
   rows.forEach(r => {
-    const line = outboundLines.find(l => l.outboundNo === currentOutboundNo && l.orderNo === r['Order No'] && l.skuId === r['SKU ID'] && l.status === 'allocated');
+    const line = outboundLines.find(l =>
+      l.status === 'allocated' &&
+      l.orderNo === r['Order No'] &&
+      l.skuId === r['SKU ID'] &&
+      (!r['Outbound No'] || l.outboundNo === r['Outbound No']) &&
+      (!currentOutboundNo || l.outboundNo === currentOutboundNo)
+    );
     if (!line) {
       failed += 1;
       return;

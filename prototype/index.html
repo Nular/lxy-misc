@@ -531,9 +531,17 @@
         <div class="page" id="page-outbound-orders">
           <div class="page-header">
             <h1 class="page-title">Outbound Orders</h1>
-            <p class="page-subtitle">Import sales orders, allocate storage-zone stock, and track batch progress</p>
+            <p class="page-subtitle">Import Admin-exported orders. One import creates one Outbound No. Stock is occupied on allocate and deducted only after the courier pickup (Confirm Shipment).</p>
           </div>
           <div class="page-body">
+            <div class="ob-flow" aria-hidden="true">
+              <span>1 Import orders</span>
+              <span>2 Allocate or On Hold</span>
+              <span>3 Export → fill Tracking No. → import</span>
+              <span>4 Print pick list</span>
+              <span>5 Pick → Pack</span>
+              <span>6 Confirm Shipment</span>
+            </div>
             <div class="filter-bar">
               <div class="filter-item">
                 <label>Search by</label>
@@ -943,7 +951,7 @@
         <button class="modal-close" onclick="closeModal('ob-track-modal')">&times;</button>
       </div>
       <div class="modal-body">
-        <p class="hint">CSV header: Order No, SKU ID, Tracking No. One tracking number maps to one Shipment No. Matching lines move to Ready to Pick. Inventory is unchanged.</p>
+        <p class="hint">Use the file from Export Shipping Order after filling Tracking No. Required columns: Order No, SKU ID, Tracking No. One Tracking No. creates one Shipment No. Matching Allocated lines move to Ready to Pick. Inventory is unchanged.</p>
         <input type="file" id="ob-track-file" accept=".csv,text/csv" onchange="onOutboundFilePicked(this, 'track')">
         <button class="btn" type="button" onclick="fillSampleTrackCsv()">Use sample for selected Allocated lines</button>
         <pre id="ob-track-preview" class="ob-preview"></pre>
@@ -1003,6 +1011,20 @@
       <div class="modal-body" id="ob-result-body"></div>
       <div class="modal-footer">
         <button class="btn btn-primary" onclick="closeModal('ob-result-modal')">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="ob-picklist-modal">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <span class="modal-title">Pick List (PDF preview)</span>
+        <button class="modal-close" onclick="closeModal('ob-picklist-modal')">&times;</button>
+      </div>
+      <div class="modal-body" id="ob-picklist-body"></div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('ob-picklist-modal')">Close</button>
+        <button class="btn btn-primary" onclick="printPickListWindow()">Print / Save PDF</button>
       </div>
     </div>
   </div>
