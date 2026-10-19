@@ -46,16 +46,12 @@
         <div class="nav-item sub" data-page="spu-sku-inventory">SPU/SKU inventory</div>
         <div class="nav-item sub" data-page="record">Record</div>
 
-        <div class="nav-item parent" data-group="inbound">
-          <span>Inbound</span>
-        </div>
+        <div class="nav-item" data-page="purchase-order">Purchase Order</div>
+        <div class="nav-item" data-page="inbound">Inbound</div>
 
         <div class="nav-item parent" data-group="outbound">
           <span>Outbound</span>
-          <span class="chevron">▼</span>
         </div>
-        <div class="nav-item sub" data-page="outbound-orders">Outbound Orders</div>
-        <div class="nav-item sub" data-page="outbound-onhold">On Hold Orders</div>
 
         <div class="nav-item parent nav-warehouses-group" data-group="warehouses">
           <span>Warehouses</span>
@@ -511,146 +507,161 @@
           </div>
         </div>
 
-        <!-- ========== PURCHASE ORDER PLACEHOLDER ========== -->
+        <!-- ========== PURCHASE ORDER ========== -->
         <div class="page" id="page-purchase-order">
-          <div class="placeholder-page">
-            <h2>Purchase Order</h2>
-            <p>Module under development — not in current prototype scope</p>
-          </div>
-        </div>
-
-        <!-- ========== INBOUND PLACEHOLDER ========== -->
-        <div class="page" id="page-inbound">
-          <div class="placeholder-page">
-            <h2>Inbound</h2>
-            <p>Module under development — not in current prototype scope</p>
-          </div>
-        </div>
-
-        <!-- ========== OUTBOUND ORDERS ========== -->
-        <div class="page" id="page-outbound-orders">
           <div class="page-header">
-            <h1 class="page-title">Outbound Orders</h1>
-            <p class="page-subtitle">Import sales orders, allocate storage-zone stock, and track batch progress</p>
+            <h1 class="page-title">Purchase Order</h1>
+            <p class="page-subtitle">Create and track purchase orders; link to inbound receipts</p>
           </div>
           <div class="page-body">
-            <div class="filter-bar">
+            <div class="filter-bar module-filter-bar">
               <div class="filter-item">
                 <label>Search by</label>
-                <select id="ob-filter-field">
-                  <option value="outboundNo">Outbound No.</option>
-                  <option value="status">Batch Status</option>
+                <select id="po-search-field">
+                  <option value="orderNo">Order No.</option>
+                  <option value="linkedReceipt">Linked Receipt No.</option>
+                </select>
+              </div>
+              <div class="filter-item filter-grow">
+                <label>Keyword</label>
+                <input type="text" id="po-search-keyword" placeholder="Search or leave empty for all" autocomplete="off">
+              </div>
+              <div class="filter-item">
+                <label>Status</label>
+                <select id="po-filter-status" multiple size="1" class="multi-hint" title="Multi-select in product UI">
+                  <option value="Draft">Draft</option>
+                  <option value="Created">Created</option>
+                  <option value="Processing">Processing</option>
+                  <option value="Partially Stocked In">Partially Stocked In</option>
+                  <option value="Stocked In">Stocked In</option>
                 </select>
               </div>
               <div class="filter-item">
-                <label>Keyword</label>
-                <input type="text" id="ob-filter-keyword" placeholder="Contains">
-              </div>
-              <div class="filter-item">
-                <label>Imported period</label>
-                <input type="date" id="ob-filter-from" aria-label="Start date">
-              </div>
-              <div class="filter-item">
-                <label>to</label>
-                <input type="date" id="ob-filter-to" aria-label="End date">
+                <label>Creation Method</label>
+                <select id="po-filter-method">
+                  <option value="">All</option>
+                  <option value="Manual Entry">Manual Entry</option>
+                  <option value="Import Created">Import Created</option>
+                </select>
               </div>
               <div class="filter-actions">
-                <button class="btn btn-primary" onclick="searchOutboundBatches()">Confirm</button>
-                <button class="btn" onclick="resetOutboundBatchFilters()">Reset</button>
+                <button class="btn btn-primary" onclick="searchPurchaseOrders()">Search</button>
+                <button class="btn" onclick="resetPurchaseOrderFilters()">Reset</button>
               </div>
             </div>
             <div class="toolbar">
-              <span class="hint" id="ob-import-scope-hint">The selected warehouse applies only to this import. Switching context later does not change existing outbound records.</span>
-              <button class="btn btn-primary" onclick="openImportOrders()">Import Order</button>
+              <span>Total <strong id="po-list-total">0</strong></span>
+              <button class="btn btn-primary" onclick="openPurchaseOrderEditor()">+ Create Purchase Order</button>
             </div>
             <div class="table-wrapper">
               <table>
                 <thead>
                   <tr>
-                    <th>Outbound No.</th>
-                    <th>Imported At</th>
-                    <th>Source File</th>
+                    <th>Order No.</th>
+                    <th>Name</th>
                     <th>Warehouse</th>
-                    <th>Orders</th>
-                    <th>SKU Count</th>
-                    <th>Total Units</th>
                     <th>Status</th>
-                    <th>Action</th>
+                    <th>Creation Method</th>
+                    <th>Linked Receipts</th>
+                    <th>Supplier</th>
+                    <th>Created</th>
+                    <th>Operation</th>
                   </tr>
                 </thead>
-                <tbody id="ob-batch-body"></tbody>
+                <tbody id="po-table-body"></tbody>
               </table>
+            </div>
+            <div class="pagination-bar">
+              <span>Rows</span>
+              <select id="po-page-size" onchange="renderPurchaseOrderList()">
+                <option value="20">20/page</option>
+                <option value="50">50/page</option>
+                <option value="100">100/page</option>
+                <option value="500">500/page</option>
+              </select>
             </div>
           </div>
         </div>
 
-        <!-- ========== OUTBOUND DETAIL ========== -->
-        <div class="page" id="page-outbound-detail">
+        <!-- ========== INBOUND RECEIPT ========== -->
+        <div class="page" id="page-inbound">
           <div class="page-header">
-            <div class="dashboard-page-header">
-              <div>
-                <h1 class="page-title" id="ob-detail-title">Outbound Detail</h1>
-                <p class="page-subtitle" id="ob-detail-sub"></p>
-              </div>
-              <button class="btn" onclick="navigateTo('outbound-orders')">Back</button>
-            </div>
+            <h1 class="page-title">Inbound</h1>
+            <p class="page-subtitle">Inbound receipts (上架入库); writes inventory on Stocked In</p>
           </div>
           <div class="page-body">
-            <div class="tabs" id="ob-line-tabs"></div>
-            <div class="toolbar" id="ob-detail-actions"></div>
+            <div class="filter-bar module-filter-bar">
+              <div class="filter-item">
+                <label>Search by</label>
+                <select id="inbound-search-field">
+                  <option value="receiptNo">Receipt No.</option>
+                  <option value="purchaseOrder">Related Purchase Order No.</option>
+                </select>
+              </div>
+              <div class="filter-item filter-grow">
+                <label>Keyword</label>
+                <input type="text" id="inbound-search-keyword" placeholder="Search or leave empty for all" autocomplete="off">
+              </div>
+              <div class="filter-item">
+                <label>Status</label>
+                <select id="inbound-filter-status">
+                  <option value="">All</option>
+                  <option value="Draft">Draft</option>
+                  <option value="Processing">Processing</option>
+                  <option value="Stocked In">Stocked In</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <label>Receipt Type</label>
+                <select id="inbound-filter-type">
+                  <option value="">All</option>
+                  <option value="Purchase Receipt">Purchase Receipt</option>
+                  <option value="Manual Receipt">Manual Receipt</option>
+                </select>
+              </div>
+              <div class="filter-actions">
+                <button class="btn btn-primary" onclick="searchInboundReceipts()">Search</button>
+                <button class="btn" onclick="resetInboundFilters()">Reset</button>
+              </div>
+            </div>
+            <div class="toolbar">
+              <span>Total <strong id="inbound-list-total">0</strong></span>
+              <button class="btn btn-primary" onclick="openReceiptEditor()">+ Create Receipt</button>
+            </div>
             <div class="table-wrapper">
               <table>
                 <thead>
                   <tr>
-                    <th style="width:36px"><input type="checkbox" id="ob-check-all" onchange="toggleOutboundChecks(this.checked)"></th>
-                    <th>Outbound No.</th>
-                    <th>Order No.</th>
-                    <th>Order Time</th>
-                    <th>Product</th>
-                    <th>Specification</th>
-                    <th>Qty</th>
-                    <th>Zone</th>
-                    <th>Shipment No.</th>
-                    <th>Tracking No.</th>
+                    <th>Receipt No.</th>
+                    <th>Type</th>
                     <th>Status</th>
-                    <th>Action</th>
+                    <th>Warehouse</th>
+                    <th>Related PO</th>
+                    <th>Lines</th>
+                    <th>Progress</th>
+                    <th>Updated</th>
+                    <th>Operation</th>
                   </tr>
                 </thead>
-                <tbody id="ob-line-body"></tbody>
+                <tbody id="inbound-table-body"></tbody>
               </table>
+            </div>
+            <div class="pagination-bar">
+              <select id="inbound-page-size" onchange="renderInboundReceiptList()">
+                <option value="20">20/page</option>
+                <option value="50">50/page</option>
+                <option value="100">100/page</option>
+                <option value="500">500/page</option>
+              </select>
             </div>
           </div>
         </div>
 
-        <!-- ========== ON HOLD ========== -->
-        <div class="page" id="page-outbound-onhold">
-          <div class="page-header">
-            <h1 class="page-title">On Hold Orders</h1>
-            <p class="page-subtitle">Lines that failed allocation. Re-allocate uses the original warehouse and storage zone only.</p>
-          </div>
-          <div class="page-body">
-            <div class="toolbar">
-              <span></span>
-              <button class="btn btn-primary" onclick="reallocateSelected(true)">Batch Re-allocate</button>
-            </div>
-            <div class="table-wrapper">
-              <table>
-                <thead>
-                  <tr>
-                    <th style="width:36px"><input type="checkbox" onchange="toggleHoldChecks(this.checked)"></th>
-                    <th>Outbound No.</th>
-                    <th>Order No.</th>
-                    <th>SKU</th>
-                    <th>Product</th>
-                    <th>Qty</th>
-                    <th>Warehouse</th>
-                    <th>Reason</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody id="ob-hold-body"></tbody>
-              </table>
-            </div>
+        <!-- ========== OUTBOUND PLACEHOLDER ========== -->
+        <div class="page" id="page-outbound">
+          <div class="placeholder-page">
+            <h2>Outbound</h2>
+            <p>Module under development — not in current prototype scope</p>
           </div>
         </div>
       </main>
@@ -904,118 +915,86 @@
     </div>
   </div>
 
-  <div class="modal-overlay" id="ob-import-modal">
-    <div class="modal modal-md">
+  <!-- Purchase Order Editor -->
+  <div class="modal-overlay" id="po-editor-modal">
+    <div class="modal modal-lg">
       <div class="modal-header">
-        <span class="modal-title">Import Orders</span>
-        <button class="modal-close" onclick="closeModal('ob-import-modal')">&times;</button>
+        <span class="modal-title" id="po-editor-title">Create Purchase Order</span>
+        <button class="modal-close" onclick="closeModal('po-editor-modal')">&times;</button>
       </div>
       <div class="modal-body">
-        <div id="ob-import-step-upload">
-          <p class="hint">Header must include Order No, Order Time, Product ID, SKU ID, Product Name, Specification, Qty. A line is allocated in full or placed On Hold.</p>
-          <div class="form-group" id="ob-import-wh-wrap">
-            <label>Warehouse</label>
-            <select id="ob-import-wh"></select>
-          </div>
-          <div class="ob-upload-box" onclick="document.getElementById('ob-import-file').click()">+ Click to upload</div>
-          <input type="file" id="ob-import-file" accept=".csv,text/csv,.xlsx,.xls" hidden onchange="onOutboundFilePicked(this, 'orders')">
-          <button class="btn" type="button" onclick="fillSampleOrderCsv()">Use sample file</button>
-          <p id="ob-import-file-msg" class="hint"></p>
+        <div class="editor-mode-hint" id="po-editor-hint">Creation: Manual Entry or Import (mutually exclusive with the other mode in full product).</div>
+        <form class="form-grid" id="po-editor-form">
+          <div class="form-group"><label>Order Name</label><input type="text" id="po-name" maxlength="200" placeholder="Purchase order name"></div>
+          <div class="form-group"><label>Warehouse</label><input class="readonly" id="po-warehouse" readonly></div>
+          <div class="form-group"><label>Supplier <span class="required">*</span></label><input type="text" id="po-supplier" maxlength="200"></div>
+          <div class="form-group"><label>Tracking No.</label><input type="text" id="po-tracking" placeholder="Logistics tracking"></div>
+        </form>
+        <div class="editor-lines-toolbar">
+          <button type="button" class="btn" onclick="poAddSampleLine()">Add Products (demo)</button>
+          <button type="button" class="btn" onclick="showToast('Import flow: max 2 concurrent jobs', 'info')">Import</button>
         </div>
-        <div id="ob-import-step-progress" hidden>
-          <p id="ob-import-progress-title">Importing</p>
-          <div class="ob-bar"><div id="ob-import-bar"></div></div>
-          <p id="ob-import-progress-text"></p>
+        <div class="table-wrapper editor-lines-table">
+          <table>
+            <thead>
+              <tr>
+                <th>SKU ID</th><th>Product Name</th><th>Specification</th><th>Qty</th><th>Unit Price</th><th>Line Status</th>
+              </tr>
+            </thead>
+            <tbody id="po-editor-lines"></tbody>
+          </table>
         </div>
-        <pre id="ob-import-preview" class="ob-preview" hidden></pre>
       </div>
       <div class="modal-footer">
-        <button class="btn" id="ob-import-cancel" onclick="closeModal('ob-import-modal')">Cancel</button>
-        <button class="btn btn-primary" id="ob-import-btn" disabled onclick="runImportOrders()">Import</button>
+        <button class="btn" onclick="closeModal('po-editor-modal')">Cancel</button>
+        <button class="btn" onclick="savePurchaseOrderDraft()">Save Draft</button>
+        <button class="btn btn-primary" onclick="savePurchaseOrderCreated()">Save &amp; Created</button>
       </div>
     </div>
   </div>
 
-  <div class="modal-overlay" id="ob-track-modal">
-    <div class="modal modal-md">
+  <!-- Inbound Receipt Editor -->
+  <div class="modal-overlay" id="receipt-editor-modal">
+    <div class="modal modal-lg">
       <div class="modal-header">
-        <span class="modal-title">Import Tracking No.</span>
-        <button class="modal-close" onclick="closeModal('ob-track-modal')">&times;</button>
+        <span class="modal-title" id="receipt-editor-title">Create Receipt</span>
+        <button class="modal-close" onclick="closeModal('receipt-editor-modal')">&times;</button>
       </div>
       <div class="modal-body">
-        <p class="hint">CSV header: Order No, SKU ID, Tracking No. One tracking number maps to one Shipment No. Matching lines move to Ready to Pick. Inventory is unchanged.</p>
-        <input type="file" id="ob-track-file" accept=".csv,text/csv" onchange="onOutboundFilePicked(this, 'track')">
-        <button class="btn" type="button" onclick="fillSampleTrackCsv()">Use sample for selected Allocated lines</button>
-        <pre id="ob-track-preview" class="ob-preview"></pre>
+        <div class="receipt-source-tabs">
+          <button type="button" class="source-tab active" data-source="po" onclick="setReceiptSource('po')">Link Purchase Order</button>
+          <button type="button" class="source-tab" data-source="products" onclick="setReceiptSource('products')">Add Products</button>
+          <button type="button" class="source-tab" data-source="import" onclick="setReceiptSource('import')">Import</button>
+        </div>
+        <form class="form-grid" id="receipt-editor-form">
+          <div class="form-group"><label>Receipt Type</label><select id="receipt-type"><option value="Purchase Receipt">Purchase Receipt</option><option value="Manual Receipt">Manual Receipt</option></select></div>
+          <div class="form-group"><label>Warehouse</label><input class="readonly" id="receipt-warehouse" readonly></div>
+          <div class="form-group" id="receipt-po-group"><label>Related PO</label><select id="receipt-po-select"></select></div>
+          <div class="form-group"><label>Default Zone (Storage)</label><input class="readonly" id="receipt-zone" readonly></div>
+        </form>
+        <div id="receipt-source-import" class="source-panel" hidden>
+          <input type="file" id="receipt-import-file" accept=".csv,.xlsx">
+          <button type="button" class="btn btn-primary" id="receipt-import-btn" disabled onclick="startReceiptImport()">Import</button>
+        </div>
+        <div class="table-wrapper editor-lines-table">
+          <table>
+            <thead>
+              <tr>
+                <th>SKU ID</th><th>Product Name</th><th>Spec</th><th>Receipt Qty</th><th>Zone</th>
+              </tr>
+            </thead>
+            <tbody id="receipt-editor-lines"></tbody>
+          </table>
+        </div>
+        <div class="import-progress" id="receipt-import-progress" hidden>
+          <div class="progress-label">Importing… <span id="receipt-import-pct">0%</span></div>
+          <div class="progress-track"><div class="progress-fill" id="receipt-import-fill"></div></div>
+        </div>
       </div>
       <div class="modal-footer">
-        <button class="btn" onclick="closeModal('ob-track-modal')">Cancel</button>
-        <button class="btn btn-primary" id="ob-track-btn" disabled onclick="runImportTracking()">Import</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal-overlay" id="ob-export-modal">
-    <div class="modal modal-sm">
-      <div class="modal-header">
-        <span class="modal-title">Export Shipping Order</span>
-        <button class="modal-close" onclick="closeModal('ob-export-modal')">&times;</button>
-      </div>
-      <div class="modal-body">
-        <label>Please select export format</label>
-        <select id="ob-export-format">
-          <option value="xlsx">xlsx</option>
-          <option value="xls">xls</option>
-          <option value="csv">csv</option>
-        </select>
-        <p class="hint" id="ob-export-count"></p>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" onclick="closeModal('ob-export-modal')">Cancel</button>
-        <button class="btn btn-primary" onclick="confirmExportShippingOrder()">Export</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal-overlay" id="ob-confirm-modal">
-    <div class="modal modal-sm">
-      <div class="modal-header">
-        <span class="modal-title" id="ob-confirm-title">Confirm</span>
-        <button class="modal-close" onclick="closeModal('ob-confirm-modal')">&times;</button>
-      </div>
-      <div class="modal-body">
-        <p id="ob-confirm-msg"></p>
-        <p class="hint">Review the selected rows before continuing.</p>
-      </div>
-      <div class="modal-footer">
-        <button class="btn" onclick="closeModal('ob-confirm-modal')">Cancel</button>
-        <button class="btn btn-primary" id="ob-confirm-ok" onclick="runOutboundConfirm()">Confirm</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal-overlay" id="ob-result-modal">
-    <div class="modal modal-md">
-      <div class="modal-header">
-        <span class="modal-title">Allocation result</span>
-        <button class="modal-close" onclick="closeModal('ob-result-modal')">&times;</button>
-      </div>
-      <div class="modal-body" id="ob-result-body"></div>
-      <div class="modal-footer">
-        <button class="btn btn-primary" onclick="closeModal('ob-result-modal')">Done</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="modal-overlay" id="ob-line-modal">
-    <div class="modal modal-md">
-      <div class="modal-header">
-        <span class="modal-title">Line Detail</span>
-        <button class="modal-close" onclick="closeModal('ob-line-modal')">&times;</button>
-      </div>
-      <div class="modal-body" id="ob-line-detail"></div>
-      <div class="modal-footer">
-        <button class="btn btn-primary" onclick="closeModal('ob-line-modal')">Close</button>
+        <button class="btn" onclick="closeModal('receipt-editor-modal')">Cancel</button>
+        <button class="btn" onclick="saveReceiptDraft()">Save Draft</button>
+        <button class="btn btn-primary" onclick="confirmReceiptStockIn()">Confirm Stock-In</button>
       </div>
     </div>
   </div>
@@ -1023,6 +1002,6 @@
   <div class="toast-container" id="toast-container"></div>
 
   <script src="js/app.js"></script>
-  <script src="js/outbound.js"></script>
+  <script src="js/inbound-po.js"></script>
 </body>
 </html>

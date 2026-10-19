@@ -1193,41 +1193,89 @@ tbody tr.selected {
   background: #fafafa;
 }
 
-.ob-upload-box {
-  margin: 12px 0;
-  padding: 28px 12px;
-  text-align: center;
-  border: 1px dashed var(--border-color);
-  border-radius: 8px;
-  color: var(--primary);
-  cursor: pointer;
-  background: #fafafa;
+/* Inbound / PO module */
+.module-filter-bar .filter-grow {
+  flex: 1;
+  min-width: 200px;
 }
 
-.ob-bar {
+.receipt-source-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.source-tab {
+  padding: 8px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.source-tab.active {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: #e6f4ff;
+}
+
+.editor-mode-hint,
+.editor-lines-toolbar {
+  margin-bottom: 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.editor-lines-toolbar {
+  display: flex;
+  gap: 8px;
+}
+
+.editor-lines-table {
+  max-height: 240px;
+  overflow: auto;
+}
+
+.mini-progress {
+  width: 80px;
+  height: 6px;
+  background: #f0f0f0;
+  border-radius: 3px;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+.mini-progress div {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 3px;
+}
+
+.progress-track {
   height: 8px;
   background: #f0f0f0;
   border-radius: 4px;
   overflow: hidden;
-  margin: 12px 0;
 }
 
-.ob-bar > div {
+.progress-fill {
   height: 100%;
   width: 0;
   background: var(--primary);
-  transition: width 0.2s;
+  transition: width 0.3s;
 }
 
-.ob-preview {
-  margin-top: 12px;
-  max-height: 160px;
-  overflow: auto;
-  background: #fafafa;
-  border: 1px solid var(--border-color);
-  padding: 8px;
+.progress-label {
   font-size: 12px;
-  white-space: pre-wrap;
+  margin-bottom: 6px;
+}
+
+.tag-warning {
+  background: #fff7e6;
+  color: #d48806;
+  border: 1px solid #ffd591;
 }
 
 .kpi-card {

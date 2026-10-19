@@ -47,11 +47,12 @@
 | — | **Warehouse**（侧栏顶部） | Admin：**下拉**切换 All/指定仓（仅 Home 页生效）；仓管：只读所属仓 |
 | 1 | Home | Dashboard（§7） |
 | 2 | Inventory | SPU/SKU inventory、Record |
-| 3 | Inbound | 入库单 |
-| 4 | Outbound | Outbound Orders、On Hold Orders（见第 9 章） |
-| 5 | **Warehouses** | **仅 Admin**（可标注 Admin）：Warehouse Management、Zone Management |
+| 3 | **Purchase Order** | 采购单（§9） |
+| 4 | **Inbound** | 入库单 / Receipt（§10） |
+| 5 | Outbound | 出库单 |
+| 6 | **Warehouses** | **仅 Admin**：Warehouse Management、Zone Management |
 
-**Purchase Orders** 入口在 Dashboard **Quick Actions**，不作为侧栏一级目录。
+Dashboard **Quick Actions** 与侧栏 Purchase Order / Inbound 跳转同一列表页。
 
 ---
 
@@ -424,75 +425,149 @@
 
 ---
 
-## 9 出库（Outbound）
+## 9 采购单（Purchase Order）
 
-与库存基础模块对齐的出库作业。拣货、打包**不改库存**；**分配成功写占用流水**（locked↑、available↓、total 不变）；**确认发货写出库扣减流水**（total↓、locked↓、available 不变）。推荐库区仅 **Storage Zone（STO）** 且 Enable、`available ≥ 行数量`。停用仓/区不可作为新分配目标。
+### 9.0 模块定位与基础模块关系
 
-### 9.1 相对原稿的修正
+- **数据范围**：受 §2.1 `warehouse_context` 约束；列表默认仅展示当前上下文仓库的 PO（`warehouse_code`）。
+- **不写库存**：PO 创建/编辑/导入**不**改 `total/locked`；**入库完成（Stocked In）** 后由 **§10 入库单** 写账并生成 **§6 入库流水**。
+- **商品主数据**：SKU ID、名称、规格、条码自 **Seller/商品库只读**；PO 行可带 **Qty、单价、链接** 等采购属性，不在 WMS 建品。
+- **与旧稿差异**：原「Creation Method = Manual Adjustment」改为 **Manual Entry**（避免与 §5.3 库存调整单混淆）。
 
-| 原稿 | 定稿 |
+### 9.1 功能列表
+
+查看 / 创建 / 编辑 / 删除采购单；搜索；Status、Creation Method 筛选；分页（默认 20，可选 20/50/100/500）；新建排序在前。
+
+### 9.2 单号与编码规则
+
+| 字段 | 规则 |
 |------|------|
-| Shippment / Comfirm | **Shipment** / **Confirm** |
-| 筛选按钮叫 Confirm | 与基础模块一致，按钮为 **Search** |
-| Shipped 行操作仍是 Confirm Shipment | **View** |
-| 导入仓库「菜单栏指定」表述含糊 | **当前仓库上下文**；上下文为 All 时，导入弹窗必须选择仓库。已生成单据不随上下文切换改仓 |
-| 一行可按件数拆开发货 | **一行（Order No. + SKU ID）整行分配或整行挂起**，不拆数量 |
-| Tracking 与 Shipment 每行各生成一号 | **一个 Tracking No. 对应一个 Shipment No.**；同一包裹的多行可共用该对号码（合并发货） |
-| 发货单号在待拣货才生成 | **导入 Tracking 成功时生成**，随后进入 Ready to Pick |
+| **Order No.** (`po_no`) | `PO-{YYYYMMDD}-{seq4}`，全局唯一，系统生成，不可改。例：`PO-20260820-0001` |
+| **warehouse_code** | 创建时取当前上下文仓，canonical 5 位（§3.2.1） |
+| **Linked Receipt No.** | 关联的入库单号 `IN-*`（§10.2），一对多 |
 
-### 9.2 编码
+`seq4`：按自然日全局递增，4 位数字，事务分配。
 
-| 单据 | 规则 | 示例 |
+### 9.3 搜索与筛选
+
+- **搜索类别（单选）**：Order No.（默认） / Linked Receipt No.
+- **Search**：无关键词 = 刷新全量；有关键词 = 模糊匹配，**精确匹配排第一**（BR201/BR202）。
+- **Status（多选，OR）**：本期 WMS 收敛为 **Draft / Created / Processing / Partially Stocked In / Stocked In**；物流态（Pending Shipment、Shipped、Received 等）由采购/物流域维护，WMS 仅展示与入库相关的聚合态（详见 §9.5）。
+- **Creation Method**：Manual Entry / Import Created（多选 OR）。
+- **Filter / Reset**：无选中时置灰；Reset 清空条件。
+
+### 9.4 状态与删除
+
+| Status | 说明 | 删除 |
+|--------|------|------|
+| Draft | 草稿，可编辑全单 | 可删 |
+| Created | 已确认，待收货/入库 | 无关联 Receipt 时可删 |
+| Processing | 导入进行中，列表可 View 进度 | 不可删 |
+| Partially Stocked In | 部分 SKU 已入库 | 不可删 |
+| Stocked In | 全部行已入库 | 不可删，仅查看 |
+
+### 9.5 SKU 行状态（与 PO 状态联动）
+
+行状态（WMS 关心）：Pending Shipment → Shipped → Received → **Stocked In**。  
+PO 头状态：若所有行同态则一致；否则 **Partially Stocked In** 优先于 Created。  
+优先级（展示）：Stocked In > Received > Shipped > Pending Shipment。
+
+### 9.6 编辑页（Create Purchase Order）
+
+三种互斥录入方式（与旧稿一致，命名调整）：
+
+1. **Add Products** — 从商品库勾选 SKU 填行  
+2. **Import** — 表头校验，最多 **2** 个并发导入任务；Processing 时 Delete 置灰  
+3. （无「引用入库单」；引用方向为 **入库单引用 PO**）
+
+- 草稿保留：localStorage / 服务端草稿（产品实现）；SKU 行上限 **10,000** 行。  
+- 保存成功后可 **Print**；有行时出现 **Delete All** 二次确认。  
+- 行字段（B2B 建议见 §9.8）：SKU ID、Product Name、Specification、**Qty（整数 1–9,999,999）**、**Unit Price（decimal(16,4)）**、Link、Cargo Type、Shipment Type、Remarks 等。
+
+---
+
+## 10 入库（Inbound Receipt）
+
+### 10.0 模块定位
+
+- **Receipt** = 入库单（上架凭证）；**Stocked In** = 确认上架，写 **total↑、available↑**（locked 不变），并写 **§6.1 入库流水**。
+- **Receipt Type**（与流水类型映射）：
+
+| Receipt Type | 流水 Type | Record 子筛 |
+|--------------|-----------|-------------|
+| **Purchase Receipt** | Purchase Inbound | Purchase |
+| **Manual Receipt** | Manual Inbound | Manual |
+
+禁止使用 **Manual Adjustment** 作为入库类型（调整走 §5.3 ADJ 单）。
+
+- **上架库区**：默认当前仓 **已启用的 Storage Zone**（`zone_code` 如 `SH001STO`）；停用仓/区不可作为目标（§8.1）。
+
+### 10.1 功能列表
+
+同旧稿：列表 / 创建 / 编辑 / 查看 / 删除；Receipt No.、Related PO 搜索；Status、Receipt Type 筛选；新建在前；分页 20/50/100/500。
+
+### 10.2 单号规则
+
+| 字段 | 规则 |
+|------|------|
+| **Receipt No.** (`receipt_no`) | `IN-{YYYYMMDD}-{seq4}`，全局唯一。例：`IN-20260821-0001` |
+| **Related PO** | 可选；`Purchase Receipt` 时建议必填 |
+| **warehouse_code / zone_code** | §3.2.1 / §4.1 |
+
+### 10.3 状态
+
+| Status | 说明 |
+|--------|------|
+| Draft | 可编辑、可删 |
+| Processing | 导入中，进度条；可 View；不可删 |
+| Stocked In | 已完成上架；仅查看；不可删 |
+
+### 10.4 编辑页（Create Receipt）
+
+三种互斥方式（旧稿保留）：
+
+1. **Link Purchase Order** — 选 PO 后拉取待入库行；展示 **Expected Qty**（来自 PO），录入 **Receipt Qty**；**不再强制** Physical Inventory / Inventory Variance（盘点差异走 §5.3 调整单，或二期对账模块）。  
+2. **Add Products** — 手工入库行（`Manual Receipt`）  
+3. **Import** — 表头校验、并发限制、进度与旧稿一致  
+
+互斥规则：选 PO 后 Add Products / Import 置灰；反之亦然。
+
+### 10.5 行字段（与基础库存对齐）
+
+| 字段 | 必填 | 说明 |
 |------|------|------|
-| Outbound No. | `OB` + `warehouse_code` + `yyyyMMdd` + 4 位流水 | `OBSH001202608210001` |
-| Shipment No. | `SHP` + `warehouse_code` + `yyyyMMdd` + 4 位流水；**按 Tracking No. 生成一次** | `SHPSH001202608210001` |
-| Tracking No. | 承运商回传，WMS 不生成 | `SF1029384756` |
+| SKU ID | Y | 4–50 字符，系统校验存在 |
+| Product Name / Specification | Y | 只读带出为主 |
+| **Receipt Qty** | Y | 上架数量；整数 **1–9,999,999** |
+| **Zone** | Y | 默认 Storage `zone_code` |
+| Primary Barcode / PAN | N | **展示只读**（§1.2）；不在入库单编辑页强制录入 13 位 PAN（旧稿 R1–R3 迁至 Seller 域） |
+| Supplier / Remarks | N | 头字段或行备注 |
 
-`warehouse_code` 使用 §3.2.1 的 5 位码（`SH001`），不含连字符。
+**删除字段建议（相对旧稿）**：行级 Total/Qty/Physical Inventory/Inventory Variance 四列并存易混淆 → 统一为 **Receipt Qty**；账面/实盘/差异在对账或调整单处理。
 
-### 9.3 行状态
+### 10.6 写账契约（与 §8.2）
 
-`Pending` 不是行状态。导入后每一行只进入 **Allocated** 或 **On Hold**。
+Stocked In 事务内：
 
-| 状态 | 进入条件 | 主动作 | 库存 |
-|------|----------|--------|------|
-| Allocated | 存储区 available 足够，整行锁定 | View；Export Shipping Order；Import Tracking No. | locked +N |
-| Ready to Pick | Tracking 导入成功 | Complete Picking | 不变 |
-| Ready to Pack | 拣货确认 | Complete Packing | 不变 |
-| Ready to Ship | 打包确认 | Confirm Shipment | 不变 |
-| Shipped | 发货确认成功 | View | total −N，locked −N |
-| On Hold | available 不足或重复重试仍不足 | Re-allocate | 不变 |
+1. 按行 `warehouse_code + zone_code + sku_id` 增加 `total`，`available = total - locked`  
+2. 插入 `record` 入库流水（`inboundNo` = Receipt No.，采购类附 `purchaseOrderNo`）  
+3. 更新 PO 行状态 → Stocked In / PO 头 → Partially Stocked In 或 Stocked In  
 
-批次状态（Outbound Orders 列表）：
+失败整单回滚，禁止半截流水。
 
-| 状态 | 规则 |
-|------|------|
-| Pending Outbound | 该批次尚无 Shipped 行 |
-| Partially Outbound | 部分行已 Shipped |
-| Fully Outbound | 全部行已 Shipped |
+### 10.7 分页与列表记忆
 
-### 9.4 页面
+与旧稿 2.5：从编辑弹层返回后保留页码、page size、筛选、滚动位置（产品实现）。
 
-**Outbound → Outbound Orders**
+### 10.8 B2B 数字与校验建议（相对旧稿修订）
 
-- 筛选：Outbound No. 或 Batch Status + 关键字，与导入时间取交集；点击 **Search** 才查询。
-- **Import Orders**：CSV 表头 `Order No, Order Time, Product ID, SKU ID, Product Name, Specification, Qty`。同一 Order No. + SKU ID 重复行忽略。
-- 列表：Outbound No.、Imported At、Source File、Warehouse、Orders、SKU Count、Total Units、Status、View。
-
-**Outbound Detail**（View 进入）
-
-Tab：All、Allocated、Ready to Pick、Ready to Pack、Ready to Ship、Shipped、On Hold。  
-列：Outbound No.、Order No.、Order Time、Product、Specification、Qty、Zone（`zone_code`）、Shipment No.、Tracking No.、Status、Action。  
-批量按钮在未勾选时不可用；单行操作不要求勾选。
-
-**Outbound → On Hold Orders**
-
-跨批次列出 On Hold 行。Re-allocate 仍用**原仓库**的存储区；成功则回到该批次 Allocated，失败保持 On Hold。
-
-### 9.5 拆单与合单
-
-- **一单多 SKU**：有货的行可单独进入 Allocated 并最终发货；缺货行整行 On Hold。不把一行数量拆成先发一部分。
-- **合单**：导入 Tracking 时，多行填写相同 Tracking No.，系统只生成一个 Shipment No. 并都挂到这些行上。订单行仍各自独立，不合并订单事实。
+| 旧稿问题 | 建议 |
+|----------|------|
+| Qty/Total/Physical/Variance 均为 7 位整数且语义重叠 | 入库行仅 **Receipt Qty**；PO 行用 **Order Qty**；金额用 **decimal(16,4)** |
+| PAN/Barcode 在 WMS 入库必填 13 位 | WMS **只读展示**；校验在 Seller 主数据 |
+| 「Manual Adjustment」作入库类型 | 改为 **Manual Receipt**；调整单专用 ADJ 前缀 |
+| 搜索推荐 5 行 UI | 保留；后端可用前缀索引 / 限 20 条 |
+| Status 十态全在 WMS | WMS 展示 **5 态 + 行态**；物流中间态由 PO 服务聚合 |
 
 ---
 
@@ -505,4 +580,4 @@ Tab：All、Allocated、Ready to Pick、Ready to Pack、Ready to Ship、Shipped�
 | Warehouse / Zone Code | PRD：`SH001`、`SH001STO`（无连字符） | HTML 原型演示数据仍用 `SH-001`、`SH-001-STO`，实现须按 §3.2.1 / §4.1 归一 |
 | Record Tab 顺序 | All 首位 | 一致 |
 | Opening 子筛 | 不单独 Opening | 一致 |
-| 出库作业 | §9：分配占用、发货扣减、Tracking 生成 Shipment | `prototype/js/outbound.js` 可走通导入、挂起重分配、拣货/打包/发货 |
+| 采购单 / 入库 | §9–§10 | 原型 `inbound-po.js`：列表、筛选、创建、Stock-In 写流水演示 |
