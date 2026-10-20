@@ -112,8 +112,13 @@ let inboundReceipts = [
 let currentPoEdit = null;
 let currentReceiptEdit = null;
 let receiptEditorSource = 'po';
+let receiptLockedSource = null;
 let poEditorLines = [];
 let receiptEditorLines = [];
+let inboundFilterApplied = { status: [], type: [] };
+let inboundListPage = 1;
+let receiptSkuPickerSelected = new Set();
+let receiptEditorReadonly = false;
 
 function nextDocNo(prefix) {
   const d = new Date().toISOString().slice(0, 10).replace(/-/g, '');
@@ -140,6 +145,80 @@ function getDefaultStorageZoneCode(whCode) {
   if (z) return normalizeWarehouseId(z.code.replace(/STO$/i, '')) + 'STO';
   return code + 'STO';
 }
+
+function findInventoryRow(skuId, warehouseCode, zoneCode) {
+  const wh = normalizeWarehouseId(warehouseCode);
+  const zc = zoneCode || getDefaultStorageZoneCode(wh);
+  return skuData.find(s =>
+    s.skuId === skuId &&
+    normalizeWarehouseId(s.warehouseCode) === wh &&
+    s.zoneCode === zc
+  );
+}
+
+function listWarehouseInventorySkus(warehouseCode) {
+  const wh = normalizeWarehouseId(warehouseCode);
+  return skuData.filter(s => normalizeWarehouseId(s.warehouseCode) === wh);
+}
+
+function primaryBarcode(s) {
+  if (!s) return '—';
+  if (s.barcode && s.barcode !== '-') return s.barcode;
+  const b = (s.barcodes || []).find(x => String(x).startsWith('EAN:'));
+  return b || (s.barcodes && s.barcodes[0]) || '—';
+}
+
+function toggleMultiSelect(wrapId) {
+  const wrap = document.getElementById(wrapId);
+  if (!wrap) return;
+  const panel = wrap.querySelector('.multi-select-panel');
+  document.querySelectorAll('.multi-select-panel').forEach(p => {
+    if (p !== panel) p.hidden = true;
+  });
+  panel.hidden = !panel.hidden;
+}
+
+function getInboundFilterCheckboxValues(wrapId) {
+  const wrap = document.getElementById(wrapId);
+  if (!wrap) return [];
+  return [...wrap.querySelectorAll('input[type=checkbox]:checked')].map(c => c.value);
+}
+
+function syncInboundFilterTriggerLabels() {
+  const statusVals = getInboundFilterCheckboxValues('inbound-filter-status-wrap');
+  const typeVals = getInboundFilterCheckboxValues('inbound-filter-type-wrap');
+  const stBtn = document.querySelector('#inbound-filter-status-wrap .multi-select-trigger');
+  const tyBtn = document.querySelector('#inbound-filter-type-wrap .multi-select-trigger');
+  if (stBtn) stBtn.textContent = statusVals.length ? statusVals.join(', ') : 'Select…';
+  if (tyBtn) tyBtn.textContent = typeVals.length ? typeVals.join(', ') : 'Select…';
+}
+
+function onInboundFilterCheckboxChange() {
+  syncInboundFilterTriggerLabels();
+  const pending = getInboundFilterCheckboxValues('inbound-filter-status-wrap').length +
+    getInboundFilterCheckboxValues('inbound-filter-type-wrap').length;
+  const applyBtn = document.getElementById('inbound-filter-apply');
+  const resetBtn = document.getElementById('inbound-filter-reset');
+  if (applyBtn) applyBtn.disabled = pending === 0;
+  if (resetBtn) resetBtn.disabled = pending === 0 &&
+    inboundFilterApplied.status.length === 0 && inboundFilterApplied.type.length === 0;
+}
+
+function applyInboundFilters() {
+  inboundFilterApplied = {
+    status: getInboundFilterCheckboxValues('inbound-filter-status-wrap'),
+    type: getInboundFilterCheckboxValues('inbound-filter-type-wrap')
+  };
+  inboundListPage = 1;
+  renderInboundReceiptList();
+  showToast('Filters applied', 'success');
+}
+
+document.addEventListener('click', e => {
+  if (!e.target.closest('.multi-select')) {
+    document.querySelectorAll('.multi-select-panel').forEach(p => { p.hidden = true; });
+  }
+});
 
 function poMatchesScope(po) {
   const scope = getWarehouseScope();
@@ -264,8 +343,9 @@ function renderInboundReceiptList() {
   if (!tbody) return;
   const field = document.getElementById('inbound-search-field').value;
   const kw = (document.getElementById('inbound-search-keyword').value || '').trim().toLowerCase();
-  const status = document.getElementById('inbound-filter-status').value;
-  const type = document.getElementById('inbound-filter-type').value;
+  const statusList = inboundFilterApplied.status;
+  const typeList = inboundFilterApplied.type;
+  const pageSize = parseInt(document.getElementById('inbound-page-size').value, 10) || 20;
 
   let rows = inboundReceipts.filter(receiptMatchesScope);
   if (kw) {
@@ -277,11 +357,17 @@ function renderInboundReceiptList() {
   } else {
     rows.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
   }
-  if (status) rows = rows.filter(r => r.status === status);
-  if (type) rows = rows.filter(r => r.receiptType === type);
+  if (statusList.length) rows = rows.filter(r => statusList.includes(r.status));
+  if (typeList.length) rows = rows.filter(r => typeList.includes(r.receiptType));
 
-  document.getElementById('inbound-list-total').textContent = rows.length;
-  tbody.innerHTML = rows.map(r => `
+  const total = rows.length;
+  const maxPage = Math.max(1, Math.ceil(total / pageSize));
+  if (inboundListPage > maxPage) inboundListPage = maxPage;
+  const start = (inboundListPage - 1) * pageSize;
+  const pageRows = rows.slice(start, start + pageSize);
+
+  document.getElementById('inbound-list-total').textContent = total;
+  tbody.innerHTML = pageRows.map(r => `
     <tr>
       <td><strong>${r.receiptNo}</strong></td>
       <td>${r.receiptType}</td>
@@ -293,12 +379,17 @@ function renderInboundReceiptList() {
       <td>${r.updatedAt}</td>
       <td>
         <div class="action-links">
-          ${r.status === 'Processing' ? `<a onclick="showReceiptProgress('${r.receiptNo}')">View Progress</a>` : `<a onclick="openReceiptEditor('${r.receiptNo}')">${r.status === 'Stocked In' ? 'View' : 'Edit'}</a>`}
+          ${r.status === 'Processing' ? `<a onclick="showReceiptProgress('${r.receiptNo}')">View</a>` : `<a onclick="openReceiptEditor('${r.receiptNo}')">${r.status === 'Stocked In' ? 'View' : 'Edit'}</a>`}
           <a class="danger ${r.status !== 'Draft' ? 'disabled' : ''}" onclick="deleteInboundReceipt('${r.receiptNo}')">Delete</a>
         </div>
       </td>
     </tr>
   `).join('') || '<tr><td colspan="9" style="text-align:center;color:#999">No data</td></tr>';
+
+  const pagBar = document.getElementById('inbound-pagination-info');
+  if (pagBar) {
+    pagBar.textContent = total ? `Page ${inboundListPage} / ${maxPage}` : 'Page 1 / 1';
+  }
 }
 
 function searchPurchaseOrders() {
@@ -320,8 +411,23 @@ function searchInboundReceipts() {
 
 function resetInboundFilters() {
   document.getElementById('inbound-search-keyword').value = '';
-  document.getElementById('inbound-filter-status').value = '';
-  document.getElementById('inbound-filter-type').value = '';
+  document.querySelectorAll('#inbound-filter-status-wrap input, #inbound-filter-type-wrap input').forEach(c => { c.checked = false; });
+  inboundFilterApplied = { status: [], type: [] };
+  inboundListPage = 1;
+  syncInboundFilterTriggerLabels();
+  onInboundFilterCheckboxChange();
+  renderInboundReceiptList();
+}
+
+function inboundPrevPage() {
+  if (inboundListPage > 1) {
+    inboundListPage--;
+    renderInboundReceiptList();
+  }
+}
+
+function inboundNextPage() {
+  inboundListPage++;
   renderInboundReceiptList();
 }
 
@@ -463,11 +569,39 @@ function populateReceiptPoSelect() {
     eligible.map(p => `<option value="${p.orderNo}">${p.orderNo} — ${p.name}</option>`).join('');
 }
 
+function inferReceiptSource(receipt) {
+  if (!receipt || !receipt.lines.length) return 'po';
+  if (receipt.purchaseOrderNo) return 'po';
+  if (receipt.entryMethod) return receipt.entryMethod;
+  return 'products';
+}
+
+function updateReceiptEditorChrome() {
+  const ro = receiptEditorReadonly;
+  const proc = currentReceiptEdit && currentReceiptEdit.status === 'Processing';
+  document.getElementById('receipt-type').disabled = ro || proc;
+  document.getElementById('receipt-po-select').disabled = ro || proc;
+  document.getElementById('receipt-supplier').disabled = ro || proc;
+  document.getElementById('receipt-remarks').disabled = ro || proc;
+  document.getElementById('receipt-save-draft-btn').hidden = ro || proc;
+  document.getElementById('receipt-stock-in-btn').hidden = ro || proc;
+  document.getElementById('receipt-print-btn').hidden = !(ro || (receiptEditorLines.length && !proc));
+  document.getElementById('receipt-delete-all-btn').hidden = ro || proc || receiptEditorLines.length === 0;
+  document.querySelectorAll('.receipt-source-tabs .source-tab').forEach(t => {
+    const src = t.dataset.source;
+    const locked = receiptLockedSource && receiptLockedSource !== src;
+    t.classList.toggle('disabled', locked || ro || proc);
+  });
+  document.getElementById('receipt-import-btn').disabled = ro || proc || !document.getElementById('receipt-import-file').files.length;
+  document.getElementById('receipt-add-products-btn').disabled = ro || proc;
+}
+
 function openReceiptEditor(receiptNo) {
   const wh = getInboundWarehouseScope();
   const zone = getDefaultStorageZoneCode(wh);
   currentReceiptEdit = receiptNo ? inboundReceipts.find(r => r.receiptNo === receiptNo) : null;
-  document.getElementById('receipt-editor-title').textContent = currentReceiptEdit ? (currentReceiptEdit.status === 'Stocked In' ? 'View Receipt' : 'Edit Receipt') : 'Create Receipt';
+  receiptEditorReadonly = !!(currentReceiptEdit && currentReceiptEdit.status === 'Stocked In');
+  document.getElementById('receipt-editor-title').textContent = currentReceiptEdit ? (receiptEditorReadonly ? 'View Receipt' : 'Edit Receipt') : 'Create Receipt';
   document.getElementById('receipt-warehouse').value = wh;
   document.getElementById('receipt-zone').value = zone + ' (Storage Zone)';
   populateReceiptPoSelect();
@@ -475,26 +609,48 @@ function openReceiptEditor(receiptNo) {
   if (currentReceiptEdit) {
     document.getElementById('receipt-type').value = currentReceiptEdit.receiptType;
     document.getElementById('receipt-po-select').value = currentReceiptEdit.purchaseOrderNo || '';
-    receiptEditorLines = currentReceiptEdit.lines.map(l => ({ ...l, orderQty: l.orderQty || l.receiptQty || 0 }));
+    document.getElementById('receipt-supplier').value = currentReceiptEdit.supplier || '';
+    document.getElementById('receipt-remarks').value = currentReceiptEdit.remarks || '';
+    receiptEditorLines = currentReceiptEdit.lines.map(l => {
+      const inv = findInventoryRow(l.skuId, wh, l.zoneCode);
+      return {
+        ...l,
+        orderQty: l.orderQty ?? 0,
+        barcode: l.barcode || primaryBarcode(inv),
+        zoneCode: l.zoneCode || zone
+      };
+    });
+    receiptLockedSource = receiptEditorLines.length ? inferReceiptSource(currentReceiptEdit) : null;
+    setReceiptSource(receiptLockedSource || inferReceiptSource(currentReceiptEdit), true);
   } else {
     const draft = localStorage.getItem('receipt_draft_type');
     document.getElementById('receipt-type').value = draft || 'Purchase Receipt';
+    document.getElementById('receipt-supplier').value = localStorage.getItem('receipt_draft_supplier') || '';
+    document.getElementById('receipt-remarks').value = localStorage.getItem('receipt_draft_remarks') || '';
     receiptEditorLines = [];
+    receiptLockedSource = null;
+    setReceiptSource('po', true);
   }
   renderReceiptEditorLines();
-  setReceiptSource('po');
+  updateReceiptEditorChrome();
   openModal('receipt-editor-modal');
 }
 
-function setReceiptSource(source) {
+function setReceiptSource(source, silent) {
+  if (receiptLockedSource && receiptLockedSource !== source && receiptEditorLines.length) return;
   receiptEditorSource = source;
   document.querySelectorAll('.receipt-source-tabs .source-tab').forEach(t => {
     t.classList.toggle('active', t.dataset.source === source);
   });
   document.getElementById('receipt-po-group').style.display = source === 'po' ? '' : 'none';
   document.getElementById('receipt-source-import').hidden = source !== 'import';
-  if (source === 'po') document.getElementById('receipt-type').value = 'Purchase Receipt';
-  if (source === 'products' || source === 'import') document.getElementById('receipt-type').value = 'Manual Receipt';
+  document.getElementById('receipt-source-products').hidden = source !== 'products';
+  if (!silent && !receiptEditorReadonly) {
+    if (source === 'po') document.getElementById('receipt-type').value = 'Purchase Receipt';
+    if (source === 'products' || source === 'import') document.getElementById('receipt-type').value = 'Manual Receipt';
+  }
+  if (receiptEditorLines.length && !receiptLockedSource) receiptLockedSource = source;
+  updateReceiptEditorChrome();
 }
 
 function reconVariance(line) {
@@ -505,31 +661,51 @@ function reconVariance(line) {
 }
 
 function renderReceiptEditorLines() {
+  const ro = receiptEditorReadonly;
   document.getElementById('receipt-editor-lines').innerHTML = receiptEditorLines.map((l, i) => `
     <tr>
       <td>${l.skuId}</td><td>${l.productName}</td><td>${l.spec}</td>
-      <td>${l.orderQty ?? '—'}</td>
-      <td><input type="number" min="1" max="9999999" value="${l.receiptQty}" onchange="receiptEditorLines[${i}].receiptQty=parseInt(this.value,10)||0;renderReceiptEditorLines()"></td>
-      <td>${reconVariance(l)}</td>
+      <td>${l.barcode || '—'}</td>
+      <td>${receiptEditorSource === 'po' ? (l.orderQty ?? '—') : '—'}</td>
+      <td>${ro ? l.receiptQty : `<input type="number" min="1" max="9999999" value="${l.receiptQty}" onchange="receiptEditorLines[${i}].receiptQty=parseInt(this.value,10)||0;renderReceiptEditorLines()">`}</td>
+      <td>${receiptEditorSource === 'po' ? reconVariance(l) : '—'}</td>
       <td>${l.zoneCode}</td>
     </tr>
-  `).join('') || '<tr><td colspan="7" style="text-align:center;color:#999">No lines — link PO, add products, or import</td></tr>';
+  `).join('') || '<tr><td colspan="8" style="text-align:center;color:#999">No lines — link PO, add products, or import</td></tr>';
+  updateReceiptEditorChrome();
 }
 
 document.addEventListener('change', e => {
   if (e.target.id === 'receipt-po-select') {
     const po = purchaseOrders.find(p => p.orderNo === e.target.value);
     if (!po) return;
+    const wh = getInboundWarehouseScope();
+    const zoneCode = getDefaultStorageZoneCode(wh);
+    const skipped = [];
     receiptEditorLines = po.lines
       .filter(l => l.lineStatus !== 'Stocked In')
-      .map(l => ({
-        skuId: l.skuId,
-        productName: l.productName,
-        spec: l.spec,
-        orderQty: l.qty,
-        receiptQty: l.qty,
-        zoneCode: getDefaultStorageZoneCode(po.warehouseCode)
-      }));
+      .map(l => {
+        const inv = findInventoryRow(l.skuId, wh, zoneCode);
+        if (!inv) {
+          skipped.push(l.skuId);
+          return null;
+        }
+        return {
+          skuId: l.skuId,
+          productName: l.productName,
+          spec: l.spec,
+          orderQty: l.qty,
+          receiptQty: l.qty,
+          barcode: primaryBarcode(inv),
+          zoneCode
+        };
+      })
+      .filter(Boolean);
+    if (skipped.length) {
+      showToast(`SKU not registered in this warehouse: ${skipped.slice(0, 3).join(', ')}${skipped.length > 3 ? '…' : ''}`, 'warning');
+    }
+    receiptLockedSource = 'po';
+    setReceiptSource('po', true);
     renderReceiptEditorLines();
   }
   if (e.target.id === 'receipt-import-file') {
@@ -560,14 +736,25 @@ function startReceiptImport() {
     if (pct >= 100) {
       clearInterval(timer);
       inboundImportJobs--;
-      receiptEditorLines.push({
-        skuId: 'SKU-10001-WH',
-        productName: 'Wireless Bluetooth Earbuds Pro',
-        spec: 'White; L',
-        orderQty: 0,
-        receiptQty: 50,
-        zoneCode: getDefaultStorageZoneCode(getInboundWarehouseScope())
-      });
+      const wh = getInboundWarehouseScope();
+      const zoneCode = getDefaultStorageZoneCode(wh);
+      const demoSku = 'SKU-10001-WH';
+      const inv = findInventoryRow(demoSku, wh, zoneCode);
+      if (inv) {
+        receiptEditorLines.push({
+          skuId: demoSku,
+          productName: inv.productName,
+          spec: inv.spec,
+          orderQty: 0,
+          receiptQty: 50,
+          barcode: primaryBarcode(inv),
+          zoneCode
+        });
+      } else {
+        showToast('SKU not registered in this warehouse (demo import).', 'error');
+      }
+      receiptLockedSource = 'import';
+      setReceiptSource('import', true);
       renderReceiptEditorLines();
       showToast('Import completed (demo)', 'success');
       document.getElementById('receipt-import-progress').hidden = true;
@@ -584,6 +771,17 @@ function confirmReceiptStockIn() {
     showToast('Add at least one SKU line before stock-in.', 'error');
     return;
   }
+  const wh = getInboundWarehouseScope();
+  for (const line of receiptEditorLines) {
+    if (!line.receiptQty || line.receiptQty < 1) {
+      showToast('Receipt Qty must be between 1 and 9,999,999.', 'error');
+      return;
+    }
+    if (!findInventoryRow(line.skuId, wh, line.zoneCode)) {
+      showToast(`Stock-in failed: ${line.skuId} is not registered in this warehouse/zone.`, 'error');
+      return;
+    }
+  }
   persistReceipt('Stocked In', true);
 }
 
@@ -596,11 +794,16 @@ function persistReceipt(status, writeInventory) {
     warehouseCode: wh,
     zoneCode,
     purchaseOrderNo: poNo,
+    supplier: document.getElementById('receipt-supplier').value.trim(),
+    remarks: document.getElementById('receipt-remarks').value.trim(),
+    entryMethod: receiptLockedSource || receiptEditorSource,
     progress: status === 'Processing' ? 45 : status === 'Stocked In' ? 100 : 0,
     updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
-    lines: receiptEditorLines
+    lines: receiptEditorLines.map(l => ({ ...l }))
   };
   localStorage.setItem('receipt_draft_type', payload.receiptType);
+  localStorage.setItem('receipt_draft_supplier', payload.supplier);
+  localStorage.setItem('receipt_draft_remarks', payload.remarks);
 
   let receiptNo;
   if (currentReceiptEdit) {
@@ -616,9 +819,16 @@ function persistReceipt(status, writeInventory) {
     if (po && !po.linkedReceipts.includes(receiptNo)) po.linkedReceipts.push(receiptNo);
   }
   if (writeInventory && status === 'Stocked In') {
-    payload.lines.forEach(line => {
-      writeInboundInventoryAndRecord(receiptNo, payload, line);
-    });
+    try {
+      payload.lines.forEach(line => {
+        writeInboundInventoryAndRecord(receiptNo, payload, line);
+      });
+    } catch (err) {
+      showToast('Stock-in failed: inventory row missing. Whole receipt rolled back (demo).', 'error');
+      if (currentReceiptEdit) currentReceiptEdit.status = 'Draft';
+      else inboundReceipts.shift();
+      return;
+    }
     if (poNo) updatePoAfterStockIn(poNo, payload.lines);
   }
 
@@ -630,12 +840,12 @@ function persistReceipt(status, writeInventory) {
 }
 
 function writeInboundInventoryAndRecord(receiptNo, receipt, line) {
-  let sku = skuData.find(s => s.skuId === line.skuId && normalizeWarehouseId(s.warehouseCode) === receipt.warehouseCode);
-  if (!sku) sku = skuData.find(s => s.skuId === line.skuId);
-  if (sku) {
-    sku.total += line.receiptQty;
-    sku.available = sku.total - sku.locked;
+  const sku = findInventoryRow(line.skuId, receipt.warehouseCode, line.zoneCode);
+  if (!sku) {
+    throw new Error('missing inventory row');
   }
+  sku.total += line.receiptQty;
+  sku.available = sku.total - sku.locked;
   const recordType = receipt.receiptType === 'Purchase Receipt' ? 'Purchase Inbound' : 'Manual Inbound';
   recordData.inbound.unshift({
     time: new Date().toISOString().slice(0, 19).replace('T', ' '),
@@ -687,11 +897,97 @@ function deleteInboundReceipt(receiptNo) {
 }
 
 function showReceiptProgress(receiptNo) {
-  showToast(`Import in progress for ${receiptNo}`, 'info');
-  openReceiptEditor(receiptNo);
+  const r = inboundReceipts.find(x => x.receiptNo === receiptNo);
+  if (!r) return;
+  document.getElementById('receipt-progress-label').textContent = `Import in progress — ${receiptNo}`;
+  document.getElementById('receipt-progress-detail').textContent = `${r.lines.length} line(s) loaded; warehouse ${r.warehouseCode}.`;
+  document.getElementById('receipt-progress-modal-fill').style.width = (r.progress || 0) + '%';
+  openModal('receipt-progress-modal');
+}
+
+function deleteAllReceiptLines() {
+  if (receiptEditorReadonly || !receiptEditorLines.length) return;
+  if (!confirm('Are you sure you want to delete all SKU data?')) return;
+  receiptEditorLines = [];
+  receiptLockedSource = null;
+  setReceiptSource(receiptEditorSource, true);
+  renderReceiptEditorLines();
+}
+
+function printReceipt() {
+  window.print();
+}
+
+function openReceiptSkuPicker() {
+  if (receiptEditorReadonly) return;
+  receiptSkuPickerSelected = new Set();
+  document.getElementById('receipt-sku-picker-search').value = '';
+  renderReceiptSkuPickerList();
+  openModal('receipt-sku-picker-modal');
+}
+
+function renderReceiptSkuPickerList() {
+  const tbody = document.getElementById('receipt-sku-picker-body');
+  if (!tbody) return;
+  const wh = getInboundWarehouseScope();
+  const kw = (document.getElementById('receipt-sku-picker-search').value || '').trim().toLowerCase();
+  let rows = listWarehouseInventorySkus(wh);
+  if (kw) {
+    rows = rows.filter(s =>
+      s.skuId.toLowerCase().includes(kw) ||
+      (s.productName || '').toLowerCase().includes(kw)
+    );
+  }
+  const existing = new Set(receiptEditorLines.map(l => l.skuId + '|' + l.zoneCode));
+  tbody.innerHTML = rows.map(s => {
+    const key = s.skuId + '|' + s.zoneCode;
+    const disabled = existing.has(key);
+    const checked = receiptSkuPickerSelected.has(key);
+    return `<tr>
+      <td><input type="checkbox" ${disabled ? 'disabled' : ''} ${checked ? 'checked' : ''} onchange="toggleReceiptSkuPick('${key}', this.checked)"></td>
+      <td>${s.skuId}</td><td>${s.productName}</td><td>${s.spec}</td><td>${s.zoneCode}</td><td>${s.total}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="6" style="text-align:center;color:#999">No SKUs in this warehouse</td></tr>';
+}
+
+function toggleReceiptSkuPick(key, on) {
+  if (on) receiptSkuPickerSelected.add(key);
+  else receiptSkuPickerSelected.delete(key);
+}
+
+function confirmReceiptSkuPicker() {
+  const wh = getInboundWarehouseScope();
+  let added = 0;
+  receiptSkuPickerSelected.forEach(key => {
+    const [skuId, zoneCode] = key.split('|');
+    const inv = findInventoryRow(skuId, wh, zoneCode);
+    if (!inv || receiptEditorLines.some(l => l.skuId === skuId && l.zoneCode === zoneCode)) return;
+    if (receiptEditorLines.length >= MAX_SKU_LINES) {
+      showToast('You have already uploaded 10,000 records. Adding new data will clear all existing data.', 'warning');
+      return;
+    }
+    receiptEditorLines.push({
+      skuId: inv.skuId,
+      productName: inv.productName,
+      spec: inv.spec,
+      orderQty: 0,
+      receiptQty: 1,
+      barcode: primaryBarcode(inv),
+      zoneCode: inv.zoneCode
+    });
+    added++;
+  });
+  if (added) {
+    receiptLockedSource = 'products';
+    setReceiptSource('products', true);
+    renderReceiptEditorLines();
+  }
+  closeModal('receipt-sku-picker-modal');
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   initPoInboundSuggest();
+  syncInboundFilterTriggerLabels();
+  onInboundFilterCheckboxChange();
   if (document.getElementById('po-table-body')) renderPurchaseOrderList();
 });

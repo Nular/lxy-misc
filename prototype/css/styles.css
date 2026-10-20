@@ -1220,6 +1220,71 @@ tbody tr.selected {
   background: #e6f4ff;
 }
 
+.source-tab.disabled,
+.source-tab:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.multi-select {
+  position: relative;
+}
+
+.multi-select-trigger {
+  padding: 6px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: #fff;
+  font-size: 13px;
+  min-width: 120px;
+  text-align: left;
+}
+
+.multi-select-panel {
+  position: absolute;
+  z-index: 20;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  padding: 8px 10px;
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 180px;
+}
+
+.multi-select-panel label {
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.form-span-2 {
+  grid-column: span 2;
+}
+
+.sku-picker-table {
+  max-height: 280px;
+  overflow: auto;
+  margin-top: 12px;
+}
+
+#receipt-sku-picker-search {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+}
+
+.source-panel {
+  margin-bottom: 12px;
+}
+
 .editor-mode-hint,
 .editor-lines-toolbar {
   margin-bottom: 12px;

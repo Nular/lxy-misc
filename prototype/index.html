@@ -617,26 +617,31 @@
                   <div id="inbound-search-suggest" class="search-suggest" hidden></div>
                 </div>
               </div>
-              <div class="filter-item">
+              <div class="filter-item filter-multi">
                 <label>Status</label>
-                <select id="inbound-filter-status">
-                  <option value="">All</option>
-                  <option value="Draft">Draft</option>
-                  <option value="Processing">Processing</option>
-                  <option value="Stocked In">Stocked In</option>
-                </select>
+                <div class="multi-select" id="inbound-filter-status-wrap">
+                  <button type="button" class="multi-select-trigger" onclick="toggleMultiSelect('inbound-filter-status-wrap')">Select…</button>
+                  <div class="multi-select-panel" hidden>
+                    <label><input type="checkbox" value="Draft" onchange="onInboundFilterCheckboxChange()"> Draft</label>
+                    <label><input type="checkbox" value="Processing" onchange="onInboundFilterCheckboxChange()"> Processing</label>
+                    <label><input type="checkbox" value="Stocked In" onchange="onInboundFilterCheckboxChange()"> Stocked In</label>
+                  </div>
+                </div>
               </div>
-              <div class="filter-item">
+              <div class="filter-item filter-multi">
                 <label>Receipt Type</label>
-                <select id="inbound-filter-type">
-                  <option value="">All</option>
-                  <option value="Purchase Receipt">Purchase Receipt</option>
-                  <option value="Manual Receipt">Manual Receipt</option>
-                </select>
+                <div class="multi-select" id="inbound-filter-type-wrap">
+                  <button type="button" class="multi-select-trigger" onclick="toggleMultiSelect('inbound-filter-type-wrap')">Select…</button>
+                  <div class="multi-select-panel" hidden>
+                    <label><input type="checkbox" value="Purchase Receipt" onchange="onInboundFilterCheckboxChange()"> Purchase Receipt</label>
+                    <label><input type="checkbox" value="Manual Receipt" onchange="onInboundFilterCheckboxChange()"> Manual Receipt</label>
+                  </div>
+                </div>
               </div>
               <div class="filter-actions">
                 <button class="btn btn-primary" onclick="searchInboundReceipts()">Search</button>
-                <button class="btn" onclick="resetInboundFilters()">Reset</button>
+                <button class="btn" id="inbound-filter-apply" disabled onclick="applyInboundFilters()">Filter</button>
+                <button class="btn" id="inbound-filter-reset" disabled onclick="resetInboundFilters()">Reset</button>
               </div>
             </div>
             <div class="toolbar">
@@ -662,12 +667,15 @@
               </table>
             </div>
             <div class="pagination-bar">
-              <select id="inbound-page-size" onchange="renderInboundReceiptList()">
+              <select id="inbound-page-size" onchange="inboundListPage=1;renderInboundReceiptList()">
                 <option value="20">20/page</option>
                 <option value="50">50/page</option>
                 <option value="100">100/page</option>
                 <option value="500">500/page</option>
               </select>
+              <span id="inbound-pagination-info">Page 1 / 1</span>
+              <button type="button" class="btn" onclick="inboundPrevPage()">Prev</button>
+              <button type="button" class="btn" onclick="inboundNextPage()">Next</button>
             </div>
           </div>
         </div>
@@ -1117,16 +1125,26 @@
           <div class="form-group"><label>Warehouse</label><input class="readonly" id="receipt-warehouse" readonly></div>
           <div class="form-group" id="receipt-po-group"><label>Related PO</label><select id="receipt-po-select"></select></div>
           <div class="form-group"><label>Default Zone (Storage)</label><input class="readonly" id="receipt-zone" readonly></div>
+          <div class="form-group"><label>Supplier</label><input type="text" id="receipt-supplier" maxlength="200" placeholder="Optional"></div>
+          <div class="form-group form-span-2"><label>Remarks</label><input type="text" id="receipt-remarks" maxlength="500" placeholder="Optional"></div>
         </form>
         <div id="receipt-source-import" class="source-panel" hidden>
+          <p class="hint">Template: SKU ID (required), Receipt Qty, Zone Code (optional, default STO). Only SKUs registered in this warehouse can be imported.</p>
           <input type="file" id="receipt-import-file" accept=".csv,.xlsx">
           <button type="button" class="btn btn-primary" id="receipt-import-btn" disabled onclick="startReceiptImport()">Import</button>
+        </div>
+        <div id="receipt-source-products" class="source-panel" hidden>
+          <button type="button" class="btn btn-primary" id="receipt-add-products-btn" onclick="openReceiptSkuPicker()">Open SKU Picker</button>
+          <span class="hint">Only SKUs with initialized inventory rows in the current warehouse (including Total=0).</span>
+        </div>
+        <div class="editor-lines-toolbar" id="receipt-lines-toolbar">
+          <button type="button" class="btn" id="receipt-delete-all-btn" hidden onclick="deleteAllReceiptLines()">Delete All</button>
         </div>
         <div class="table-wrapper editor-lines-table">
           <table>
             <thead>
               <tr>
-                <th>SKU ID</th><th>Product Name</th><th>Spec</th><th>Order Qty</th><th>Receipt Qty</th><th>Variance</th><th>Zone</th>
+                <th>SKU ID</th><th>Product Name</th><th>Spec</th><th>Primary Barcode</th><th>Order Qty</th><th>Receipt Qty</th><th>Variance</th><th>Zone</th>
               </tr>
             </thead>
             <tbody id="receipt-editor-lines"></tbody>
@@ -1138,9 +1156,49 @@
         </div>
       </div>
       <div class="modal-footer">
-        <button class="btn" onclick="closeModal('receipt-editor-modal')">Cancel</button>
-        <button class="btn" onclick="saveReceiptDraft()">Save Draft</button>
-        <button class="btn btn-primary" onclick="confirmReceiptStockIn()">Confirm Stock-In</button>
+        <button class="btn" id="receipt-cancel-btn" onclick="closeModal('receipt-editor-modal')">Cancel</button>
+        <button class="btn" id="receipt-print-btn" hidden onclick="printReceipt()">Print</button>
+        <button class="btn" id="receipt-save-draft-btn" onclick="saveReceiptDraft()">Save Draft</button>
+        <button class="btn btn-primary" id="receipt-stock-in-btn" onclick="confirmReceiptStockIn()">Confirm Stock-In</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="receipt-sku-picker-modal">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <span class="modal-title">Add Products — SKU Picker</span>
+        <button class="modal-close" onclick="closeModal('receipt-sku-picker-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="text" id="receipt-sku-picker-search" placeholder="Filter by SKU ID or product name" oninput="renderReceiptSkuPickerList()">
+        <div class="table-wrapper sku-picker-table">
+          <table>
+            <thead><tr><th></th><th>SKU ID</th><th>Product</th><th>Spec</th><th>Zone</th><th>Total</th></tr></thead>
+            <tbody id="receipt-sku-picker-body"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('receipt-sku-picker-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="confirmReceiptSkuPicker()">Add Selected</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="receipt-progress-modal">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <span class="modal-title">Import Progress</span>
+        <button class="modal-close" onclick="closeModal('receipt-progress-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="receipt-progress-label">Processing import…</p>
+        <div class="progress-track"><div class="progress-fill" id="receipt-progress-modal-fill"></div></div>
+        <p class="hint" id="receipt-progress-detail"></p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="closeModal('receipt-progress-modal')">Close</button>
       </div>
     </div>
   </div>
