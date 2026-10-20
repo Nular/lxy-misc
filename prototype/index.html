@@ -516,45 +516,39 @@
             <p class="page-subtitle">Inbound receipts (上架入库); writes inventory on Stocked In</p>
           </div>
           <div class="page-body">
-            <div class="filter-bar module-filter-bar">
+            <div class="filter-bar module-filter-bar inbound-filter-bar">
               <div class="filter-item">
-                <label>Search by</label>
-                <select id="inbound-search-field">
-                  <option value="receiptNo">Inbound No.</option>
-                  <option value="sourceFile">Source file name</option>
+                <label>Inbound No.</label>
+                <input type="text" id="inbound-filter-no" placeholder="Contains" autocomplete="off">
+              </div>
+              <div class="filter-item">
+                <label>Operator</label>
+                <input type="text" id="inbound-filter-operator" placeholder="Operator name" list="inbound-operator-list">
+                <datalist id="inbound-operator-list"></datalist>
+              </div>
+              <div class="filter-item">
+                <label>From</label>
+                <input type="date" id="inbound-filter-date-from" aria-label="Start date">
+              </div>
+              <div class="filter-item">
+                <label>To</label>
+                <input type="date" id="inbound-filter-date-to" aria-label="End date">
+              </div>
+              <div class="filter-item">
+                <label>Inbound Type</label>
+                <select id="inbound-filter-type">
+                  <option value="">All</option>
+                  <option value="Purchase Receipt">采购单入库</option>
+                  <option value="Manual Receipt">手动入库</option>
                 </select>
               </div>
-              <div class="filter-item filter-grow">
-                <label>Keyword</label>
-                <div class="suggest-wrap">
-                  <input type="text" id="inbound-search-keyword" placeholder="Search or leave empty for all" autocomplete="off">
-                  <div id="inbound-search-suggest" class="search-suggest" hidden></div>
-                </div>
-              </div>
-              <div class="filter-item filter-multi">
-                <label>Status</label>
-                <div class="multi-select" id="inbound-filter-status-wrap">
-                  <button type="button" class="multi-select-trigger" onclick="toggleMultiSelect('inbound-filter-status-wrap')">Select…</button>
-                  <div class="multi-select-panel" hidden>
-                    <label><input type="checkbox" value="Processing" onchange="onInboundFilterCheckboxChange()"> Processing</label>
-                    <label><input type="checkbox" value="Stocked In" onchange="onInboundFilterCheckboxChange()"> Stocked In</label>
-                  </div>
-                </div>
-              </div>
-              <div class="filter-item filter-multi">
-                <label>Inbound Type</label>
-                <div class="multi-select" id="inbound-filter-type-wrap">
-                  <button type="button" class="multi-select-trigger" onclick="toggleMultiSelect('inbound-filter-type-wrap')">Select…</button>
-                  <div class="multi-select-panel" hidden>
-                    <label><input type="checkbox" value="Purchase Receipt" onchange="onInboundFilterCheckboxChange()"> Purchase Order Import</label>
-                    <label><input type="checkbox" value="Manual Receipt" onchange="onInboundFilterCheckboxChange()"> Manual Import</label>
-                  </div>
-                </div>
+              <div class="filter-item filter-wh-scope" id="inbound-filter-warehouse-wrap">
+                <label>Warehouse</label>
+                <select id="inbound-filter-warehouse"><option value="">All</option></select>
               </div>
               <div class="filter-actions">
-                <button class="btn btn-primary" onclick="searchInboundReceipts()">Search</button>
-                <button class="btn" id="inbound-filter-apply" disabled onclick="applyInboundFilters()">Filter</button>
-                <button class="btn" id="inbound-filter-reset" disabled onclick="resetInboundFilters()">Reset</button>
+                <button class="btn btn-primary" type="button" onclick="searchInboundReceipts()">Search</button>
+                <button class="btn" type="button" onclick="resetInboundFilters()">Reset</button>
               </div>
             </div>
             <div class="toolbar">
@@ -572,6 +566,7 @@
                     <th>Source File</th>
                     <th>Lines</th>
                     <th>Progress</th>
+                    <th>Operator</th>
                     <th>Updated</th>
                     <th>Operation</th>
                   </tr>
@@ -978,22 +973,6 @@
     </div>
   </div>
 
-  <div class="modal-overlay" id="inbound-new-type-modal">
-    <div class="modal modal-sm">
-      <div class="modal-header">
-        <span class="modal-title">New Inbound</span>
-        <button class="modal-close" onclick="closeModal('inbound-new-type-modal')">&times;</button>
-      </div>
-      <div class="modal-body">
-        <p class="hint">Each inbound task gets one Inbound No. Choose how you will add lines (cannot change later).</p>
-        <div class="inbound-type-pick">
-          <button type="button" class="btn btn-primary inbound-type-card" onclick="startInboundWithType('po-import')">Purchase Order Import</button>
-          <button type="button" class="btn inbound-type-card" onclick="startInboundWithType('manual')">Manual Import</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
   <div class="modal-overlay" id="inbound-detail-modal">
     <div class="modal modal-lg">
       <div class="modal-header">
@@ -1015,28 +994,32 @@
         <button class="modal-close" onclick="closeModal('receipt-editor-modal')">&times;</button>
       </div>
       <div class="modal-body">
+        <p class="hint" id="receipt-type-hint">Select inbound type (cannot change after lines are added).</p>
+        <div class="inbound-type-pick inbound-type-pick-inline" id="receipt-type-pick">
+          <button type="button" class="btn inbound-type-card" id="receipt-type-btn-po" onclick="pickInboundEditorType('po-import')">采购单入库</button>
+          <button type="button" class="btn inbound-type-card" id="receipt-type-btn-manual" onclick="pickInboundEditorType('manual')">手动入库</button>
+        </div>
+        <div id="receipt-editor-body" hidden>
         <form class="form-grid" id="receipt-editor-form">
           <div class="form-group"><label>Inbound Type</label><input class="readonly" id="receipt-type-label" readonly></div>
-          <div class="form-group"><label>Default Warehouse</label><input class="readonly" id="receipt-warehouse" readonly></div>
-          <div class="form-group form-span-2"><label>Remarks</label><textarea id="receipt-remarks" maxlength="500" rows="2" placeholder="Exceptions: qty mismatch vs file, damaged goods, unmatched ItemDesc handled offline…"></textarea></div>
+          <div class="form-group"><label>Context Warehouse</label><input class="readonly" id="receipt-warehouse" readonly></div>
+          <div class="form-group form-span-2"><label>Remarks</label><textarea id="receipt-remarks" maxlength="500" rows="2" placeholder="入库异常说明：数量不符、破损、ItemDesc 无法匹配已线下处理…"></textarea></div>
         </form>
-        <input type="hidden" id="receipt-type" value="Purchase Receipt">
+        <input type="hidden" id="receipt-type" value="">
         <div id="receipt-source-po-import" class="source-panel" hidden>
-          <p class="hint">Upload <strong>采购单文档订单列表.xlsx</strong>. Required columns: <code>ItemDesc</code>, <code>ItemQuantity</code>. Rows are matched to warehouse SKUs by ItemDesc.</p>
+          <p class="hint">导入 <strong>采购单文档订单列表.xlsx</strong>。系统按 <code>ItemDesc</code> 匹配商品；匹配成功后展示 SKU ID、Product Name、SKU（规格），请填写 Warehouse、Zone、数量。</p>
           <input type="file" id="receipt-import-file" accept=".xlsx,.xls,.csv">
           <button type="button" class="btn btn-primary" id="receipt-import-btn" disabled onclick="startPoListImport()">Parse file</button>
           <div id="receipt-unmatched-panel" class="inbound-alert" hidden>
-            <strong>Unmatched ItemDesc</strong> — check spelling or list the product on Seller before inbound.
+            <strong>无法匹配的商品（ItemDesc）</strong> — 请核对是否拼写错误，或在 Seller 平台完成商品上架后再入库。
             <ul id="receipt-unmatched-list"></ul>
           </div>
         </div>
         <div id="receipt-source-manual" class="source-panel" hidden>
-          <div class="filter-bar" style="margin-bottom:8px">
-            <input type="text" id="receipt-manual-search" placeholder="Search SKU ID or product name" oninput="renderReceiptManualSearch()">
-            <button type="button" class="btn btn-primary" id="receipt-add-products-btn" onclick="openReceiptSkuPicker()">Browse SKUs</button>
-          </div>
-          <div id="receipt-manual-suggest" class="search-suggest" hidden></div>
-          <span class="hint">Only SKUs with initialized inventory rows (including Total=0).</span>
+          <label class="field-label">Product Name（模糊搜索）</label>
+          <input type="text" id="receipt-manual-search" class="manual-product-search" placeholder="输入商品名称关键词…" oninput="renderReceiptManualSearch()">
+          <div id="receipt-manual-suggest" class="manual-suggest-list" hidden></div>
+          <span class="hint">选中推荐行后填写 Warehouse、Zone、数量；仅展示已初始化库存行（含 Total=0）。</span>
         </div>
         <div class="editor-lines-toolbar" id="receipt-lines-toolbar">
           <button type="button" class="btn" id="receipt-delete-all-btn" hidden onclick="deleteAllReceiptLines()">Delete All</button>
@@ -1055,10 +1038,11 @@
           <div class="progress-label">Importing… <span id="receipt-import-pct">0%</span></div>
           <div class="progress-track"><div class="progress-fill" id="receipt-import-fill"></div></div>
         </div>
+        </div>
       </div>
       <div class="modal-footer">
         <button class="btn" id="receipt-cancel-btn" onclick="closeModal('receipt-editor-modal')">Cancel</button>
-        <button class="btn btn-primary" id="receipt-stock-in-btn" onclick="confirmReceiptStockIn()">Confirm Stock-In</button>
+        <button class="btn btn-primary" id="receipt-stock-in-btn" onclick="confirmReceiptStockIn()">确认入库</button>
       </div>
     </div>
   </div>

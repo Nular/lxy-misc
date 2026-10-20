@@ -298,6 +298,7 @@ function applyRoleAndScopeUI() {
   document.querySelectorAll('.filter-wh-scope').forEach(el => {
     el.style.display = hideFilters ? 'none' : '';
   });
+  if (typeof syncInboundListWarehouseFilterVisibility === 'function') syncInboundListWarehouseFilterVisibility();
 }
 
 function setUserRole(role) {
@@ -410,7 +411,11 @@ function navigateTo(pageId) {
   if (navItem) navItem.classList.add('active');
 
   if (pageId === 'home') renderHome();
-  if (pageId === 'inbound' && typeof renderInboundReceiptList === 'function') renderInboundReceiptList();
+  if (pageId === 'inbound') {
+    if (typeof populateInboundListFilters === 'function') populateInboundListFilters();
+    if (typeof syncInboundListWarehouseFilterVisibility === 'function') syncInboundListWarehouseFilterVisibility();
+    if (typeof renderInboundReceiptList === 'function') renderInboundReceiptList();
+  }
 }
 
 // ========== Home / Dashboard ==========

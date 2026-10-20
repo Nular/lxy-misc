@@ -12,12 +12,13 @@ let inboundReceipts = [
     warehouseCode: 'SH001',
     progress: 100,
     updatedAt: '2026-08-21 09:32:15',
-    remarks: 'Qty matched; short-ship on KT88 noted in remarks.',
+    remarks: '文件数量与实收一致。',
     operator: 'Zhang Wei',
     sourceFile: '采购单文档订单列表.xlsx',
     entryMethod: 'po-import',
     lines: [
-      { itemDesc: '200 * Wireless Bluetooth Earbuds Pro Black', skuId: 'SKU-10001-BK', productName: 'Wireless Bluetooth Earbuds Pro', spec: 'Black; M', orderQty: 200, receiptQty: 200, warehouseCode: 'SH001', zoneCode: 'SH001STO', afterQty: 1200 }
+      { itemDesc: '200 * Wireless Bluetooth Earbuds Pro Black', skuId: 'SKU-10001-BK', productName: 'Wireless Bluetooth Earbuds Pro', spec: 'Black; M', orderQty: 200, receiptQty: 200, warehouseCode: 'SH001', zoneCode: 'SH001STO', afterQty: 1200 },
+      { itemDesc: '50 * R31 headphones - Lightning', skuId: 'SKU-10001-WH', productName: 'Wireless Bluetooth Earbuds Pro', spec: 'White; L', orderQty: 50, receiptQty: 48, warehouseCode: 'SH001', zoneCode: 'SH001STO', afterQty: 548 }
     ]
   },
   {
@@ -27,9 +28,85 @@ let inboundReceipts = [
     warehouseCode: 'SH001',
     progress: 45,
     updatedAt: '2026-08-23 08:05:00',
-    sourceFile: '采购单文档订单列表.xlsx',
+    operator: 'Admin',
+    sourceFile: '采购单文档订单列表_0823.xlsx',
     entryMethod: 'po-import',
     lines: []
+  },
+  {
+    receiptNo: 'IN-20260819005',
+    receiptType: 'Manual Receipt',
+    status: 'Stocked In',
+    warehouseCode: 'BJ001',
+    progress: 100,
+    updatedAt: '2026-08-19 11:00:00',
+    remarks: '无采购文件，门店退回补录。',
+    operator: 'Admin',
+    sourceFile: '',
+    entryMethod: 'manual',
+    lines: [
+      { skuId: 'SKU-10003-01', productName: 'Portable Power Bank 20000mAh', spec: 'Standard', receiptQty: 80, warehouseCode: 'BJ001', zoneCode: 'BJ001STO', afterQty: 3280 }
+    ]
+  },
+  {
+    receiptNo: 'IN-20260820012',
+    receiptType: 'Purchase Receipt',
+    status: 'Stocked In',
+    warehouseCode: 'SH001',
+    progress: 100,
+    updatedAt: '2026-08-20 16:45:00',
+    remarks: 'KT88 少 2 件，已在备注说明。',
+    operator: 'Li Ming',
+    sourceFile: '采购单文档订单列表.xlsx',
+    entryMethod: 'po-import',
+    lines: [
+      { itemDesc: '2 * KT88 Smart Watch Specification - Black / With light', skuId: 'SKU-10002-42', productName: 'Smart Watch Series X', spec: '42mm Silver', orderQty: 2, receiptQty: 2, warehouseCode: 'SH001', zoneCode: 'SH001STO', afterQty: 402 }
+    ]
+  },
+  {
+    receiptNo: 'IN-20260818008',
+    receiptType: 'Manual Receipt',
+    status: 'Stocked In',
+    warehouseCode: 'SH001',
+    progress: 100,
+    updatedAt: '2026-08-18 14:20:00',
+    remarks: '',
+    operator: 'Zhang Wei',
+    sourceFile: '',
+    entryMethod: 'manual',
+    lines: [
+      { skuId: 'SKU-10001-BK', productName: 'Wireless Bluetooth Earbuds Pro', spec: 'Black; M', receiptQty: 30, warehouseCode: 'SH001', zoneCode: 'SH001STO', afterQty: 1030 }
+    ]
+  },
+  {
+    receiptNo: 'IN-20260824002',
+    receiptType: 'Purchase Receipt',
+    status: 'Stocked In',
+    warehouseCode: 'BJ001',
+    progress: 100,
+    updatedAt: '2026-08-24 10:08:00',
+    remarks: '含 1 条 ItemDesc 未匹配，已线下上架后补入。',
+    operator: 'Warehouse Manager',
+    sourceFile: '采购单文档订单列表.xlsx',
+    entryMethod: 'po-import',
+    lines: [
+      { itemDesc: '1 * XD Mini Wireless 1080P HD Security Camera', skuId: 'SKU-10003-01', productName: 'Portable Power Bank 20000mAh', spec: 'Standard', orderQty: 1, receiptQty: 1, warehouseCode: 'BJ001', zoneCode: 'BJ001STO', afterQty: 3281 }
+    ]
+  },
+  {
+    receiptNo: 'IN-20260822007',
+    receiptType: 'Manual Receipt',
+    status: 'Stocked In',
+    warehouseCode: 'SH001',
+    progress: 100,
+    updatedAt: '2026-08-22 09:15:00',
+    remarks: '样品入库。',
+    operator: 'Li Ming',
+    sourceFile: '',
+    entryMethod: 'manual',
+    lines: [
+      { skuId: 'SKU-10002-42', productName: 'Smart Watch Series X', spec: '42mm Silver', receiptQty: 5, warehouseCode: 'SH001', zoneCode: 'SH001STO', afterQty: 405 }
+    ]
   }
 ];
 
@@ -37,7 +114,7 @@ let currentReceiptEdit = null;
 let receiptEditorSource = 'po-import';
 let receiptLockedSource = null;
 let receiptEditorLines = [];
-let inboundFilterApplied = { status: [], type: [] };
+let inboundListFiltersApplied = {};
 let inboundListPage = 1;
 let receiptSkuPickerSelected = new Set();
 let receiptEditorReadonly = false;
@@ -45,6 +122,10 @@ let receiptUnmatched = [];
 
 function inboundTypeLabel(receiptType) {
   return receiptType === 'Purchase Receipt' ? 'Purchase Order Import' : 'Manual Import';
+}
+
+function inboundTypeLabelZh(receiptType) {
+  return receiptType === 'Purchase Receipt' ? '采购单入库' : '手动入库';
 }
 
 function currentOperatorName() {
@@ -101,28 +182,45 @@ function zoneSelectHtml(warehouseCode, selected, lineIndex, ro) {
 }
 
 function openNewInboundTask() {
-  openModal('inbound-new-type-modal');
-}
-
-function startInboundWithType(mode) {
-  closeModal('inbound-new-type-modal');
   receiptUnmatched = [];
   currentReceiptEdit = null;
   receiptEditorReadonly = false;
   receiptEditorLines = [];
-  receiptLockedSource = mode === 'po-import' ? 'po-import' : 'manual';
-  const wh = getInboundWarehouseScope();
-  document.getElementById('receipt-type').value = mode === 'po-import' ? 'Purchase Receipt' : 'Manual Receipt';
-  document.getElementById('receipt-type-label').value = inboundTypeLabel(document.getElementById('receipt-type').value);
-  document.getElementById('receipt-warehouse').value = wh;
+  receiptLockedSource = null;
+  receiptEditorSource = 'po-import';
+  document.getElementById('receipt-type').value = '';
+  document.getElementById('receipt-type-label').value = '—';
+  document.getElementById('receipt-warehouse').value = getInboundWarehouseScope();
   document.getElementById('receipt-remarks').value = '';
   document.getElementById('receipt-import-file').value = '';
   document.getElementById('receipt-unmatched-panel').hidden = true;
+  document.getElementById('receipt-manual-search').value = '';
   document.getElementById('receipt-editor-title').textContent = 'New Inbound';
-  setReceiptSource(receiptLockedSource, true);
+  document.getElementById('receipt-editor-body').hidden = true;
+  document.getElementById('receipt-type-pick').hidden = false;
+  document.getElementById('receipt-type-hint').hidden = false;
+  document.querySelectorAll('#receipt-type-pick .inbound-type-card').forEach(b => b.classList.remove('active'));
+  document.getElementById('receipt-source-po-import').hidden = true;
+  document.getElementById('receipt-source-manual').hidden = true;
   renderReceiptEditorLines();
   updateReceiptEditorChrome();
   openModal('receipt-editor-modal');
+}
+
+function pickInboundEditorType(mode) {
+  if (receiptLockedSource && receiptLockedSource !== mode && receiptEditorLines.length) return;
+  receiptLockedSource = mode;
+  receiptEditorSource = mode;
+  const wh = getInboundWarehouseScope();
+  document.getElementById('receipt-type').value = mode === 'po-import' ? 'Purchase Receipt' : 'Manual Receipt';
+  document.getElementById('receipt-type-label').value = inboundTypeLabelZh(document.getElementById('receipt-type').value);
+  document.getElementById('receipt-warehouse').value = wh;
+  document.getElementById('receipt-editor-body').hidden = false;
+  document.getElementById('receipt-type-pick').hidden = false;
+  document.getElementById('receipt-type-btn-po').classList.toggle('active', mode === 'po-import');
+  document.getElementById('receipt-type-btn-manual').classList.toggle('active', mode === 'manual');
+  setReceiptSource(mode, true);
+  renderReceiptEditorLines();
 }
 
 function nextInboundNo() {
@@ -187,34 +285,52 @@ function getInboundFilterCheckboxValues(wrapId) {
   return [...wrap.querySelectorAll('input[type=checkbox]:checked')].map(c => c.value);
 }
 
-function syncInboundFilterTriggerLabels() {
-  const statusVals = getInboundFilterCheckboxValues('inbound-filter-status-wrap');
-  const typeVals = getInboundFilterCheckboxValues('inbound-filter-type-wrap');
-  const stBtn = document.querySelector('#inbound-filter-status-wrap .multi-select-trigger');
-  const tyBtn = document.querySelector('#inbound-filter-type-wrap .multi-select-trigger');
-  if (stBtn) stBtn.textContent = statusVals.length ? statusVals.join(', ') : 'Select…';
-  if (tyBtn) tyBtn.textContent = typeVals.length ? typeVals.join(', ') : 'Select…';
-}
-
-function onInboundFilterCheckboxChange() {
-  syncInboundFilterTriggerLabels();
-  const pending = getInboundFilterCheckboxValues('inbound-filter-status-wrap').length +
-    getInboundFilterCheckboxValues('inbound-filter-type-wrap').length;
-  const applyBtn = document.getElementById('inbound-filter-apply');
-  const resetBtn = document.getElementById('inbound-filter-reset');
-  if (applyBtn) applyBtn.disabled = pending === 0;
-  if (resetBtn) resetBtn.disabled = pending === 0 &&
-    inboundFilterApplied.status.length === 0 && inboundFilterApplied.type.length === 0;
-}
-
-function applyInboundFilters() {
-  inboundFilterApplied = {
-    status: getInboundFilterCheckboxValues('inbound-filter-status-wrap'),
-    type: getInboundFilterCheckboxValues('inbound-filter-type-wrap')
+function readInboundListFiltersFromForm() {
+  return {
+    inboundNo: (document.getElementById('inbound-filter-no')?.value || '').trim(),
+    operator: (document.getElementById('inbound-filter-operator')?.value || '').trim(),
+    dateFrom: document.getElementById('inbound-filter-date-from')?.value || '',
+    dateTo: document.getElementById('inbound-filter-date-to')?.value || '',
+    receiptType: document.getElementById('inbound-filter-type')?.value || '',
+    warehouse: document.getElementById('inbound-filter-warehouse')?.value || ''
   };
-  inboundListPage = 1;
-  renderInboundReceiptList();
-  showToast('Filters applied', 'success');
+}
+
+function populateInboundListFilters() {
+  const whSel = document.getElementById('inbound-filter-warehouse');
+  if (whSel) {
+    whSel.innerHTML = '<option value="">All</option>' +
+      warehouses.map(w => `<option value="${normalizeWarehouseId(w.id)}">${w.id} - ${w.name}</option>`).join('');
+  }
+  const ops = [...new Set(inboundReceipts.map(r => r.operator).filter(Boolean))];
+  const dl = document.getElementById('inbound-operator-list');
+  if (dl) dl.innerHTML = ops.map(o => `<option value="${o}">`).join('');
+}
+
+function syncInboundListWarehouseFilterVisibility() {
+  const wrap = document.getElementById('inbound-filter-warehouse-wrap');
+  if (!wrap) return;
+  const show = isAdminUser() && getWarehouseScope() === 'all';
+  wrap.style.display = show ? '' : 'none';
+  if (!show) {
+    const sel = document.getElementById('inbound-filter-warehouse');
+    if (sel) sel.value = '';
+  }
+}
+
+function receiptDateKey(updatedAt) {
+  return String(updatedAt || '').slice(0, 10);
+}
+
+function inboundPassesListFilters(r, f) {
+  if (f.inboundNo && !r.receiptNo.toLowerCase().includes(f.inboundNo.toLowerCase())) return false;
+  if (f.operator && !(r.operator || '').toLowerCase().includes(f.operator.toLowerCase())) return false;
+  if (f.receiptType && r.receiptType !== f.receiptType) return false;
+  if (f.warehouse && normalizeWarehouseId(r.warehouseCode) !== normalizeWarehouseId(f.warehouse)) return false;
+  const d = receiptDateKey(r.updatedAt);
+  if (f.dateFrom && d && d < f.dateFrom) return false;
+  if (f.dateTo && d && d > f.dateTo) return false;
+  return true;
 }
 
 document.addEventListener('click', e => {
@@ -259,49 +375,15 @@ function bindSearchSuggest(inputId, panelId, getValues) {
   });
 }
 
-function initInboundSuggest() {
-  bindSearchSuggest('inbound-search-keyword', 'inbound-search-suggest', () => {
-    const field = document.getElementById('inbound-search-field').value;
-    const rows = inboundReceipts.filter(receiptMatchesScope);
-    if (field === 'sourceFile') return [...new Set(rows.map(r => r.sourceFile).filter(Boolean))];
-    return rows.map(r => r.receiptNo);
-  });
-}
-
-function rankByKeyword(rows, kw, getVal) {
-  const k = kw.toLowerCase();
-  return rows.sort((a, b) => {
-    const va = getVal(a).toLowerCase();
-    const vb = getVal(b).toLowerCase();
-    const ea = va === k;
-    const eb = vb === k;
-    if (ea && !eb) return -1;
-    if (!ea && eb) return 1;
-    return 0;
-  });
-}
-
 function renderInboundReceiptList() {
   const tbody = document.getElementById('inbound-table-body');
   if (!tbody) return;
-  const field = document.getElementById('inbound-search-field').value;
-  const kw = (document.getElementById('inbound-search-keyword').value || '').trim().toLowerCase();
-  const statusList = inboundFilterApplied.status;
-  const typeList = inboundFilterApplied.type;
+  syncInboundListWarehouseFilterVisibility();
+  const f = inboundListFiltersApplied;
   const pageSize = parseInt(document.getElementById('inbound-page-size').value, 10) || 20;
 
-  let rows = inboundReceipts.filter(receiptMatchesScope);
-  if (kw) {
-    rows = rows.filter(r => {
-      if (field === 'receiptNo') return r.receiptNo.toLowerCase().includes(kw);
-      return (r.sourceFile || '').toLowerCase().includes(kw);
-    });
-    rankByKeyword(rows, kw, r => (field === 'receiptNo' ? r.receiptNo : (r.sourceFile || '')));
-  } else {
-    rows.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
-  }
-  if (statusList.length) rows = rows.filter(r => statusList.includes(r.status));
-  if (typeList.length) rows = rows.filter(r => typeList.includes(r.receiptType));
+  let rows = inboundReceipts.filter(receiptMatchesScope).filter(r => inboundPassesListFilters(r, f));
+  rows.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 
   const total = rows.length;
   const maxPage = Math.max(1, Math.ceil(total / pageSize));
@@ -313,12 +395,13 @@ function renderInboundReceiptList() {
   tbody.innerHTML = pageRows.map(r => `
     <tr class="record-row-clickable" onclick="openInboundDetailModal('${r.receiptNo}')">
       <td><strong>${r.receiptNo}</strong></td>
-      <td>${inboundTypeLabel(r.receiptType)}</td>
+      <td>${inboundTypeLabelZh(r.receiptType)}</td>
       <td><span class="tag ${r.status === 'Stocked In' ? 'tag-enable' : r.status === 'Processing' ? 'tag-warning' : 'tag-disable'}">${r.status}</span></td>
       <td>${r.warehouseCode}</td>
       <td>${r.sourceFile || '—'}</td>
       <td>${r.lines.length}</td>
       <td>${r.status === 'Processing' ? `<div class="mini-progress"><div style="width:${r.progress}%"></div></div> ${r.progress}%` : r.status === 'Stocked In' ? '100%' : '—'}</td>
+      <td>${r.operator || '—'}</td>
       <td>${r.updatedAt}</td>
       <td>
         <div class="action-links">
@@ -327,7 +410,7 @@ function renderInboundReceiptList() {
         </div>
       </td>
     </tr>
-  `).join('') || '<tr><td colspan="9" style="text-align:center;color:#999">No data</td></tr>';
+  `).join('') || '<tr><td colspan="10" style="text-align:center;color:#999">No data</td></tr>';
 
   const pagBar = document.getElementById('inbound-pagination-info');
   if (pagBar) {
@@ -336,17 +419,23 @@ function renderInboundReceiptList() {
 }
 
 function searchInboundReceipts() {
+  inboundListFiltersApplied = readInboundListFiltersFromForm();
+  inboundListPage = 1;
   renderInboundReceiptList();
-  showToast('Inbound receipt search applied', 'success');
+  showToast('Search applied', 'success');
 }
 
 function resetInboundFilters() {
-  document.getElementById('inbound-search-keyword').value = '';
-  document.querySelectorAll('#inbound-filter-status-wrap input, #inbound-filter-type-wrap input').forEach(c => { c.checked = false; });
-  inboundFilterApplied = { status: [], type: [] };
+  ['inbound-filter-no', 'inbound-filter-operator', 'inbound-filter-date-from', 'inbound-filter-date-to'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  const ty = document.getElementById('inbound-filter-type');
+  if (ty) ty.value = '';
+  const wh = document.getElementById('inbound-filter-warehouse');
+  if (wh) wh.value = '';
+  inboundListFiltersApplied = {};
   inboundListPage = 1;
-  syncInboundFilterTriggerLabels();
-  onInboundFilterCheckboxChange();
   renderInboundReceiptList();
 }
 
@@ -378,7 +467,6 @@ function updateReceiptEditorChrome() {
   document.getElementById('receipt-delete-all-btn').hidden = ro || proc || receiptEditorLines.length === 0;
   const fileEl = document.getElementById('receipt-import-file');
   document.getElementById('receipt-import-btn').disabled = ro || proc || !(fileEl && fileEl.files.length);
-  document.getElementById('receipt-add-products-btn').disabled = ro || proc;
 }
 
 function setReceiptSource(source, silent) {
@@ -611,7 +699,7 @@ function persistReceipt(status, writeInventory) {
   closeModal('receipt-editor-modal');
   renderInboundReceiptList();
     renderHome();
-  showToast('Stocked in. Inventory & inbound records updated.', 'success');
+  showToast('入库成功，库存 Available 已增加。', 'success');
 }
 
 function writeInboundInventoryAndRecord(receiptNo, receipt, line) {
@@ -752,11 +840,14 @@ function renderReceiptManualSearch() {
     return;
   }
   panel.innerHTML = rows.map(s =>
-    `<div class="suggest-item" data-sku="${s.skuId}" data-zone="${s.zoneCode}">${s.skuId} — ${s.productName}</div>`
+    `<div class="manual-suggest-item" data-sku="${s.skuId}" data-zone="${s.zoneCode}">
+      <strong>${s.productName}</strong>
+      <span>SKU ID: ${s.skuId} · SKU: ${s.spec}</span>
+    </div>`
   ).join('');
   panel.hidden = false;
   panel.onclick = e => {
-    const item = e.target.closest('.suggest-item');
+    const item = e.target.closest('.manual-suggest-item');
     if (!item) return;
     const inv = findInventoryRow(item.dataset.sku, wh, item.dataset.zone);
     if (!inv || receiptEditorLines.some(l => l.skuId === inv.skuId && l.zoneCode === inv.zoneCode)) return;
@@ -778,8 +869,7 @@ function renderReceiptManualSearch() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  initInboundSuggest();
-  syncInboundFilterTriggerLabels();
-  onInboundFilterCheckboxChange();
+  populateInboundListFilters();
+  syncInboundListWarehouseFilterVisibility();
   if (document.getElementById('inbound-table-body')) renderInboundReceiptList();
 });
