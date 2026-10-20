@@ -1,8 +1,9 @@
 # KickBazar WMS 产品需求说明（仓库与库存）
 
 > **文档说明**  
-> 本文档为 WMS **仓库与库存**模块 PRD 正文（第 1–8 章），与飞书主 PRD 同源。  
-> **2026-10 修订**：仓库上下文仅在 **Dashboard** 切换、侧栏只读展示；**Purchase Order** 侧栏一级导航；库区 **去掉 Zone Name**；Record Tab 与全局筛选联动见第 6、7 章。  
+> 本文档为 WMS **仓库与库存基础** PRD（第 1–8 章 + 出库摘要 §9），与飞书主 PRD 同源。  
+> **作业单据**：**采购单**、**入库单** 不在本文展开，见独立 PRD：[`KickBazar-WMS-PO-PRD.md`](KickBazar-WMS-PO-PRD.md)、[`KickBazar-WMS-Inbound-PRD.md`](KickBazar-WMS-Inbound-PRD.md)。  
+> **2026-10 修订**：Dashboard 仓库上下文；库区去掉 Zone Name；Record Tab 与全局筛选见第 6、7 章；SKU 导入与零库存初始化见 §5.0。  
 > 原型（库存）：https://itkaop.axshare.com/?id=5yfdzj&p=spu_sku_inventory&sc=3&g=1  
 > 原型（流水）：https://itkaop.axshare.com/?id=jo37v4&p=inventory_record&sc=3&g=1  
 > Home：https://itkaop.axshare.com/?g=1&id=foz25t&p=dashboard  
@@ -47,8 +48,8 @@
 | — | **Warehouse**（侧栏顶部） | Admin：**下拉**切换 All/指定仓（仅 Home 页生效）；仓管：只读所属仓 |
 | 1 | Home | Dashboard（§7） |
 | 2 | Inventory | SPU/SKU inventory、Record |
-| 3 | **Purchase Order** | 采购单（§9） |
-| 4 | **Inbound** | 入库单 / Receipt（§10） |
+| 3 | **Purchase Order** | 采购单（见 [`KickBazar-WMS-PO-PRD.md`](KickBazar-WMS-PO-PRD.md)） |
+| 4 | **Inbound** | 入库单（见 [`KickBazar-WMS-Inbound-PRD.md`](KickBazar-WMS-Inbound-PRD.md)） |
 | 5 | Outbound | 出库单 |
 | 6 | **Warehouses** | **仅 Admin**：Warehouse Management、Zone Management |
 
@@ -217,7 +218,7 @@ WMS **不在入库/采购单页面创建 SKU 主数据**；仓内可作业前提
 
 #### 5.0.2 入库/出库/调整前置条件（拍板）
 
-任意 **写库存** 操作（含 §10 入库上架、§5.3 调整、§11 出库占用/扣减）前，系统 **必须** 校验：
+任意 **写库存** 操作（含 **入库上架**（Inbound PRD）、§5.3 调整、§9 出库占用/扣减）前，系统 **必须** 校验：
 
 | 校验项 | 规则 | 失败处理 |
 |--------|------|----------|
@@ -227,9 +228,9 @@ WMS **不在入库/采购单页面创建 SKU 主数据**；仓内可作业前提
 
 **入库/采购单匹配规则**：Add Products、Link PO、Excel **Import** 均只能选中或匹配 **当前 `warehouse_code` 下已存在库存行** 的 SKU；**不得**因入库/PO 导入而 **自动新建** 库存行或商品主数据。若需新 SKU 进仓，须先走 **§5.0.1 下发/初始化** 再入库。
 
-#### 5.0.3 与入库模块衔接
+#### 5.0.3 与采购/入库模块衔接
 
-- §9 采购单、§10 入库单行上的 SKU，仅允许引用 **§5.0.1 已初始化** 的行；写账逻辑见 §10.6。
+- 采购单、入库单行上的 SKU，仅允许引用 **§5.0.1 已初始化** 的行；入库写账见 [`KickBazar-WMS-Inbound-PRD.md`](KickBazar-WMS-Inbound-PRD.md) §9。
 - Record / Inventory 查询结果与上述库存行 **同一数据源**。
 
 ### 5.1 SPU 视图
@@ -456,171 +457,20 @@ WMS **不在入库/采购单页面创建 SKU 主数据**；仓内可作业前提
 
 ---
 
-## 9 采购单（Purchase Order）
+## 9 关联模块 PRD（采购 / 入库）
 
-### 9.0 模块定位与基础模块关系
+本文档仅描述 **仓库、库区、库存、流水、Dashboard** 等基础能力。以下作业模块有 **独立 PRD**，正文不在此重复：
 
-- **数据范围**：受 §2.1 `warehouse_context` 约束；列表默认仅展示当前上下文仓库的 PO（`warehouse_code`）。
-- **不写库存**：PO 创建/编辑/导入**不**改 `total/locked`；**入库完成（Stocked In）** 后由 **§10 入库单** 写账并生成 **§6 入库流水**。
-- **商品主数据**：SKU ID、名称、规格、条码自 **Seller/商品库只读**；PO 行可带 **Qty、单价、链接** 等采购属性，不在 WMS 建品。
-- **SKU 可选范围（拍板）**：Add Products / Import **仅能选择或匹配** 当前 `warehouse_code` 下 **§5.0.1 已生成库存行** 的 SKU（初始 Total=0 即可）；未下发 SKU **不可加入 PO 行**。
-- **与旧稿差异**：原「Creation Method = Manual Adjustment」改为 **Manual Entry**（避免与 §5.3 库存调整单混淆）。
+| 模块 | 文档 | 与基础 PRD 的边界 |
+|------|------|-------------------|
+| **采购单** Purchase Order | [`KickBazar-WMS-PO-PRD.md`](KickBazar-WMS-PO-PRD.md) | 不写库存；SKU 行须满足 **§5.0.1–§5.0.2** |
+| **入库** Inbound Receipt | [`KickBazar-WMS-Inbound-PRD.md`](KickBazar-WMS-Inbound-PRD.md) | Stocked In 写 **§6.1** 流水并 UPDATE 已有库存行；**禁止**入库流程建 SKU/库存行 |
 
-### 9.1 功能列表
-
-查看 / 创建 / 编辑 / 删除采购单；搜索；Status、Creation Method 筛选；分页（默认 20，可选 20/50/100/500）；新建排序在前。
-
-### 9.2 单号与编码规则
-
-| 字段 | 规则 |
-|------|------|
-| **Order No.** (`po_no`) | `PO-{YYYYMMDD}{seq3}`，与流水前缀规则一致；全局唯一，系统生成，不可改。例：`PO-20260821088` |
-| **warehouse_code** | 创建时取当前上下文仓，canonical 5 位（§3.2.1），例 `SH001` |
-| **Linked Receipt No.** | 关联入库单号 `IN-{YYYYMMDD}{seq3}`（§10.2），一对多 |
-
-`seq3`：按自然日全局递增，3 位数字（001–999），事务分配。展示与落库均为 **前缀 + 连字符 + 日期流水连写**（`PO-20260821088`），**不要**写成 `PO-20260821-0088`。
-
-### 9.3 搜索与筛选
-
-- **搜索类别（单选）**：Order No.（默认） / Linked Receipt No.
-- **搜索推荐框**：焦点或输入时展示；高度 1–5 行，超出滚动；空关键词展示当前仓全部候选，有关键词做包含过滤。点击推荐项立即搜索。
-- **Search**：无关键词 = 刷新全量；有关键词 = 模糊匹配，**精确匹配排第一**（BR201/BR202）。
-- **Status（多选，OR）**：**全部 10 态均在 WMS**（见 §9.4）。
-- **Creation Method**：Manual Entry / Import Created（多选 OR）。
-- **Filter / Reset**：无选中时置灰；Reset 清空条件。
-
-### 9.4 状态与删除（WMS 全量）
-
-| Status | 说明 | 删除 |
-|--------|------|------|
-| Draft | 草稿，可编辑全单 | 无关联单据可删 |
-| Processing | 导入进行中；列表 View 进度；**全系统最多 2 个并发导入任务**（PO+入库合计或分模块各 2，产品实现按模块计） | 不可删 |
-| Created | 信息编辑完成 | 无关联 Receipt 可删 |
-| Pending Shipment | 待发货 | 不可删 |
-| Partially Shipped | 部分发货 | 不可删 |
-| Shipped | 全部发货 | 不可删 |
-| Partially Received | 部分收货 | 不可删 |
-| Received | 全部收货 | 不可删 |
-| Partially Stocked In | 部分入库 | 不可删 |
-| Stocked In | 全部入库 | 不可删，仅查看 |
-
-**Draft** 可编辑全单；**Stocked In / Processing** 仅查看；其余态可改**商品行状态**（不改主数据）。
-
-### 9.5 SKU 行状态（与 PO 头联动）
-
-行状态：Pending Shipment → Shipped → Received → **Stocked In**。  
-- 所有行同态 → 头状态与行一致。  
-- 行态不同 → 头状态优先级：**Partially Stocked In > Partially Received > Partially Shipped**。  
-行优先级：Stocked In > Received > Shipped > Pending Shipment。
-
-### 9.6 编辑页（Create Purchase Order）
-
-三种互斥录入方式（与旧稿一致，命名调整）：
-
-1. **Add Products** — 从 **当前仓已初始化库存行** 的 SKU 列表勾选（可联查商品库展示名称/规格/条码，只读）；**不展示**未下发 SKU。  
-2. **Import** — 表头校验；按 **SKU ID** 匹配 **当前仓 + 默认/指定 `zone_code` 库存行**（§5.0.2）；未匹配行进入 **失败明细**，不自动建 SKU/库存行；最多 **2** 个并发导入任务；Processing 时 Delete 置灰  
-3. （无「引用入库单」；引用方向为 **入库单引用 PO**）
-
-- 草稿保留：localStorage / 服务端草稿（产品实现）；SKU 行上限 **10,000** 行。  
-- 保存成功后可 **Print**；有行时出现 **Delete All** 二次确认。  
-- 行字段（B2B 建议见 §9.8）：SKU ID、Product Name、Specification、**Qty（整数 1–9,999,999）**、**Unit Price（decimal(16,4)）**、Link、Cargo Type、Shipment Type、Remarks 等。
+侧栏与 Dashboard Quick Actions 仍可进入上述模块；实现与验收以 **独立 PRD** 为准。
 
 ---
 
-## 10 入库（Inbound Receipt）
-
-> **独立正文**：入库模块完整 PRD 见 [`KickBazar-WMS-Inbound-PRD.md`](KickBazar-WMS-Inbound-PRD.md)。本节为与主文档的 **摘要/契约索引**。
-
-### 10.0 模块定位
-
-- **Receipt** = 入库单（上架凭证）；**Stocked In** = 确认上架，写 **total↑、available↑**（locked 不变），并写 **§6.1 入库流水**。
-- **前置依赖（拍板）**：本模块 **依赖 §5.0.1–§5.0.2**；入库匹配 **只更新已存在库存行**，不在 Receipt 流程中创建 SKU 或零库存行。
-- **Receipt Type**（与流水类型映射）：
-
-| Receipt Type | 流水 Type | Record 子筛 |
-|--------------|-----------|-------------|
-| **Purchase Receipt** | Purchase Inbound | Purchase |
-| **Manual Receipt** | Manual Inbound | Manual |
-
-禁止使用 **Manual Adjustment** 作为入库类型（调整走 §5.3 ADJ 单）。
-
-- **上架库区**：默认当前仓 **已启用的 Storage Zone**（`zone_code` 如 `SH001STO`）；停用仓/区不可作为目标（§8.1）。
-
-### 10.1 功能列表
-
-同旧稿：列表 / 创建 / 编辑 / 查看 / 删除；Receipt No.、Related PO 搜索；Status、Receipt Type 筛选；新建在前；分页 20/50/100/500。
-
-### 10.2 单号规则
-
-| 字段 | 规则 |
-|------|------|
-| **Receipt No.** (`receipt_no`) | `IN-{YYYYMMDD}{seq3}`，与库存流水 `order` / `inboundNo` **同一格式**。例：`IN-20260821001` |
-| **Related PO** | 可选；`Purchase Receipt` 时建议必填 |
-| **warehouse_code / zone_code** | §3.2.1 / §4.1 |
-
-### 10.3 状态
-
-| Status | 说明 |
-|--------|------|
-| Draft | 可编辑、可删 |
-| Processing | 导入中，进度条；可 View；不可删 |
-| Stocked In | 已完成上架；仅查看；不可删 |
-
-### 10.4 编辑页（Create Receipt）
-
-三种互斥方式（旧稿保留）：
-
-1. **Link Purchase Order** — 选 PO 后拉取待入库行：展示 **Order Qty**（PO 行数量，只读），录入 **Receipt Qty**；**Variance = Receipt Qty − Order Qty** 只读对账，**不落库、不写库存**。差异处理走 **§5.3 调整单**或对账任务，不在入库行强制 Physical Inventory。  
-2. **Add Products** — 手工入库（`Manual Receipt`）：SKU 选择器 **仅列出当前仓 §5.0.1 已初始化库存行**（Total=0 可入库）；填 **Receipt Qty**。  
-3. **Import** — 表头校验；行 **SKU ID** 必须在当前 `warehouse_code`（及模板指定 `zone_code`，默认 STO）**已有库存行**；匹配成功填充只读商品信息 + 录入 Receipt Qty；**未匹配行不入库**，写入导入结果报告（行号、SKU、原因：`SKU not in warehouse inventory`）；**最多 2 个**并发导入；Processing 时 View 进度、不可删；Cancel 在导入开始后置灰。  
-
-互斥规则：选 PO 后 Add Products / Import 置灰；反之亦然。
-
-**Link PO 匹配补充**：自 PO 带入的 SKU 在 **Stocked In 写账前** 再次校验 §5.0.2；若 PO 创建后该 SKU 已从仓内移除下发，**拒绝该行写账** 并提示先完成库存行初始化。
-
-### 10.5 行字段（与基础库存对齐）
-
-| 字段 | 必填 | 说明 |
-|------|------|------|
-| SKU ID | Y | 4–50 字符；**须存在于当前仓库存行**（§5.0.2），且商品库可读 |
-| Product Name / Specification | Y | 匹配成功后 **只读带出**（商品库） |
-| **Order Qty** | N | 来自 PO，只读；手工/导入可空 |
-| **Receipt Qty** | Y | 实际上架数量；整数 **1–9,999,999**；**仅此字段写账** |
-| **Variance** | — | 计算列 `receipt_qty − order_qty`，对账用 |
-| **Zone** | Y | 默认 Storage `zone_code` |
-| Primary Barcode / PAN | N | **展示只读**（§1.2）；不在入库单编辑页强制录入 13 位 PAN（旧稿 R1–R3 迁至 Seller 域） |
-| Supplier / Remarks | N | 头字段或行备注 |
-
-**删除字段建议（相对旧稿）**：行级 Total/Qty/Physical Inventory/Inventory Variance 四列并存易混淆 → 统一为 **Receipt Qty**；账面/实盘/差异在对账或调整单处理。
-
-### 10.6 写账契约（与 §8.2）
-
-Stocked In 事务内：
-
-0. **前置**：逐行校验 §5.0.2（库存行存在、仓/区 Enable）；任一失败 **整单失败**  
-1. 按行 `warehouse_code + zone_code + sku_id` **UPDATE** 已有库存行：`total += receipt_qty`，`available = total - locked`  
-2. 插入 `record` 入库流水（`inboundNo` = Receipt No.，采购类附 `purchaseOrderNo`）  
-3. 更新 PO 行状态 → Stocked In / PO 头 → Partially Stocked In 或 Stocked In  
-
-失败整单回滚，禁止半截流水。**禁止** `INSERT` 新库存行作为入库副作用。
-
-### 10.7 分页与列表记忆
-
-与旧稿 2.5：从编辑弹层返回后保留页码、page size、筛选、滚动位置（产品实现）。
-
-### 10.8 B2B 数字与校验建议（相对旧稿修订）
-
-| 旧稿问题 | 建议 |
-|----------|------|
-| Qty/Total/Physical/Variance 均为 7 位整数且语义重叠 | 入库行仅 **Receipt Qty**；PO 行用 **Order Qty**；金额用 **decimal(16,4)** |
-| PAN/Barcode 在 WMS 入库必填 13 位 | WMS **只读展示**；校验在 Seller 主数据 |
-| 「Manual Adjustment」作入库类型 | 改为 **Manual Receipt**；调整单专用 ADJ 前缀 |
-| 搜索推荐 5 行 UI | 保留；后端可用前缀索引 / 限 20 条 |
-| Status 十态 | **全部在 WMS**（§9.4） |
-
----
-
-## 11 出库（Outbound）
+## 10 出库（Outbound）
 
 与库存基础模块、Axure《出库》包、交接会议（2026-10-12）对齐。
 
@@ -628,7 +478,7 @@ Stocked In 事务内：
 
 拣货、打包**不改库存**；分配成功写 **Outbound Occupy**；确认发货写 **Outbound Deduct**。推荐库区仅 Enable 的 Storage Zone，且 `available ≥ 行数量`。
 
-### 11.1 编码
+### 10.1 编码
 
 | 单据 | 规则 | 示例 |
 |------|------|------|
@@ -636,7 +486,7 @@ Stocked In 事务内：
 | Shipment No. | `SHP` + `warehouse_code` + `yyyyMMdd` + 4 位流水；**每个 Tracking No. 一个** | `SHPSH001202608210001` |
 | Tracking No. | 承运商回传，WMS 不生成 | `SF1029384756` |
 
-### 11.2 行状态与批次状态
+### 10.2 行状态与批次状态
 
 导入后行只有 **Allocated** 或 **On Hold**（没有行级 Pending）。
 
@@ -655,11 +505,11 @@ Stocked In 事务内：
 | Partially Outbound | 有 On Hold，或已有部分 Shipped（会议：部分挂起则批次为部分出库） |
 | Fully Outbound | 全部 Shipped |
 
-### 11.3 拣货单商品码
+### 10.3 拣货单商品码
 
 拣货单 PDF。展示优先级：**EAN → UPC → —**（会议口径；拣货单不展示 PAN）。SKU 主数据仍见 §1.2。
 
-### 11.4 页面
+### 10.4 页面
 
 - **Outbound Orders**：Imported period + Confirm/Reset；Import Order；列表含 Outbound No.、Imported At、Source File、Warehouse、Orders、SKU Count、Total Units、Status、View。
 - **Outbound Detail**：All / Allocated / Ready to Pick / Ready to Pack / Ready to Ship / Shipped / On Hold。
@@ -677,5 +527,5 @@ Stocked In 事务内：
 | 单据号 | `IN-20260821001`、`PO-20260821088`、`ADJ-YYYYMMDDNNN` | 与流水列 Related Order No. 一致 |
 | Record Tab 顺序 | All 首位 | 一致 |
 | Opening 子筛 | 不单独 Opening | 一致 |
-| 采购单 / 入库 | §9–§10 | 原型 `inbound-po.js`：列表、筛选、创建、Stock-In 写流水演示 |
-| 出库 | §11 | `outbound.js`：导入分配、发货单 CSV 回导、拣货单 PDF、发货扣减 |
+| 采购单 / 入库 | 独立 PRD | 原型 `inbound-po.js`：列表、筛选、创建、Stock-In 写流水演示 |
+| 出库 | §10 | `outbound.js`：导入分配、发货单 CSV 回导、拣货单 PDF、发货扣减 |
