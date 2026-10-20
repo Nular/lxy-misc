@@ -1,8 +1,8 @@
 # KickBazar WMS 产品需求说明（仓库与库存）
 
 > **文档说明**  
-> 本文档为 WMS **仓库与库存基础** PRD（第 1–8 章 + 出库摘要 §9），与飞书主 PRD 同源。  
-> **作业单据**：**采购单**、**入库单** 不在本文展开，见独立 PRD：[`KickBazar-WMS-PO-PRD.md`](KickBazar-WMS-PO-PRD.md)、[`KickBazar-WMS-Inbound-PRD.md`](KickBazar-WMS-Inbound-PRD.md)。  
+> 本文档为 WMS **仓库与库存基础** PRD（**第 1–8 章** + **§9 关联索引**），与飞书主 PRD 同源。  
+> **作业单据**（采购 / 入库 / 出库）不在本文展开，见：[`KickBazar-WMS-PO-PRD.md`](KickBazar-WMS-PO-PRD.md)、[`KickBazar-WMS-Inbound-PRD.md`](KickBazar-WMS-Inbound-PRD.md)、[`KickBazar-WMS-Outbound-PRD.md`](KickBazar-WMS-Outbound-PRD.md)。  
 > **2026-10 修订**：Dashboard 仓库上下文；库区去掉 Zone Name；Record Tab 与全局筛选见第 6、7 章；SKU 导入与零库存初始化见 §5.0。  
 > 原型（库存）：https://itkaop.axshare.com/?id=5yfdzj&p=spu_sku_inventory&sc=3&g=1  
 > 原型（流水）：https://itkaop.axshare.com/?id=jo37v4&p=inventory_record&sc=3&g=1  
@@ -218,7 +218,7 @@ WMS **不在入库/采购单页面创建 SKU 主数据**；仓内可作业前提
 
 #### 5.0.2 入库/出库/调整前置条件（拍板）
 
-任意 **写库存** 操作（含 **入库上架**（Inbound PRD）、§5.3 调整、§9 出库占用/扣减）前，系统 **必须** 校验：
+任意 **写库存** 操作（含 **入库上架**（Inbound PRD）、§5.3 调整、**出库占用/扣减**（Outbound PRD））前，系统 **必须** 校验：
 
 | 校验项 | 规则 | 失败处理 |
 |--------|------|----------|
@@ -457,7 +457,7 @@ WMS **不在入库/采购单页面创建 SKU 主数据**；仓内可作业前提
 
 ---
 
-## 9 关联模块 PRD（采购 / 入库）
+## 9 关联模块 PRD（采购 / 入库 / 出库）
 
 本文档仅描述 **仓库、库区、库存、流水、Dashboard** 等基础能力。以下作业模块有 **独立 PRD**，正文不在此重复：
 
@@ -465,55 +465,9 @@ WMS **不在入库/采购单页面创建 SKU 主数据**；仓内可作业前提
 |------|------|-------------------|
 | **采购单** Purchase Order | [`KickBazar-WMS-PO-PRD.md`](KickBazar-WMS-PO-PRD.md) | 不写库存；SKU 行须满足 **§5.0.1–§5.0.2** |
 | **入库** Inbound Receipt | [`KickBazar-WMS-Inbound-PRD.md`](KickBazar-WMS-Inbound-PRD.md) | Stocked In 写 **§6.1** 流水并 UPDATE 已有库存行；**禁止**入库流程建 SKU/库存行 |
+| **出库** Outbound | [`KickBazar-WMS-Outbound-PRD.md`](KickBazar-WMS-Outbound-PRD.md) | 分配写 **§6.2** Occupy；发货扣减写 Deduct；拣货/打包不改库存（**§8.2**） |
 
 侧栏与 Dashboard Quick Actions 仍可进入上述模块；实现与验收以 **独立 PRD** 为准。
-
----
-
-## 10 出库（Outbound）
-
-与库存基础模块、Axure《出库》包、交接会议（2026-10-12）对齐。
-
-**作业闭环：** Admin 导出待处理订单 → WMS **Import Order**（校验表头）→ 按当前仓 **Storage Zone** 整行分配 → 有货 **Allocated**（占用库存）/ 缺货 **On Hold** → Allocated **Export Shipping Order**，线下填 Tracking No. 再导入 → 系统按包裹生成 **Shipment No.**，行进入 **Ready to Pick** → 打印拣货单（PDF，可保存或打印）→ Complete Picking → Ready to Pack → Complete Packing → Ready to Ship → 快递员上门取件后 **Confirm Shipment** → Shipped，并扣减实物。
-
-拣货、打包**不改库存**；分配成功写 **Outbound Occupy**；确认发货写 **Outbound Deduct**。推荐库区仅 Enable 的 Storage Zone，且 `available ≥ 行数量`。
-
-### 10.1 编码
-
-| 单据 | 规则 | 示例 |
-|------|------|------|
-| Outbound No. | `OB` + `warehouse_code` + `yyyyMMdd` + 4 位流水；**一次导入一个号** | `OBSH001202608210001` |
-| Shipment No. | `SHP` + `warehouse_code` + `yyyyMMdd` + 4 位流水；**每个 Tracking No. 一个** | `SHPSH001202608210001` |
-| Tracking No. | 承运商回传，WMS 不生成 | `SF1029384756` |
-
-### 10.2 行状态与批次状态
-
-导入后行只有 **Allocated** 或 **On Hold**（没有行级 Pending）。
-
-| 行状态 | 进入 | 库存 |
-|--------|------|------|
-| Allocated | 存储区 available 足够 | locked +N |
-| Ready to Pick | Tracking 导入成功 | 不变 |
-| Ready to Pack | Complete Picking | 不变 |
-| Ready to Ship | Complete Packing | 不变 |
-| Shipped | Confirm Shipment（快递员已取件） | total −N，locked −N |
-| On Hold | available 不足 | 不变 |
-
-| 批次状态 | 规则 |
-|----------|------|
-| Pending Outbound | 无 On Hold、无 Shipped |
-| Partially Outbound | 有 On Hold，或已有部分 Shipped（会议：部分挂起则批次为部分出库） |
-| Fully Outbound | 全部 Shipped |
-
-### 10.3 拣货单商品码
-
-拣货单 PDF。展示优先级：**EAN → UPC → —**（会议口径；拣货单不展示 PAN）。SKU 主数据仍见 §1.2。
-
-### 10.4 页面
-
-- **Outbound Orders**：Imported period + Confirm/Reset；Import Order；列表含 Outbound No.、Imported At、Source File、Warehouse、Orders、SKU Count、Total Units、Status、View。
-- **Outbound Detail**：All / Allocated / Ready to Pick / Ready to Pack / Ready to Ship / Shipped / On Hold。
-- **On Hold Orders**：跨批次 Re-allocate，仍用原仓存储区。
 
 ---
 
@@ -528,4 +482,4 @@ WMS **不在入库/采购单页面创建 SKU 主数据**；仓内可作业前提
 | Record Tab 顺序 | All 首位 | 一致 |
 | Opening 子筛 | 不单独 Opening | 一致 |
 | 采购单 / 入库 | 独立 PRD | 原型 `inbound-po.js`：列表、筛选、创建、Stock-In 写流水演示 |
-| 出库 | §10 | `outbound.js`：导入分配、发货单 CSV 回导、拣货单 PDF、发货扣减 |
+| 出库 | [`KickBazar-WMS-Outbound-PRD.md`](KickBazar-WMS-Outbound-PRD.md) | `outbound.js`：导入分配、发货单 CSV 回导、拣货单 PDF、发货扣减 |
