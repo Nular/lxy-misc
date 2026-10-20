@@ -205,7 +205,7 @@ Dashboard **Quick Actions** 与侧栏 **Inbound** / **Outbound** 跳转对应列
 
 #### 5.0.1 库存行初始化（自原有库导入，拍板）
 
-WMS **不在入库/采购单页面创建 SKU 主数据**；仓内可作业前提如下：
+WMS **不在入库页面创建 SKU 主数据**；仓内可作业前提如下：
 
 1. **商品主数据**：自企业 **原有数据库（商品库）** 一次性或增量 **导入/同步** 至 WMS 可读层（与 Seller 库只读策略一致）。
 2. **库存行生成**：对每个 **`warehouse_code` × 已启用 `zone_code`**，对 Admin **已下发到该仓** 的 SKU，生成库存行：
@@ -453,7 +453,7 @@ WMS **不在入库/采购单页面创建 SKU 主数据**；仓内可作业前提
 ### 8.3 本侧提供与 `warehouse_context`
 
 - 仓库/库区主数据；出库推荐（仓 + SKU + 存储区 + enable + available>0）。
-- 删仓前：无库存且无未完成 PO/入出库单。
+- 删仓前：无库存且无未完成入出库单。
 
 **`warehouse_context`（Admin 可为 `all` 或 `warehouse_code`；仓管固定所属仓）：**
 
@@ -483,7 +483,7 @@ WMS **不在入库/采购单页面创建 SKU 主数据**；仓内可作业前提
 | 库存调整权限 | Admin + 仓管所属仓 | 演示开关为 Admin only |
 | Dashboard 布局 | §7：6 KPI + Quick Actions + Admin Setup + Today's Operations 流水表 | 与 Axure/截图一致；Pending 指标原型为演示聚合数 |
 | Warehouse / Zone Code | `SH001`、`SH001STO` | 原型 mock 已统一无连字符 |
-| 单据号 | `IN-20260821001`、`PO-20260821088`、`ADJ-YYYYMMDDNNN` | 与流水列 Related Order No. 一致 |
+| 单据号 | `IN-20260821001`、`OB…`、`ADJ-YYYYMMDDNNN` | 入库流水 Related Order No. = Inbound No. |
 | Record Tab 顺序 | All 首位 | 一致 |
 | Opening 子筛 | 不单独 Opening | 一致 |
 | 入库 | 独立 PRD | 原型 `inbound.js`：采购 xlsx 导入 + 手动导入，Confirm Stock-In 写流水 |
