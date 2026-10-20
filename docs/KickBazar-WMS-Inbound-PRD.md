@@ -136,7 +136,7 @@ Inbound No.、Inbound Type、Status、Warehouse Code、Source File（采购 xlsx
 - **BR1**：高度 1–5 行；超过 5 行右侧滚动。  
 - **焦点 / 输入时**展示推荐：  
   - 有搜索词：当前仓内，类别字段 **包含** 搜索词的候选列表。  
-  - 无搜索词：当前仓内，该类别 **全部** 候选（Inbound No. 或 PO No.）。  
+  - 无搜索词：当前仓内，该类别 **全部** 候选（Inbound No. 或源文件名）。  
 - 点击推荐项：**立即执行搜索**。  
 - 点击 **Search**：无内容 = 刷新全量（当前仓 + 保留筛选）；有内容 = 按词搜索。  
 - **BR201**：精确匹配排第一；**BR202**：模糊匹配靠后。  
@@ -179,7 +179,7 @@ Inbound No.、Inbound Type、Status、Warehouse Code、Source File（采购 xlsx
 ### 6.1 新建入库任务
 
 1. 列表 **+ New Inbound** → 选择 **Purchase Order Import** 或 **Manual Import**（不可再切换）。  
-2. 系统生成 **Inbound No.**（Draft）并进入编辑页/弹层。  
+2. 进入新建弹层；**Confirm Stock-In** 时分配 **Inbound No.** 并写账。  
 3. 标题：**New Inbound** / **Edit Inbound** / **View Inbound**。  
 4. 头字段：**Inbound Type**（只读）、**Remarks**（采购导入在存在未匹配或数量差异时 **建议必填**）、默认 Warehouse（= 上下文，行可改仓）。  
 5. 仅 **Cancel** 与 **Confirm Stock-In**；取消则丢弃未提交行（不入列表）。
@@ -217,7 +217,7 @@ Inbound No.、Inbound Type、Status、Warehouse Code、Source File（采购 xlsx
 
 1. **Search SKU**：输入 **SKU ID** 或 **Product Name**（包含匹配），数据源 = 当前上下文仓 **已初始化库存行**（Total=0 可选）。  
 2. 选中后加行，只读带出商品信息；填写 **Warehouse、Zone、Receipt Qty**。  
-3. 可追加多行；保存 Draft 或 **Confirm Stock-In**。
+3. 可追加多行；**Confirm Stock-In** 一次性提交。
 
 ### 7.3 ItemDesc 解析与匹配（采购文件）
 
@@ -296,7 +296,7 @@ Inbound No.、Inbound Type、Status、Warehouse Code、Source File（采购 xlsx
 ### 9.1 触发
 
 - 用户确认 **Stocked In**（或旧稿「导入库存已完成」等价操作）。  
-- 仅 **Draft** 或 Import 完成后的单据可进入写账（Processing 完成后转 Draft 或直接 Stocked In，产品二选一，**建议：Import 成功 → 可 Stocked In**）。
+- 仅在新建弹层内完成行编辑后 **Confirm Stock-In**（xlsx 解析完成后仍在同一弹层确认）。
 
 ### 9.2 事务步骤（与主 PRD §8.2 一致）
 
@@ -313,8 +313,7 @@ Inbound No.、Inbound Type、Status、Warehouse Code、Source File（采购 xlsx
    - Manual Receipt → **Manual Inbound**  
    - `inboundNo` = Receipt No.；采购类附 `purchaseOrderNo`  
    - 变更后展示 Total/Locked/Available（↑ 规则见主 PRD §6）  
-4. **UPDATE** 关联 PO 行状态 → **Stocked In**（若适用）；PO 头 → **Partially Stocked In / Stocked In**。  
-5. 入库单头 → **Stocked In**。
+4. 入库单头 → **Stocked In**。
 
 失败：**整单回滚**，禁止半截流水或脏库存。
 
@@ -326,18 +325,14 @@ Inbound No.、Inbound Type、Status、Warehouse Code、Source File（采购 xlsx
 
 ---
 
-## 10 与采购单、流水的关系
+## 10 与库存流水的关系
 
 ```
 [商品库] ──只读──> WMS
-[§5.0.1 零库存行] ──必须存在──> [入库单明细]
-[PO] ──引用──> [Purchase Receipt] ──Stocked In──> total↑ + Inbound 流水 + PO 状态反写
-[Manual Receipt] ──Stocked In──> total↑ + Manual Inbound 流水
+[§5.0.1 零库存行] ──必须存在──> [入库明细]
+[采购 xlsx / 手动加行] ──Confirm Stock-In──> total↑ + Inbound 流水（Related Order No. = Inbound No.）
 [ADJ 调整单] ──≠──> 入库单（不可走 Receipt Type）
 ```
-
-- PO **创建/导入/发货** 不改 `total`（主 PRD §8.2）。  
-- 一个 PO 可对应 **多个** Receipt；PO 搜索 **Linked Receipt No.** 在采购模块。
 
 ---
 
@@ -346,11 +341,9 @@ Inbound No.、Inbound Type、Status、Warehouse Code、Source File（采购 xlsx
 | 接口 | 说明 |
 |------|------|
 | `GET /inbound/receipts` | 列表；强制 `warehouse_code`、分页、搜索筛选 |
-| `POST /inbound/receipts` | 创建 Draft |
-| `PUT /inbound/receipts/{receipt_no}` | 编辑 Draft |
-| `DELETE /inbound/receipts/{receipt_no}` | 仅 Draft |
-| `POST /inbound/receipts/{id}/import` | 上传/启动 Processing |
-| `POST /inbound/receipts/{id}/stock-in` | Stocked In 写账（§9.2） |
+| `POST /inbound/tasks/parse` | 上传 xlsx，返回匹配行 + Unmatched（可异步 Processing） |
+| `POST /inbound/tasks/stock-in` | Confirm Stock-In 写账（§9.2），生成 Inbound No. |
+| `GET /inbound/receipts` | 列表（仅 Stocked In / Processing） |
 | `GET /warehouses/{code}/inventory/sku-options` | Add Products 选择器（已初始化行） |
 
 **Stocked In 核心逻辑**：
@@ -369,8 +362,8 @@ COMMIT or ROLLBACK all
 
 | 项 | 说明 |
 |----|------|
-| 并发导入 | 全系统最多 **2** 个 Processing 任务（可与 PO 共享计数） |
-| 权限 | 写账、Delete Draft：Admin + 所属仓仓管；跨仓拒绝 |
+| 并发导入 | 全系统最多 **2** 个 Processing 解析任务 |
+| 权限 | Confirm Stock-In：Admin + 所属仓仓管；跨仓拒绝 |
 | 审计 | 操作人写入流水 Operator |
 | 原型 | Axure 包「入库」；字段以本文为准，冲突以 **§2、§8.2** 为准 |
 
@@ -398,7 +391,6 @@ COMMIT or ROLLBACK all
 | 仓库上下文 | §2.1 |
 | 入库流水 | §6.1 |
 | 写账总表 | §8.2 |
-| 采购单（引用方） | `KickBazar-WMS-PO-PRD.md` |
 
 ---
 
