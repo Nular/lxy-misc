@@ -518,29 +518,29 @@
           <div class="page-body">
             <div class="filter-bar module-filter-bar inbound-filter-bar">
               <div class="filter-item">
-                <label>Inbound No.</label>
-                <input type="text" id="inbound-filter-no" placeholder="Contains" autocomplete="off">
-              </div>
-              <div class="filter-item">
-                <label>Operator</label>
-                <input type="text" id="inbound-filter-operator" placeholder="Operator name" list="inbound-operator-list">
-                <datalist id="inbound-operator-list"></datalist>
-              </div>
-              <div class="filter-item">
-                <label>From</label>
+                <label>Time (from)</label>
                 <input type="date" id="inbound-filter-date-from" aria-label="Start date">
               </div>
               <div class="filter-item">
-                <label>To</label>
+                <label>Time (to)</label>
                 <input type="date" id="inbound-filter-date-to" aria-label="End date">
+              </div>
+              <div class="filter-item">
+                <label>Inbound No.</label>
+                <input type="text" id="inbound-filter-no" placeholder="Contains" autocomplete="off">
               </div>
               <div class="filter-item">
                 <label>Inbound Type</label>
                 <select id="inbound-filter-type">
                   <option value="">All</option>
-                  <option value="Purchase Receipt">采购单入库</option>
-                  <option value="Manual Receipt">手动入库</option>
+                  <option value="Purchase Receipt">Purchase Inbound</option>
+                  <option value="Manual Receipt">Manual Inbound</option>
                 </select>
+              </div>
+              <div class="filter-item">
+                <label>Operator</label>
+                <input type="text" id="inbound-filter-operator" placeholder="Operator name" list="inbound-operator-list">
+                <datalist id="inbound-operator-list"></datalist>
               </div>
               <div class="filter-item filter-wh-scope" id="inbound-filter-warehouse-wrap">
                 <label>Warehouse</label>
@@ -559,16 +559,12 @@
               <table>
                 <thead>
                   <tr>
+                    <th>Time</th>
                     <th>Inbound No.</th>
                     <th>Inbound Type</th>
-                    <th>Status</th>
-                    <th>Warehouse</th>
-                    <th>Source File</th>
-                    <th>Lines</th>
-                    <th>Progress</th>
+                    <th>SKU Qty</th>
                     <th>Operator</th>
-                    <th>Updated</th>
-                    <th>Operation</th>
+                    <th style="width:56px;text-align:center">View</th>
                   </tr>
                 </thead>
                 <tbody id="inbound-table-body"></tbody>
@@ -994,24 +990,29 @@
         <button class="modal-close" onclick="closeModal('receipt-editor-modal')">&times;</button>
       </div>
       <div class="modal-body">
-        <p class="hint" id="receipt-type-hint">Select inbound type (cannot change after lines are added).</p>
-        <div class="inbound-type-pick inbound-type-pick-inline" id="receipt-type-pick">
-          <button type="button" class="btn inbound-type-card" id="receipt-type-btn-po" onclick="pickInboundEditorType('po-import')">采购单入库</button>
-          <button type="button" class="btn inbound-type-card" id="receipt-type-btn-manual" onclick="pickInboundEditorType('manual')">手动入库</button>
+        <p class="hint" id="receipt-type-hint">Select Inbound Type, then complete the form. Type cannot change after lines are added.</p>
+        <div class="form-group" id="receipt-type-select-wrap" style="max-width:320px;margin-bottom:12px">
+          <label>Inbound Type</label>
+          <select id="receipt-type-select" onchange="onReceiptTypeSelectChange(this.value)">
+            <option value="">Select…</option>
+            <option value="po-import">Purchase Inbound</option>
+            <option value="manual">Manual Inbound</option>
+          </select>
         </div>
         <div id="receipt-editor-body" hidden>
         <form class="form-grid" id="receipt-editor-form">
+          <div class="form-group"><label>Inbound No.</label><input class="readonly" id="receipt-inbound-no-preview" readonly placeholder="Auto on submit"></div>
           <div class="form-group"><label>Inbound Type</label><input class="readonly" id="receipt-type-label" readonly></div>
           <div class="form-group"><label>Context Warehouse</label><input class="readonly" id="receipt-warehouse" readonly></div>
-          <div class="form-group form-span-2"><label>Remarks</label><textarea id="receipt-remarks" maxlength="500" rows="2" placeholder="入库异常说明：数量不符、破损、ItemDesc 无法匹配已线下处理…"></textarea></div>
+          <div class="form-group form-span-2"><label>Header Remarks (optional)</label><textarea id="receipt-remarks" maxlength="500" rows="2" placeholder="Whole-receipt notes; line remarks required when Order Qty ≠ Receipt Qty."></textarea></div>
         </form>
         <input type="hidden" id="receipt-type" value="">
         <div id="receipt-source-po-import" class="source-panel" hidden>
-          <p class="hint">导入 <strong>采购单文档订单列表.xlsx</strong>。系统按 <code>ItemDesc</code> 匹配商品；匹配成功后展示 SKU ID、Product Name、SKU（规格），请填写 Warehouse、Zone、数量。</p>
+          <p class="hint">Upload purchase list (<strong>采购单文档订单列表.xlsx</strong>). System matches warehouse SKUs by <code>ItemDesc</code>. Unmatched rows show a warning; you may still submit successful lines. Original file is kept on the receipt.</p>
           <input type="file" id="receipt-import-file" accept=".xlsx,.xls,.csv">
           <button type="button" class="btn btn-primary" id="receipt-import-btn" disabled onclick="startPoListImport()">Parse file</button>
           <div id="receipt-unmatched-panel" class="inbound-alert" hidden>
-            <strong>无法匹配的商品（ItemDesc）</strong> — 请核对是否拼写错误，或在 Seller 平台完成商品上架后再入库。
+            <strong>Warn — unmatched ItemDesc</strong> — Check spelling or list the product on Seller before inbound.
             <ul id="receipt-unmatched-list"></ul>
           </div>
         </div>
@@ -1028,7 +1029,7 @@
           <table>
             <thead>
               <tr>
-                <th>ItemDesc</th><th>SKU ID</th><th>Product Name</th><th>Spec</th><th>Warehouse</th><th>Zone</th><th>Order Qty</th><th>Receipt Qty</th><th>Variance</th>
+                <th>SKU ID</th><th>Product Name</th><th>Spec</th><th>Warehouse</th><th>Zone</th><th>Order Qty</th><th>Receipt Qty</th><th>Remark</th><th style="width:72px">Action</th>
               </tr>
             </thead>
             <tbody id="receipt-editor-lines"></tbody>

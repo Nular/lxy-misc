@@ -927,6 +927,11 @@ tbody tr.selected {
   fill: currentColor;
 }
 
+.editor-lines-table input.input-required {
+  border-color: #fa8c16;
+  background: #fff7e6;
+}
+
 .record-detail-grid {
   display: grid;
   grid-template-columns: 160px 1fr;

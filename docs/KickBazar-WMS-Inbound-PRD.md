@@ -120,7 +120,9 @@
 
 ### 5.1 列表列（建议）
 
-Inbound No.、Inbound Type、Status、Warehouse Code、Source File（采购 xlsx 名，手动导入为 `—`）、SKU 行数、Updated At、操作（**Detail** / Processing 进度）。
+**Time**（入库完成/更新时间）、**Inbound No.**、**Inbound Type**（`Purchase Inbound` / `Manual Inbound`）、**SKU 数量**（行数）、**Operator**、**View**（行内小眼睛图标进详情；**整行不可点**）。
+
+筛选栏顺序建议：**Time（起止，同一 date 控件规格）**、Inbound No.、Inbound Type、Operator；（Admin + All 上下文时可选 Warehouse）。
 
 ### 5.2 搜索（Search）
 
@@ -154,7 +156,7 @@ Inbound No.、Inbound Type、Status、Warehouse Code、Source File（采购 xlsx
 | 筛选项 | 可选值 |
 |--------|--------|
 | **Status** | Processing、Stocked In |
-| **Inbound Type** | Purchase Order Import、Manual Import |
+| **Inbound Type** | Purchase Inbound、Manual Inbound |
 
 ### 5.4 状态说明与操作
 
@@ -178,11 +180,12 @@ Inbound No.、Inbound Type、Status、Warehouse Code、Source File（采购 xlsx
 
 ### 6.1 新建入库任务
 
-1. 列表 **+ New Inbound** → 选择 **Purchase Order Import** 或 **Manual Import**（不可再切换）。  
-2. 进入新建弹层；**Confirm Stock-In** 时分配 **Inbound No.** 并写账。  
-3. 标题：**New Inbound** / **Edit Inbound** / **View Inbound**。  
-4. 头字段：**Inbound Type**（只读）、**Remarks**（采购导入在存在未匹配或数量差异时 **建议必填**）、默认 Warehouse（= 上下文，行可改仓）。  
-5. 仅 **Cancel** 与 **Confirm Stock-In**；取消则丢弃未提交行（不入列表）。
+1. 列表 **+ New Inbound** → **下拉**选择 **Purchase Inbound** 或 **Manual Inbound**（加行后不可再切换）。  
+2. 弹层展示 **Inbound No.** 预览（提交时生成 **`IN-{YYYYMMDD}{seq3}`**）并写账。  
+3. 标题：**New Inbound** / **View Inbound**。  
+4. 头字段：**Inbound Type**（只读）、**Header Remarks**（可选）；行级 **Remark** 在 **Order Qty ≠ Receipt Qty** 时 **必填**。  
+5. 采购导入：**Zone** 默认 Storage Zone **不可改**；**Order Qty** 只读；**Receipt Qty** 必填；未匹配 ItemDesc **Warn** 可忽略仍提交；**原 xlsx 保留**。  
+6. 行 **Delete** + **Delete All**；仅 **Cancel** 与 **Confirm Stock-In**。
 
 ### 6.2 行数上限
 
