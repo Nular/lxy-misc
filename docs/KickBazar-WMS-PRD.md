@@ -200,8 +200,37 @@ Dashboard **Quick Actions** 与侧栏 Purchase Order / Inbound 跳转同一列�
 ### 5.0 库存行与 SKU 主数据
 
 - 主键：**SKU ID + Warehouse Code + Zone Code**。
-- 初始化：Total=0、Locked=0；Available 实时计算。
-- 写账：入库、出库占用/扣减、库存调整单（§5.3）更新 total、locked。
+- 展示字段（SKU ID、Specification、Product Name、条码缓存等）来自 **原有商品库 / Seller 库**（WMS **只读**，见 §1.2、§2）。
+- 写账：入库上架、出库占用/扣减、库存调整单（§5.3）更新 `total`、`locked`；**Available 不落库**（`total - locked`）。
+
+#### 5.0.1 库存行初始化（自原有库导入，拍板）
+
+WMS **不在入库/采购单页面创建 SKU 主数据**；仓内可作业前提如下：
+
+1. **商品主数据**：自企业 **原有数据库（商品库）** 一次性或增量 **导入/同步** 至 WMS 可读层（与 Seller 库只读策略一致）。
+2. **库存行生成**：对每个 **`warehouse_code` × 已启用 `zone_code`**，对 Admin **已下发到该仓** 的 SKU，生成库存行：
+   - **Total = 0**、**Locked = 0**、**Available = 0**（实时计算）。
+   - 未下发到该仓的 SKU **不存在** 对应库存行。
+3. **导入时机**：建仓并启用库区后、**首次入库/出库/调整前** 必须完成该仓 SKU 库存行初始化（批量任务或接口）；失败可重试，**禁止**在未初始化仓上执行写账。
+
+> 说明：「原有数据库导入」指 **商品 + 仓内库存行占位（零库存）** 的数据准备阶段，**不是**指 Excel 入库单导入。
+
+#### 5.0.2 入库/出库/调整前置条件（拍板）
+
+任意 **写库存** 操作（含 §10 入库上架、§5.3 调整、§11 出库占用/扣减）前，系统 **必须** 校验：
+
+| 校验项 | 规则 | 失败处理 |
+|--------|------|----------|
+| 库存行存在 | 存在记录 `(sku_id, warehouse_code, zone_code)` | 拒绝写账；提示 **SKU not registered in this warehouse/zone**（文案产品定稿） |
+| 仓/区可用 | 仓库 Enable、目标库区 Enable；上架默认 **Storage Zone**（§8.1） | 拒绝 |
+| 商品主数据 | SKU 在商品库存在且可读 | 拒绝 |
+
+**入库/采购单匹配规则**：Add Products、Link PO、Excel **Import** 均只能选中或匹配 **当前 `warehouse_code` 下已存在库存行** 的 SKU；**不得**因入库/PO 导入而 **自动新建** 库存行或商品主数据。若需新 SKU 进仓，须先走 **§5.0.1 下发/初始化** 再入库。
+
+#### 5.0.3 与入库模块衔接
+
+- §9 采购单、§10 入库单行上的 SKU，仅允许引用 **§5.0.1 已初始化** 的行；写账逻辑见 §10.6。
+- Record / Inventory 查询结果与上述库存行 **同一数据源**。
 
 ### 5.1 SPU 视图
 
@@ -432,6 +461,7 @@ Dashboard **Quick Actions** 与侧栏 Purchase Order / Inbound 跳转同一列�
 - **数据范围**：受 §2.1 `warehouse_context` 约束；列表默认仅展示当前上下文仓库的 PO（`warehouse_code`）。
 - **不写库存**：PO 创建/编辑/导入**不**改 `total/locked`；**入库完成（Stocked In）** 后由 **§10 入库单** 写账并生成 **§6 入库流水**。
 - **商品主数据**：SKU ID、名称、规格、条码自 **Seller/商品库只读**；PO 行可带 **Qty、单价、链接** 等采购属性，不在 WMS 建品。
+- **SKU 可选范围（拍板）**：Add Products / Import **仅能选择或匹配** 当前 `warehouse_code` 下 **§5.0.1 已生成库存行** 的 SKU（初始 Total=0 即可）；未下发 SKU **不可加入 PO 行**。
 - **与旧稿差异**：原「Creation Method = Manual Adjustment」改为 **Manual Entry**（避免与 §5.3 库存调整单混淆）。
 
 ### 9.1 功能列表
@@ -485,8 +515,8 @@ Dashboard **Quick Actions** 与侧栏 Purchase Order / Inbound 跳转同一列�
 
 三种互斥录入方式（与旧稿一致，命名调整）：
 
-1. **Add Products** — 从商品库勾选 SKU 填行  
-2. **Import** — 表头校验，最多 **2** 个并发导入任务；Processing 时 Delete 置灰  
+1. **Add Products** — 从 **当前仓已初始化库存行** 的 SKU 列表勾选（可联查商品库展示名称/规格/条码，只读）；**不展示**未下发 SKU。  
+2. **Import** — 表头校验；按 **SKU ID** 匹配 **当前仓 + 默认/指定 `zone_code` 库存行**（§5.0.2）；未匹配行进入 **失败明细**，不自动建 SKU/库存行；最多 **2** 个并发导入任务；Processing 时 Delete 置灰  
 3. （无「引用入库单」；引用方向为 **入库单引用 PO**）
 
 - 草稿保留：localStorage / 服务端草稿（产品实现）；SKU 行上限 **10,000** 行。  
@@ -500,6 +530,7 @@ Dashboard **Quick Actions** 与侧栏 Purchase Order / Inbound 跳转同一列�
 ### 10.0 模块定位
 
 - **Receipt** = 入库单（上架凭证）；**Stocked In** = 确认上架，写 **total↑、available↑**（locked 不变），并写 **§6.1 入库流水**。
+- **前置依赖（拍板）**：本模块 **依赖 §5.0.1–§5.0.2**；入库匹配 **只更新已存在库存行**，不在 Receipt 流程中创建 SKU 或零库存行。
 - **Receipt Type**（与流水类型映射）：
 
 | Receipt Type | 流水 Type | Record 子筛 |
@@ -536,17 +567,19 @@ Dashboard **Quick Actions** 与侧栏 Purchase Order / Inbound 跳转同一列�
 三种互斥方式（旧稿保留）：
 
 1. **Link Purchase Order** — 选 PO 后拉取待入库行：展示 **Order Qty**（PO 行数量，只读），录入 **Receipt Qty**；**Variance = Receipt Qty − Order Qty** 只读对账，**不落库、不写库存**。差异处理走 **§5.3 调整单**或对账任务，不在入库行强制 Physical Inventory。  
-2. **Add Products** — 手工入库行（`Manual Receipt`），仅 Receipt Qty。  
-3. **Import** — 表头校验；**最多 2 个导入进程同时进行**；Processing 时 View 进度、不可删；Cancel 在导入开始后置灰。  
+2. **Add Products** — 手工入库（`Manual Receipt`）：SKU 选择器 **仅列出当前仓 §5.0.1 已初始化库存行**（Total=0 可入库）；填 **Receipt Qty**。  
+3. **Import** — 表头校验；行 **SKU ID** 必须在当前 `warehouse_code`（及模板指定 `zone_code`，默认 STO）**已有库存行**；匹配成功填充只读商品信息 + 录入 Receipt Qty；**未匹配行不入库**，写入导入结果报告（行号、SKU、原因：`SKU not in warehouse inventory`）；**最多 2 个**并发导入；Processing 时 View 进度、不可删；Cancel 在导入开始后置灰。  
 
 互斥规则：选 PO 后 Add Products / Import 置灰；反之亦然。
+
+**Link PO 匹配补充**：自 PO 带入的 SKU 在 **Stocked In 写账前** 再次校验 §5.0.2；若 PO 创建后该 SKU 已从仓内移除下发，**拒绝该行写账** 并提示先完成库存行初始化。
 
 ### 10.5 行字段（与基础库存对齐）
 
 | 字段 | 必填 | 说明 |
 |------|------|------|
-| SKU ID | Y | 4–50 字符，系统校验存在 |
-| Product Name / Specification | Y | 只读带出为主 |
+| SKU ID | Y | 4–50 字符；**须存在于当前仓库存行**（§5.0.2），且商品库可读 |
+| Product Name / Specification | Y | 匹配成功后 **只读带出**（商品库） |
 | **Order Qty** | N | 来自 PO，只读；手工/导入可空 |
 | **Receipt Qty** | Y | 实际上架数量；整数 **1–9,999,999**；**仅此字段写账** |
 | **Variance** | — | 计算列 `receipt_qty − order_qty`，对账用 |
@@ -560,11 +593,12 @@ Dashboard **Quick Actions** 与侧栏 Purchase Order / Inbound 跳转同一列�
 
 Stocked In 事务内：
 
-1. 按行 `warehouse_code + zone_code + sku_id` 增加 `total`，`available = total - locked`  
+0. **前置**：逐行校验 §5.0.2（库存行存在、仓/区 Enable）；任一失败 **整单失败**  
+1. 按行 `warehouse_code + zone_code + sku_id` **UPDATE** 已有库存行：`total += receipt_qty`，`available = total - locked`  
 2. 插入 `record` 入库流水（`inboundNo` = Receipt No.，采购类附 `purchaseOrderNo`）  
 3. 更新 PO 行状态 → Stocked In / PO 头 → Partially Stocked In 或 Stocked In  
 
-失败整单回滚，禁止半截流水。
+失败整单回滚，禁止半截流水。**禁止** `INSERT` 新库存行作为入库副作用。
 
 ### 10.7 分页与列表记忆
 
