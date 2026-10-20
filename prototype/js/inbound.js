@@ -107,6 +107,36 @@ let inboundReceipts = [
     lines: [
       { skuId: 'SKU-10002-42', productName: 'Smart Watch Series X', spec: '42mm Silver', receiptQty: 5, warehouseCode: 'SH001', zoneCode: 'SH001STO', afterQty: 405 }
     ]
+  },
+  {
+    receiptNo: 'IN-20260825011',
+    receiptType: 'Purchase Receipt',
+    status: 'Stocked In',
+    warehouseCode: 'SH001',
+    progress: 100,
+    updatedAt: '2026-08-25 15:40:00',
+    remarks: 'R31 耳机批量到货。',
+    operator: 'Zhang Wei',
+    sourceFile: '采购单文档订单列表_0825.xlsx',
+    entryMethod: 'po-import',
+    lines: [
+      { itemDesc: '1 * R31 headphones - Lightning', skuId: 'SKU-10001-BK', productName: 'Wireless Bluetooth Earbuds Pro', spec: 'Black; M', orderQty: 1, receiptQty: 120, warehouseCode: 'SH001', zoneCode: 'SH001STO', afterQty: 1320 }
+    ]
+  },
+  {
+    receiptNo: 'IN-20260826003',
+    receiptType: 'Manual Receipt',
+    status: 'Stocked In',
+    warehouseCode: 'BJ001',
+    progress: 100,
+    updatedAt: '2026-08-26 08:55:00',
+    remarks: '',
+    operator: 'Warehouse Manager',
+    sourceFile: '',
+    entryMethod: 'manual',
+    lines: [
+      { skuId: 'SKU-10002-42', productName: 'Smart Watch Series X', spec: '42mm Silver', receiptQty: 12, warehouseCode: 'BJ001', zoneCode: 'BJ001STO', afterQty: 112 }
+    ]
   }
 ];
 
@@ -194,7 +224,8 @@ function openNewInboundTask() {
   document.getElementById('receipt-remarks').value = '';
   document.getElementById('receipt-import-file').value = '';
   document.getElementById('receipt-unmatched-panel').hidden = true;
-  document.getElementById('receipt-manual-search').value = '';
+  const manualSearch = document.getElementById('receipt-manual-search');
+  if (manualSearch) manualSearch.value = '';
   document.getElementById('receipt-editor-title').textContent = 'New Inbound';
   document.getElementById('receipt-editor-body').hidden = true;
   document.getElementById('receipt-type-pick').hidden = false;
@@ -462,9 +493,12 @@ function updateReceiptEditorChrome() {
   const ro = receiptEditorReadonly;
   const proc = currentReceiptEdit && currentReceiptEdit.status === 'Processing';
   document.getElementById('receipt-remarks').disabled = ro || proc;
-  document.getElementById('receipt-stock-in-btn').hidden = ro || proc;
-  document.getElementById('receipt-print-btn').hidden = !(ro || (receiptEditorLines.length && !proc));
-  document.getElementById('receipt-delete-all-btn').hidden = ro || proc || receiptEditorLines.length === 0;
+  const stockBtn = document.getElementById('receipt-stock-in-btn');
+  if (stockBtn) stockBtn.hidden = ro || proc;
+  const printBtn = document.getElementById('receipt-print-btn');
+  if (printBtn) printBtn.hidden = !(ro || (receiptEditorLines.length && !proc));
+  const delAllBtn = document.getElementById('receipt-delete-all-btn');
+  if (delAllBtn) delAllBtn.hidden = ro || proc || receiptEditorLines.length === 0;
   const fileEl = document.getElementById('receipt-import-file');
   document.getElementById('receipt-import-btn').disabled = ro || proc || !(fileEl && fileEl.files.length);
 }

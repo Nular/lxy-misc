@@ -4947,9 +4947,12 @@ function updateReceiptEditorChrome() {
   const ro = receiptEditorReadonly;
   const proc = currentReceiptEdit && currentReceiptEdit.status === 'Processing';
   document.getElementById('receipt-remarks').disabled = ro || proc;
-  document.getElementById('receipt-stock-in-btn').hidden = ro || proc;
-  document.getElementById('receipt-print-btn').hidden = !(ro || (receiptEditorLines.length && !proc));
-  document.getElementById('receipt-delete-all-btn').hidden = ro || proc || receiptEditorLines.length === 0;
+  const stockBtn = document.getElementById('receipt-stock-in-btn');
+  if (stockBtn) stockBtn.hidden = ro || proc;
+  const printBtn = document.getElementById('receipt-print-btn');
+  if (printBtn) printBtn.hidden = !(ro || (receiptEditorLines.length && !proc));
+  const delAllBtn = document.getElementById('receipt-delete-all-btn');
+  if (delAllBtn) delAllBtn.hidden = ro || proc || receiptEditorLines.length === 0;
   const fileEl = document.getElementById('receipt-import-file');
   document.getElementById('receipt-import-btn').disabled = ro || proc || !(fileEl && fileEl.files.length);
 }
