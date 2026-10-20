@@ -527,6 +527,8 @@ WMS **不在入库/采购单页面创建 SKU 主数据**；仓内可作业前提
 
 ## 10 入库（Inbound Receipt）
 
+> **独立正文**：入库模块完整 PRD 见 [`KickBazar-WMS-Inbound-PRD.md`](KickBazar-WMS-Inbound-PRD.md)。本节为与主文档的 **摘要/契约索引**。
+
 ### 10.0 模块定位
 
 - **Receipt** = 入库单（上架凭证）；**Stocked In** = 确认上架，写 **total↑、available↑**（locked 不变），并写 **§6.1 入库流水**。
