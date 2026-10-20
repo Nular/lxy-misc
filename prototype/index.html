@@ -606,7 +606,7 @@
               <div class="filter-item">
                 <label>Search by</label>
                 <select id="inbound-search-field">
-                  <option value="receiptNo">Receipt No.</option>
+                  <option value="receiptNo">Inbound No.</option>
                   <option value="purchaseOrder">Related Purchase Order No.</option>
                 </select>
               </div>
@@ -633,8 +633,8 @@
                 <div class="multi-select" id="inbound-filter-type-wrap">
                   <button type="button" class="multi-select-trigger" onclick="toggleMultiSelect('inbound-filter-type-wrap')">Select…</button>
                   <div class="multi-select-panel" hidden>
-                    <label><input type="checkbox" value="Purchase Receipt" onchange="onInboundFilterCheckboxChange()"> Purchase Receipt</label>
-                    <label><input type="checkbox" value="Manual Receipt" onchange="onInboundFilterCheckboxChange()"> Manual Receipt</label>
+                    <label><input type="checkbox" value="Purchase Receipt" onchange="onInboundFilterCheckboxChange()"> Purchase Order Import</label>
+                    <label><input type="checkbox" value="Manual Receipt" onchange="onInboundFilterCheckboxChange()"> Manual Import</label>
                   </div>
                 </div>
               </div>
@@ -646,14 +646,14 @@
             </div>
             <div class="toolbar">
               <span>Total <strong id="inbound-list-total">0</strong></span>
-              <button class="btn btn-primary" onclick="openReceiptEditor()">+ Create Receipt</button>
+              <button class="btn btn-primary" onclick="openNewInboundTask()">+ New Inbound</button>
             </div>
             <div class="table-wrapper">
               <table>
                 <thead>
                   <tr>
-                    <th>Receipt No.</th>
-                    <th>Type</th>
+                    <th>Inbound No.</th>
+                    <th>Inbound Type</th>
                     <th>Status</th>
                     <th>Warehouse</th>
                     <th>Related PO</th>
@@ -1107,6 +1107,35 @@
     </div>
   </div>
 
+  <div class="modal-overlay" id="inbound-new-type-modal">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <span class="modal-title">New Inbound</span>
+        <button class="modal-close" onclick="closeModal('inbound-new-type-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="hint">Each inbound task gets one Inbound No. Choose how you will add lines (cannot change later).</p>
+        <div class="inbound-type-pick">
+          <button type="button" class="btn btn-primary inbound-type-card" onclick="startInboundWithType('po-import')">Purchase Order Import</button>
+          <button type="button" class="btn inbound-type-card" onclick="startInboundWithType('manual')">Manual Import</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="inbound-detail-modal">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <span class="modal-title" id="inbound-detail-title">Inbound Detail</span>
+        <button class="modal-close" onclick="closeModal('inbound-detail-modal')">&times;</button>
+      </div>
+      <div class="modal-body" id="inbound-detail-body"></div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="closeModal('inbound-detail-modal')">Close</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Inbound Receipt Editor -->
   <div class="modal-overlay" id="receipt-editor-modal">
     <div class="modal modal-lg">
@@ -1115,27 +1144,30 @@
         <button class="modal-close" onclick="closeModal('receipt-editor-modal')">&times;</button>
       </div>
       <div class="modal-body">
-        <div class="receipt-source-tabs">
-          <button type="button" class="source-tab active" data-source="po" onclick="setReceiptSource('po')">Link Purchase Order</button>
-          <button type="button" class="source-tab" data-source="products" onclick="setReceiptSource('products')">Add Products</button>
-          <button type="button" class="source-tab" data-source="import" onclick="setReceiptSource('import')">Import</button>
-        </div>
         <form class="form-grid" id="receipt-editor-form">
-          <div class="form-group"><label>Receipt Type</label><select id="receipt-type"><option value="Purchase Receipt">Purchase Receipt</option><option value="Manual Receipt">Manual Receipt</option></select></div>
-          <div class="form-group"><label>Warehouse</label><input class="readonly" id="receipt-warehouse" readonly></div>
-          <div class="form-group" id="receipt-po-group"><label>Related PO</label><select id="receipt-po-select"></select></div>
-          <div class="form-group"><label>Default Zone (Storage)</label><input class="readonly" id="receipt-zone" readonly></div>
+          <div class="form-group"><label>Inbound Type</label><input class="readonly" id="receipt-type-label" readonly></div>
+          <div class="form-group"><label>Default Warehouse</label><input class="readonly" id="receipt-warehouse" readonly></div>
+          <div class="form-group" id="receipt-po-group"><label>Related PO (optional)</label><select id="receipt-po-select"></select></div>
           <div class="form-group"><label>Supplier</label><input type="text" id="receipt-supplier" maxlength="200" placeholder="Optional"></div>
-          <div class="form-group form-span-2"><label>Remarks</label><input type="text" id="receipt-remarks" maxlength="500" placeholder="Optional"></div>
+          <div class="form-group form-span-2"><label>Remarks</label><textarea id="receipt-remarks" maxlength="500" rows="2" placeholder="Purchase exceptions: qty mismatch, damaged goods, unmatched items handled offline…"></textarea></div>
         </form>
-        <div id="receipt-source-import" class="source-panel" hidden>
-          <p class="hint">Template: SKU ID (required), Receipt Qty, Zone Code (optional, default STO). Only SKUs registered in this warehouse can be imported.</p>
-          <input type="file" id="receipt-import-file" accept=".csv,.xlsx">
-          <button type="button" class="btn btn-primary" id="receipt-import-btn" disabled onclick="startReceiptImport()">Import</button>
+        <input type="hidden" id="receipt-type" value="Purchase Receipt">
+        <div id="receipt-source-po-import" class="source-panel" hidden>
+          <p class="hint">Upload <strong>采购单文档订单列表.xlsx</strong>. Required columns: <code>ItemDesc</code>, <code>ItemQuantity</code>. Rows are matched to warehouse SKUs by ItemDesc.</p>
+          <input type="file" id="receipt-import-file" accept=".xlsx,.xls,.csv">
+          <button type="button" class="btn btn-primary" id="receipt-import-btn" disabled onclick="startPoListImport()">Parse file</button>
+          <div id="receipt-unmatched-panel" class="inbound-alert" hidden>
+            <strong>Unmatched ItemDesc</strong> — check spelling or list the product on Seller before inbound.
+            <ul id="receipt-unmatched-list"></ul>
+          </div>
         </div>
-        <div id="receipt-source-products" class="source-panel" hidden>
-          <button type="button" class="btn btn-primary" id="receipt-add-products-btn" onclick="openReceiptSkuPicker()">Open SKU Picker</button>
-          <span class="hint">Only SKUs with initialized inventory rows in the current warehouse (including Total=0).</span>
+        <div id="receipt-source-manual" class="source-panel" hidden>
+          <div class="filter-bar" style="margin-bottom:8px">
+            <input type="text" id="receipt-manual-search" placeholder="Search SKU ID or product name" oninput="renderReceiptManualSearch()">
+            <button type="button" class="btn btn-primary" id="receipt-add-products-btn" onclick="openReceiptSkuPicker()">Browse SKUs</button>
+          </div>
+          <div id="receipt-manual-suggest" class="search-suggest" hidden></div>
+          <span class="hint">Only SKUs with initialized inventory rows (including Total=0).</span>
         </div>
         <div class="editor-lines-toolbar" id="receipt-lines-toolbar">
           <button type="button" class="btn" id="receipt-delete-all-btn" hidden onclick="deleteAllReceiptLines()">Delete All</button>
@@ -1144,7 +1176,7 @@
           <table>
             <thead>
               <tr>
-                <th>SKU ID</th><th>Product Name</th><th>Spec</th><th>Primary Barcode</th><th>Order Qty</th><th>Receipt Qty</th><th>Variance</th><th>Zone</th>
+                <th>ItemDesc</th><th>SKU ID</th><th>Product Name</th><th>Spec</th><th>Warehouse</th><th>Zone</th><th>Order Qty</th><th>Receipt Qty</th><th>Variance</th>
               </tr>
             </thead>
             <tbody id="receipt-editor-lines"></tbody>

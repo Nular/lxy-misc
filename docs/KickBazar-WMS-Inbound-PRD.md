@@ -12,9 +12,19 @@
 ### 1.1 业务目标
 
 1. 支持仓内 **上架入库**：将实物数量记入指定 **仓库 × 库区** 库存行，并生成 **库存流水**（Record → Inbound）。
-2. 支持 **采购入库**（关联采购单）与 **手工入库** 两类凭证。
-3. 支持 **Excel 批量导入** 入库明细（匹配已有仓内 SKU，非建品）。
-4. 入库过程可草稿、可异步导入进度；**完成后不可删**，仅可查看。
+2. 将线下两类入库收敛为系统内两种 **入库任务**（每次操作生成一个 **Inbound No.**）：
+   - **采购单导入**（Purchase Order Import / `Purchase Receipt`）：批量上传 **`采购单文档订单列表.xlsx`**，按 **ItemDesc** 匹配仓内商品后由仓管填写各行 warehouse、zone、数量；头 **Remarks** 记录与采购/实物不一致等异常。
+   - **手动导入**（Manual Import / `Manual Receipt`）：按 **SKU ID** 或 **Product Name** 搜索匹配商品，填写 warehouse、zone、数量后提交。
+3. 匹配失败行 **不入账**：提示无法匹配的商品（核对拼写或在 Seller 端上架），与线下「商品未上架先上架」一致。
+4. 入库过程可草稿、可异步导入解析进度；**Stocked In 后不可删**，仅可查看详情。
+
+### 1.4 业务流程对照（线下 → 系统）
+
+| 线下分支 | 系统入口 | 关键步骤 |
+|----------|----------|----------|
+| 采购单入库：填单 → 保留待入库 → 收货核对 → 上架 | **采购单导入** | 上传订单列表 xlsx → ItemDesc 匹配 SKU → 填库区/数量 → 异常写 Remarks → Confirm Stock-In |
+| 无采购单入库：收货 →（未上架则 Seller 上架）→ 入库 | **手动导入** | 搜 SKU → 填库区/数量 → Confirm Stock-In |
+| 实物与采购单不一致 | 采购单导入 + **Remarks** | 允许按实收数量入库，须在备注说明原因（Variance 只读对账） |
 
 ### 1.2 不在本模块范围
 
@@ -49,9 +59,8 @@
 
 | 录入方式 | 匹配键 | 成功条件 | 失败 |
 |----------|--------|----------|------|
-| Link Purchase Order | PO 行 SKU ID | 当前仓 **已有** `(sku_id, warehouse_code, zone_code)` 库存行 | 该行不可写入 Receipt；写账时整行失败 |
-| Add Products | 用户选 SKU | 选择器 **仅展示** 当前仓已初始化库存行（含 Total=0） | 未下发 SKU **不出现在列表** |
-| Import Excel | 模板 **SKU ID**（+ 可选 Zone Code，默认 STO） | 同上库存行存在 | **失败明细**，不自动建 SKU/库存行 |
+| Purchase Order Import | **ItemDesc** → SKU | 匹配成功且目标 `(sku_id, warehouse_code, zone_code)` 存在 | Unmatched 提醒；无库存行则拒绝写账 |
+| Manual Import | SKU ID / Product Name 搜索 | 选择器 **仅展示** 已初始化库存行（含 Total=0） | 未下发 SKU **不可选** |
 
 **禁止**：在入库单、Import 流程中 **INSERT** 商品主数据或库存行。
 
@@ -73,42 +82,44 @@
 
 | # | 功能 |
 |---|------|
-| 1 | 查看入库单列表 |
-| 2 | 创建入库单 |
-| 3 | 编辑入库单 |
-| 4 | 查看入库单 |
-| 5 | 删除入库单（受状态限制） |
-| 6 | 搜索：Receipt No. / Related Purchase Order No.（单选类别） |
-| 7 | 筛选：Status、Receipt Type（多选） |
-| 8 | 新建数据排在列表前面（`created_at` 降序） |
-| 9 | 三种录入：Link PO / Add Products / Import（互斥） |
-| 10 | 分页：默认 20；可选 20 / 50 / 100 / 500 |
+| 1 | 入库单列表（按 **Inbound No.** 展示） |
+| 2 | **新建入库任务**：选择 **采购单导入** 或 **手动导入**（二选一，创建后不可切换） |
+| 3 | 采购单导入：上传 `采购单文档订单列表.xlsx`、ItemDesc 匹配、未匹配提醒 |
+| 4 | 手动导入：SKU ID / Product Name 搜索加行 |
+| 5 | 行级填写 **Warehouse、Zone、Receipt Qty**（写账目标） |
+| 6 | 头 **Remarks**（采购入库异常说明） |
+| 7 | 编辑 / 查看 / 删除（受状态限制） |
+| 8 | **搜索**：Inbound No. / Related Purchase Order No. |
+| 9 | **筛选**：Status、Inbound Type |
+| 10 | 入库单 **详情 Modal**（行级：ItemDesc、SKU、数量、After Qty、Type、备注、操作人） |
+| 11 | 分页：默认 20；可选 20 / 50 / 100 / 500 |
 
 ---
 
 ## 4 单号与类型
 
-### 4.1 Receipt No.（`receipt_no`）
+### 4.1 Inbound No.（`receipt_no`）
 
+- 界面文案：**Inbound No.**；字段名 `receipt_no`。  
 - 格式：**`IN-{YYYYMMDD}{seq3}`**，全局唯一，系统生成，不可改。  
 - 示例：`IN-20260821001`  
 - `seq3`：按自然日递增，001–999，事务分配。  
-- 与库存流水 **Inbound No. / Related Order No.** 一致。
+- 与库存流水列表 **Related Order No.**（入库类）及详情 **Inbound No.** 一致（主 PRD §6.1）。
 
-### 4.2 Receipt Type（入库类型）
+### 4.2 Inbound Type（入库类型）
 
-| Receipt Type | 说明 | 流水 Type | Record → Inbound 子筛 |
-|--------------|------|-----------|------------------------|
-| **Purchase Receipt** | 关联采购单 | Purchase Inbound | Purchase |
-| **Manual Receipt** | 手工入库 | Manual Inbound | Manual |
+| 界面文案 | 存储值 `receipt_type` | 流水 Type | Record → Inbound 子筛 |
+|----------|----------------------|-----------|------------------------|
+| **Purchase Order Import**（采购单导入） | Purchase Receipt | Purchase Inbound | Purchase |
+| **Manual Import**（手动导入） | Manual Receipt | Manual Inbound | Manual |
 
 - **禁止**使用 **Manual Adjustment** 作为入库类型（与库存调整单 ADJ 区分）。
 
-### 4.3 关联采购单
+### 4.3 关联采购单（可选）
 
-- 字段：**Related Purchase Order No.**（`purchase_order_no` / `po_no`）。  
-- **Purchase Receipt** 建议必填 PO；**Manual Receipt** 为空。  
-- 关系：**多入库单可关联同一 PO**（一对多）；PO 不写库存，**Stocked In 后** 反写 PO 行/头状态（见 §12）。
+- 字段：**Related Purchase Order No.**（`purchase_order_no`），来自 PO 模块关联或仓管手选；**采购单导入**也可仅依赖 xlsx 而不绑 PO。  
+- **Manual Import** 为空。  
+- 若关联 PO：**多入库单可对应同一 PO**；PO 不写库存，**Stocked In 后** 可反写 PO 行/头状态（见 §10）。
 
 ---
 
@@ -116,7 +127,7 @@
 
 ### 5.1 列表列（建议）
 
-Receipt No.、Receipt Type、Related PO、Status、Warehouse Code、行数/SKU 数、创建时间、操作（Edit / Delete / View / View 进度）。
+Inbound No.、Inbound Type、Status、Warehouse Code（头默认仓或首行仓）、Related PO（若有）、SKU 行数、Updated At、操作（**View 详情** / Edit / Delete / Import 进度）。
 
 ### 5.2 搜索（Search）
 
@@ -124,7 +135,7 @@ Receipt No.、Receipt Type、Related PO、Status、Warehouse Code、行数/SKU �
 
 | 选项 | 含义 |
 |------|------|
-| **Receipt No.**（默认） | 凭证号 |
+| **Inbound No.**（默认） | 入库单号 |
 | **Related Purchase Order No.** | 关联采购订单号 |
 
 #### 5.2.2 搜索推荐框
@@ -132,7 +143,7 @@ Receipt No.、Receipt Type、Related PO、Status、Warehouse Code、行数/SKU �
 - **BR1**：高度 1–5 行；超过 5 行右侧滚动。  
 - **焦点 / 输入时**展示推荐：  
   - 有搜索词：当前仓内，类别字段 **包含** 搜索词的候选列表。  
-  - 无搜索词：当前仓内，该类别 **全部** 候选（Receipt No. 或 PO No.）。  
+  - 无搜索词：当前仓内，该类别 **全部** 候选（Inbound No. 或 PO No.）。  
 - 点击推荐项：**立即执行搜索**。  
 - 点击 **Search**：无内容 = 刷新全量（当前仓 + 保留筛选）；有内容 = 按词搜索。  
 - **BR201**：精确匹配排第一；**BR202**：模糊匹配靠后。  
@@ -150,7 +161,7 @@ Receipt No.、Receipt Type、Related PO、Status、Warehouse Code、行数/SKU �
 | 筛选项 | 可选值 |
 |--------|--------|
 | **Status** | Draft、Processing、Stocked In |
-| **Receipt Type** | Purchase Receipt、Manual Receipt |
+| **Inbound Type** | Purchase Order Import、Manual Import |
 
 ### 5.4 状态说明与操作
 
@@ -173,13 +184,13 @@ Receipt No.、Receipt Type、Related PO、Status、Warehouse Code、行数/SKU �
 
 ## 6 创建 / 编辑 / 查看 / 删除
 
-### 6.1 Create Receipt 页面
+### 6.1 新建入库任务
 
-- 标题：**Create Receipt** / **Edit Receipt** / **View Receipt**。  
-- **草稿保留**：保留 **最近一次编辑内容**（localStorage 或服务端 Draft，产品实现）。  
-- 头字段（建议）：Receipt Type、Related PO（条件显示）、Supplier、Remarks、Warehouse（只读，= 上下文仓）、默认 Zone。  
-- 保存成功且非 Processing 时显示 **Print**。  
-- 存在商品行时显示 **Delete All** → 二次确认：*Are you sure you want to delete all SKU data?*
+1. 列表 **+ New Inbound** → 选择 **Purchase Order Import** 或 **Manual Import**（不可再切换）。  
+2. 系统生成 **Inbound No.**（Draft）并进入编辑页/弹层。  
+3. 标题：**New Inbound** / **Edit Inbound** / **View Inbound**。  
+4. 头字段：**Inbound Type**（只读）、Related PO（采购导入可选）、Supplier（可选）、**Remarks**（采购导入 **建议必填** 当存在未匹配或数量差异）、默认 Warehouse（= 上下文，行可改仓）。  
+5. **Stocked In** 成功后仅 **View**；可 **Print**；行区 **Delete All** 二次确认。
 
 ### 6.2 行数上限
 
@@ -194,47 +205,68 @@ Receipt No.、Receipt Type、Related PO、Status、Warehouse Code、行数/SKU �
 
 ---
 
-## 7 三种录入方式（互斥）
+## 7 两种录入方式（创建时选定，互斥）
 
-同一入库单 **仅一种** 录入方式生效：
+| 录入方式 | Inbound Type | 典型场景 |
+|----------|--------------|----------|
+| **采购单导入** | Purchase Order Import | 上传采购/订单列表，按 ItemDesc 批量匹配 |
+| **手动导入** | Manual Import | 零星到货、无采购文件 |
 
-| 方式 | Receipt Type 典型 | 互斥 |
-|------|-------------------|------|
-| **Link Purchase Order** | Purchase Receipt | 激活后 **Add Products、Import 置灰** |
-| **Add Products** | Manual Receipt | 激活后 **Link PO、Import 置灰** |
-| **Import** | 二者均可（由头字段 Receipt Type 决定） | 激活后 **Link PO、Add Products 置灰** |
+### 7.1 采购单导入（Purchase Order Import）
 
-### 7.1 Link Purchase Order（引用采购单）
+**文件**：`采购单文档订单列表.xlsx`（与运营导出模板一致）。
 
-1. 右侧/弹层 **选择采购单**（当前仓、状态允许入库的 PO，规则与采购模块一致）。  
-2. 拉取 PO **待入库行**（SKU、Order Qty 等）。  
-3. 列表增加只读 **Order Qty**；用户录入 **Receipt Qty**。  
-4. **Variance** = Receipt Qty − Order Qty，**只读**，对账用，**不写库存**。  
-5. 匹配到的 SKU 须满足 **§2.2**；商品名称/规格/条码 **只读带出**。  
-6. **Stocked In 前**再次校验库存行；PO 创建后若 SKU 已从仓内移除下发 → **拒绝该行写账**。
+**必需表头**（至少）：`ItemDesc`、`ItemQuantity`（解析规则见 §7.3）。可选：`MerchantOrderId` 等，仅追溯不入账。
 
-### 7.2 Add Products（手工加行）
+**流程**：
 
-1. 打开 SKU 选择器：数据源 = **当前 `warehouse_code` 下已初始化库存行**（**Total=0 也可选**）。  
-2. 勾选后填充 SKU ID、Product Name、Specification、Primary Barcode/PAN（**只读**）。  
-3. 用户填写 **Receipt Qty**、**Zone**（默认 STO）。  
-4. 保存后 **Import 置灰**；若再选 Import，则 **Add Products 置灰**（与旧稿一致）。
+1. 上传 xlsx → 校验表头 → **Parse**（可进入 **Processing**，进度条；全系统最多 **2** 个并行解析任务）。  
+2. 对每一行 **ItemDesc**，在商品库 + 当前仓已初始化 SKU 中 **模糊匹配** Product Name / 规格关键词（§7.3）。  
+3. **匹配成功**：生成明细行，带出 SKU ID、Product Name、Specification、**Order Qty**（自 `ItemQuantity` 解析）、Primary Barcode；仓管填写 **Warehouse、Zone、Receipt Qty**（默认可=Order Qty）。  
+4. **匹配失败**：列入 **Unmatched** 面板（ItemDesc、行号）；**不入明细**；提示核对拼写或在 Seller **上架商品**。  
+5. 头 **Remarks**：记录实物与单据不一致、缺货、多货等（对应线下「判断情况入库写明原因」）。  
+6. 可选关联 **Related Purchase Order No.**（PO 模块），用于 Stocked In 后反写 PO 状态。
 
-### 7.3 Import（Excel 导入）
+**表头非法**：Toast *The imported file contains invalid fields. Please re-upload.*；Import 置灰。
 
-1. **上传文件** → 校验表头 → 通过后可点 **Import**。  
-2. 表头字段与列表列映射成功则填充；**SKU ID 必填**；匹配 **§2.2** 库存行。  
-3. **Processing**：行数据 **实时出现在列表**；进度条；**最多 2 个**导入任务 **同时进行**（可与 PO 模块共享配额或分模块计数，产品定稿）。  
-4. **Import 按钮（上传）**  
-   - 置灰：未上传或上传失败  
-   - 激活：上传成功且表头合法  
-5. **表头不合法**：Toast *The imported file contains invalid fields. Please re-upload.*；文件异常样式；Import 置灰。  
-6. **Cancel**  
-   - 激活：导入 **未开始**  
-   - 置灰：导入 **进行中**  
-7. 导入进行中按钮文案：**Importing**（Loading）；结束后恢复或关闭。  
-8. **未匹配 SKU**：不入行或入失败表；报告含行号、SKU ID、原因（如 *SKU not registered in this warehouse*）。  
-9. **不得**通过 Import 创建 PAN/Barcode/SKU/库存行。
+### 7.2 手动导入（Manual Import）
+
+1. **Search SKU**：输入 **SKU ID** 或 **Product Name**（包含匹配），数据源 = 当前上下文仓 **已初始化库存行**（Total=0 可选）。  
+2. 选中后加行，只读带出商品信息；填写 **Warehouse、Zone、Receipt Qty**。  
+3. 可追加多行；保存 Draft 或 **Confirm Stock-In**。
+
+### 7.3 ItemDesc 解析与匹配（采购文件）
+
+**ItemDesc 示例**（来自真实模板）：`1 * R31 headphones - Lightning`、`2 * KT88 Smart Watch Specification - Black / With light`。
+
+| 步骤 | 规则 |
+|------|------|
+| 数量 | 行首 `N *` → **Order Qty** = N；无则默认 1 |
+| 匹配键 | `*` 后文本去首尾空格，与商品库 **Product Name + Specification** 归一化后做包含/分词匹配 |
+| 多命中 | 弹窗让仓管 **择一 SKU**；单命中自动绑定 |
+| 零命中 | Unmatched 列表，不入账 |
+| 库存行 | 绑定 SKU 后仍须存在 `(sku_id, warehouse_code, zone_code)` 行（§2.2），否则该行标红且 Stocked In 整单失败 |
+
+### 7.4 入库单详情（Modal / View）
+
+列表点击 **Inbound No.** 或 **View** 打开，展示头信息 + 行表：
+
+| 列 | 说明 |
+|----|------|
+| ItemDesc | 采购导入源文本；手动导入显示 `—` |
+| SKU ID | 匹配结果 |
+| Product Name | 只读 |
+| SKU / Specification | 规格 |
+| Qty Added | 本次 Receipt Qty（`+N` 展示） |
+| After Qty | Stocked In 后该行 **total**（草稿显示 `—`） |
+| Type | Purchase Order Import / Manual Import |
+| Remarks | 行备注（可选）；头 Remarks 单独展示 |
+| Operator | 最后编辑人或 Stocked In 操作人 |
+
+### 7.5 与 Inventory Record 联动
+
+- Stocked In 每行写一条 **Inbound 流水**；列表 **Related Order No.** = **Inbound No.**（主 PRD §6.1）。  
+- 流水 **View** 详情展示 **Inbound Remarks**（头）及行级 ItemDesc / Product Name（来自入库明细快照）。
 
 ---
 
@@ -247,7 +279,9 @@ Receipt No.、Receipt Type、Related PO、Status、Warehouse Code、行数/SKU �
 | SKU ID | SKU 编号 | Y | — | 4–50 字符；**§2.2 库存行须存在** |
 | Product Name | 商品名称 | — | — | 匹配后 **只读** |
 | Specification | 规格 | — | — | 只读 |
-| Order Qty | 订单/账面数量 | N | — | Link PO 时 **只读** |
+| ItemDesc | 导入描述 | N | — | 采购 xlsx 源字段；详情展示 |
+| Order Qty | 订单/账面数量 | N | — | 采购导入自 ItemQuantity，**只读** |
+| Warehouse | 仓库 | Y | 上下文仓 | 行级可改（仓管仅所属仓） |
 | **Receipt Qty** | 实际上架数量 | Y | — | 整数 **1–9,999,999**；**唯一写账数量** |
 | Variance | 差异 | — | — | 计算：`Receipt Qty − Order Qty`，只读 |
 | Zone | 库区 | Y | 默认 STO | 须 Enable；`zone_code` |

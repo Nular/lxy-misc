@@ -285,8 +285,16 @@ WMS **不在入库/采购单页面创建 SKU 主数据**；仓内可作业前提
 **共用筛选**：时间（默认近 7 天）、Warehouse、Zone、SKU ID、关联单号、操作人。  
 当仓库上下文 **≠ All** 时：**隐藏 Warehouse 筛选**。
 
-**共用列**：时间、仓库、库区（编码+类型）、SKU ID、数量、变更后 Total/Locked/Available（含↑↓规则）、类型、关联单号、操作人。  
+**共用列**：时间、仓库、库区（编码+类型）、SKU ID、数量、变更后 Total/Locked/Available（含↑↓规则）、类型、**关联单号（Related Order No.）**、操作人。  
 支持 **行点击 / View** 打开**流水详情**（入库/出库/调整扩展字段分块）；关联单号一期文本展示，不强制跳转。
+
+**关联单号列语义（按 Type）**：
+
+| 流水 Type | Related Order No. 取值 |
+|-----------|-------------------------|
+| Purchase Inbound / Manual Inbound | **Inbound No.**（`IN-{YYYYMMDD}{seq3}`，与入库单 `receipt_no` 一致） |
+| Outbound Occupy / Outbound Deduct | Outbound No.（详情中另展示电商平台订单号等） |
+| Manual Adjustment (±) | Adjustment No.（`ADJ-*`） |
 
 ### 6.1 入库流水（Tab：Inbound）
 
@@ -295,7 +303,8 @@ WMS **不在入库/采购单页面创建 SKU 主数据**；仓内可作业前提
 **子筛**：All / **Manual** / **Purchase**
 
 - **不含**库存调整单流水（调整单仅 §6.4）。
-- 采购入库详情可含 Purchase Order No.（次要信息）。
+- 列表 **Related Order No.**：**仅展示 Inbound No.**，不展示外部订单号或 PO 号。
+- **流水详情 — Inbound 扩展区**：Inbound No.、Inbound Type（Manual / Purchase）、Purchase Order No.（若采购入库且已关联 PO 模块单号）、**Inbound Remarks**（入库单头备注，含采购入库异常说明）、行级 ItemDesc（采购导入源字段）、Product Name、Specification、行备注（若有）。
 
 ### 6.2 出库流水（Tab：Outbound）
 
@@ -403,7 +412,7 @@ WMS **不在入库/采购单页面创建 SKU 主数据**；仓内可作业前提
 | Zone | `zone_code`（如 SH001STO） |
 | SKU | SKU ID |
 | Qty | 正数绿色 `+200`，负数红色 `-25` |
-| Order No. | 关联单号（文本） |
+| Order No. | 关联单号（文本）；入库类 = **Inbound No.**（同 Record §6.1） |
 | Operator | 用户名或 System |
 
 - **默认**：当日 00:00:00 – 当前时间，最多 **20** 条，按时间倒序。

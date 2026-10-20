@@ -1501,6 +1501,33 @@ tbody tr.selected {
   opacity: 0.8;
 }
 
+.inbound-type-pick {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.inbound-type-card {
+  width: 100%;
+  padding: 14px 16px;
+  text-align: left;
+}
+
+.inbound-alert {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: #fff7e6;
+  border: 1px solid #ffd591;
+  font-size: 13px;
+}
+
+.inbound-alert ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
 .ob-flow {
   display: flex;
   flex-wrap: wrap;
@@ -1689,4 +1716,31 @@ tbody tr.selected {
 .quick-card:hover .quick-desc {
   color: var(--primary);
   opacity: 0.8;
+}
+
+.inbound-type-pick {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.inbound-type-card {
+  width: 100%;
+  padding: 14px 16px;
+  text-align: left;
+}
+
+.inbound-alert {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: #fff7e6;
+  border: 1px solid #ffd591;
+  font-size: 13px;
+}
+
+.inbound-alert ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
 }

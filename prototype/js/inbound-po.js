@@ -79,8 +79,11 @@ let inboundReceipts = [
     purchaseOrderNo: 'PO-20260820001',
     progress: 100,
     updatedAt: '2026-08-21 09:32:15',
+    remarks: 'PO qty matched; all lines stocked to SH001STO.',
+    operator: 'Zhang Wei',
+    sourceFile: '采购单文档订单列表.xlsx',
     lines: [
-      { skuId: 'SKU-10001-BK', productName: 'Wireless Bluetooth Earbuds Pro', spec: 'Black; M', orderQty: 200, receiptQty: 200, zoneCode: 'SH001STO' }
+      { itemDesc: '200 * Wireless Bluetooth Earbuds Pro Black', skuId: 'SKU-10001-BK', productName: 'Wireless Bluetooth Earbuds Pro', spec: 'Black; M', orderQty: 200, receiptQty: 200, warehouseCode: 'SH001', zoneCode: 'SH001STO', afterQty: 1200 }
     ]
   },
   {
@@ -119,6 +122,92 @@ let inboundFilterApplied = { status: [], type: [] };
 let inboundListPage = 1;
 let receiptSkuPickerSelected = new Set();
 let receiptEditorReadonly = false;
+let receiptUnmatched = [];
+
+function inboundTypeLabel(receiptType) {
+  return receiptType === 'Purchase Receipt' ? 'Purchase Order Import' : 'Manual Import';
+}
+
+function currentOperatorName() {
+  return isAdminUser() ? 'Admin' : 'Warehouse Manager';
+}
+
+function parseItemDescQty(desc) {
+  const m = String(desc || '').match(/^(\d+)\s*\*\s*(.+)$/);
+  if (m) return { qty: parseInt(m[1], 10), text: m[2].trim() };
+  return { qty: 1, text: String(desc || '').trim() };
+}
+
+function matchSkuByItemDesc(desc, warehouseCode) {
+  const { text } = parseItemDescQty(desc);
+  const norm = text.toLowerCase();
+  const wh = normalizeWarehouseId(warehouseCode);
+  const rules = [
+    { kw: 'r31 headphones', skuId: 'SKU-10001-BK' },
+    { kw: 'kt88 smart watch', skuId: 'SKU-10002-42' },
+    { kw: 'xd mini wireless', skuId: 'SKU-10003-01' },
+    { kw: 'earbuds', skuId: 'SKU-10001-WH' }
+  ];
+  for (const r of rules) {
+    if (norm.includes(r.kw)) {
+      const inv = skuData.find(s => s.skuId === r.skuId && normalizeWarehouseId(s.warehouseCode) === wh);
+      if (inv) return inv;
+    }
+  }
+  const candidates = listWarehouseInventorySkus(wh).filter(s => {
+    const blob = `${s.productName} ${s.spec}`.toLowerCase();
+    return norm.split(/\s+/).filter(w => w.length > 2).some(w => blob.includes(w));
+  });
+  return candidates.length === 1 ? candidates[0] : (candidates[0] || null);
+}
+
+function warehouseSelectHtml(selected, lineIndex, ro) {
+  const scope = getWarehouseScope();
+  let list = warehouses.map(w => normalizeWarehouseId(w.id));
+  if (scope !== 'all') list = list.filter(id => id === normalizeWarehouseId(scope));
+  if (ro) return selected;
+  return `<select onchange="receiptEditorLines[${lineIndex}].warehouseCode=this.value;renderReceiptEditorLines()">${list.map(c => `<option value="${c}" ${c === selected ? 'selected' : ''}>${c}</option>`).join('')}</select>`;
+}
+
+function zoneSelectHtml(warehouseCode, selected, lineIndex, ro) {
+  const wh = normalizeWarehouseId(warehouseCode);
+  const opts = zones.filter(z => normalizeWarehouseId(z.whId) === wh && z.type === 'Storage Zone');
+  const codes = opts.map(z => {
+    const code = normalizeWarehouseId(z.code.replace(/STO$/i, '')) + 'STO';
+    return code;
+  });
+  if (!codes.length) codes.push(getDefaultStorageZoneCode(wh));
+  if (ro) return selected;
+  return `<select onchange="receiptEditorLines[${lineIndex}].zoneCode=this.value;renderReceiptEditorLines()">${codes.map(c => `<option value="${c}" ${c === selected ? 'selected' : ''}>${c}</option>`).join('')}</select>`;
+}
+
+function openNewInboundTask() {
+  openModal('inbound-new-type-modal');
+}
+
+function startInboundWithType(mode) {
+  closeModal('inbound-new-type-modal');
+  receiptUnmatched = [];
+  currentReceiptEdit = null;
+  receiptEditorReadonly = false;
+  receiptEditorLines = [];
+  receiptLockedSource = mode === 'po-import' ? 'po-import' : 'manual';
+  const wh = getInboundWarehouseScope();
+  document.getElementById('receipt-type').value = mode === 'po-import' ? 'Purchase Receipt' : 'Manual Receipt';
+  document.getElementById('receipt-type-label').value = inboundTypeLabel(document.getElementById('receipt-type').value);
+  document.getElementById('receipt-warehouse').value = wh;
+  document.getElementById('receipt-supplier').value = '';
+  document.getElementById('receipt-remarks').value = '';
+  populateReceiptPoSelect();
+  document.getElementById('receipt-po-select').value = '';
+  document.getElementById('receipt-import-file').value = '';
+  document.getElementById('receipt-unmatched-panel').hidden = true;
+  document.getElementById('receipt-editor-title').textContent = 'New Inbound';
+  setReceiptSource(receiptLockedSource, true);
+  renderReceiptEditorLines();
+  updateReceiptEditorChrome();
+  openModal('receipt-editor-modal');
+}
 
 function nextDocNo(prefix) {
   const d = new Date().toISOString().slice(0, 10).replace(/-/g, '');
@@ -368,9 +457,9 @@ function renderInboundReceiptList() {
 
   document.getElementById('inbound-list-total').textContent = total;
   tbody.innerHTML = pageRows.map(r => `
-    <tr>
+    <tr class="record-row-clickable" onclick="openInboundDetailModal('${r.receiptNo}')">
       <td><strong>${r.receiptNo}</strong></td>
-      <td>${r.receiptType}</td>
+      <td>${inboundTypeLabel(r.receiptType)}</td>
       <td><span class="tag ${r.status === 'Stocked In' ? 'tag-enable' : r.status === 'Processing' ? 'tag-warning' : 'tag-disable'}">${r.status}</span></td>
       <td>${r.warehouseCode}</td>
       <td>${r.purchaseOrderNo || '—'}</td>
@@ -379,7 +468,8 @@ function renderInboundReceiptList() {
       <td>${r.updatedAt}</td>
       <td>
         <div class="action-links">
-          ${r.status === 'Processing' ? `<a onclick="showReceiptProgress('${r.receiptNo}')">View</a>` : `<a onclick="openReceiptEditor('${r.receiptNo}')">${r.status === 'Stocked In' ? 'View' : 'Edit'}</a>`}
+          <a onclick="event.stopPropagation();openInboundDetailModal('${r.receiptNo}')">Detail</a>
+          ${r.status === 'Processing' ? `<a onclick="event.stopPropagation();showReceiptProgress('${r.receiptNo}')">Progress</a>` : `<a onclick="event.stopPropagation();openReceiptEditor('${r.receiptNo}')">${r.status === 'Stocked In' ? 'Open' : 'Edit'}</a>`}
           <a class="danger ${r.status !== 'Draft' ? 'disabled' : ''}" onclick="deleteInboundReceipt('${r.receiptNo}')">Delete</a>
         </div>
       </td>
@@ -570,16 +660,15 @@ function populateReceiptPoSelect() {
 }
 
 function inferReceiptSource(receipt) {
-  if (!receipt || !receipt.lines.length) return 'po';
-  if (receipt.purchaseOrderNo) return 'po';
-  if (receipt.entryMethod) return receipt.entryMethod;
-  return 'products';
+  if (!receipt) return 'po-import';
+  if (receipt.entryMethod === 'po-import' || receipt.entryMethod === 'manual') return receipt.entryMethod;
+  if (receipt.receiptType === 'Manual Receipt') return 'manual';
+  return 'po-import';
 }
 
 function updateReceiptEditorChrome() {
   const ro = receiptEditorReadonly;
   const proc = currentReceiptEdit && currentReceiptEdit.status === 'Processing';
-  document.getElementById('receipt-type').disabled = ro || proc;
   document.getElementById('receipt-po-select').disabled = ro || proc;
   document.getElementById('receipt-supplier').disabled = ro || proc;
   document.getElementById('receipt-remarks').disabled = ro || proc;
@@ -587,12 +676,8 @@ function updateReceiptEditorChrome() {
   document.getElementById('receipt-stock-in-btn').hidden = ro || proc;
   document.getElementById('receipt-print-btn').hidden = !(ro || (receiptEditorLines.length && !proc));
   document.getElementById('receipt-delete-all-btn').hidden = ro || proc || receiptEditorLines.length === 0;
-  document.querySelectorAll('.receipt-source-tabs .source-tab').forEach(t => {
-    const src = t.dataset.source;
-    const locked = receiptLockedSource && receiptLockedSource !== src;
-    t.classList.toggle('disabled', locked || ro || proc);
-  });
-  document.getElementById('receipt-import-btn').disabled = ro || proc || !document.getElementById('receipt-import-file').files.length;
+  const fileEl = document.getElementById('receipt-import-file');
+  document.getElementById('receipt-import-btn').disabled = ro || proc || !(fileEl && fileEl.files.length);
   document.getElementById('receipt-add-products-btn').disabled = ro || proc;
 }
 
@@ -601,13 +686,13 @@ function openReceiptEditor(receiptNo) {
   const zone = getDefaultStorageZoneCode(wh);
   currentReceiptEdit = receiptNo ? inboundReceipts.find(r => r.receiptNo === receiptNo) : null;
   receiptEditorReadonly = !!(currentReceiptEdit && currentReceiptEdit.status === 'Stocked In');
-  document.getElementById('receipt-editor-title').textContent = currentReceiptEdit ? (receiptEditorReadonly ? 'View Receipt' : 'Edit Receipt') : 'Create Receipt';
+  document.getElementById('receipt-editor-title').textContent = currentReceiptEdit ? (receiptEditorReadonly ? 'View Inbound' : 'Edit Inbound') : 'New Inbound';
   document.getElementById('receipt-warehouse').value = wh;
-  document.getElementById('receipt-zone').value = zone + ' (Storage Zone)';
   populateReceiptPoSelect();
 
   if (currentReceiptEdit) {
     document.getElementById('receipt-type').value = currentReceiptEdit.receiptType;
+    document.getElementById('receipt-type-label').value = inboundTypeLabel(currentReceiptEdit.receiptType);
     document.getElementById('receipt-po-select').value = currentReceiptEdit.purchaseOrderNo || '';
     document.getElementById('receipt-supplier').value = currentReceiptEdit.supplier || '';
     document.getElementById('receipt-remarks').value = currentReceiptEdit.remarks || '';
@@ -620,16 +705,13 @@ function openReceiptEditor(receiptNo) {
         zoneCode: l.zoneCode || zone
       };
     });
-    receiptLockedSource = receiptEditorLines.length ? inferReceiptSource(currentReceiptEdit) : null;
-    setReceiptSource(receiptLockedSource || inferReceiptSource(currentReceiptEdit), true);
+    receiptLockedSource = inferReceiptSource(currentReceiptEdit);
+    receiptUnmatched = currentReceiptEdit.unmatched || [];
+    setReceiptSource(receiptLockedSource, true);
+    renderUnmatchedPanel();
   } else {
-    const draft = localStorage.getItem('receipt_draft_type');
-    document.getElementById('receipt-type').value = draft || 'Purchase Receipt';
-    document.getElementById('receipt-supplier').value = localStorage.getItem('receipt_draft_supplier') || '';
-    document.getElementById('receipt-remarks').value = localStorage.getItem('receipt_draft_remarks') || '';
-    receiptEditorLines = [];
-    receiptLockedSource = null;
-    setReceiptSource('po', true);
+    openNewInboundTask();
+    return;
   }
   renderReceiptEditorLines();
   updateReceiptEditorChrome();
@@ -639,18 +721,27 @@ function openReceiptEditor(receiptNo) {
 function setReceiptSource(source, silent) {
   if (receiptLockedSource && receiptLockedSource !== source && receiptEditorLines.length) return;
   receiptEditorSource = source;
-  document.querySelectorAll('.receipt-source-tabs .source-tab').forEach(t => {
-    t.classList.toggle('active', t.dataset.source === source);
-  });
-  document.getElementById('receipt-po-group').style.display = source === 'po' ? '' : 'none';
-  document.getElementById('receipt-source-import').hidden = source !== 'import';
-  document.getElementById('receipt-source-products').hidden = source !== 'products';
+  document.getElementById('receipt-po-group').style.display = source === 'po-import' ? '' : 'none';
+  document.getElementById('receipt-source-po-import').hidden = source !== 'po-import';
+  document.getElementById('receipt-source-manual').hidden = source !== 'manual';
   if (!silent && !receiptEditorReadonly) {
-    if (source === 'po') document.getElementById('receipt-type').value = 'Purchase Receipt';
-    if (source === 'products' || source === 'import') document.getElementById('receipt-type').value = 'Manual Receipt';
+    document.getElementById('receipt-type').value = source === 'po-import' ? 'Purchase Receipt' : 'Manual Receipt';
+    document.getElementById('receipt-type-label').value = inboundTypeLabel(document.getElementById('receipt-type').value);
   }
   if (receiptEditorLines.length && !receiptLockedSource) receiptLockedSource = source;
   updateReceiptEditorChrome();
+}
+
+function renderUnmatchedPanel() {
+  const panel = document.getElementById('receipt-unmatched-panel');
+  const list = document.getElementById('receipt-unmatched-list');
+  if (!panel || !list) return;
+  if (!receiptUnmatched.length) {
+    panel.hidden = true;
+    return;
+  }
+  panel.hidden = false;
+  list.innerHTML = receiptUnmatched.map(u => `<li>Row ${u.row}: ${u.itemDesc}</li>`).join('');
 }
 
 function reconVariance(line) {
@@ -662,16 +753,23 @@ function reconVariance(line) {
 
 function renderReceiptEditorLines() {
   const ro = receiptEditorReadonly;
-  document.getElementById('receipt-editor-lines').innerHTML = receiptEditorLines.map((l, i) => `
+  const whDefault = getInboundWarehouseScope();
+  document.getElementById('receipt-editor-lines').innerHTML = receiptEditorLines.map((l, i) => {
+    const wh = l.warehouseCode || whDefault;
+    const zc = l.zoneCode || getDefaultStorageZoneCode(wh);
+    l.warehouseCode = wh;
+    l.zoneCode = zc;
+    return `
     <tr>
+      <td class="hint" style="max-width:160px">${l.itemDesc || '—'}</td>
       <td>${l.skuId}</td><td>${l.productName}</td><td>${l.spec}</td>
-      <td>${l.barcode || '—'}</td>
-      <td>${receiptEditorSource === 'po' ? (l.orderQty ?? '—') : '—'}</td>
+      <td>${warehouseSelectHtml(wh, i, ro)}</td>
+      <td>${zoneSelectHtml(wh, zc, i, ro)}</td>
+      <td>${receiptEditorSource === 'po-import' ? (l.orderQty ?? '—') : '—'}</td>
       <td>${ro ? l.receiptQty : `<input type="number" min="1" max="9999999" value="${l.receiptQty}" onchange="receiptEditorLines[${i}].receiptQty=parseInt(this.value,10)||0;renderReceiptEditorLines()">`}</td>
-      <td>${receiptEditorSource === 'po' ? reconVariance(l) : '—'}</td>
-      <td>${l.zoneCode}</td>
-    </tr>
-  `).join('') || '<tr><td colspan="8" style="text-align:center;color:#999">No lines — link PO, add products, or import</td></tr>';
+      <td>${receiptEditorSource === 'po-import' ? reconVariance(l) : '—'}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="9" style="text-align:center;color:#999">No lines — parse PO file or search SKUs</td></tr>';
   updateReceiptEditorChrome();
 }
 
@@ -704,8 +802,8 @@ document.addEventListener('change', e => {
     if (skipped.length) {
       showToast(`SKU not registered in this warehouse: ${skipped.slice(0, 3).join(', ')}${skipped.length > 3 ? '…' : ''}`, 'warning');
     }
-    receiptLockedSource = 'po';
-    setReceiptSource('po', true);
+    receiptLockedSource = 'po-import';
+    setReceiptSource('po-import', true);
     renderReceiptEditorLines();
   }
   if (e.target.id === 'receipt-import-file') {
@@ -713,7 +811,7 @@ document.addEventListener('change', e => {
   }
 });
 
-function startReceiptImport() {
+function startPoListImport() {
   if (countActiveJobs('in') >= MAX_IMPORT_JOBS) {
     showToast('At most 2 import jobs can run at the same time.', 'warning');
     return;
@@ -724,12 +822,19 @@ function startReceiptImport() {
     return;
   }
   inboundImportJobs++;
+  receiptUnmatched = [];
   document.getElementById('receipt-import-progress').hidden = false;
   let pct = 0;
   const fill = document.getElementById('receipt-import-fill');
   const label = document.getElementById('receipt-import-pct');
+  const demoRows = [
+    { row: 2, itemDesc: '1 * R31 headphones - Lightning', qty: 1 },
+    { row: 4, itemDesc: '2 * KT88 Smart Watch Specification - Black / With light', qty: 2 },
+    { row: 5, itemDesc: '1 * XD Mini Wireless 1080P HD Security Camera', qty: 1 },
+    { row: 99, itemDesc: '1 * Unknown Gadget XYZ-404', qty: 1 }
+  ];
   const timer = setInterval(() => {
-    pct += 15;
+    pct += 20;
     if (pct > 100) pct = 100;
     fill.style.width = pct + '%';
     label.textContent = pct + '%';
@@ -738,28 +843,76 @@ function startReceiptImport() {
       inboundImportJobs--;
       const wh = getInboundWarehouseScope();
       const zoneCode = getDefaultStorageZoneCode(wh);
-      const demoSku = 'SKU-10001-WH';
-      const inv = findInventoryRow(demoSku, wh, zoneCode);
-      if (inv) {
+      receiptEditorLines = [];
+      demoRows.forEach(dr => {
+        const inv = matchSkuByItemDesc(dr.itemDesc, wh);
+        if (!inv) {
+          receiptUnmatched.push({ row: dr.row, itemDesc: dr.itemDesc });
+          return;
+        }
+        const parsed = parseItemDescQty(dr.itemDesc);
         receiptEditorLines.push({
-          skuId: demoSku,
+          itemDesc: dr.itemDesc,
+          skuId: inv.skuId,
           productName: inv.productName,
           spec: inv.spec,
-          orderQty: 0,
-          receiptQty: 50,
+          orderQty: parsed.qty,
+          receiptQty: parsed.qty,
           barcode: primaryBarcode(inv),
-          zoneCode
+          warehouseCode: wh,
+          zoneCode: inv.zoneCode || zoneCode
         });
-      } else {
-        showToast('SKU not registered in this warehouse (demo import).', 'error');
-      }
-      receiptLockedSource = 'import';
-      setReceiptSource('import', true);
+      });
+      receiptLockedSource = 'po-import';
+      setReceiptSource('po-import', true);
       renderReceiptEditorLines();
-      showToast('Import completed (demo)', 'success');
+      renderUnmatchedPanel();
+      showToast(receiptUnmatched.length
+        ? `Parsed with ${receiptUnmatched.length} unmatched ItemDesc row(s).`
+        : 'PO list parsed (demo).', receiptUnmatched.length ? 'warning' : 'success');
       document.getElementById('receipt-import-progress').hidden = true;
     }
-  }, 400);
+  }, 350);
+}
+
+function openInboundDetailModal(receiptNo) {
+  const r = inboundReceipts.find(x => x.receiptNo === receiptNo);
+  if (!r) return;
+  document.getElementById('inbound-detail-title').textContent = `Inbound ${r.receiptNo}`;
+  const op = r.operator || currentOperatorName();
+  const lines = r.lines || [];
+  const body = document.getElementById('inbound-detail-body');
+  body.innerHTML = `
+    <div class="record-detail-grid" style="margin-bottom:16px">
+      <div class="label">Inbound Type</div><div class="value">${inboundTypeLabel(r.receiptType)}</div>
+      <div class="label">Status</div><div class="value">${r.status}</div>
+      <div class="label">Related PO</div><div class="value">${r.purchaseOrderNo || '—'}</div>
+      <div class="label">Remarks</div><div class="value">${r.remarks || '—'}</div>
+      <div class="label">Operator</div><div class="value">${op}</div>
+      <div class="label">Source file</div><div class="value">${r.sourceFile || '—'}</div>
+    </div>
+    <div class="table-wrapper">
+      <table>
+        <thead><tr>
+          <th>ItemDesc</th><th>SKU ID</th><th>Product Name</th><th>SKU / Spec</th>
+          <th>Qty Added</th><th>After Qty</th><th>Type</th><th>Remarks</th><th>Operator</th>
+        </tr></thead>
+        <tbody>
+          ${lines.map(l => `<tr>
+            <td>${l.itemDesc || '—'}</td>
+            <td>${l.skuId}</td>
+            <td>${l.productName}</td>
+            <td>${l.spec}</td>
+            <td>+${l.receiptQty}</td>
+            <td>${l.afterQty != null ? l.afterQty : '—'}</td>
+            <td>${inboundTypeLabel(r.receiptType)}</td>
+            <td>${l.lineRemarks || '—'}</td>
+            <td>${op}</td>
+          </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;color:#999">No lines</td></tr>'}
+        </tbody>
+      </table>
+    </div>`;
+  openModal('inbound-detail-modal');
 }
 
 function saveReceiptDraft() {
@@ -777,7 +930,8 @@ function confirmReceiptStockIn() {
       showToast('Receipt Qty must be between 1 and 9,999,999.', 'error');
       return;
     }
-    if (!findInventoryRow(line.skuId, wh, line.zoneCode)) {
+    const lineWh = line.warehouseCode || wh;
+    if (!findInventoryRow(line.skuId, lineWh, line.zoneCode)) {
       showToast(`Stock-in failed: ${line.skuId} is not registered in this warehouse/zone.`, 'error');
       return;
     }
@@ -796,6 +950,9 @@ function persistReceipt(status, writeInventory) {
     purchaseOrderNo: poNo,
     supplier: document.getElementById('receipt-supplier').value.trim(),
     remarks: document.getElementById('receipt-remarks').value.trim(),
+    operator: currentOperatorName(),
+    unmatched: receiptUnmatched.slice(),
+    sourceFile: document.getElementById('receipt-import-file').files[0]?.name || (currentReceiptEdit && currentReceiptEdit.sourceFile) || '',
     entryMethod: receiptLockedSource || receiptEditorSource,
     progress: status === 'Processing' ? 45 : status === 'Stocked In' ? 100 : 0,
     updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
@@ -840,27 +997,33 @@ function persistReceipt(status, writeInventory) {
 }
 
 function writeInboundInventoryAndRecord(receiptNo, receipt, line) {
-  const sku = findInventoryRow(line.skuId, receipt.warehouseCode, line.zoneCode);
+  const lineWh = line.warehouseCode || receipt.warehouseCode;
+  const sku = findInventoryRow(line.skuId, lineWh, line.zoneCode);
   if (!sku) {
     throw new Error('missing inventory row');
   }
   sku.total += line.receiptQty;
   sku.available = sku.total - sku.locked;
+  line.afterQty = sku.total;
   const recordType = receipt.receiptType === 'Purchase Receipt' ? 'Purchase Inbound' : 'Manual Inbound';
   recordData.inbound.unshift({
     time: new Date().toISOString().slice(0, 19).replace('T', ' '),
-    warehouse: receipt.warehouseCode,
+    warehouse: lineWh,
     zone: `${line.zoneCode} (Storage Zone)`,
     sku: line.skuId,
     qty: '+' + line.receiptQty,
-    after: sku ? { total: sku.total, locked: sku.locked, available: sku.available } : { total: line.receiptQty, locked: 0, available: line.receiptQty },
+    after: { total: sku.total, locked: sku.locked, available: sku.available },
     type: recordType,
     order: receiptNo,
-    operator: isAdminUser() ? 'Admin' : 'Warehouse Manager',
+    operator: receipt.operator || currentOperatorName(),
     sub: receipt.receiptType === 'Purchase Receipt' ? 'purchase' : 'manual',
     inboundNo: receiptNo,
     inboundType: receipt.receiptType === 'Purchase Receipt' ? 'Purchase' : 'Manual',
-    purchaseOrderNo: receipt.purchaseOrderNo || null
+    purchaseOrderNo: receipt.purchaseOrderNo || null,
+    inboundRemarks: receipt.remarks || '',
+    itemDesc: line.itemDesc || '',
+    productName: line.productName,
+    specification: line.spec
   });
 }
 
@@ -973,16 +1136,60 @@ function confirmReceiptSkuPicker() {
       orderQty: 0,
       receiptQty: 1,
       barcode: primaryBarcode(inv),
+      warehouseCode: wh,
       zoneCode: inv.zoneCode
     });
     added++;
   });
   if (added) {
-    receiptLockedSource = 'products';
-    setReceiptSource('products', true);
+    receiptLockedSource = 'manual';
+    setReceiptSource('manual', true);
     renderReceiptEditorLines();
   }
   closeModal('receipt-sku-picker-modal');
+}
+
+function renderReceiptManualSearch() {
+  const panel = document.getElementById('receipt-manual-suggest');
+  const input = document.getElementById('receipt-manual-search');
+  if (!panel || !input) return;
+  const kw = (input.value || '').trim().toLowerCase();
+  if (!kw) {
+    panel.hidden = true;
+    return;
+  }
+  const wh = getInboundWarehouseScope();
+  let rows = listWarehouseInventorySkus(wh).filter(s =>
+    s.skuId.toLowerCase().includes(kw) || (s.productName || '').toLowerCase().includes(kw)
+  ).slice(0, 8);
+  if (!rows.length) {
+    panel.hidden = true;
+    return;
+  }
+  panel.innerHTML = rows.map(s =>
+    `<div class="suggest-item" data-sku="${s.skuId}" data-zone="${s.zoneCode}">${s.skuId} — ${s.productName}</div>`
+  ).join('');
+  panel.hidden = false;
+  panel.onclick = e => {
+    const item = e.target.closest('.suggest-item');
+    if (!item) return;
+    const inv = findInventoryRow(item.dataset.sku, wh, item.dataset.zone);
+    if (!inv || receiptEditorLines.some(l => l.skuId === inv.skuId && l.zoneCode === inv.zoneCode)) return;
+    receiptEditorLines.push({
+      skuId: inv.skuId,
+      productName: inv.productName,
+      spec: inv.spec,
+      orderQty: 0,
+      receiptQty: 1,
+      warehouseCode: wh,
+      zoneCode: inv.zoneCode,
+      barcode: primaryBarcode(inv)
+    });
+    input.value = '';
+    panel.hidden = true;
+    renderReceiptEditorLines();
+    showToast('SKU line added.', 'success');
+  };
 }
 
 document.addEventListener('DOMContentLoaded', () => {

@@ -333,7 +333,7 @@ let currentAdjSkuId = null;
 
 const recordData = {
   inbound: [
-    { time: '2026-08-21 09:32:15', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10001-BK', qty: '+200', after: { total: 1200, locked: 200, available: 1000 }, type: 'Purchase Inbound', order: 'IN-20260821001', operator: 'Zhang Wei', sub: 'purchase', inboundNo: 'IN-20260821001', inboundType: 'Purchase', purchaseOrderNo: 'PO-20260821088' },
+    { time: '2026-08-21 09:32:15', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10001-BK', qty: '+200', after: { total: 1200, locked: 200, available: 1000 }, type: 'Purchase Inbound', order: 'IN-20260821001', operator: 'Zhang Wei', sub: 'purchase', inboundNo: 'IN-20260821001', inboundType: 'Purchase', purchaseOrderNo: 'PO-20260820001', inboundRemarks: 'PO qty matched; all lines stocked to SH001STO.', itemDesc: '200 * Wireless Bluetooth Earbuds Pro Black', productName: 'Wireless Bluetooth Earbuds Pro', specification: 'Black; M' },
     { time: '2026-08-20 14:18:42', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10002-42', qty: '+150', after: { total: 900, locked: 160, available: 740 }, type: 'Purchase Inbound', order: 'IN-20260820003', operator: 'Li Ming', sub: 'purchase' },
     { time: '2026-08-18 16:22:08', warehouse: 'SG001', zone: 'SG001STO (Storage Zone)', sku: 'SKU-10004-01', qty: '+100', after: { total: 450, locked: 80, available: 370 }, type: 'Purchase Inbound', order: 'IN-20260818002', operator: 'Tan Wei Ming', sub: 'purchase' },
     { time: '2026-08-18 08:00:00', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10002-42', qty: '+100', after: { total: 900, locked: 160, available: 740 }, type: 'Purchase Inbound', order: 'IN-20260818001', operator: 'Admin', sub: 'purchase' },
@@ -1300,7 +1300,11 @@ function enrichRecordDetail(r) {
     row.inboundNo = row.inboundNo || row.order;
     row.inboundType = row.inboundType || (row.sub === 'purchase' ? 'Purchase' : 'Manual');
     if (row.inboundType === 'Purchase' && !row.purchaseOrderNo) {
-      row.purchaseOrderNo = 'PO-20260820001';
+      row.purchaseOrderNo = row.purchaseOrderNo || null;
+    }
+    if (!row.inboundRemarks) {
+      const rec = (typeof inboundReceipts !== 'undefined' ? inboundReceipts : []).find(r => r.receiptNo === row.inboundNo);
+      row.inboundRemarks = rec?.remarks || row.inboundRemarks || '';
     }
   }
   if (row.type && row.type.includes('Manual Adjustment')) {
@@ -1334,6 +1338,7 @@ function openRecordDetail(index) {
     ${detailRow('Qty', r.qty)}
     ${detailRow('After Change', formatAfterChangeDetailHtml(r))}
     ${detailRow('Type', r.type)}
+    ${detailRow('Related Order No.', (r.type === 'Purchase Inbound' || r.type === 'Manual Inbound') ? (r.inboundNo || r.order) : r.order)}
     ${detailRow('Operator', r.operator)}
   </div>`;
 
@@ -1345,6 +1350,10 @@ function openRecordDetail(index) {
       ${detailRow('Inbound No.', r.inboundNo)}
       ${detailRow('Inbound Type', r.inboundType)}
       ${detailRow('Purchase Order No.', po)}
+      ${detailRow('Inbound Remarks', r.inboundRemarks || '—')}
+      ${detailRow('ItemDesc', r.itemDesc || '—')}
+      ${detailRow('Product Name', r.productName || '—')}
+      ${detailRow('Specification', r.specification || '—')}
     </div></div>`;
   }
 
