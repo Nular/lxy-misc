@@ -1,8 +1,8 @@
 # KickBazar WMS — 入库模块产品需求说明（Inbound Receipt）
 
 > **文档性质**：入库模块 **独立 PRD**，与《KickBazar WMS 产品需求说明（仓库与库存）》(`KickBazar-WMS-PRD.md`) 配套使用。  
-> **范围**：入库单（Receipt）列表、创建、编辑、查看、删除、Excel 导入、上架写账及与采购单/库存流水联动。  
-> **不包含**：采购单全生命周期（见 [`KickBazar-WMS-PO-PRD.md`](KickBazar-WMS-PO-PRD.md)）；仓库/库区主数据（主 PRD §3–§4）。  
+> **范围**：入库任务（Inbound No.）列表、新建、采购 xlsx 导入、手动加行、确认上架写账、详情查看、与库存流水联动。  
+> **不包含**：独立 **采购单（PO）模块**（本期不做）；仓库/库区主数据（主 PRD §3–§4）。  
 > **版本**：2026-10（合并仓库基础拍板 + 原交互稿修订）
 
 ---
@@ -16,7 +16,7 @@
    - **采购单导入**（Purchase Order Import / `Purchase Receipt`）：批量上传 **`采购单文档订单列表.xlsx`**，按 **ItemDesc** 匹配仓内商品后由仓管填写各行 warehouse、zone、数量；头 **Remarks** 记录与采购/实物不一致等异常。
    - **手动导入**（Manual Import / `Manual Receipt`）：按 **SKU ID** 或 **Product Name** 搜索匹配商品，填写 warehouse、zone、数量后提交。
 3. 匹配失败行 **不入账**：提示无法匹配的商品（核对拼写或在 Seller 端上架），与线下「商品未上架先上架」一致。
-4. 入库过程可草稿、可异步导入解析进度；**Stocked In 后不可删**，仅可查看详情。
+4. **无 Draft**：未 Confirm Stock-In 的数据仅存在于当前新建弹层，不入列表；xlsx 解析可进入 **Processing**（异步进度）。**Stocked In** 后仅 **查看详情**，不可删改。
 
 ### 1.4 业务流程对照（线下 → 系统）
 
@@ -33,8 +33,6 @@
 | 创建 SKU、维护 PAN/条码 | **商品库 / Seller**（WMS 只读） |
 | 生成仓内零库存行 | **库存初始化**（主 PRD §5.0.1，入库前完成） |
 | 盘盈盘亏、报损 | **库存调整单 ADJ**（主 PRD §5.3 → Record Manual Adjustment） |
-| 采购单创建/发货状态 | 采购单模块；入库仅 **引用 PO** 并 **反写 Stocked In** |
-
 ### 1.3 入口与权限
 
 - **侧栏**：Inbound（与主 PRD §1.3 一致）。
@@ -53,7 +51,7 @@
 1. **商品主数据**自企业 **原有数据库（商品库）** 导入/同步至 WMS 可读层。
 2. 对每个 **`warehouse_code` × 已启用 `zone_code`**，对 **已下发到该仓** 的 SKU 生成库存行：  
    **Total = 0，Locked = 0，Available = 0**（Available 不落库，实时 `total - locked`）。
-3. 未完成该仓库存行初始化的，**禁止 Stocked In 写账**（可进列表、可存 Draft）。
+3. 未完成该仓库存行初始化的，**禁止 Stocked In 写账**。
 
 ### 2.2 入库匹配规则
 
@@ -88,8 +86,8 @@
 | 4 | 手动导入：SKU ID / Product Name 搜索加行 |
 | 5 | 行级填写 **Warehouse、Zone、Receipt Qty**（写账目标） |
 | 6 | 头 **Remarks**（采购入库异常说明） |
-| 7 | 编辑 / 查看 / 删除（受状态限制） |
-| 8 | **搜索**：Inbound No. / Related Purchase Order No. |
+| 7 | 列表 **查看详情**（Modal）；Processing 查看进度 |
+| 8 | **搜索**：Inbound No. / 源文件名（Source file） |
 | 9 | **筛选**：Status、Inbound Type |
 | 10 | 入库单 **详情 Modal**（行级：ItemDesc、SKU、数量、After Qty、Type、备注、操作人） |
 | 11 | 分页：默认 20；可选 20 / 50 / 100 / 500 |
@@ -115,19 +113,14 @@
 
 - **禁止**使用 **Manual Adjustment** 作为入库类型（与库存调整单 ADJ 区分）。
 
-### 4.3 关联采购单（可选）
-
-- 字段：**Related Purchase Order No.**（`purchase_order_no`），来自 PO 模块关联或仓管手选；**采购单导入**也可仅依赖 xlsx 而不绑 PO。  
-- **Manual Import** 为空。  
-- 若关联 PO：**多入库单可对应同一 PO**；PO 不写库存，**Stocked In 后** 可反写 PO 行/头状态（见 §10）。
-
 ---
+
 
 ## 5 列表页
 
 ### 5.1 列表列（建议）
 
-Inbound No.、Inbound Type、Status、Warehouse Code（头默认仓或首行仓）、Related PO（若有）、SKU 行数、Updated At、操作（**View 详情** / Edit / Delete / Import 进度）。
+Inbound No.、Inbound Type、Status、Warehouse Code、Source File（采购 xlsx 名，手动导入为 `—`）、SKU 行数、Updated At、操作（**Detail** / Processing 进度）。
 
 ### 5.2 搜索（Search）
 
@@ -136,7 +129,7 @@ Inbound No.、Inbound Type、Status、Warehouse Code（头默认仓或首行仓�
 | 选项 | 含义 |
 |------|------|
 | **Inbound No.**（默认） | 入库单号 |
-| **Related Purchase Order No.** | 关联采购订单号 |
+| **Source file name** | 采购导入文件名（模糊） |
 
 #### 5.2.2 搜索推荐框
 
@@ -160,19 +153,18 @@ Inbound No.、Inbound Type、Status、Warehouse Code（头默认仓或首行仓�
 
 | 筛选项 | 可选值 |
 |--------|--------|
-| **Status** | Draft、Processing、Stocked In |
+| **Status** | Processing、Stocked In |
 | **Inbound Type** | Purchase Order Import、Manual Import |
 
 ### 5.4 状态说明与操作
 
-| Status | 含义 | Edit | Delete | View |
-|--------|------|------|--------|------|
-| **Draft** | 草稿 | ✓ | ✓ | ✓ |
-| **Processing** | Excel 导入进行中，有进度 | 进入编辑页并开进度面板 | **置灰** | 列表 **View** 打开进度面板 |
-| **Stocked In** | 已上架写账完成 | ✗ 仅查看 | ✗ | ✓；可 **下载原导入文件**（若存在） |
+| Status | 含义 | 列表操作 |
+|--------|------|----------|
+| **Processing** | xlsx 解析进行中（服务端/异步） | **Progress**；**不改** `total/locked` |
+| **Stocked In** | 已 Confirm Stock-In | **Detail**；可下载原 xlsx（若留存） |
 
-- **Processing** 期间 **不改** `total/locked`。  
-- **Stocked In** 后 **不可删除**（与删仓校验「未完成入库单」一致）。
+- 新建任务在 **Confirm Stock-In** 成功后才生成列表行（状态直接 **Stocked In**），或异步解析任务单独为 **Processing**。  
+- **无 Draft**；**Stocked In 不可删除**（与删仓校验「未完成入库单」一致）。
 
 ### 5.5 排序与分页
 
@@ -189,19 +181,13 @@ Inbound No.、Inbound Type、Status、Warehouse Code（头默认仓或首行仓�
 1. 列表 **+ New Inbound** → 选择 **Purchase Order Import** 或 **Manual Import**（不可再切换）。  
 2. 系统生成 **Inbound No.**（Draft）并进入编辑页/弹层。  
 3. 标题：**New Inbound** / **Edit Inbound** / **View Inbound**。  
-4. 头字段：**Inbound Type**（只读）、Related PO（采购导入可选）、Supplier（可选）、**Remarks**（采购导入 **建议必填** 当存在未匹配或数量差异）、默认 Warehouse（= 上下文，行可改仓）。  
-5. **Stocked In** 成功后仅 **View**；可 **Print**；行区 **Delete All** 二次确认。
+4. 头字段：**Inbound Type**（只读）、**Remarks**（采购导入在存在未匹配或数量差异时 **建议必填**）、默认 Warehouse（= 上下文，行可改仓）。  
+5. 仅 **Cancel** 与 **Confirm Stock-In**；取消则丢弃未提交行（不入列表）。
 
 ### 6.2 行数上限
 
 - 单证最多 **10,000** 行 SKU。  
 - 已达 10,000 再继续导入：Toast *You have already uploaded 10,000 records. Adding new data will clear all existing data.*（产品可改为禁止追加）。
-
-### 6.3 删除入库单
-
-- **Draft**：可删。  
-- **Processing / Stocked In**：不可删。  
-- 删除前二次确认（文案产品定稿）。
 
 ---
 
@@ -225,8 +211,6 @@ Inbound No.、Inbound Type、Status、Warehouse Code（头默认仓或首行仓�
 3. **匹配成功**：生成明细行，带出 SKU ID、Product Name、Specification、**Order Qty**（自 `ItemQuantity` 解析）、Primary Barcode；仓管填写 **Warehouse、Zone、Receipt Qty**（默认可=Order Qty）。  
 4. **匹配失败**：列入 **Unmatched** 面板（ItemDesc、行号）；**不入明细**；提示核对拼写或在 Seller **上架商品**。  
 5. 头 **Remarks**：记录实物与单据不一致、缺货、多货等（对应线下「判断情况入库写明原因」）。  
-6. 可选关联 **Related Purchase Order No.**（PO 模块），用于 Stocked In 后反写 PO 状态。
-
 **表头非法**：Toast *The imported file contains invalid fields. Please re-upload.*；Import 置灰。
 
 ### 7.2 手动导入（Manual Import）

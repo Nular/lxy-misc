@@ -2,7 +2,7 @@
 
 > **文档说明**  
 > 本文档为 WMS **仓库与库存基础** PRD（**第 1–8 章** + **§9 关联索引**），与飞书主 PRD 同源。  
-> **作业单据**（采购 / 入库 / 出库）不在本文展开，见：[`KickBazar-WMS-PO-PRD.md`](KickBazar-WMS-PO-PRD.md)、[`KickBazar-WMS-Inbound-PRD.md`](KickBazar-WMS-Inbound-PRD.md)、[`KickBazar-WMS-Outbound-PRD.md`](KickBazar-WMS-Outbound-PRD.md)。  
+> **作业单据**（入库 / 出库）不在本文展开，见：[`KickBazar-WMS-Inbound-PRD.md`](KickBazar-WMS-Inbound-PRD.md)、[`KickBazar-WMS-Outbound-PRD.md`](KickBazar-WMS-Outbound-PRD.md)。**本期不含**独立采购单（PO）模块；采购到货通过入库 **采购单导入**（xlsx + ItemDesc）完成。  
 > **2026-10 修订**：Dashboard 仓库上下文；库区去掉 Zone Name；Record Tab 与全局筛选见第 6、7 章；SKU 导入与零库存初始化见 §5.0。  
 > 原型（库存）：https://itkaop.axshare.com/?id=5yfdzj&p=spu_sku_inventory&sc=3&g=1  
 > 原型（流水）：https://itkaop.axshare.com/?id=jo37v4&p=inventory_record&sc=3&g=1  
@@ -48,12 +48,11 @@
 | — | **Warehouse**（侧栏顶部） | Admin：**下拉**切换 All/指定仓（仅 Home 页生效）；仓管：只读所属仓 |
 | 1 | Home | Dashboard（§7） |
 | 2 | Inventory | SPU/SKU inventory、Record |
-| 3 | **Purchase Order** | 采购单（见 [`KickBazar-WMS-PO-PRD.md`](KickBazar-WMS-PO-PRD.md)） |
-| 4 | **Inbound** | 入库单（见 [`KickBazar-WMS-Inbound-PRD.md`](KickBazar-WMS-Inbound-PRD.md)） |
+| 3 | **Inbound** | 入库单（见 [`KickBazar-WMS-Inbound-PRD.md`](KickBazar-WMS-Inbound-PRD.md)） |
 | 5 | Outbound | 出库单 |
 | 6 | **Warehouses** | **仅 Admin**：Warehouse Management、Zone Management |
 
-Dashboard **Quick Actions** 与侧栏 Purchase Order / Inbound 跳转同一列表页。
+Dashboard **Quick Actions** 与侧栏 **Inbound** / **Outbound** 跳转对应列表页。
 
 ---
 
@@ -226,11 +225,11 @@ WMS **不在入库/采购单页面创建 SKU 主数据**；仓内可作业前提
 | 仓/区可用 | 仓库 Enable、目标库区 Enable；上架默认 **Storage Zone**（§8.1） | 拒绝 |
 | 商品主数据 | SKU 在商品库存在且可读 | 拒绝 |
 
-**入库/采购单匹配规则**：Add Products、Link PO、Excel **Import** 均只能选中或匹配 **当前 `warehouse_code` 下已存在库存行** 的 SKU；**不得**因入库/PO 导入而 **自动新建** 库存行或商品主数据。若需新 SKU 进仓，须先走 **§5.0.1 下发/初始化** 再入库。
+**入库匹配规则**：采购 xlsx（ItemDesc）与手动搜 SKU 均只能匹配 **当前 `warehouse_code` 下已存在库存行** 的 SKU；**不得**因入库而 **自动新建** 库存行或商品主数据。若需新 SKU 进仓，须先走 **§5.0.1 下发/初始化** 再入库。
 
-#### 5.0.3 与采购/入库模块衔接
+#### 5.0.3 与入库模块衔接
 
-- 采购单、入库单行上的 SKU，仅允许引用 **§5.0.1 已初始化** 的行；入库写账见 [`KickBazar-WMS-Inbound-PRD.md`](KickBazar-WMS-Inbound-PRD.md) §9。
+- 入库单行上的 SKU，仅允许引用 **§5.0.1 已初始化** 的行；入库写账见 [`KickBazar-WMS-Inbound-PRD.md`](KickBazar-WMS-Inbound-PRD.md) §9。
 - Record / Inventory 查询结果与上述库存行 **同一数据源**。
 
 ### 5.1 SPU 视图
@@ -304,7 +303,7 @@ WMS **不在入库/采购单页面创建 SKU 主数据**；仓内可作业前提
 
 - **不含**库存调整单流水（调整单仅 §6.4）。
 - 列表 **Related Order No.**：**仅展示 Inbound No.**，不展示外部订单号或 PO 号。
-- **流水详情 — Inbound 扩展区**：Inbound No.、Inbound Type（Manual / Purchase）、Purchase Order No.（若采购入库且已关联 PO 模块单号）、**Inbound Remarks**（入库单头备注，含采购入库异常说明）、行级 ItemDesc（采购导入源字段）、Product Name、Specification、行备注（若有）。
+- **流水详情 — Inbound 扩展区**：Inbound No.、Inbound Type（Manual / Purchase）、**Inbound Remarks**（入库单头备注，含采购文件导入异常说明）、行级 ItemDesc（采购 xlsx 源字段）、Product Name、Specification、行备注（若有）。
 
 ### 6.2 出库流水（Tab：Outbound）
 
@@ -379,11 +378,10 @@ WMS **不在入库/采购单页面创建 SKU 主数据**；仓内可作业前提
 
 ### 7.2 Quick Actions（主任务入口）
 
-**区块标题**：Quick Actions。一行 **3** 张大卡片（图标 + 文案 + 右箭头）：
+**区块标题**：Quick Actions。一行 **2** 张大卡片（图标 + 文案 + 右箭头）：
 
 | 中文 | 英文 | 跳转 |
 |------|------|------|
-| 采购单 | Purchase Orders | 采购单列表 |
 | 入库 | Inbound | 入库单列表 |
 | 出库 | Outbound | 出库单列表 |
 
@@ -443,8 +441,7 @@ WMS **不在入库/采购单页面创建 SKU 主数据**；仓内可作业前提
 
 | 事件 | 实物 | 锁定 | 未锁定 | 流水 Tab |
 |------|------|------|--------|----------|
-| 采购/手动入库确认上架 | ↑ | — | ↑ | Inbound |
-| 采购单状态流转（未上架） | 不变 | 不变 | 不变 | 仅 PO |
+| 采购文件/手动入库确认上架 | ↑ | — | ↑ | Inbound |
 | 出库确认导入 | — | ↑ | ↓ | Outbound Occupy |
 | 出库扣减 | ↓ | ↓ | — | Outbound Deduct |
 | 库存调整-增加 | ↑ | — | ↑ | Manual Adjustment |
@@ -466,14 +463,13 @@ WMS **不在入库/采购单页面创建 SKU 主数据**；仓内可作业前提
 
 ---
 
-## 9 关联模块 PRD（采购 / 入库 / 出库）
+## 9 关联模块 PRD（入库 / 出库）
 
 本文档仅描述 **仓库、库区、库存、流水、Dashboard** 等基础能力。以下作业模块有 **独立 PRD**，正文不在此重复：
 
 | 模块 | 文档 | 与基础 PRD 的边界 |
 |------|------|-------------------|
-| **采购单** Purchase Order | [`KickBazar-WMS-PO-PRD.md`](KickBazar-WMS-PO-PRD.md) | 不写库存；SKU 行须满足 **§5.0.1–§5.0.2** |
-| **入库** Inbound Receipt | [`KickBazar-WMS-Inbound-PRD.md`](KickBazar-WMS-Inbound-PRD.md) | Stocked In 写 **§6.1** 流水并 UPDATE 已有库存行；**禁止**入库流程建 SKU/库存行 |
+| **入库** Inbound | [`KickBazar-WMS-Inbound-PRD.md`](KickBazar-WMS-Inbound-PRD.md) | Stocked In 写 **§6.1** 流水并 UPDATE 已有库存行；**禁止**入库流程建 SKU/库存行 |
 | **出库** Outbound | [`KickBazar-WMS-Outbound-PRD.md`](KickBazar-WMS-Outbound-PRD.md) | 分配写 **§6.2** Occupy；发货扣减写 Deduct；拣货/打包不改库存（**§8.2**） |
 
 侧栏与 Dashboard Quick Actions 仍可进入上述模块；实现与验收以 **独立 PRD** 为准。
@@ -490,5 +486,5 @@ WMS **不在入库/采购单页面创建 SKU 主数据**；仓内可作业前提
 | 单据号 | `IN-20260821001`、`PO-20260821088`、`ADJ-YYYYMMDDNNN` | 与流水列 Related Order No. 一致 |
 | Record Tab 顺序 | All 首位 | 一致 |
 | Opening 子筛 | 不单独 Opening | 一致 |
-| 采购单 / 入库 | 独立 PRD | 原型 `inbound-po.js`：列表、筛选、创建、Stock-In 写流水演示 |
+| 入库 | 独立 PRD | 原型 `inbound.js`：采购 xlsx 导入 + 手动导入，Confirm Stock-In 写流水 |
 | 出库 | [`KickBazar-WMS-Outbound-PRD.md`](KickBazar-WMS-Outbound-PRD.md) | `outbound.js`：导入分配、发货单 CSV 回导、拣货单 PDF、发货扣减 |
