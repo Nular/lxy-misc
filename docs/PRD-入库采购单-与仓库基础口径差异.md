@@ -142,7 +142,7 @@
 
 | 动作 | 负责建议 |
 |------|----------|
-| 在 `KickBazar-WMS-PRD.md` 增加 **§9 入库**、**§10 采购单**（或链接本子文档） | 产品 |
+| 基础 PRD **§9** 链接独立 PRD（`KickBazar-WMS-Inbound-PRD.md`、`KickBazar-WMS-PO-PRD.md`、`KickBazar-WMS-Outbound-PRD.md`） | 产品（已落地） |
 | 子 PRD 全文替换 **Manual Adjustment**（入库/PO 域） | 产品 |
 | Axure：Receipt Type、Creation Method 改名；SKU 行改 **只读条码 + SKU 选择器** | 交互 |
 | §8.2 增一行：**Receipt Stocked In → Purchase/Manual Inbound 流水** | 产品 |

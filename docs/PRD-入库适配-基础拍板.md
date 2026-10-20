@@ -89,4 +89,4 @@ POST /inbound/receipts/{id}/stock-in
 
 ---
 
-*与 `KickBazar-WMS-PRD.md` §5.0、§9、§10 同步；基础其他章节未改。*
+*与 `KickBazar-WMS-PRD.md` §5.0、§9 及独立 PRD（`KickBazar-WMS-Inbound-PRD.md` 等）同步；基础正文不含作业单据章节。*
