@@ -15,7 +15,7 @@ out = html.replace(
     '  <link rel="stylesheet" href="css/styles.css">\n',
     f"  <style>\n{css}\n  </style>\n",
 ).replace(
-    '  <script src="vendor/xlsx.full.min.js"></script>\n  <script src="js/app.js"></script>\n  <script src="js/inbound.js"></script>\n  <script src="js/outbound.js"></script>\n',
+    '  <script src="vendor/xlsx.full.min.js?v=record-detail-v2"></script>\n  <script src="js/app.js?v=record-detail-v2"></script>\n  <script src="js/inbound.js?v=record-detail-v2"></script>\n  <script src="js/outbound.js?v=record-detail-v2"></script>\n',
     f"  <script>\n{js_bundle}\n  </script>\n",
 )
 out = out.replace("<title>KickBazar WMS - Prototype</title>", "<title>KickBazar WMS</title>")

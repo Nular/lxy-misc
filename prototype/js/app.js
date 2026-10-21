@@ -1341,16 +1341,16 @@ function detailRow(label, valueHtml) {
   return `<div class="label">${label}</div><div class="value">${valueHtml}</div>`;
 }
 
-function openRecordDetail(index) {
-  const r = recordListCache[index];
-  if (!r) return;
-  let html;
+function isInboundRecordType(type) {
+  return type === 'Purchase Inbound' || type === 'Manual Inbound';
+}
 
-  if (r.type === 'Purchase Inbound' || r.type === 'Manual Inbound') {
-    const poPreview = r.purchaseOrderNo && r.inboundReceiptNo
-      ? `${r.purchaseOrderNo} <button type="button" class="btn btn-sm" onclick="openInboundStoredSourcePreview('${r.inboundReceiptNo}')">Preview</button>`
-      : (r.purchaseOrderNo || '—');
-    html = `<div class="record-detail-grid">
+/** Inventory Record → Inbound detail (single grid, no legacy Inbound subsection). */
+function renderInboundRecordDetailHtml(r) {
+  const poPreview = r.purchaseOrderNo && r.inboundReceiptNo
+    ? `${r.purchaseOrderNo} <button type="button" class="btn btn-sm" onclick="openInboundStoredSourcePreview('${r.inboundReceiptNo}')">Preview</button>`
+    : (r.purchaseOrderNo || '—');
+  return `<div class="record-detail-grid record-detail-inbound">
       ${detailRow('Time', r.time)}
       ${detailRow('Warehouse', r.warehouse)}
       ${detailRow('Zone', r.zone)}
@@ -1366,6 +1366,15 @@ function openRecordDetail(index) {
       ${detailRow('Related Purchase Order', poPreview)}
       ${detailRow('Shipping No.', r.shippingNo || '—')}
     </div>`;
+}
+
+function openRecordDetail(index) {
+  const r = recordListCache[index];
+  if (!r) return;
+  let html;
+
+  if (isInboundRecordType(r.type)) {
+    html = renderInboundRecordDetailHtml(r);
   } else {
     html = `<div class="record-detail-grid">
       ${detailRow('Time', r.time)}

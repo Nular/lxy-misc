@@ -1145,18 +1145,28 @@ const RECORD_VIEW_ICON=`<svg viewBox="0 0 24 24"><path d="M12 5c-5 0-9.3 3.1-10.
 function recordViewButtonHtml(i){return `<button type="button" class="record-view-btn" title="View detail" onclick="event.stopPropagation();openRecordDetail(${i})">${RECORD_VIEW_ICON}</button>`;}
 function enrich(r){
   const row={...r};
-  if(row.type==='Purchase Inbound'||row.type==='Manual Inbound'){row.inboundNo=row.inboundNo||row.order;row.inboundType=row.inboundType||(row.sub==='purchase'?'Purchase':'Manual');if(row.inboundType==='Purchase'&&!row.purchaseOrderNo)row.purchaseOrderNo='PO-20260820001';}
+  if(row.type==='Purchase Inbound'||row.type==='Manual Inbound'){
+    row.inboundNo=row.inboundNo||row.order;
+    row.inboundType=row.inboundType||(row.sub==='purchase'?'Purchase':'Manual');
+    if(!row.productName)row.productName=row.sku==='SKU-10001-BK'?'Wireless Bluetooth Earbuds Pro':row.productName;
+    if(!row.specification)row.specification=row.sku==='SKU-10001-BK'?'Black; M':row.specification;
+    if(!row.purchaseOrderNo&&row.sub==='purchase')row.purchaseOrderNo='202607001';
+    if(!row.shippingNo&&row.sub==='purchase')row.shippingNo='KY4001086777153';
+    if(!row.inboundRemarks)row.inboundRemarks='Qty matched.';
+  }
   if(row.type&&row.type.includes('Manual Adjustment')){row.direction=row.direction||(row.qty.startsWith('+')?'Increase':'Decrease');row.adjQty=row.adjQty||row.qty.replace(/^[+-]/,'');row.adjType=row.adjType||'—';row.reason=row.reason||'—';row.attachment=row.attachment||'—';}
   if(row.type==='Outbound Occupy'||row.type==='Outbound Deduct'){row.outboundNo=row.outboundNo||row.order;row.relatedOrderNo=row.relatedOrderNo||'—';row.shipmentNo=row.shipmentNo||row.trackingNo||'—';row.status=row.status||(row.type==='Outbound Occupy'?'Allocated':'Shipped');}
   return row;
 }
+function renderInboundRecordDetailHtml(r){
+  const po=r.purchaseOrderNo?`${r.purchaseOrderNo} <button type="button" class="btn btn-sm" onclick="showToast('Purchase file preview: use full WMS prototype (KickBazar-WMS.html)')">Preview</button>`:'—';
+  return `<div class="record-detail-grid record-detail-inbound">${detailRow('Time',r.time)}${detailRow('Warehouse',r.warehouse)}${detailRow('Zone',r.zone)}${detailRow('SKU ID',r.sku)}${detailRow('Product Name',r.productName||'—')}${detailRow('SKU',r.specification||'—')}${detailRow('Qty',r.qty)}${detailRow('After Change',formatAfterChangeDetailHtml(r))}${detailRow('Type',r.type)}${detailRow('Inbound No.',r.inboundNo||r.order)}${detailRow('Operator',r.operator)}${detailRow('Inbound Remarks',r.inboundRemarks||'—')}${detailRow('Related Purchase Order',po)}${detailRow('Shipping No.',r.shippingNo||'—')}</div>`;
+}
 function openRecordDetail(i){
   const r=recordListCache[i]; if(!r)return;
-  let html=`<div class="record-detail-grid">${detailRow('Time',r.time)}${detailRow('Warehouse',r.warehouse)}${detailRow('Zone',r.zone)}${detailRow('SKU ID',r.sku)}${detailRow('Qty',r.qty)}${detailRow('After Change',formatAfterChangeDetailHtml(r))}${detailRow('Type',r.type)}${detailRow('Operator',r.operator)}</div>`;
-  if(r.type==='Purchase Inbound'||r.type==='Manual Inbound'){
-    const po=r.purchaseOrderNo?`<a href="#" onclick="event.preventDefault();showToast('PO: ${r.purchaseOrderNo}')">${r.purchaseOrderNo}</a>`:'—';
-    html+=`<div class="record-detail-section"><h4>Inbound</h4><div class="record-detail-grid">${detailRow('Inbound No.',r.inboundNo)}${detailRow('Inbound Type',r.inboundType)}${detailRow('Purchase Order No.',po)}</div></div>`;
-  }
+  let html;
+  if(r.type==='Purchase Inbound'||r.type==='Manual Inbound'){ html=renderInboundRecordDetailHtml(r); }
+  else { html=`<div class="record-detail-grid">${detailRow('Time',r.time)}${detailRow('Warehouse',r.warehouse)}${detailRow('Zone',r.zone)}${detailRow('SKU ID',r.sku)}${detailRow('Qty',r.qty)}${detailRow('After Change',formatAfterChangeDetailHtml(r))}${detailRow('Type',r.type)}${detailRow('Related Order No.',r.order)}${detailRow('Operator',r.operator)}</div>`; }
   if(r.type&&r.type.includes('Manual Adjustment')){
     html+=`<div class="record-detail-section"><h4>Inventory Adjustment</h4><div class="record-detail-grid">${detailRow('Adjustment No.',r.order)}${detailRow('Direction',r.direction)}${detailRow('Adjustment Qty',r.adjQty)}${detailRow('Adjustment Type',r.adjType)}${detailRow('Reason',r.reason)}${detailRow('Attachment',r.attachment)}</div></div>`;
   }
@@ -1168,7 +1178,7 @@ function openRecordDetail(i){
 }
 const base = {
   inbound: [
-    { time:'2026-08-21 09:32:15', warehouse:'SH001 - Shanghai Main Warehouse', zone:'SH001STO (Storage)', sku:'SKU-10001-BK', qty:'+200', after:{total:1200,locked:200,available:1000}, type:'Purchase Inbound', order:'IN-20260821001', operator:'Zhang Wei', sub:'purchase', purchaseOrderNo:'PO-20260821088' },
+    { time:'2026-08-21 09:32:15', warehouse:'SH001', zone:'SH001STO (Storage Zone)', sku:'SKU-10001-BK', qty:'+200', after:{total:1200,locked:200,available:1000}, type:'Purchase Inbound', order:'IN-20260821001', operator:'Zhang Wei', sub:'purchase', inboundNo:'IN-20260821001', productName:'Wireless Bluetooth Earbuds Pro', specification:'Black; M', purchaseOrderNo:'202607001', shippingNo:'KY4001086777153', inboundRemarks:'Qty matched.' },
     { time:'2026-08-18 08:00:00', warehouse:'SH001 - Shanghai Main Warehouse', zone:'SH001STO (Storage)', sku:'SKU-10002-42', qty:'+100', after:{total:900,locked:160,available:740}, type:'Purchase Inbound', order:'IN-20260818001', operator:'Admin', sub:'purchase' },
     { time:'2026-08-19 11:00:00', warehouse:'BJ001 - Beijing Distribution Center', zone:'BJ001STO (Storage)', sku:'SKU-10003-01', qty:'+80', after:{total:3280,locked:560,available:2720}, type:'Manual Inbound', order:'IN-20260819005', operator:'Admin', sub:'manual' }
   ],
