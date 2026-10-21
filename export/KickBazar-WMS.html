@@ -2845,7 +2845,7 @@ tbody tr.selected {
   </div>
 
   <div class="modal-overlay" id="inbound-detail-modal">
-    <div class="modal modal-lg">
+    <div class="modal modal-lg modal-inbound-detail">
       <div class="modal-header">
         <span class="modal-title" id="inbound-detail-title">Inbound Detail</span>
         <button class="modal-close" onclick="closeModal('inbound-detail-modal')">&times;</button>
@@ -5019,6 +5019,42 @@ function openInboundStoredSourcePreview(receiptNo) {
   openModal('inbound-source-preview-modal');
 }
 
+function downloadInboundSourceFile(receiptNo) {
+  const r = inboundReceipts.find(x => x.receiptNo === receiptNo);
+  if (!r || !r.sourceFile) {
+    showToast('No source file on this inbound.', 'warning');
+    return;
+  }
+  if (r.sourceFileDataUrl) {
+    const a = document.createElement('a');
+    a.href = r.sourceFileDataUrl;
+    a.download = r.sourceFile;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    showToast(`Downloading ${r.sourceFile}`, 'success');
+    return;
+  }
+  if (r.sourceFilePreviewMatrix?.length && typeof XLSX !== 'undefined') {
+    const ws = XLSX.utils.aoa_to_sheet(r.sourceFilePreviewMatrix);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+    XLSX.writeFile(wb, r.sourceFile.endsWith('.xlsx') ? r.sourceFile : `${r.sourceFile.replace(/\.\w+$/, '')}.xlsx`);
+    showToast('Downloaded from stored preview data.', 'success');
+    return;
+  }
+  showToast('Source file content not available for download in demo.', 'warning');
+}
+
+function inboundDetailSourceFileHtml(r) {
+  if (!r.sourceFile) return '—';
+  const previewBtn = r.sourceFilePreviewMatrix?.length
+    ? `<button type="button" class="btn btn-sm" onclick="openInboundStoredSourcePreview('${r.receiptNo}')">Preview</button>`
+    : '';
+  const downloadBtn = `<button type="button" class="btn btn-sm" onclick="downloadInboundSourceFile('${r.receiptNo}')">Download</button>`;
+  return `${r.sourceFile} <span class="hint">(kept in system)</span> ${previewBtn} ${downloadBtn}`;
+}
+
 function applyReceiptLineSku(lineIndex, skuId) {
   if (!skuId) {
     receiptEditorLines[lineIndex].skuId = '';
@@ -5629,19 +5665,21 @@ async function startPoListImport() {
 function openInboundDetailModal(receiptNo) {
   const r = inboundReceipts.find(x => x.receiptNo === receiptNo);
   if (!r) return;
-  document.getElementById('inbound-detail-title').textContent = `Inbound ${r.receiptNo}`;
+  document.getElementById('inbound-detail-title').textContent = 'Inbound Detail';
   const op = r.operator || currentOperatorName();
   const lines = r.lines || [];
+  const isPurchase = r.receiptType === 'Purchase Receipt';
   const body = document.getElementById('inbound-detail-body');
   body.innerHTML = `
-    <div class="record-detail-grid" style="margin-bottom:16px">
+    <div class="record-detail-grid inbound-detail-header" style="margin-bottom:16px">
+      <div class="label">Time</div><div class="value">${r.updatedAt || '—'}</div>
+      <div class="label">Inbound No.</div><div class="value"><strong>${r.receiptNo}</strong></div>
+      <div class="label">Purchase Order</div><div class="value">${isPurchase ? summarizePurchaseOrders(r) : '—'}</div>
+      <div class="label">Shipping No.</div><div class="value">${isPurchase ? summarizeShippingNos(r) : '—'}</div>
       <div class="label">Inbound Type</div><div class="value">${inboundTypeLabel(r.receiptType)}</div>
-      ${r.receiptType === 'Purchase Receipt' ? `<div class="label">Purchase Order</div><div class="value">${summarizePurchaseOrders(r)}</div>` : ''}
-      ${r.receiptType === 'Purchase Receipt' ? `<div class="label">Shipping No.</div><div class="value">${summarizeShippingNos(r)}</div>` : ''}
-      <div class="label">Status</div><div class="value">${r.status}</div>
+      <div class="label">SKU Qty</div><div class="value">${lines.length}</div>
       <div class="label">Operator</div><div class="value">${op}</div>
-      <div class="label">Source file</div><div class="value">${r.sourceFile ? `${r.sourceFile} <span class="hint">(kept in system)</span> ${r.sourceFilePreviewMatrix?.length ? `<button type="button" class="btn btn-sm" onclick="openInboundStoredSourcePreview('${r.receiptNo}')">Preview</button>` : ''}` : '—'}</div>
-      ${(r.unmatched && r.unmatched.length) ? `<div class="label">Unmatched warn</div><div class="value">${r.unmatched.map(u => `Row ${u.row}: ${u.importProductName || u.itemDesc || '—'}`).join('<br>')}</div>` : ''}
+      <div class="label">Source File</div><div class="value">${inboundDetailSourceFileHtml(r)}</div>
     </div>
     <div class="table-wrapper">
       <table>
@@ -5727,6 +5765,7 @@ function persistReceipt(status, writeInventory) {
     operator: currentOperatorName(),
     unmatched: receiptUnmatched.slice(),
     sourceFile: receiptSourceFileData.name || document.getElementById('receipt-import-file').files[0]?.name || (currentReceiptEdit && currentReceiptEdit.sourceFile) || '',
+    sourceFileDataUrl: receiptSourceFileData.dataUrl || (currentReceiptEdit && currentReceiptEdit.sourceFileDataUrl) || '',
     sourceFilePreviewMatrix: receiptSourcePreviewMatrix.slice(),
     entryMethod: receiptLockedSource || receiptEditorSource,
     progress: status === 'Processing' ? 45 : status === 'Stocked In' ? 100 : 0,
