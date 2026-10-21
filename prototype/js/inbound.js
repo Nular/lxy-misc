@@ -329,6 +329,27 @@ function collectShippingNosFromLines(lines) {
   return [...new Set((lines || []).map(l => l.shippingNo).filter(Boolean))];
 }
 
+/** One upload → one 物流单号: keep first non-empty value, drop other rows, fill blanks. */
+function enforceSingleShippingOnImportRows(rows) {
+  const shipSet = [...new Set(rows.map(r => r.shippingNo).filter(Boolean))];
+  if (!shipSet.length) return { rows, dropped: [], note: '' };
+  const keep = shipSet[0];
+  const dropped = [];
+  const kept = [];
+  rows.forEach(r => {
+    if (r.shippingNo && r.shippingNo !== keep) {
+      dropped.push(r);
+      return;
+    }
+    kept.push({ ...r, shippingNo: r.shippingNo || keep });
+  });
+  let note = '';
+  if (shipSet.length > 1 || dropped.length) {
+    note = ` One upload allows one Shipping No.; kept ${keep}.`;
+  }
+  return { rows: kept, dropped, note };
+}
+
 function formatInboundLineAfterChange(line) {
   const after = line.afterChange;
   if (!after) return '—';
@@ -371,7 +392,7 @@ function updateShippingNoSummaryField() {
   }
   wrap.hidden = false;
   const ships = collectShippingNosFromLines(receiptEditorLines);
-  input.value = ships.length ? ships.join(', ') : '';
+  input.value = ships.length === 1 ? ships[0] : (ships.length > 1 ? '(multiple — one per upload)' : '');
 }
 
 function renderSourcePreviewTable(matrix, titleHint) {
@@ -983,6 +1004,15 @@ async function startPoListImport() {
       dropped.forEach(r => receiptUnmatched.push({ row: r.row, importProductName: `${r.importProductName} (PO ${r.purchaseOrder})` }));
       poFilterNote = ` One Inbound allows one Purchase Order; kept ${keep}.`;
     }
+    const shipResult = enforceSingleShippingOnImportRows(rows);
+    rows = shipResult.rows;
+    let shipFilterNote = shipResult.note;
+    shipResult.dropped.forEach(r => {
+      receiptUnmatched.push({
+        row: r.row,
+        importProductName: `${r.importProductName} (Shipping ${r.shippingNo})`
+      });
+    });
     const wh = getInboundWarehouseScope();
     receiptEditorLines = [];
     rows.forEach(dr => buildReceiptLineFromPoRow(dr, wh));
@@ -992,9 +1022,9 @@ async function startPoListImport() {
     renderUnmatchedPanel();
     fill.style.width = '100%';
     label.textContent = '100%';
-    const warn = receiptUnmatched.length || poFilterNote;
+    const warn = receiptUnmatched.length || poFilterNote || shipFilterNote;
     showToast(warn
-      ? `Parsed ${receiptEditorLines.length} line(s); ${receiptUnmatched.length} row(s) skipped/warn.${poFilterNote}`
+      ? `Parsed ${receiptEditorLines.length} line(s); ${receiptUnmatched.length} row(s) skipped/warn.${poFilterNote}${shipFilterNote}`
       : `Parsed ${receiptEditorLines.length} line(s) from ${file.name}.`, warn ? 'warning' : 'success');
   } catch (err) {
     console.error(err);
@@ -1069,6 +1099,15 @@ function confirmReceiptStockIn() {
       showToast('One Inbound No. can only bind one Purchase Order.', 'error');
       return;
     }
+    const ships = collectShippingNosFromLines(receiptEditorLines);
+    if (ships.length > 1) {
+      showToast('One upload allows only one Shipping No. (物流单号).', 'error');
+      return;
+    }
+    if (!ships.length) {
+      showToast('Shipping No. (物流单号) is required for purchase upload.', 'error');
+      return;
+    }
   }
   for (const line of receiptEditorLines) {
     const lineWh = line.warehouseCode || wh;
@@ -1084,6 +1123,7 @@ function persistReceipt(status, writeInventory) {
   const wh = getInboundWarehouseScope();
   const zoneCode = getDefaultStorageZoneCode(wh);
   const ships = collectShippingNosFromLines(receiptEditorLines);
+  const shippingNo = ships.length === 1 ? ships[0] : (document.getElementById('receipt-shipping-no-summary')?.value?.trim() || '');
   const lineRemarks = receiptEditorLines.map(l => l.lineRemarks).filter(t => (t || '').trim());
   const purchaseOrder = document.getElementById('receipt-purchase-order-summary')?.value?.trim() || '';
   const payload = {
@@ -1092,7 +1132,7 @@ function persistReceipt(status, writeInventory) {
     zoneCode,
     remarks: lineRemarks.join('; '),
     purchaseOrder,
-    shippingNo: ships.join(', '),
+    shippingNo,
     operator: currentOperatorName(),
     unmatched: receiptUnmatched.slice(),
     sourceFile: receiptSourceFileData.name || document.getElementById('receipt-import-file').files[0]?.name || (currentReceiptEdit && currentReceiptEdit.sourceFile) || '',

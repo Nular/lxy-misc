@@ -1033,7 +1033,7 @@
         </form>
         <input type="hidden" id="receipt-type" value="">
         <div id="receipt-source-po-import" class="source-panel" hidden>
-          <p class="hint">Upload <strong>采购.xlsx</strong>: <code>采购单号</code> → Purchase Order (one per Inbound), <code>物流单号</code> → Shipping No., <code>Product Name</code>, <code>需求数量</code> → Order Qty (editable). One Inbound No. binds one PO; one PO may have many Shipping Nos across inbounds.</p>
+          <p class="hint">Upload <strong>采购.xlsx</strong>: <code>采购单号</code> → Purchase Order (one per Inbound), <code>物流单号</code> → Shipping No. (<strong>one per upload</strong>), <code>Product Name</code>, <code>需求数量</code> → Order Qty. One PO may have many Shipping Nos across separate inbounds.</p>
           <input type="file" id="receipt-import-file" accept=".xlsx,.xls">
           <button type="button" class="btn btn-primary" id="receipt-import-btn" disabled onclick="startPoListImport()">Parse file</button>
           <div id="receipt-source-file-meta" class="hint" hidden></div>
