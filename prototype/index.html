@@ -561,6 +561,7 @@
                   <tr>
                     <th>Time</th>
                     <th>Inbound No.</th>
+                    <th>Purchase Order</th>
                     <th>Inbound Type</th>
                     <th>SKU Qty</th>
                     <th>Operator</th>
@@ -969,6 +970,22 @@
     </div>
   </div>
 
+  <div class="modal-overlay" id="inbound-source-preview-modal">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <span class="modal-title" id="inbound-source-preview-title">Source file preview</span>
+        <button class="modal-close" onclick="closeModal('inbound-source-preview-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="hint" id="inbound-source-preview-hint"></p>
+        <div class="table-wrapper" id="inbound-source-preview-table-wrap"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="closeModal('inbound-source-preview-modal')">Close</button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-overlay" id="inbound-detail-modal">
     <div class="modal modal-lg">
       <div class="modal-header">
@@ -1004,15 +1021,21 @@
           <div class="form-group"><label>Inbound No.</label><input class="readonly" id="receipt-inbound-no-preview" readonly placeholder="Auto on submit"></div>
           <div class="form-group"><label>Inbound Type</label><input class="readonly" id="receipt-type-label" readonly></div>
           <div class="form-group"><label>Context Warehouse</label><input class="readonly" id="receipt-warehouse" readonly></div>
+          <div class="form-group" id="receipt-purchase-order-wrap" hidden>
+            <label>Purchase Order</label>
+            <input class="readonly" id="receipt-purchase-order-summary" readonly placeholder="From 采购.xlsx (采购单号)">
+          </div>
           <div class="form-group form-span-2"><label>Header Remarks (optional)</label><textarea id="receipt-remarks" maxlength="500" rows="2" placeholder="Whole-receipt notes; line remarks required when Order Qty ≠ Receipt Qty."></textarea></div>
         </form>
         <input type="hidden" id="receipt-type" value="">
         <div id="receipt-source-po-import" class="source-panel" hidden>
-          <p class="hint">Upload purchase list (<strong>采购单文档订单列表.xlsx</strong>). System matches warehouse SKUs by <code>ItemDesc</code>. Unmatched rows show a warning; you may still submit successful lines. Original file is kept on the receipt.</p>
-          <input type="file" id="receipt-import-file" accept=".xlsx,.xls,.csv">
+          <p class="hint">Upload <strong>采购.xlsx</strong> template: <code>采购单号</code> → Purchase Order, <code>Product Name</code>, <code>需求数量</code> → Order Qty (editable after parse). Match by product name; multiple SKUs require a selection. File is kept and previewable.</p>
+          <input type="file" id="receipt-import-file" accept=".xlsx,.xls">
           <button type="button" class="btn btn-primary" id="receipt-import-btn" disabled onclick="startPoListImport()">Parse file</button>
+          <div id="receipt-source-file-meta" class="hint" hidden></div>
+          <button type="button" class="btn" id="receipt-source-preview-btn" hidden onclick="openReceiptSourcePreview()">Preview source file</button>
           <div id="receipt-unmatched-panel" class="inbound-alert" hidden>
-            <strong>Warn — unmatched ItemDesc</strong> — Check spelling or list the product on Seller before inbound.
+            <strong>Warn — unmatched Product Name</strong> — Check spelling or list the product on Seller before inbound.
             <ul id="receipt-unmatched-list"></ul>
           </div>
         </div>
@@ -1027,7 +1050,7 @@
         </div>
         <div class="table-wrapper editor-lines-table">
           <table>
-            <thead>
+            <thead id="receipt-editor-lines-head">
               <tr>
                 <th>SKU ID</th><th>Product Name</th><th>Spec</th><th>Warehouse</th><th>Zone</th><th>Order Qty</th><th>Receipt Qty</th><th>Remark</th><th style="width:72px">Action</th>
               </tr>
@@ -1220,6 +1243,7 @@
   
   <div class="toast-container" id="toast-container"></div>
 
+  <script src="vendor/xlsx.full.min.js"></script>
   <script src="js/app.js"></script>
   <script src="js/inbound.js"></script>
   <script src="js/outbound.js"></script>

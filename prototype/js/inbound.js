@@ -16,9 +16,11 @@ let inboundReceipts = [
     operator: 'Zhang Wei',
     sourceFile: '采购单文档订单列表.xlsx',
     entryMethod: 'po-import',
+    purchaseOrderSummary: '202607001',
+    sourceFilePreviewMatrix: [],
     lines: [
-      { itemDesc: '200 * Wireless Bluetooth Earbuds Pro Black', skuId: 'SKU-10001-BK', productName: 'Wireless Bluetooth Earbuds Pro', spec: 'Black; M', orderQty: 200, receiptQty: 200, warehouseCode: 'SH001', zoneCode: 'SH001STO', afterQty: 1200 },
-      { itemDesc: '50 * R31 headphones - Lightning', skuId: 'SKU-10001-WH', productName: 'Wireless Bluetooth Earbuds Pro', spec: 'White; L', orderQty: 50, receiptQty: 48, warehouseCode: 'SH001', zoneCode: 'SH001STO', afterQty: 548 }
+      { purchaseOrder: '202607001', importProductName: 'Wireless Bluetooth Earbuds Pro Black', skuId: 'SKU-10001-BK', productName: 'Wireless Bluetooth Earbuds Pro', spec: 'Black; M', orderQty: 200, receiptQty: 200, warehouseCode: 'SH001', zoneCode: 'SH001STO', afterQty: 1200 },
+      { purchaseOrder: '202607001', importProductName: 'R31 Headphones', skuId: 'SKU-10001-WH', productName: 'Wireless Bluetooth Earbuds Pro', spec: 'White; L', orderQty: 50, receiptQty: 48, warehouseCode: 'SH001', zoneCode: 'SH001STO', afterQty: 548, lineRemarks: 'Short 2 pcs' }
     ]
   },
   {
@@ -149,6 +151,17 @@ let inboundListPage = 1;
 let receiptSkuPickerSelected = new Set();
 let receiptEditorReadonly = false;
 let receiptUnmatched = [];
+let receiptSourceFileData = { name: '', dataUrl: '' };
+let receiptSourcePreviewMatrix = [];
+let receiptPendingImportFile = null;
+
+const PO_PRODUCT_ALIASES = [
+  { re: /r31\s*headphones?/i, productName: 'Wireless Bluetooth Earbuds Pro' },
+  { re: /kt\d+\s*smart\s*watch/i, productName: 'Smart Watch Series X' },
+  { re: /smart\s*watch/i, productName: 'Smart Watch Series X' },
+  { re: /20000ma|power\s*bank/i, productName: 'Portable Power Bank 20000mAh' },
+  { re: /earbuds?/i, productName: 'Wireless Bluetooth Earbuds Pro' }
+];
 
 const INBOUND_VIEW_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5c-5 0-9.3 3.1-10.7 7.5C2.7 16.9 7 20 12 20s9.3-3.1 10.7-7.5C21.3 8.1 17 5 12 5zm0 12.5a5 5 0 1 1 0-10 5 5 0 0 1 0 10zm0-2.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/></svg>`;
 
@@ -178,27 +191,240 @@ function parseItemDescQty(desc) {
   return { qty: 1, text: String(desc || '').trim() };
 }
 
-function matchSkuByItemDesc(desc, warehouseCode) {
-  const { text } = parseItemDescQty(desc);
-  const norm = text.toLowerCase();
-  const wh = normalizeWarehouseId(warehouseCode);
-  const rules = [
-    { kw: 'r31 headphones', skuId: 'SKU-10001-BK' },
-    { kw: 'kt88 smart watch', skuId: 'SKU-10002-42' },
-    { kw: 'xd mini wireless', skuId: 'SKU-10003-01' },
-    { kw: 'earbuds', skuId: 'SKU-10001-WH' }
-  ];
-  for (const r of rules) {
-    if (norm.includes(r.kw)) {
-      const inv = skuData.find(s => s.skuId === r.skuId && normalizeWarehouseId(s.warehouseCode) === wh);
-      if (inv) return inv;
-    }
+function normalizePoProductName(name) {
+  return String(name || '').toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+function resolveCanonicalProductName(importName) {
+  const norm = normalizePoProductName(importName);
+  for (const rule of PO_PRODUCT_ALIASES) {
+    if (rule.re.test(importName)) return rule.productName;
   }
-  const candidates = listWarehouseInventorySkus(wh).filter(s => {
-    const blob = `${s.productName} ${s.spec}`.toLowerCase();
-    return norm.split(/\s+/).filter(w => w.length > 2).some(w => blob.includes(w));
+  return null;
+}
+
+function dedupeSkuCandidates(rows) {
+  const seen = new Set();
+  return rows.filter(s => {
+    const key = s.skuId + '|' + s.zoneCode;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
   });
-  return candidates.length === 1 ? candidates[0] : (candidates[0] || null);
+}
+
+function matchSkusByProductName(importName, warehouseCode) {
+  const wh = normalizeWarehouseId(warehouseCode);
+  const pool = listWarehouseInventorySkus(wh);
+  const canonical = resolveCanonicalProductName(importName);
+  const norm = normalizePoProductName(importName);
+  let matches = [];
+  if (canonical) {
+    matches = pool.filter(s => s.productName === canonical);
+  } else {
+    matches = pool.filter(s => {
+      const pn = normalizePoProductName(s.productName);
+      if (pn === norm || pn.includes(norm) || norm.includes(pn)) return true;
+      const tokens = norm.split(/\s+/).filter(w => w.length > 2);
+      return tokens.some(t => pn.includes(t) || normalizePoProductName(s.spec).includes(t));
+    });
+  }
+  return dedupeSkuCandidates(matches);
+}
+
+function findHeaderIndex(headers, candidates) {
+  const row = headers.map(h => normalizePoProductName(h));
+  for (const c of candidates) {
+    const key = normalizePoProductName(c);
+    const idx = row.findIndex(h => h === key || h.includes(key) || key.includes(h));
+    if (idx >= 0) return idx;
+  }
+  return -1;
+}
+
+function cellToDisplay(val) {
+  if (val == null || val === '') return '';
+  if (val instanceof Date) return val.toISOString().slice(0, 10);
+  return String(val).trim();
+}
+
+function parsePurchaseXlsxMatrix(matrix) {
+  if (!matrix || !matrix.length) return { rows: [], preview: [] };
+  const headers = matrix[0].map(c => cellToDisplay(c));
+  const idxPo = findHeaderIndex(headers, ['采购单号', 'purchase order']);
+  const idxName = findHeaderIndex(headers, ['product name', 'productname', '商品名称']);
+  const idxQty = findHeaderIndex(headers, ['需求数量', 'order qty']);
+  if (idxName < 0 || idxQty < 0) {
+    throw new Error('Missing required columns: Product Name and 需求数量');
+  }
+  const rows = [];
+  for (let r = 1; r < matrix.length; r++) {
+    const line = matrix[r];
+    if (!line || !line.some(c => c !== '' && c != null)) continue;
+    const productName = cellToDisplay(line[idxName]);
+    const qtyRaw = line[idxQty];
+    const orderQty = parseInt(String(qtyRaw).replace(/,/g, ''), 10);
+    if (!productName) continue;
+    if (!orderQty || orderQty < 1) continue;
+    rows.push({
+      row: r + 1,
+      purchaseOrder: idxPo >= 0 ? cellToDisplay(line[idxPo]) : '',
+      importProductName: productName,
+      orderQty
+    });
+  }
+  return { rows, preview: matrix.slice(0, Math.min(matrix.length, 25)) };
+}
+
+function readFileAsArrayBuffer(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function parsePurchaseXlsxFile(file) {
+  if (typeof XLSX === 'undefined') throw new Error('XLSX parser not loaded');
+  const buf = await readFileAsArrayBuffer(file);
+  const wb = XLSX.read(new Uint8Array(buf), { type: 'array', cellDates: true });
+  const sheet = wb.Sheets[wb.SheetNames[0]];
+  const matrix = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+  return parsePurchaseXlsxMatrix(matrix);
+}
+
+function summarizePurchaseOrders(receipt) {
+  if (!receipt || receipt.receiptType !== 'Purchase Receipt') return '—';
+  if (receipt.purchaseOrderSummary) return receipt.purchaseOrderSummary;
+  const pos = [...new Set((receipt.lines || []).map(l => l.purchaseOrder).filter(Boolean))];
+  if (!pos.length) return '—';
+  if (pos.length <= 2) return pos.join(', ');
+  return `${pos[0]} +${pos.length - 1}`;
+}
+
+function updateReceiptSourceFileMeta() {
+  const meta = document.getElementById('receipt-source-file-meta');
+  const btn = document.getElementById('receipt-source-preview-btn');
+  const name = receiptSourceFileData.name;
+  if (meta) {
+    meta.hidden = !name;
+    meta.textContent = name ? `Source file: ${name} (kept in system)` : '';
+  }
+  if (btn) btn.hidden = !receiptSourcePreviewMatrix.length;
+}
+
+function updatePurchaseOrderSummaryField() {
+  const wrap = document.getElementById('receipt-purchase-order-wrap');
+  const input = document.getElementById('receipt-purchase-order-summary');
+  if (!wrap || !input) return;
+  if (receiptEditorSource !== 'po-import') {
+    wrap.hidden = true;
+    return;
+  }
+  wrap.hidden = false;
+  const pos = [...new Set(receiptEditorLines.map(l => l.purchaseOrder).filter(Boolean))];
+  input.value = pos.length ? pos.join(', ') : '';
+}
+
+function renderSourcePreviewTable(matrix, titleHint) {
+  const wrap = document.getElementById('inbound-source-preview-table-wrap');
+  const hint = document.getElementById('inbound-source-preview-hint');
+  const title = document.getElementById('inbound-source-preview-title');
+  if (!wrap) return;
+  if (title) title.textContent = 'Source file preview';
+  if (hint) hint.textContent = titleHint || '';
+  if (!matrix || !matrix.length) {
+    wrap.innerHTML = '<p class="hint">No preview data.</p>';
+    return;
+  }
+  const header = matrix[0].map(c => cellToDisplay(c));
+  const body = matrix.slice(1);
+  wrap.innerHTML = `<table><thead><tr>${header.map(h => `<th>${h || '—'}</th>`).join('')}</tr></thead><tbody>${body.map(row =>
+    `<tr>${header.map((_, i) => `<td>${cellToDisplay(row[i]) || '—'}</td>`).join('')}</tr>`
+  ).join('')}</tbody></table>`;
+}
+
+function openReceiptSourcePreview() {
+  renderSourcePreviewTable(
+    receiptSourcePreviewMatrix,
+    receiptSourceFileData.name ? `File: ${receiptSourceFileData.name}` : ''
+  );
+  openModal('inbound-source-preview-modal');
+}
+
+function openInboundStoredSourcePreview(receiptNo) {
+  const r = inboundReceipts.find(x => x.receiptNo === receiptNo);
+  if (!r || !r.sourceFilePreviewMatrix?.length) {
+    showToast('Source preview not available for this receipt.', 'warning');
+    return;
+  }
+  renderSourcePreviewTable(
+    r.sourceFilePreviewMatrix,
+    r.sourceFile ? `File: ${r.sourceFile} (kept in system)` : ''
+  );
+  openModal('inbound-source-preview-modal');
+}
+
+function applyReceiptLineSku(lineIndex, skuId) {
+  if (!skuId) {
+    receiptEditorLines[lineIndex].skuId = '';
+    receiptEditorLines[lineIndex].spec = '';
+    receiptEditorLines[lineIndex].skuResolved = false;
+    renderReceiptEditorLines();
+    return;
+  }
+  const line = receiptEditorLines[lineIndex];
+  const wh = line.warehouseCode || getInboundWarehouseScope();
+  const inv = listWarehouseInventorySkus(wh).find(s => s.skuId === skuId);
+  if (!inv) {
+    showToast('SKU not found in selected warehouse.', 'error');
+    return;
+  }
+  line.skuId = inv.skuId;
+  line.productName = inv.productName;
+  line.spec = inv.spec;
+  line.zoneCode = inv.zoneCode || getDefaultStorageZoneCode(wh);
+  line.warehouseCode = wh;
+  line.skuResolved = true;
+  renderReceiptEditorLines();
+}
+
+function receiptSkuSelectHtml(line, lineIndex, ro) {
+  const candidates = line.skuCandidates || [];
+  if (!candidates.length) return '<span class="hint">—</span>';
+  if (ro || candidates.length === 1) {
+    return candidates.length === 1 ? candidates[0].spec : (line.spec || '—');
+  }
+  const opts = candidates.map(c =>
+    `<option value="${c.skuId}" ${line.skuId === c.skuId ? 'selected' : ''}>${c.spec} (${c.skuId})</option>`
+  ).join('');
+  return `<select class="${line.skuId ? '' : 'input-required'}" onchange="applyReceiptLineSku(${lineIndex}, this.value)"><option value="">Select SKU (required)…</option>${opts}</select>`;
+}
+
+function renderReceiptEditorLinesHead() {
+  const head = document.getElementById('receipt-editor-lines-head');
+  if (!head) return;
+  if (receiptEditorSource === 'po-import') {
+    head.innerHTML = `<tr>
+      <th>Purchase Order</th><th>Product Name</th><th>SKU</th><th>SKU ID</th><th>Spec</th>
+      <th>Warehouse</th><th>Zone</th><th>Order Qty</th><th>Receipt Qty</th><th>Remark</th><th style="width:72px">Action</th>
+    </tr>`;
+  } else {
+    head.innerHTML = `<tr>
+      <th>SKU ID</th><th>Product Name</th><th>Spec</th><th>Warehouse</th><th>Zone</th>
+      <th>Order Qty</th><th>Receipt Qty</th><th>Remark</th><th style="width:72px">Action</th>
+    </tr>`;
+  }
 }
 
 function warehouseSelectHtml(selected, lineIndex, ro) {
@@ -228,6 +454,9 @@ function receiptZoneReadonlyForSource() {
 
 function openNewInboundTask() {
   receiptUnmatched = [];
+  receiptSourceFileData = { name: '', dataUrl: '' };
+  receiptSourcePreviewMatrix = [];
+  receiptPendingImportFile = null;
   currentReceiptEdit = null;
   receiptEditorReadonly = false;
   receiptEditorLines = [];
@@ -239,6 +468,8 @@ function openNewInboundTask() {
   document.getElementById('receipt-remarks').value = '';
   document.getElementById('receipt-import-file').value = '';
   document.getElementById('receipt-unmatched-panel').hidden = true;
+  updateReceiptSourceFileMeta();
+  updatePurchaseOrderSummaryField();
   const manualSearch = document.getElementById('receipt-manual-search');
   if (manualSearch) manualSearch.value = '';
   document.getElementById('receipt-editor-title').textContent = 'New Inbound';
@@ -275,7 +506,9 @@ function pickInboundEditorType(mode) {
   const previewNo = document.getElementById('receipt-inbound-no-preview');
   if (previewNo && !currentReceiptEdit) previewNo.value = nextInboundNo();
   setReceiptSource(mode, true);
+  renderReceiptEditorLinesHead();
   renderReceiptEditorLines();
+  updatePurchaseOrderSummaryField();
 }
 
 function nextInboundNo() {
@@ -451,12 +684,13 @@ function renderInboundReceiptList() {
     <tr>
       <td>${r.updatedAt}</td>
       <td><strong>${r.receiptNo}</strong></td>
+      <td>${summarizePurchaseOrders(r)}</td>
       <td>${inboundTypeLabel(r.receiptType)}</td>
       <td>${r.lines.length}</td>
       <td>${r.operator || '—'}</td>
       <td style="text-align:center">${inboundViewButton(r.receiptNo)}</td>
     </tr>
-  `).join('') || '<tr><td colspan="6" style="text-align:center;color:#999">No data</td></tr>';
+  `).join('') || '<tr><td colspan="7" style="text-align:center;color:#999">No data</td></tr>';
 
   const pagBar = document.getElementById('inbound-pagination-info');
   if (pagBar) {
@@ -528,6 +762,7 @@ function setReceiptSource(source, silent) {
     document.getElementById('receipt-type-label').value = inboundTypeLabel(document.getElementById('receipt-type').value);
   }
   if (receiptEditorLines.length && !receiptLockedSource) receiptLockedSource = source;
+  updatePurchaseOrderSummaryField();
   updateReceiptEditorChrome();
 }
 
@@ -540,7 +775,7 @@ function renderUnmatchedPanel() {
     return;
   }
   panel.hidden = false;
-  list.innerHTML = receiptUnmatched.map(u => `<li>Row ${u.row}: ${u.itemDesc}</li>`).join('');
+  list.innerHTML = receiptUnmatched.map(u => `<li>Row ${u.row}: ${u.importProductName || u.itemDesc || '—'}</li>`).join('');
 }
 
 function reconVariance(line) {
@@ -558,9 +793,12 @@ function lineQtyMismatch(line) {
 }
 
 function renderReceiptEditorLines() {
+  renderReceiptEditorLinesHead();
   const ro = receiptEditorReadonly;
   const whDefault = getInboundWarehouseScope();
   const zoneRo = ro || receiptZoneReadonlyForSource();
+  const poMode = receiptEditorSource === 'po-import';
+  const colSpan = poMode ? 11 : 9;
   document.getElementById('receipt-editor-lines').innerHTML = receiptEditorLines.map((l, i) => {
     const wh = l.warehouseCode || whDefault;
     const zc = l.zoneCode || getDefaultStorageZoneCode(wh);
@@ -570,12 +808,33 @@ function renderReceiptEditorLines() {
     const remarkCell = ro
       ? (l.lineRemarks || '—')
       : `<input type="text" maxlength="200" placeholder="${mismatch ? 'Required' : 'Optional'}" value="${l.lineRemarks || ''}" class="${mismatch ? 'input-required' : ''}" oninput="receiptEditorLines[${i}].lineRemarks=this.value">`;
-    const orderCell = receiptEditorSource === 'po-import'
-      ? `<span class="readonly-qty">${l.orderQty ?? '—'}</span>`
+    const orderCell = poMode
+      ? (ro ? (l.orderQty ?? '—') : `<input type="number" min="1" max="9999999" value="${l.orderQty ?? 0}" onchange="receiptEditorLines[${i}].orderQty=parseInt(this.value,10)||0;renderReceiptEditorLines()">`)
       : '—';
     const deleteCell = ro
       ? '—'
       : `<button type="button" class="btn btn-sm" onclick="deleteReceiptLine(${i})">Delete</button>`;
+    if (poMode) {
+      const displayName = l.importProductName || l.productName || '—';
+      const skuIdCell = l.skuId || '—';
+      const skuPickCell = (l.skuCandidates && l.skuCandidates.length > 1 && !ro)
+        ? receiptSkuSelectHtml(l, i, ro)
+        : (l.skuCandidates && l.skuCandidates.length === 1 ? l.skuCandidates[0].spec : (l.skuId ? l.spec : '—'));
+      return `
+      <tr>
+        <td>${l.purchaseOrder || '—'}</td>
+        <td>${displayName}</td>
+        <td>${skuPickCell}</td>
+        <td><strong>${skuIdCell}</strong></td>
+        <td>${l.skuId ? (l.spec || '—') : '—'}</td>
+        <td>${warehouseSelectHtml(wh, i, ro)}</td>
+        <td>${zoneSelectHtml(wh, zc, i, zoneRo)}</td>
+        <td>${orderCell}</td>
+        <td>${ro ? l.receiptQty : `<input type="number" min="1" max="9999999" value="${l.receiptQty}" onchange="receiptEditorLines[${i}].receiptQty=parseInt(this.value,10)||0;renderReceiptEditorLines()">`}</td>
+        <td>${remarkCell}</td>
+        <td>${deleteCell}</td>
+      </tr>`;
+    }
     return `
     <tr>
       <td>${l.skuId}</td><td>${l.productName}</td><td>${l.spec}</td>
@@ -586,9 +845,10 @@ function renderReceiptEditorLines() {
       <td>${remarkCell}</td>
       <td>${deleteCell}</td>
     </tr>`;
-  }).join('') || '<tr><td colspan="9" style="text-align:center;color:#999">No lines — upload PO file or search products</td></tr>';
+  }).join('') || `<tr><td colspan="${colSpan}" style="text-align:center;color:#999">No lines — upload 采购.xlsx or search products</td></tr>`;
   const typeSel = document.getElementById('receipt-type-select');
   if (typeSel && !ro) typeSel.disabled = receiptEditorLines.length > 0;
+  updatePurchaseOrderSummaryField();
   updateReceiptEditorChrome();
 }
 
@@ -601,7 +861,19 @@ function deleteReceiptLine(index) {
 
 document.addEventListener('change', e => {
   if (e.target.id === 'receipt-import-file') {
-    document.getElementById('receipt-import-btn').disabled = !e.target.files.length;
+    const file = e.target.files[0];
+    document.getElementById('receipt-import-btn').disabled = !file;
+    receiptPendingImportFile = file || null;
+    if (file) {
+      readFileAsDataUrl(file).then(url => {
+        receiptSourceFileData = { name: file.name, dataUrl: url };
+        updateReceiptSourceFileMeta();
+      });
+    } else {
+      receiptSourceFileData = { name: '', dataUrl: '' };
+      receiptSourcePreviewMatrix = [];
+      updateReceiptSourceFileMeta();
+    }
   }
 });
 
@@ -609,68 +881,75 @@ function countActiveInboundJobs() {
   return inboundImportJobs + inboundReceipts.filter(r => r.status === 'Processing').length;
 }
 
-function startPoListImport() {
+function buildReceiptLineFromPoRow(dr, wh) {
+  const zoneCode = getDefaultStorageZoneCode(wh);
+  const candidates = matchSkusByProductName(dr.importProductName, wh);
+  if (!candidates.length) {
+    receiptUnmatched.push({ row: dr.row, importProductName: dr.importProductName, purchaseOrder: dr.purchaseOrder });
+    return;
+  }
+  const skuCandidates = candidates.map(c => ({ skuId: c.skuId, spec: c.spec, zoneCode: c.zoneCode }));
+  const single = candidates.length === 1 ? candidates[0] : null;
+  receiptEditorLines.push({
+    purchaseOrder: dr.purchaseOrder,
+    importProductName: dr.importProductName,
+    productName: single ? single.productName : dr.importProductName,
+    skuId: single ? single.skuId : '',
+    spec: single ? single.spec : '',
+    skuCandidates,
+    skuResolved: !!single,
+    orderQty: dr.orderQty,
+    receiptQty: dr.orderQty,
+    barcode: single ? primaryBarcode(single) : '',
+    warehouseCode: wh,
+    zoneCode: single ? (single.zoneCode || zoneCode) : zoneCode
+  });
+}
+
+async function startPoListImport() {
   if (countActiveInboundJobs() >= MAX_IMPORT_JOBS) {
     showToast('At most 2 import jobs can run at the same time.', 'warning');
     return;
   }
-  const file = document.getElementById('receipt-import-file');
-  if (!file.files.length) {
-    showToast('The imported file contains invalid fields. Please re-upload.', 'error');
+  const fileInput = document.getElementById('receipt-import-file');
+  const file = receiptPendingImportFile || fileInput.files[0];
+  if (!file) {
+    showToast('Please upload 采购.xlsx before parsing.', 'error');
     return;
   }
   inboundImportJobs++;
   receiptUnmatched = [];
   document.getElementById('receipt-import-progress').hidden = false;
-  let pct = 0;
   const fill = document.getElementById('receipt-import-fill');
   const label = document.getElementById('receipt-import-pct');
-  const demoRows = [
-    { row: 2, itemDesc: '1 * R31 headphones - Lightning', qty: 1 },
-    { row: 4, itemDesc: '2 * KT88 Smart Watch Specification - Black / With light', qty: 2 },
-    { row: 5, itemDesc: '1 * XD Mini Wireless 1080P HD Security Camera', qty: 1 },
-    { row: 99, itemDesc: '1 * Unknown Gadget XYZ-404', qty: 1 }
-  ];
-  const timer = setInterval(() => {
-    pct += 20;
-    if (pct > 100) pct = 100;
-    fill.style.width = pct + '%';
-    label.textContent = pct + '%';
-    if (pct >= 100) {
-      clearInterval(timer);
-      inboundImportJobs--;
-      const wh = getInboundWarehouseScope();
-      const zoneCode = getDefaultStorageZoneCode(wh);
-      receiptEditorLines = [];
-      demoRows.forEach(dr => {
-        const inv = matchSkuByItemDesc(dr.itemDesc, wh);
-        if (!inv) {
-          receiptUnmatched.push({ row: dr.row, itemDesc: dr.itemDesc });
-          return;
-        }
-        const parsed = parseItemDescQty(dr.itemDesc);
-        receiptEditorLines.push({
-          itemDesc: dr.itemDesc,
-          skuId: inv.skuId,
-          productName: inv.productName,
-          spec: inv.spec,
-          orderQty: parsed.qty,
-          receiptQty: parsed.qty,
-          barcode: primaryBarcode(inv),
-          warehouseCode: wh,
-          zoneCode: inv.zoneCode || zoneCode
-        });
-      });
-      receiptLockedSource = 'po-import';
-      setReceiptSource('po-import', true);
-      renderReceiptEditorLines();
-      renderUnmatchedPanel();
-      showToast(receiptUnmatched.length
-        ? `Parsed with ${receiptUnmatched.length} unmatched ItemDesc row(s).`
-        : 'PO list parsed (demo).', receiptUnmatched.length ? 'warning' : 'success');
-      document.getElementById('receipt-import-progress').hidden = true;
-    }
-  }, 350);
+  fill.style.width = '15%';
+  label.textContent = '15%';
+  try {
+    const { rows, preview } = await parsePurchaseXlsxFile(file);
+    receiptSourcePreviewMatrix = preview;
+    receiptSourceFileData.name = file.name;
+    updateReceiptSourceFileMeta();
+    fill.style.width = '70%';
+    label.textContent = '70%';
+    const wh = getInboundWarehouseScope();
+    receiptEditorLines = [];
+    rows.forEach(dr => buildReceiptLineFromPoRow(dr, wh));
+    receiptLockedSource = 'po-import';
+    setReceiptSource('po-import', true);
+    renderReceiptEditorLines();
+    renderUnmatchedPanel();
+    fill.style.width = '100%';
+    label.textContent = '100%';
+    showToast(receiptUnmatched.length
+      ? `Parsed ${receiptEditorLines.length} line(s); ${receiptUnmatched.length} Product Name(s) unmatched.`
+      : `Parsed ${receiptEditorLines.length} line(s) from ${file.name}.`, receiptUnmatched.length ? 'warning' : 'success');
+  } catch (err) {
+    console.error(err);
+    showToast(err.message || 'Failed to parse purchase file.', 'error');
+  } finally {
+    inboundImportJobs--;
+    document.getElementById('receipt-import-progress').hidden = true;
+  }
 }
 
 function openInboundDetailModal(receiptNo) {
@@ -683,23 +962,24 @@ function openInboundDetailModal(receiptNo) {
   body.innerHTML = `
     <div class="record-detail-grid" style="margin-bottom:16px">
       <div class="label">Inbound Type</div><div class="value">${inboundTypeLabel(r.receiptType)}</div>
+      ${r.receiptType === 'Purchase Receipt' ? `<div class="label">Purchase Order</div><div class="value">${summarizePurchaseOrders(r)}</div>` : ''}
       <div class="label">Status</div><div class="value">${r.status}</div>
       <div class="label">Remarks</div><div class="value">${r.remarks || '—'}</div>
       <div class="label">Operator</div><div class="value">${op}</div>
-      <div class="label">Source file</div><div class="value">${r.sourceFile ? `${r.sourceFile} <span class="hint">(kept in system)</span>` : '—'}</div>
-      ${(r.unmatched && r.unmatched.length) ? `<div class="label">Unmatched warn</div><div class="value">${r.unmatched.map(u => `Row ${u.row}: ${u.itemDesc}`).join('<br>')}</div>` : ''}
+      <div class="label">Source file</div><div class="value">${r.sourceFile ? `${r.sourceFile} <span class="hint">(kept in system)</span> ${r.sourceFilePreviewMatrix?.length ? `<button type="button" class="btn btn-sm" onclick="openInboundStoredSourcePreview('${r.receiptNo}')">Preview</button>` : ''}` : '—'}</div>
+      ${(r.unmatched && r.unmatched.length) ? `<div class="label">Unmatched warn</div><div class="value">${r.unmatched.map(u => `Row ${u.row}: ${u.importProductName || u.itemDesc || '—'}`).join('<br>')}</div>` : ''}
     </div>
     <div class="table-wrapper">
       <table>
         <thead><tr>
-          <th>ItemDesc</th><th>SKU ID</th><th>Product Name</th><th>SKU / Spec</th>
+          <th>Purchase Order</th><th>Product Name</th><th>SKU ID</th><th>Spec</th>
           <th>Qty Added</th><th>After Qty</th><th>Type</th><th>Remarks</th><th>Operator</th>
         </tr></thead>
         <tbody>
           ${lines.map(l => `<tr>
-            <td>${l.itemDesc || '—'}</td>
+            <td>${l.purchaseOrder || '—'}</td>
+            <td>${l.importProductName || l.productName || '—'}</td>
             <td>${l.skuId}</td>
-            <td>${l.productName}</td>
             <td>${l.spec}</td>
             <td>+${l.receiptQty}</td>
             <td>${l.afterQty != null ? l.afterQty : '—'}</td>
@@ -728,6 +1008,10 @@ function confirmReceiptStockIn() {
       showToast('Remark is required on each line where Order Qty ≠ Receipt Qty.', 'error');
       return;
     }
+    if (receiptEditorSource === 'po-import' && !line.skuId) {
+      showToast('Select SKU for each purchase line with multiple matches.', 'error');
+      return;
+    }
     const lineWh = line.warehouseCode || wh;
     if (!findInventoryRow(line.skuId, lineWh, line.zoneCode)) {
       showToast(`Stock-in failed: ${line.skuId} is not registered in this warehouse/zone.`, 'error');
@@ -747,7 +1031,9 @@ function persistReceipt(status, writeInventory) {
     remarks: document.getElementById('receipt-remarks').value.trim(),
     operator: currentOperatorName(),
     unmatched: receiptUnmatched.slice(),
-    sourceFile: document.getElementById('receipt-import-file').files[0]?.name || (currentReceiptEdit && currentReceiptEdit.sourceFile) || '',
+    sourceFile: receiptSourceFileData.name || document.getElementById('receipt-import-file').files[0]?.name || (currentReceiptEdit && currentReceiptEdit.sourceFile) || '',
+    sourceFilePreviewMatrix: receiptSourcePreviewMatrix.slice(),
+    purchaseOrderSummary: document.getElementById('receipt-purchase-order-summary')?.value || '',
     entryMethod: receiptLockedSource || receiptEditorSource,
     progress: status === 'Processing' ? 45 : status === 'Stocked In' ? 100 : 0,
     updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
