@@ -1033,7 +1033,11 @@
         </form>
         <input type="hidden" id="receipt-type" value="">
         <div id="receipt-source-po-import" class="source-panel" hidden>
-          <p class="hint">Upload <strong>采购.xlsx</strong>: <code>采购单号</code> → Purchase Order (one per Inbound), <code>物流单号</code> → Shipping No. (<strong>one per upload</strong>), <code>Product Name</code>, <code>需求数量</code> → Order Qty. One PO may have many Shipping Nos across separate inbounds.</p>
+          <p class="hint">Upload <strong>采购.xlsx</strong>: <code>采购单号</code> → Purchase Order (one per Inbound), <code>物流单号</code> → Shipping No., <code>Product Name</code>, <code>需求数量</code> → Order Qty.</p>
+          <div class="inbound-alert inbound-shipping-split-hint" id="receipt-shipping-split-hint" role="note">
+            <strong>One Shipping No. per upload</strong>
+            <p style="margin:8px 0 0">Each Inbound accepts a single tracking number (<code>物流单号</code>). If your spreadsheet lists multiple shipments, filter or split the file so each upload contains only one <strong>Shipping No.</strong>, then create a separate Inbound for each shipment. The same Purchase Order may span multiple Inbounds (one per tracking number).</p>
+          </div>
           <input type="file" id="receipt-import-file" accept=".xlsx,.xls">
           <button type="button" class="btn btn-primary" id="receipt-import-btn" disabled onclick="startPoListImport()">Parse file</button>
           <div id="receipt-source-file-meta" class="hint" hidden></div>

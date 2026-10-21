@@ -345,7 +345,7 @@ function enforceSingleShippingOnImportRows(rows) {
   });
   let note = '';
   if (shipSet.length > 1 || dropped.length) {
-    note = ` One upload allows one Shipping No.; kept ${keep}.`;
+    note = ` Only Shipping No. ${keep} was imported. Split the file and upload again for other tracking numbers.`;
   }
   return { rows: kept, dropped, note };
 }
@@ -839,7 +839,11 @@ function renderUnmatchedPanel() {
     return;
   }
   panel.hidden = false;
-  list.innerHTML = receiptUnmatched.map(u => `<li>Row ${u.row}: ${u.importProductName || u.itemDesc || '—'}</li>`).join('');
+  const hasShipSkip = receiptUnmatched.some(u => String(u.importProductName || '').includes('(Shipping '));
+  const shipIntro = hasShipSkip
+    ? `<p class="hint" style="margin:0 0 8px"><strong>Multiple tracking numbers in file.</strong> Upload one shipment at a time—rows tied to other Shipping Nos. were skipped.</p>`
+    : '';
+  list.innerHTML = shipIntro + receiptUnmatched.map(u => `<li>Row ${u.row}: ${u.importProductName || u.itemDesc || '—'}</li>`).join('');
 }
 
 function reconVariance(line) {
