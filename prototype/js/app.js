@@ -334,7 +334,7 @@ let currentAdjSkuId = null;
 
 const recordData = {
   inbound: [
-    { time: '2026-08-21 09:32:15', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10001-BK', qty: '+200', after: { total: 1200, locked: 200, available: 1000 }, type: 'Purchase Inbound', order: 'IN-20260821001', operator: 'Zhang Wei', sub: 'purchase', inboundNo: 'IN-20260821001', inboundType: 'Purchase', inboundRemarks: 'Qty matched; short-ship on KT88 noted in remarks.', itemDesc: '200 * Wireless Bluetooth Earbuds Pro Black', productName: 'Wireless Bluetooth Earbuds Pro', specification: 'Black; M' },
+    { time: '2026-08-21 09:32:15', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10001-BK', qty: '+200', after: { total: 1200, locked: 200, available: 1000 }, type: 'Purchase Inbound', order: 'IN-20260821001', operator: 'Zhang Wei', sub: 'purchase', inboundNo: 'IN-20260821001', inboundReceiptNo: 'IN-20260821001', inboundType: 'Purchase', inboundRemarks: 'Qty matched.', productName: 'Wireless Bluetooth Earbuds Pro', specification: 'Black; M', purchaseOrderNo: '202607001', shippingNo: 'KY4001086777153' },
     { time: '2026-08-20 14:18:42', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10002-42', qty: '+150', after: { total: 900, locked: 160, available: 740 }, type: 'Purchase Inbound', order: 'IN-20260820003', operator: 'Li Ming', sub: 'purchase' },
     { time: '2026-08-18 16:22:08', warehouse: 'SG001', zone: 'SG001STO (Storage Zone)', sku: 'SKU-10004-01', qty: '+100', after: { total: 450, locked: 80, available: 370 }, type: 'Purchase Inbound', order: 'IN-20260818002', operator: 'Tan Wei Ming', sub: 'purchase' },
     { time: '2026-08-18 08:00:00', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10002-42', qty: '+100', after: { total: 900, locked: 160, available: 740 }, type: 'Purchase Inbound', order: 'IN-20260818001', operator: 'Admin', sub: 'purchase' },
@@ -1301,11 +1301,25 @@ function enrichRecordDetail(r) {
   const row = { ...r };
   if (row.type === 'Purchase Inbound' || row.type === 'Manual Inbound') {
     row.inboundNo = row.inboundNo || row.order;
+    row.inboundReceiptNo = row.inboundReceiptNo || row.inboundNo;
     row.inboundType = row.inboundType || (row.sub === 'purchase' ? 'Purchase' : 'Manual');
-    if (!row.inboundRemarks) {
-      const rec = (typeof inboundReceipts !== 'undefined' ? inboundReceipts : []).find(r => r.receiptNo === row.inboundNo);
-      row.inboundRemarks = rec?.remarks || row.inboundRemarks || '';
+    const rec = (typeof inboundReceipts !== 'undefined' ? inboundReceipts : []).find(x => x.receiptNo === row.inboundNo);
+    if (rec) {
+      row.purchaseOrderNo = row.purchaseOrderNo || rec.purchaseOrder || (typeof receiptPurchaseOrder === 'function' ? receiptPurchaseOrder(rec) : null);
+      let ship = row.shippingNo || rec.shippingNo || (typeof summarizeShippingNos === 'function' ? summarizeShippingNos(rec) : null);
+      if (ship === '—') ship = null;
+      row.shippingNo = ship;
+      if (row.shippingNo === '—') row.shippingNo = null;
+      if (!row.inboundRemarks) row.inboundRemarks = rec.remarks || '';
+      if (!row.productName && rec.lines) {
+        const line = rec.lines.find(l => l.skuId === row.sku);
+        if (line) {
+          row.productName = line.importProductName || line.productName;
+          row.specification = line.spec || row.specification;
+        }
+      }
     }
+    if (!row.inboundRemarks) row.inboundRemarks = row.inboundRemarks || '';
   }
   if (row.type && row.type.includes('Manual Adjustment')) {
     row.direction = row.direction || (row.qty.startsWith('+') ? 'Increase' : 'Decrease');
@@ -1330,27 +1344,40 @@ function detailRow(label, valueHtml) {
 function openRecordDetail(index) {
   const r = recordListCache[index];
   if (!r) return;
-  let html = `<div class="record-detail-grid">
-    ${detailRow('Time', r.time)}
-    ${detailRow('Warehouse', r.warehouse)}
-    ${detailRow('Zone', r.zone)}
-    ${detailRow('SKU ID', r.sku)}
-    ${detailRow('Qty', r.qty)}
-    ${detailRow('After Change', formatAfterChangeDetailHtml(r))}
-    ${detailRow('Type', r.type)}
-    ${detailRow('Related Order No.', (r.type === 'Purchase Inbound' || r.type === 'Manual Inbound') ? (r.inboundNo || r.order) : r.order)}
-    ${detailRow('Operator', r.operator)}
-  </div>`;
+  let html;
 
   if (r.type === 'Purchase Inbound' || r.type === 'Manual Inbound') {
-    html += `<div class="record-detail-section"><h4>Inbound</h4><div class="record-detail-grid">
-      ${detailRow('Inbound No.', r.inboundNo)}
-      ${detailRow('Inbound Type', r.inboundType)}
-      ${detailRow('Inbound Remarks', r.inboundRemarks || '—')}
-      ${detailRow('ItemDesc', r.itemDesc || '—')}
+    const poPreview = r.purchaseOrderNo && r.inboundReceiptNo
+      ? `${r.purchaseOrderNo} <button type="button" class="btn btn-sm" onclick="openInboundStoredSourcePreview('${r.inboundReceiptNo}')">Preview</button>`
+      : (r.purchaseOrderNo || '—');
+    html = `<div class="record-detail-grid">
+      ${detailRow('Time', r.time)}
+      ${detailRow('Warehouse', r.warehouse)}
+      ${detailRow('Zone', r.zone)}
+      ${detailRow('SKU ID', r.sku)}
       ${detailRow('Product Name', r.productName || '—')}
-      ${detailRow('Specification', r.specification || '—')}
-    </div></div>`;
+      ${detailRow('SKU', r.specification || '—')}
+      ${detailRow('Qty', r.qty)}
+      ${detailRow('After Change', formatAfterChangeDetailHtml(r))}
+      ${detailRow('Type', r.type)}
+      ${detailRow('Inbound No.', r.inboundNo || r.order)}
+      ${detailRow('Operator', r.operator)}
+      ${detailRow('Inbound Remarks', r.inboundRemarks || '—')}
+      ${detailRow('Related Purchase Order', poPreview)}
+      ${detailRow('Shipping No.', r.shippingNo || '—')}
+    </div>`;
+  } else {
+    html = `<div class="record-detail-grid">
+      ${detailRow('Time', r.time)}
+      ${detailRow('Warehouse', r.warehouse)}
+      ${detailRow('Zone', r.zone)}
+      ${detailRow('SKU ID', r.sku)}
+      ${detailRow('Qty', r.qty)}
+      ${detailRow('After Change', formatAfterChangeDetailHtml(r))}
+      ${detailRow('Type', r.type)}
+      ${detailRow('Related Order No.', r.order)}
+      ${detailRow('Operator', r.operator)}
+    </div>`;
   }
 
   if (r.type && r.type.includes('Manual Adjustment')) {

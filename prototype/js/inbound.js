@@ -16,11 +16,12 @@ let inboundReceipts = [
     operator: 'Zhang Wei',
     sourceFile: '采购单文档订单列表.xlsx',
     entryMethod: 'po-import',
-    purchaseOrderSummary: '202607001',
+    purchaseOrder: '202607001',
+    shippingNo: 'KY4001086777153',
     sourceFilePreviewMatrix: [],
     lines: [
-      { purchaseOrder: '202607001', importProductName: 'Wireless Bluetooth Earbuds Pro Black', skuId: 'SKU-10001-BK', productName: 'Wireless Bluetooth Earbuds Pro', spec: 'Black; M', orderQty: 200, receiptQty: 200, warehouseCode: 'SH001', zoneCode: 'SH001STO', afterQty: 1200 },
-      { purchaseOrder: '202607001', importProductName: 'R31 Headphones', skuId: 'SKU-10001-WH', productName: 'Wireless Bluetooth Earbuds Pro', spec: 'White; L', orderQty: 50, receiptQty: 48, warehouseCode: 'SH001', zoneCode: 'SH001STO', afterQty: 548, lineRemarks: 'Short 2 pcs' }
+      { purchaseOrder: '202607001', shippingNo: 'KY4001086777153', importProductName: 'Wireless Bluetooth Earbuds Pro Black', skuId: 'SKU-10001-BK', productName: 'Wireless Bluetooth Earbuds Pro', spec: 'Black; M', orderQty: 200, receiptQty: 200, warehouseCode: 'SH001', zoneCode: 'SH001STO', afterChange: { total: 1200, locked: 200, available: 1000 }, lineRemarks: '' },
+      { purchaseOrder: '202607001', shippingNo: 'KY4001086777153', importProductName: 'R31 Headphones', skuId: 'SKU-10001-WH', productName: 'Wireless Bluetooth Earbuds Pro', spec: 'White; L', orderQty: 50, receiptQty: 48, warehouseCode: 'SH001', zoneCode: 'SH001STO', afterChange: { total: 548, locked: 150, available: 398 }, lineRemarks: 'Short 2 pcs' }
     ]
   },
   {
@@ -252,6 +253,7 @@ function parsePurchaseXlsxMatrix(matrix) {
   if (!matrix || !matrix.length) return { rows: [], preview: [] };
   const headers = matrix[0].map(c => cellToDisplay(c));
   const idxPo = findHeaderIndex(headers, ['采购单号', 'purchase order']);
+  const idxShip = findHeaderIndex(headers, ['物流单号', 'shipping no', 'shipping no.']);
   const idxName = findHeaderIndex(headers, ['product name', 'productname', '商品名称']);
   const idxQty = findHeaderIndex(headers, ['需求数量', 'order qty']);
   if (idxName < 0 || idxQty < 0) {
@@ -269,6 +271,7 @@ function parsePurchaseXlsxMatrix(matrix) {
     rows.push({
       row: r + 1,
       purchaseOrder: idxPo >= 0 ? cellToDisplay(line[idxPo]) : '',
+      shippingNo: idxShip >= 0 ? cellToDisplay(line[idxShip]) : '',
       importProductName: productName,
       orderQty
     });
@@ -303,13 +306,35 @@ async function parsePurchaseXlsxFile(file) {
   return parsePurchaseXlsxMatrix(matrix);
 }
 
+function receiptPurchaseOrder(receipt) {
+  if (!receipt || receipt.receiptType !== 'Purchase Receipt') return '';
+  return receipt.purchaseOrder || receipt.purchaseOrderSummary || (receipt.lines || []).map(l => l.purchaseOrder).find(Boolean) || '';
+}
+
 function summarizePurchaseOrders(receipt) {
+  const po = receiptPurchaseOrder(receipt);
+  return po || '—';
+}
+
+function summarizeShippingNos(receipt) {
   if (!receipt || receipt.receiptType !== 'Purchase Receipt') return '—';
-  if (receipt.purchaseOrderSummary) return receipt.purchaseOrderSummary;
-  const pos = [...new Set((receipt.lines || []).map(l => l.purchaseOrder).filter(Boolean))];
-  if (!pos.length) return '—';
-  if (pos.length <= 2) return pos.join(', ');
-  return `${pos[0]} +${pos.length - 1}`;
+  if (receipt.shippingNo) return receipt.shippingNo;
+  const fromLines = [...new Set((receipt.lines || []).map(l => l.shippingNo).filter(Boolean))];
+  if (!fromLines.length) return '—';
+  if (fromLines.length <= 2) return fromLines.join(', ');
+  return `${fromLines[0]} +${fromLines.length - 1}`;
+}
+
+function collectShippingNosFromLines(lines) {
+  return [...new Set((lines || []).map(l => l.shippingNo).filter(Boolean))];
+}
+
+function formatInboundLineAfterChange(line) {
+  const after = line.afterChange;
+  if (!after) return '—';
+  const mock = { type: 'Purchase Inbound', qty: '+' + (line.receiptQty || 0), after };
+  if (typeof formatAfterChangeHtml === 'function') return formatAfterChangeHtml(mock);
+  return `T: ${after.total} / L: ${after.locked} / A: ${after.available}`;
 }
 
 function updateReceiptSourceFileMeta() {
@@ -333,7 +358,20 @@ function updatePurchaseOrderSummaryField() {
   }
   wrap.hidden = false;
   const pos = [...new Set(receiptEditorLines.map(l => l.purchaseOrder).filter(Boolean))];
-  input.value = pos.length ? pos.join(', ') : '';
+  input.value = pos.length === 1 ? pos[0] : (pos.length > 1 ? '(multiple — keep one PO)' : '');
+}
+
+function updateShippingNoSummaryField() {
+  const wrap = document.getElementById('receipt-shipping-no-wrap');
+  const input = document.getElementById('receipt-shipping-no-summary');
+  if (!wrap || !input) return;
+  if (receiptEditorSource !== 'po-import') {
+    wrap.hidden = true;
+    return;
+  }
+  wrap.hidden = false;
+  const ships = collectShippingNosFromLines(receiptEditorLines);
+  input.value = ships.length ? ships.join(', ') : '';
 }
 
 function renderSourcePreviewTable(matrix, titleHint) {
@@ -416,12 +454,12 @@ function renderReceiptEditorLinesHead() {
   if (!head) return;
   if (receiptEditorSource === 'po-import') {
     head.innerHTML = `<tr>
-      <th>Purchase Order</th><th>Product Name</th><th>SKU</th><th>SKU ID</th><th>Spec</th>
+      <th>Product Name</th><th>SKU ID</th><th>SKU</th>
       <th>Warehouse</th><th>Zone</th><th>Order Qty</th><th>Receipt Qty</th><th>Remark</th><th style="width:72px">Action</th>
     </tr>`;
   } else {
     head.innerHTML = `<tr>
-      <th>SKU ID</th><th>Product Name</th><th>Spec</th><th>Warehouse</th><th>Zone</th>
+      <th>SKU ID</th><th>Product Name</th><th>SKU</th><th>Warehouse</th><th>Zone</th>
       <th>Order Qty</th><th>Receipt Qty</th><th>Remark</th><th style="width:72px">Action</th>
     </tr>`;
   }
@@ -465,11 +503,15 @@ function openNewInboundTask() {
   document.getElementById('receipt-type').value = '';
   document.getElementById('receipt-type-label').value = '—';
   document.getElementById('receipt-warehouse').value = getInboundWarehouseScope();
-  document.getElementById('receipt-remarks').value = '';
+  const poSum = document.getElementById('receipt-purchase-order-summary');
+  if (poSum) poSum.value = '';
+  const shipSum = document.getElementById('receipt-shipping-no-summary');
+  if (shipSum) shipSum.value = '';
   document.getElementById('receipt-import-file').value = '';
   document.getElementById('receipt-unmatched-panel').hidden = true;
   updateReceiptSourceFileMeta();
   updatePurchaseOrderSummaryField();
+  updateShippingNoSummaryField();
   const manualSearch = document.getElementById('receipt-manual-search');
   if (manualSearch) manualSearch.value = '';
   document.getElementById('receipt-editor-title').textContent = 'New Inbound';
@@ -685,12 +727,13 @@ function renderInboundReceiptList() {
       <td>${r.updatedAt}</td>
       <td><strong>${r.receiptNo}</strong></td>
       <td>${summarizePurchaseOrders(r)}</td>
+      <td>${summarizeShippingNos(r)}</td>
       <td>${inboundTypeLabel(r.receiptType)}</td>
       <td>${r.lines.length}</td>
       <td>${r.operator || '—'}</td>
       <td style="text-align:center">${inboundViewButton(r.receiptNo)}</td>
     </tr>
-  `).join('') || '<tr><td colspan="7" style="text-align:center;color:#999">No data</td></tr>';
+  `).join('') || '<tr><td colspan="8" style="text-align:center;color:#999">No data</td></tr>';
 
   const pagBar = document.getElementById('inbound-pagination-info');
   if (pagBar) {
@@ -741,7 +784,6 @@ function inferReceiptSource(receipt) {
 function updateReceiptEditorChrome() {
   const ro = receiptEditorReadonly;
   const proc = currentReceiptEdit && currentReceiptEdit.status === 'Processing';
-  document.getElementById('receipt-remarks').disabled = ro || proc;
   const stockBtn = document.getElementById('receipt-stock-in-btn');
   if (stockBtn) stockBtn.hidden = ro || proc;
   const printBtn = document.getElementById('receipt-print-btn');
@@ -763,6 +805,7 @@ function setReceiptSource(source, silent) {
   }
   if (receiptEditorLines.length && !receiptLockedSource) receiptLockedSource = source;
   updatePurchaseOrderSummaryField();
+  updateShippingNoSummaryField();
   updateReceiptEditorChrome();
 }
 
@@ -798,7 +841,7 @@ function renderReceiptEditorLines() {
   const whDefault = getInboundWarehouseScope();
   const zoneRo = ro || receiptZoneReadonlyForSource();
   const poMode = receiptEditorSource === 'po-import';
-  const colSpan = poMode ? 11 : 9;
+  const colSpan = poMode ? 9 : 9;
   document.getElementById('receipt-editor-lines').innerHTML = receiptEditorLines.map((l, i) => {
     const wh = l.warehouseCode || whDefault;
     const zc = l.zoneCode || getDefaultStorageZoneCode(wh);
@@ -817,16 +860,14 @@ function renderReceiptEditorLines() {
     if (poMode) {
       const displayName = l.importProductName || l.productName || '—';
       const skuIdCell = l.skuId || '—';
-      const skuPickCell = (l.skuCandidates && l.skuCandidates.length > 1 && !ro)
+      const skuCell = (l.skuCandidates && l.skuCandidates.length > 1 && !ro)
         ? receiptSkuSelectHtml(l, i, ro)
-        : (l.skuCandidates && l.skuCandidates.length === 1 ? l.skuCandidates[0].spec : (l.skuId ? l.spec : '—'));
+        : (l.spec || (l.skuCandidates && l.skuCandidates[0] && l.skuCandidates[0].spec) || '—');
       return `
       <tr>
-        <td>${l.purchaseOrder || '—'}</td>
         <td>${displayName}</td>
-        <td>${skuPickCell}</td>
         <td><strong>${skuIdCell}</strong></td>
-        <td>${l.skuId ? (l.spec || '—') : '—'}</td>
+        <td>${skuCell}</td>
         <td>${warehouseSelectHtml(wh, i, ro)}</td>
         <td>${zoneSelectHtml(wh, zc, i, zoneRo)}</td>
         <td>${orderCell}</td>
@@ -837,7 +878,7 @@ function renderReceiptEditorLines() {
     }
     return `
     <tr>
-      <td>${l.skuId}</td><td>${l.productName}</td><td>${l.spec}</td>
+      <td>${l.skuId}</td><td>${l.productName}</td><td>${l.spec || '—'}</td>
       <td>${warehouseSelectHtml(wh, i, ro)}</td>
       <td>${zoneSelectHtml(wh, zc, i, zoneRo)}</td>
       <td>${orderCell}</td>
@@ -849,6 +890,7 @@ function renderReceiptEditorLines() {
   const typeSel = document.getElementById('receipt-type-select');
   if (typeSel && !ro) typeSel.disabled = receiptEditorLines.length > 0;
   updatePurchaseOrderSummaryField();
+  updateShippingNoSummaryField();
   updateReceiptEditorChrome();
 }
 
@@ -892,6 +934,7 @@ function buildReceiptLineFromPoRow(dr, wh) {
   const single = candidates.length === 1 ? candidates[0] : null;
   receiptEditorLines.push({
     purchaseOrder: dr.purchaseOrder,
+    shippingNo: dr.shippingNo || '',
     importProductName: dr.importProductName,
     productName: single ? single.productName : dr.importProductName,
     skuId: single ? single.skuId : '',
@@ -925,12 +968,21 @@ async function startPoListImport() {
   fill.style.width = '15%';
   label.textContent = '15%';
   try {
-    const { rows, preview } = await parsePurchaseXlsxFile(file);
+    let { rows, preview } = await parsePurchaseXlsxFile(file);
     receiptSourcePreviewMatrix = preview;
     receiptSourceFileData.name = file.name;
     updateReceiptSourceFileMeta();
     fill.style.width = '70%';
     label.textContent = '70%';
+    const poSet = [...new Set(rows.map(r => r.purchaseOrder).filter(Boolean))];
+    let poFilterNote = '';
+    if (poSet.length > 1) {
+      const keep = poSet[0];
+      const dropped = rows.filter(r => r.purchaseOrder && r.purchaseOrder !== keep);
+      rows = rows.filter(r => !r.purchaseOrder || r.purchaseOrder === keep);
+      dropped.forEach(r => receiptUnmatched.push({ row: r.row, importProductName: `${r.importProductName} (PO ${r.purchaseOrder})` }));
+      poFilterNote = ` One Inbound allows one Purchase Order; kept ${keep}.`;
+    }
     const wh = getInboundWarehouseScope();
     receiptEditorLines = [];
     rows.forEach(dr => buildReceiptLineFromPoRow(dr, wh));
@@ -940,9 +992,10 @@ async function startPoListImport() {
     renderUnmatchedPanel();
     fill.style.width = '100%';
     label.textContent = '100%';
-    showToast(receiptUnmatched.length
-      ? `Parsed ${receiptEditorLines.length} line(s); ${receiptUnmatched.length} Product Name(s) unmatched.`
-      : `Parsed ${receiptEditorLines.length} line(s) from ${file.name}.`, receiptUnmatched.length ? 'warning' : 'success');
+    const warn = receiptUnmatched.length || poFilterNote;
+    showToast(warn
+      ? `Parsed ${receiptEditorLines.length} line(s); ${receiptUnmatched.length} row(s) skipped/warn.${poFilterNote}`
+      : `Parsed ${receiptEditorLines.length} line(s) from ${file.name}.`, warn ? 'warning' : 'success');
   } catch (err) {
     console.error(err);
     showToast(err.message || 'Failed to parse purchase file.', 'error');
@@ -963,8 +1016,8 @@ function openInboundDetailModal(receiptNo) {
     <div class="record-detail-grid" style="margin-bottom:16px">
       <div class="label">Inbound Type</div><div class="value">${inboundTypeLabel(r.receiptType)}</div>
       ${r.receiptType === 'Purchase Receipt' ? `<div class="label">Purchase Order</div><div class="value">${summarizePurchaseOrders(r)}</div>` : ''}
+      ${r.receiptType === 'Purchase Receipt' ? `<div class="label">Shipping No.</div><div class="value">${summarizeShippingNos(r)}</div>` : ''}
       <div class="label">Status</div><div class="value">${r.status}</div>
-      <div class="label">Remarks</div><div class="value">${r.remarks || '—'}</div>
       <div class="label">Operator</div><div class="value">${op}</div>
       <div class="label">Source file</div><div class="value">${r.sourceFile ? `${r.sourceFile} <span class="hint">(kept in system)</span> ${r.sourceFilePreviewMatrix?.length ? `<button type="button" class="btn btn-sm" onclick="openInboundStoredSourcePreview('${r.receiptNo}')">Preview</button>` : ''}` : '—'}</div>
       ${(r.unmatched && r.unmatched.length) ? `<div class="label">Unmatched warn</div><div class="value">${r.unmatched.map(u => `Row ${u.row}: ${u.importProductName || u.itemDesc || '—'}`).join('<br>')}</div>` : ''}
@@ -972,21 +1025,18 @@ function openInboundDetailModal(receiptNo) {
     <div class="table-wrapper">
       <table>
         <thead><tr>
-          <th>Purchase Order</th><th>Product Name</th><th>SKU ID</th><th>Spec</th>
-          <th>Qty Added</th><th>After Qty</th><th>Type</th><th>Remarks</th><th>Operator</th>
+          <th>Product Name</th><th>SKU ID</th><th>SKU</th>
+          <th>Qty Added</th><th>After Change</th><th>Remark</th>
         </tr></thead>
         <tbody>
           ${lines.map(l => `<tr>
-            <td>${l.purchaseOrder || '—'}</td>
             <td>${l.importProductName || l.productName || '—'}</td>
             <td>${l.skuId}</td>
-            <td>${l.spec}</td>
+            <td>${l.spec || '—'}</td>
             <td>+${l.receiptQty}</td>
-            <td>${l.afterQty != null ? l.afterQty : '—'}</td>
-            <td>${inboundTypeLabel(r.receiptType)}</td>
+            <td class="stock-change">${formatInboundLineAfterChange(l)}</td>
             <td>${l.lineRemarks || '—'}</td>
-            <td>${op}</td>
-          </tr>`).join('') || '<tr><td colspan="9" style="text-align:center;color:#999">No lines</td></tr>'}
+          </tr>`).join('') || '<tr><td colspan="6" style="text-align:center;color:#999">No lines</td></tr>'}
         </tbody>
       </table>
     </div>`;
@@ -1012,6 +1062,15 @@ function confirmReceiptStockIn() {
       showToast('Select SKU for each purchase line with multiple matches.', 'error');
       return;
     }
+  }
+  if (receiptEditorSource === 'po-import') {
+    const pos = new Set(receiptEditorLines.map(l => l.purchaseOrder).filter(Boolean));
+    if (pos.size > 1) {
+      showToast('One Inbound No. can only bind one Purchase Order.', 'error');
+      return;
+    }
+  }
+  for (const line of receiptEditorLines) {
     const lineWh = line.warehouseCode || wh;
     if (!findInventoryRow(line.skuId, lineWh, line.zoneCode)) {
       showToast(`Stock-in failed: ${line.skuId} is not registered in this warehouse/zone.`, 'error');
@@ -1024,16 +1083,20 @@ function confirmReceiptStockIn() {
 function persistReceipt(status, writeInventory) {
   const wh = getInboundWarehouseScope();
   const zoneCode = getDefaultStorageZoneCode(wh);
+  const ships = collectShippingNosFromLines(receiptEditorLines);
+  const lineRemarks = receiptEditorLines.map(l => l.lineRemarks).filter(t => (t || '').trim());
+  const purchaseOrder = document.getElementById('receipt-purchase-order-summary')?.value?.trim() || '';
   const payload = {
     receiptType: document.getElementById('receipt-type').value,
     warehouseCode: wh,
     zoneCode,
-    remarks: document.getElementById('receipt-remarks').value.trim(),
+    remarks: lineRemarks.join('; '),
+    purchaseOrder,
+    shippingNo: ships.join(', '),
     operator: currentOperatorName(),
     unmatched: receiptUnmatched.slice(),
     sourceFile: receiptSourceFileData.name || document.getElementById('receipt-import-file').files[0]?.name || (currentReceiptEdit && currentReceiptEdit.sourceFile) || '',
     sourceFilePreviewMatrix: receiptSourcePreviewMatrix.slice(),
-    purchaseOrderSummary: document.getElementById('receipt-purchase-order-summary')?.value || '',
     entryMethod: receiptLockedSource || receiptEditorSource,
     progress: status === 'Processing' ? 45 : status === 'Stocked In' ? 100 : 0,
     updatedAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
@@ -1074,9 +1137,11 @@ function writeInboundInventoryAndRecord(receiptNo, receipt, line) {
   if (!sku) {
     throw new Error('missing inventory row');
   }
+  const before = { total: sku.total, locked: sku.locked, available: sku.available };
   sku.total += line.receiptQty;
   sku.available = sku.total - sku.locked;
-  line.afterQty = sku.total;
+  line.afterChange = { total: sku.total, locked: sku.locked, available: sku.available };
+  line.beforeChange = before;
   const recordType = receipt.receiptType === 'Purchase Receipt' ? 'Purchase Inbound' : 'Manual Inbound';
   recordData.inbound.unshift({
     time: new Date().toISOString().slice(0, 19).replace('T', ' '),
@@ -1084,17 +1149,19 @@ function writeInboundInventoryAndRecord(receiptNo, receipt, line) {
     zone: `${line.zoneCode} (Storage Zone)`,
     sku: line.skuId,
     qty: '+' + line.receiptQty,
-    after: { total: sku.total, locked: sku.locked, available: sku.available },
+    after: line.afterChange,
     type: recordType,
     order: receiptNo,
     operator: receipt.operator || currentOperatorName(),
     sub: receipt.receiptType === 'Purchase Receipt' ? 'purchase' : 'manual',
     inboundNo: receiptNo,
+    inboundReceiptNo: receiptNo,
     inboundType: receipt.receiptType === 'Purchase Receipt' ? 'Purchase' : 'Manual',
-    inboundRemarks: receipt.remarks || '',
-    itemDesc: line.itemDesc || '',
-    productName: line.productName,
-    specification: line.spec
+    inboundRemarks: line.lineRemarks || receipt.remarks || '',
+    productName: line.importProductName || line.productName,
+    specification: line.spec,
+    purchaseOrderNo: receipt.purchaseOrder || line.purchaseOrder || null,
+    shippingNo: line.shippingNo || receipt.shippingNo || null
   });
 }
 
