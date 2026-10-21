@@ -2,7 +2,7 @@
 
 > **文档说明**  
 > 本文档为 WMS **仓库与库存基础** PRD（**第 1–8 章** + **§9 关联索引**），与飞书主 PRD 同源。  
-> **作业单据**（入库 / 出库）不在本文展开，见：[`KickBazar-WMS-Inbound-PRD.md`](KickBazar-WMS-Inbound-PRD.md)、[`KickBazar-WMS-Outbound-PRD.md`](KickBazar-WMS-Outbound-PRD.md)。**本期不含**独立采购单（PO）模块；采购到货通过入库 **采购单导入**（xlsx + ItemDesc）完成。  
+> **作业单据**（入库 / 出库）不在本文展开，见：[`KickBazar-WMS-Inbound-PRD.md`](KickBazar-WMS-Inbound-PRD.md)、[`KickBazar-WMS-Outbound-PRD.md`](KickBazar-WMS-Outbound-PRD.md)。**本期不含**独立采购单（PO）模块；采购到货通过入库 **Purchase Inbound**（上传 **`采购.xlsx`**，按 **Product Name** 匹配，绑定 **Purchase Order / Shipping No.**，规则见入库 PRD §5.1.1）完成。  
 > **2026-10 修订**：Dashboard 仓库上下文；库区去掉 Zone Name；Record Tab 与全局筛选见第 6、7 章；SKU 导入与零库存初始化见 §5.0。  
 > 原型（库存）：https://itkaop.axshare.com/?id=5yfdzj&p=spu_sku_inventory&sc=3&g=1  
 > 原型（流水）：https://itkaop.axshare.com/?id=jo37v4&p=inventory_record&sc=3&g=1  
@@ -225,7 +225,7 @@ WMS **不在入库页面创建 SKU 主数据**；仓内可作业前提如下：
 | 仓/区可用 | 仓库 Enable、目标库区 Enable；上架默认 **Storage Zone**（§8.1） | 拒绝 |
 | 商品主数据 | SKU 在商品库存在且可读 | 拒绝 |
 
-**入库匹配规则**：采购 xlsx（ItemDesc）与手动搜 SKU 均只能匹配 **当前 `warehouse_code` 下已存在库存行** 的 SKU；**不得**因入库而 **自动新建** 库存行或商品主数据。若需新 SKU 进仓，须先走 **§5.0.1 下发/初始化** 再入库。
+**入库匹配规则**：采购 **`采购.xlsx`（Product Name 列）** 与手动 **Product Name** 搜索均只能匹配 **当前 `warehouse_code` 下已存在库存行** 的 SKU；**不得**因入库而 **自动新建** 库存行或商品主数据。若需新 SKU 进仓，须先走 **§5.0.1 下发/初始化** 再入库。
 
 #### 5.0.3 与入库模块衔接
 
@@ -303,7 +303,7 @@ WMS **不在入库页面创建 SKU 主数据**；仓内可作业前提如下：
 
 - **不含**库存调整单流水（调整单仅 §6.4）。
 - 列表 **Related Order No.**：**仅展示 Inbound No.**，不展示外部订单号或 PO 号。
-- **流水详情 — Inbound 扩展区**：Inbound No.、Inbound Type（Manual / Purchase）、**Inbound Remarks**（入库单头备注，含采购文件导入异常说明）、行级 ItemDesc（采购 xlsx 源字段）、Product Name、Specification、行备注（若有）。
+- **流水详情（Record Detail，单页）**：Time、Warehouse、Zone、SKU ID、Product Name、**SKU**（规格）、Qty、**After Change**、Type、**Inbound No.**、Operator、**Inbound Remarks**（行备注聚合，无头 Remarks）、**Related Purchase Order**（含源文件 **Preview**）、**Shipping No.**（采购类）；匹配键为 **Product Name**（非 ItemDesc 模板）。详见入库 PRD §7.5。
 
 ### 6.2 出库流水（Tab：Outbound）
 
@@ -359,19 +359,19 @@ WMS **不在入库页面创建 SKU 主数据**；仓内可作业前提如下：
 | # | 中文 | 英文 | 单位/说明 |
 |---|------|------|-----------|
 | 1 | 总库存 | Total Inventory | 件数；当前视图 Σ `total` |
-| 2 | 待入库 | Pending Inbound | **vehicles**（待收货/待上架任务数） |
+| 2 | 待入库 | Pending Inbound | **shipments** 或 **open receipts**（当前上下文下待完成上架的入库任务/运单数；**Processing** 及未 Stocked In 的异步任务；**不按 PO 聚合**） |
 | 3 | 待分配 | Pending Allocation | orders |
 | 4 | 待拣货 | Pending Picking | orders |
 | 5 | 待打包 | Pending Packing | orders |
 | 6 | 今日已发货 | Shipped Today | orders（当日已完成发运） |
 
-- Pending / Shipped 来自入出库模块聚合；Dashboard **不改单据状态**。
+- Pending / Shipped 来自入出库模块聚合；Dashboard **不改单据状态**。入库指标口径与二期建议见 [`KickBazar-WMS-Inbound-PRD.md`](KickBazar-WMS-Inbound-PRD.md) **§14**。
 - **点击跳转**（带入当前仓库上下文）：
 
 | 卡片 | 跳转 |
 |------|------|
 | Total Inventory | Inventory → SPU/SKU Inventory（**默认 SKU Tab**） |
-| Pending Inbound | Inbound（状态=待处理） |
+| Pending Inbound | Inbound 列表（预置 **Processing** 或近期待办筛选；详情见 PO / Shipping No.） |
 | Pending Allocation / Picking / Packing / Shipped Today | Outbound（对应状态筛选） |
 
 - 进入 Home、**切换仓库**、从其他页返回 Home 时刷新；无数据展示 `0`。失败 Toast：`Failed to load dashboard metrics.`
