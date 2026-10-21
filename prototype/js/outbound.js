@@ -1,19 +1,19 @@
-// Outbound orders — aligned with inventory: occupy on allocate, deduct on ship.
+// Outbound — Regular (occupy → pack/tracking → deduct) + Special (direct deduct). PRD: KickBazar-WMS-Outbound-PRD.md
 
 const OB_STATUS = {
-  allocated: { label: 'Allocated', cls: 'tag-sto' },
-  ready_to_pick: { label: 'Ready to Pick', cls: 'tag-rcv' },
-  ready_to_pack: { label: 'Ready to Pack', cls: 'tag-normal' },
-  ready_to_ship: { label: 'Ready to Ship', cls: 'tag-shp' },
+  on_hold: { label: 'On Hold', cls: 'tag-cold' },
+  allocated: { label: 'Allocated (To Pack)', cls: 'tag-sto' },
+  ready_to_ship: { label: 'Awaiting Pickup', cls: 'tag-shp' },
   shipped: { label: 'Shipped', cls: 'tag-enable' },
-  on_hold: { label: 'On Hold', cls: 'tag-cold' }
+  ready_to_pick: { label: 'Awaiting Pickup', cls: 'tag-shp' },
+  ready_to_pack: { label: 'Awaiting Pickup', cls: 'tag-shp' }
 };
 
-const OB_TABS = ['all', 'allocated', 'ready_to_pick', 'ready_to_pack', 'ready_to_ship', 'shipped', 'on_hold'];
+const OB_TABS = ['all', 'on_hold', 'allocated', 'ready_to_ship', 'shipped'];
 
 let outboundBatches = [];
 let outboundLines = [];
-let obSeq = { OB: 1, SHP: 1 };
+let obSeq = { OB: 1, SHP: 1, SX: 1 };
 let currentOutboundNo = null;
 let currentObTab = 'all';
 let obOrderCsv = '';
@@ -71,7 +71,8 @@ function batchTag(status) {
 }
 
 function lineTag(status) {
-  const meta = OB_STATUS[status] || { label: status, cls: 'tag-normal' };
+  const key = normalizeObStatus(status);
+  const meta = OB_STATUS[key] || OB_STATUS[status] || { label: status, cls: 'tag-normal' };
   return `<span class="tag ${meta.cls}">${meta.label}</span>`;
 }
 
@@ -87,7 +88,7 @@ function seedOutbound() {
   });
   const samples = [
     { orderNo: 'SO-20260821001', skuId: 'SKU-10001-BK', name: 'Wireless Bluetooth Earbuds Pro', spec: 'Black; M', qty: 2, status: 'allocated' },
-    { orderNo: 'SO-20260821002', skuId: 'SKU-10001-WH', name: 'Wireless Bluetooth Earbuds Pro', spec: 'White; L', qty: 1, status: 'ready_to_pick', tracking: 'SF1029384756' },
+    { orderNo: 'SO-20260821002', skuId: 'SKU-10001-WH', name: 'Wireless Bluetooth Earbuds Pro', spec: 'White; L', qty: 1, status: 'ready_to_ship', tracking: 'SF1029384756' },
     { orderNo: 'SO-20260821003', skuId: 'SKU-10004-01', name: 'USB-C Flash Drive', spec: '128GB', qty: 2, status: 'on_hold' }
   ];
   samples.forEach(s => {
@@ -142,7 +143,30 @@ function occupySku(warehouseId, skuId, qty, outboundNo, orderNo) {
 
 function deductSku(line) {
   const sku = storageSku(line.warehouseId, line.skuId);
-  if (!sku || sku.locked < line.qty) return false;
+  if (!sku) return false;
+  if (line.outboundType === 'special') {
+    if (sku.available < line.qty) return false;
+    sku.total -= line.qty;
+    sku.available = sku.total - sku.locked;
+    recordData.deduct.unshift({
+      time: new Date().toISOString().slice(0, 19).replace('T', ' '),
+      warehouse: formatCanonicalWarehouseCode(line.warehouseId),
+      zone: `${line.zoneCode} (${line.zone})`,
+      sku: line.skuId,
+      qty: '-' + line.qty,
+      after: { total: sku.total, locked: sku.locked, available: sku.available },
+      type: 'Outbound Deduct',
+      order: line.outboundNo,
+      operator: 'Warehouse',
+      outboundNo: line.outboundNo,
+      relatedOrderNo: '—',
+      shipmentNo: '—',
+      status: 'Special',
+      specialReason: line.specialReason || ''
+    });
+    return true;
+  }
+  if (sku.locked < line.qty) return false;
   sku.locked -= line.qty;
   sku.total -= line.qty;
   sku.available = sku.total - sku.locked;
@@ -231,11 +255,13 @@ function renderOutboundDetail() {
     ? `${batch.warehouseCode} · ${batchStatus(lines)} · ${lines.length} lines`
     : '';
   document.getElementById('ob-line-tabs').innerHTML = OB_TABS.map(tab => {
-    const count = tab === 'all' ? lines.length : lines.filter(l => l.status === tab).length;
+    const count = tab === 'all' ? lines.length : lines.filter(l => normalizeObStatus(l.status) === tab).length;
     const label = tab === 'all' ? 'All' : OB_STATUS[tab].label;
     return `<div class="tab ${tab === currentObTab ? 'active' : ''}" onclick="setOutboundTab('${tab}')">${label} (${count})</div>`;
   }).join('');
-  const visible = currentObTab === 'all' ? lines : lines.filter(l => l.status === currentObTab);
+  const visible = currentObTab === 'all'
+    ? lines
+    : lines.filter(l => normalizeObStatus(l.status) === currentObTab);
   document.getElementById('ob-detail-actions').innerHTML = detailActions(currentObTab);
   document.getElementById('ob-line-body').innerHTML = visible.map(l => `
     <tr>
@@ -262,30 +288,31 @@ function setOutboundTab(tab) {
 
 function detailActions(tab) {
   if (tab === 'allocated') {
-    return `<span></span><span>
-      <button class="btn" onclick="exportShippingOrder()">Export Shipping Order</button>
-      <button class="btn btn-primary" onclick="openImportTracking()">Import Tracking No.</button>
+    return `<span class="hint">Pack: verify label vs order, then enter Tracking No.</span><span>
+      <button class="btn" onclick="exportShippingOrder()">Export for Courier</button>
+      <button class="btn" onclick="openImportTracking()">Import Tracking</button>
+      <button class="btn btn-primary" onclick="openPackTrackingModal()">Enter Tracking</button>
     </span>`;
   }
-  if (tab === 'ready_to_pick') {
-    return `<span></span><span>
-      <button class="btn" onclick="printPickList()">Print Pick List</button>
-      <button class="btn btn-primary" onclick="askAdvance('ready_to_pick','ready_to_pack','Confirm completing picking for the selected row(s)?')">Batch Complete Picking</button>
-    </span>`;
+  if (tab === 'ready_to_ship') {
+    return `<span class="hint">Courier pickup → confirm to deduct stock.</span><button class="btn btn-primary" onclick="askConfirmShipment()">Confirm Shipment</button>`;
   }
-  if (tab === 'ready_to_pack') return `<span></span><button class="btn btn-primary" onclick="askAdvance('ready_to_pack','ready_to_ship','Confirm completing packing for the selected row(s)?')">Batch Complete Packing</button>`;
-  if (tab === 'ready_to_ship') return `<span></span><button class="btn btn-primary" onclick="askConfirmShipment()">Batch Confirm Shipment</button>`;
-  if (tab === 'on_hold') return `<span></span><button class="btn btn-primary" onclick="reallocateSelected(false)">Batch Re-allocate</button>`;
+  if (tab === 'on_hold') return `<span class="hint">Replenish via Inbound, then re-allocate.</span><button class="btn btn-primary" onclick="reallocateSelected(false)">Batch Re-allocate</button>`;
   return '';
 }
 
+function normalizeObStatus(status) {
+  if (status === 'ready_to_pick' || status === 'ready_to_pack') return 'ready_to_ship';
+  return status;
+}
+
 function lineAction(l) {
-  if (l.status === 'allocated' || l.status === 'shipped') return `<a class="btn-link" onclick="viewOutboundLine('${l.id}')">View</a>`;
-  if (l.status === 'ready_to_pick') return `<a class="btn-link" onclick="askAdvance('ready_to_pick','ready_to_pack','Confirm completing picking for the selected row(s)?','${l.id}')">Complete Picking</a>`;
-  if (l.status === 'ready_to_pack') return `<a class="btn-link" onclick="askAdvance('ready_to_pack','ready_to_ship','Confirm completing packing for the selected row(s)?','${l.id}')">Complete Packing</a>`;
-  if (l.status === 'ready_to_ship') return `<a class="btn-link" onclick="askConfirmShipment('${l.id}')">Confirm Shipment</a>`;
-  if (l.status === 'on_hold') return `<a class="btn-link" onclick="reallocateLine('${l.id}')">Re-allocate</a>`;
-  return '';
+  const st = normalizeObStatus(l.status);
+  if (st === 'allocated') return `<a class="btn-link" onclick="openPackTrackingModal('${l.id}')">Enter Tracking</a>`;
+  if (st === 'ready_to_ship') return `<a class="btn-link" onclick="askConfirmShipment('${l.id}')">Confirm Shipment</a>`;
+  if (st === 'on_hold') return `<a class="btn-link" onclick="reallocateLine('${l.id}')">Re-allocate</a>`;
+  if (st === 'shipped') return `<a class="btn-link" onclick="viewOutboundLine('${l.id}')">View</a>`;
+  return `<a class="btn-link" onclick="viewOutboundLine('${l.id}')">View</a>`;
 }
 
 function selectedLineIds() {
@@ -383,7 +410,7 @@ function advanceSelected(from, to, label) {
 
 function confirmShipment(id) {
   const line = outboundLines.find(l => l.id === id);
-  if (!line || line.status !== 'ready_to_ship') return;
+  if (!line || normalizeObStatus(line.status) !== 'ready_to_ship') return;
   if (!deductSku(line)) {
     showToast('Insufficient locked stock. Entire line failed.', 'error');
     return;
@@ -702,13 +729,123 @@ function runImportTracking() {
     if (!shipmentByTracking[tracking]) shipmentByTracking[tracking] = nextDocNo('SHP', line.warehouseId);
     line.trackingNo = tracking;
     line.shipmentNo = shipmentByTracking[tracking];
-    line.status = 'ready_to_pick';
+    line.status = 'ready_to_ship';
     matched += 1;
   });
   closeModal('ob-track-modal');
-  showToast(failed ? `Matched ${matched}. Failed ${failed}: data mismatch` : `Matched ${matched}. Moved to Ready to Pick`, failed ? 'warning' : 'success');
-  currentObTab = 'ready_to_pick';
+  showToast(failed ? `Matched ${matched}. Failed ${failed}: data mismatch` : `Matched ${matched}. Awaiting pickup.`, failed ? 'warning' : 'success');
+  currentObTab = 'ready_to_ship';
   renderOutboundDetail();
+}
+
+function openPackTrackingModal(onlyId) {
+  document.getElementById('ob-pack-line-id').value = onlyId || '';
+  document.getElementById('ob-pack-tracking').value = '';
+  openModal('ob-pack-modal');
+}
+
+function submitPackTracking() {
+  const onlyId = document.getElementById('ob-pack-line-id').value;
+  const tracking = (document.getElementById('ob-pack-tracking').value || '').trim();
+  if (!tracking) {
+    showToast('Tracking No. is required.', 'warning');
+    return;
+  }
+  const ids = onlyId ? [onlyId] : selectedLineIds();
+  const targets = outboundLines.filter(l =>
+    l.outboundNo === currentOutboundNo &&
+    normalizeObStatus(l.status) === 'allocated' &&
+    (!ids.length || ids.includes(l.id))
+  );
+  if (!targets.length) {
+    showToast('No Allocated lines selected.', 'warning');
+    return;
+  }
+  const shipmentNo = nextDocNo('SHP', targets[0].warehouseId);
+  targets.forEach(l => {
+    l.trackingNo = tracking;
+    l.shipmentNo = shipmentNo;
+    l.status = 'ready_to_ship';
+  });
+  closeModal('ob-pack-modal');
+  showToast(`${targets.length} line(s) → Awaiting Pickup`, 'success');
+  currentObTab = 'ready_to_ship';
+  renderOutboundDetail();
+}
+
+const SPECIAL_REASONS = [
+  { code: 'SAMPLE', label: 'Sample' },
+  { code: 'DAMAGE', label: 'Damage / write-off' },
+  { code: 'INTERNAL', label: 'Internal use' },
+  { code: 'OTHER', label: 'Other (note required)' }
+];
+
+function renderSpecialOutboundForm() {
+  const scope = getWarehouseScope();
+  const whSelect = document.getElementById('sx-wh');
+  const list = scope === 'all' ? warehouses : warehouses.filter(w => w.id === scope);
+  whSelect.innerHTML = list.map(w => `<option value="${w.id}">${formatCanonicalWarehouseCode(w.id)} — ${w.name}</option>`).join('');
+  whSelect.disabled = scope !== 'all';
+  const reason = document.getElementById('sx-reason');
+  reason.innerHTML = SPECIAL_REASONS.map(r => `<option value="${r.code}">${r.label}</option>`).join('');
+  refreshSpecialSkuOptions();
+}
+
+function refreshSpecialSkuOptions() {
+  const wh = document.getElementById('sx-wh').value;
+  const select = document.getElementById('sx-sku');
+  const code = formatCanonicalWarehouseCode(wh);
+  const rows = skuData.filter(s => formatCanonicalWarehouseCode(skuWarehouseId(s)) === code && /STO|Storage/i.test((s.zoneCode || '') + s.zone));
+  select.innerHTML = rows.map(s =>
+    `<option value="${s.skuId}">${s.skuId} · avail ${s.available} · ${s.productName || ''}</option>`
+  ).join('') || '<option value="">No SKU rows in this warehouse</option>';
+}
+
+function submitSpecialOutbound() {
+  const wh = document.getElementById('sx-wh').value;
+  const skuId = document.getElementById('sx-sku').value;
+  const qty = parseInt(document.getElementById('sx-qty').value, 10);
+  const reasonCode = document.getElementById('sx-reason').value;
+  const note = (document.getElementById('sx-note').value || '').trim();
+  if (!skuId || !qty || qty < 1) {
+    showToast('Select SKU and enter a valid quantity.', 'warning');
+    return;
+  }
+  if (reasonCode === 'OTHER' && !note) {
+    showToast('Reason note is required for Other.', 'warning');
+    return;
+  }
+  const sku = storageSku(wh, skuId);
+  if (!sku || sku.available < qty) {
+    showToast('Insufficient available inventory.', 'error');
+    return;
+  }
+  const outboundNo = nextDocNo('SX', wh);
+  const reasonLabel = SPECIAL_REASONS.find(r => r.code === reasonCode)?.label || reasonCode;
+  const line = {
+    id: 'SX' + Date.now(),
+    outboundNo,
+    outboundType: 'special',
+    orderNo: '—',
+    skuId,
+    productName: sku.productName || skuId,
+    qty,
+    warehouseId: wh,
+    zone: 'Storage Zone',
+    zoneCode: formatCanonicalWarehouseCode(wh) + 'STO',
+    shipmentNo: '—',
+    trackingNo: '—',
+    status: 'shipped',
+    specialReason: `${reasonLabel}${note ? ': ' + note : ''}`
+  };
+  if (!deductSku(line)) {
+    showToast('Deduction failed.', 'error');
+    return;
+  }
+  document.getElementById('sx-qty').value = '1';
+  document.getElementById('sx-note').value = '';
+  showToast(`Special outbound ${outboundNo} recorded.`, 'success');
+  refreshAfterInventoryChange();
 }
 
 seedOutbound();
@@ -720,5 +857,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (pageId === 'outbound-orders') renderOutboundBatches();
     if (pageId === 'outbound-onhold') renderOnHold();
     if (pageId === 'outbound-detail') renderOutboundDetail();
+    if (pageId === 'outbound-special') renderSpecialOutboundForm();
   };
 });

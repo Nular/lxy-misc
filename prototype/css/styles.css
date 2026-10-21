@@ -1597,6 +1597,59 @@ tbody tr.selected {
   color: #555;
 }
 
+.ob-flow-v2 span {
+  background: #eef6ff;
+  border: 1px solid #c5ddf8;
+  color: #1a5fb4;
+  font-weight: 500;
+}
+
+.ob-flow-v2 span::after {
+  content: '→';
+  margin-left: 6px;
+  color: #999;
+  font-weight: 400;
+}
+
+.ob-flow-v2 span:last-child::after {
+  content: none;
+}
+
+.ob-flow-special span {
+  background: #fff4e6;
+  border-color: #f0c78a;
+  color: #9a6700;
+}
+
+.sx-form {
+  max-width: 520px;
+  margin-top: 8px;
+}
+
+.sx-form .form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.sx-form .form-row label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+}
+
+.sx-form .form-row input,
+.sx-form .form-row select {
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+}
+
+.sx-form .form-actions {
+  margin-top: 8px;
+}
+
 .ob-picklist {
   font-size: 13px;
 }

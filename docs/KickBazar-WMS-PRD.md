@@ -441,9 +441,11 @@ WMS **不在入库页面创建 SKU 主数据**；仓内可作业前提如下：
 
 | 事件 | 实物 | 锁定 | 未锁定 | 流水 Tab |
 |------|------|------|--------|----------|
-| 采购文件/手动入库确认上架 | ↑ | — | ↑ | Inbound |
-| 出库确认导入 | — | ↑ | ↓ | Outbound Occupy |
-| 出库扣减 | ↓ | ↓ | — | Outbound Deduct |
+| 采购/手动入库确认上架 | ↑ | — | ↑ | Inbound |
+| 采购单状态流转（未上架） | 不变 | 不变 | 不变 | 仅 PO |
+| 出库确认导入（普通） | — | ↑ | ↓ | Outbound Occupy |
+| 出库扣减（普通取件） | ↓ | ↓ | — | Outbound Deduct |
+| 特殊出库确认 | ↓ | — | ↓ | Outbound Deduct |
 | 库存调整-增加 | ↑ | — | ↑ | Manual Adjustment |
 | 库存调整-减少 | ↓ | — | ↓ | Manual Adjustment |
 | 打包/发运 | 不变 | 不变 | 不变 | 不写 |
@@ -463,14 +465,15 @@ WMS **不在入库页面创建 SKU 主数据**；仓内可作业前提如下：
 
 ---
 
-## 9 关联模块 PRD（入库 / 出库）
+## 9 关联模块 PRD（采购 / 入库 / 出库）
 
 本文档仅描述 **仓库、库区、库存、流水、Dashboard** 等基础能力。以下作业模块有 **独立 PRD**，正文不在此重复：
 
 | 模块 | 文档 | 与基础 PRD 的边界 |
 |------|------|-------------------|
-| **入库** Inbound | [`KickBazar-WMS-Inbound-PRD.md`](KickBazar-WMS-Inbound-PRD.md) | Stocked In 写 **§6.1** 流水并 UPDATE 已有库存行；**禁止**入库流程建 SKU/库存行 |
-| **出库** Outbound | [`KickBazar-WMS-Outbound-PRD.md`](KickBazar-WMS-Outbound-PRD.md) | 分配写 **§6.2** Occupy；发货扣减写 Deduct；拣货/打包不改库存（**§8.2**） |
+| **采购单** Purchase Order | [`KickBazar-WMS-PO-PRD.md`](KickBazar-WMS-PO-PRD.md) | 不写库存；SKU 行须满足 **§5.0.1–§5.0.2** |
+| **入库** Inbound Receipt | [`KickBazar-WMS-Inbound-PRD.md`](KickBazar-WMS-Inbound-PRD.md) | Stocked In 写 **§6.1** 流水并 UPDATE 已有库存行；**禁止**入库流程建 SKU/库存行 |
+| **出库** Outbound | [`KickBazar-WMS-Outbound-PRD.md`](KickBazar-WMS-Outbound-PRD.md) | **普通出库**：Occupy → 取件后 Deduct；**特殊出库**：直接 Deduct；打包录单号不改库存（**§8.2**） |
 
 侧栏与 Dashboard Quick Actions 仍可进入上述模块；实现与验收以 **独立 PRD** 为准。
 

@@ -52,8 +52,9 @@
           <span>Outbound</span>
           <span class="chevron">▼</span>
         </div>
-        <div class="nav-item sub" data-page="outbound-orders">Outbound Orders</div>
-        <div class="nav-item sub" data-page="outbound-onhold">On Hold Orders</div>
+        <div class="nav-item sub" data-page="outbound-orders">Regular Outbound</div>
+        <div class="nav-item sub" data-page="outbound-special">Special Outbound</div>
+        <div class="nav-item sub" data-page="outbound-onhold">Waiting Queue</div>
 
         <div class="nav-item parent nav-warehouses-group" data-group="warehouses">
           <span>Warehouses</span>
@@ -589,17 +590,15 @@
         <!-- ========== OUTBOUND ORDERS ========== -->
         <div class="page" id="page-outbound-orders">
           <div class="page-header">
-            <h1 class="page-title">Outbound Orders</h1>
-            <p class="page-subtitle">Import Admin-exported orders. One import creates one Outbound No. Stock is occupied on allocate and deducted only after the courier pickup (Confirm Shipment).</p>
+            <h1 class="page-title">Regular Outbound</h1>
+            <p class="page-subtitle">Import merchant-exported orders (replaces outbound Excel). Occupy on allocate; deduct only after courier pickup. Insufficient stock → Waiting Queue without occupy.</p>
           </div>
           <div class="page-body">
-            <div class="ob-flow" aria-hidden="true">
-              <span>1 Import orders</span>
-              <span>2 Allocate or On Hold</span>
-              <span>3 Export → fill Tracking No. → import</span>
-              <span>4 Print pick list</span>
-              <span>5 Pick → Pack</span>
-              <span>6 Confirm Shipment</span>
+            <div class="ob-flow ob-flow-v2" aria-label="Regular outbound flow">
+              <span>① Import</span>
+              <span>② Occupy or On Hold</span>
+              <span>③ Pack + Tracking No.</span>
+              <span>④ Courier pickup → Deduct</span>
             </div>
             <div class="filter-bar">
               <div class="filter-item">
@@ -628,6 +627,7 @@
             </div>
             <div class="toolbar">
               <span class="hint" id="ob-import-scope-hint">The selected warehouse applies only to this import. Switching context later does not change existing outbound records.</span>
+              <button class="btn" onclick="navigateTo('outbound-special')">Special Outbound</button>
               <button class="btn btn-primary" onclick="openImportOrders()">Import Order</button>
             </div>
             <div class="table-wrapper">
@@ -689,11 +689,51 @@
           </div>
         </div>
 
+        <!-- ========== SPECIAL OUTBOUND ========== -->
+        <div class="page" id="page-outbound-special">
+          <div class="page-header">
+            <h1 class="page-title">Special Outbound</h1>
+            <p class="page-subtitle">Non-sales outbound with mandatory reason. Direct Outbound Deduct (no Occupy). Replaces manual outbound Excel + inventory Excel for special cases.</p>
+          </div>
+          <div class="page-body">
+            <div class="ob-flow ob-flow-v2 ob-flow-special" aria-label="Special outbound flow">
+              <span>① Reason</span>
+              <span>② Confirm</span>
+              <span>③ Outbound Deduct</span>
+            </div>
+            <div class="form-card sx-form">
+              <div class="form-row">
+                <label for="sx-wh">Warehouse</label>
+                <select id="sx-wh" onchange="refreshSpecialSkuOptions()"></select>
+              </div>
+              <div class="form-row">
+                <label for="sx-sku">SKU (storage zone row)</label>
+                <select id="sx-sku"></select>
+              </div>
+              <div class="form-row">
+                <label for="sx-qty">Quantity</label>
+                <input type="number" id="sx-qty" min="1" value="1">
+              </div>
+              <div class="form-row">
+                <label for="sx-reason">Reason</label>
+                <select id="sx-reason"></select>
+              </div>
+              <div class="form-row">
+                <label for="sx-note">Note</label>
+                <input type="text" id="sx-note" placeholder="Required when reason is Other">
+              </div>
+              <div class="form-actions">
+                <button class="btn btn-primary" type="button" onclick="submitSpecialOutbound()">Confirm Special Outbound</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- ========== ON HOLD ========== -->
         <div class="page" id="page-outbound-onhold">
           <div class="page-header">
-            <h1 class="page-title">On Hold Orders</h1>
-            <p class="page-subtitle">Lines that failed allocation. Re-allocate uses the original warehouse and storage zone only.</p>
+            <h1 class="page-title">Waiting Queue</h1>
+            <p class="page-subtitle">On Hold lines (no stock occupy). Replenish via Inbound, then Re-allocate — same as「选择已补货」in the target flow.</p>
           </div>
           <div class="page-body">
             <div class="toolbar">
@@ -1157,7 +1197,7 @@
         <button class="modal-close" onclick="closeModal('ob-track-modal')">&times;</button>
       </div>
       <div class="modal-body">
-        <p class="hint">Use the file from Export Shipping Order after filling Tracking No. Required columns: Order No, SKU ID, Tracking No. One Tracking No. creates one Shipment No. Matching Allocated lines move to Ready to Pick. Inventory is unchanged.</p>
+        <p class="hint">After courier label is ready. Columns: Order No, SKU ID, Tracking No. Lines move to Awaiting Pickup. Inventory unchanged until Confirm Shipment.</p>
         <input type="file" id="ob-track-file" accept=".csv,text/csv" onchange="onOutboundFilePicked(this, 'track')">
         <button class="btn" type="button" onclick="fillSampleTrackCsv()">Use sample for selected Allocated lines</button>
         <pre id="ob-track-preview" class="ob-preview"></pre>
@@ -1165,6 +1205,27 @@
       <div class="modal-footer">
         <button class="btn" onclick="closeModal('ob-track-modal')">Cancel</button>
         <button class="btn btn-primary" id="ob-track-btn" disabled onclick="runImportTracking()">Import</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="ob-pack-modal">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <span class="modal-title">Pack — Enter Tracking No.</span>
+        <button class="modal-close" onclick="closeModal('ob-pack-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="hint">Verify shipping label against the order, then enter the courier tracking number.</p>
+        <input type="hidden" id="ob-pack-line-id" value="">
+        <div class="form-group">
+          <label for="ob-pack-tracking">Tracking No.</label>
+          <input type="text" id="ob-pack-tracking" placeholder="e.g. SF1029384756">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('ob-pack-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitPackTracking()">Save</button>
       </div>
     </div>
   </div>
