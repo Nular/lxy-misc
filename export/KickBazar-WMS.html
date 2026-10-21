@@ -2890,10 +2890,10 @@ tbody tr.selected {
         </form>
         <input type="hidden" id="receipt-type" value="">
         <div id="receipt-source-po-import" class="source-panel" hidden>
-          <p class="hint">Upload <strong>采购.xlsx</strong>: <code>采购单号</code> → Purchase Order (one per Inbound), <code>物流单号</code> → Shipping No., <code>Product Name</code>, <code>需求数量</code> → Order Qty.</p>
+          <p class="hint">Upload <strong>采购.xlsx</strong>: <code>采购单号</code> → Purchase Order (one per Inbound), <code>物流单号</code> → Shipping No.（<strong>每次上传仅允许一个</strong>）, <code>Product Name</code>, <code>需求数量</code> → Order Qty.</p>
           <div class="inbound-alert inbound-shipping-split-hint" id="receipt-shipping-split-hint" role="note">
-            <strong>One Shipping No. per upload</strong>
-            <p style="margin:8px 0 0">Each Inbound accepts a single tracking number (<code>物流单号</code>). If your spreadsheet lists multiple shipments, filter or split the file so each upload contains only one <strong>Shipping No.</strong>, then create a separate Inbound for each shipment. The same Purchase Order may span multiple Inbounds (one per tracking number).</p>
+            <strong>每次上传仅允许一个物流单号</strong>
+            <p style="margin:8px 0 0">若 Excel 中存在多个不同的 <code>物流单号</code>，系统将<strong>拒绝解析</strong>并提示拆分文件。请按运单号筛选或拆表后分别点击「+ New Inbound」入库；同一 <code>采购单号</code> 可对应多个 Inbound（每个运单一次入库）。</p>
           </div>
           <input type="file" id="receipt-import-file" accept=".xlsx,.xls">
           <button type="button" class="btn btn-primary" id="receipt-import-btn" disabled onclick="startPoListImport()">Parse file</button>
@@ -4910,25 +4910,20 @@ function collectShippingNosFromLines(lines) {
   return [...new Set((lines || []).map(l => l.shippingNo).filter(Boolean))];
 }
 
-/** One upload → one 物流单号: keep first non-empty value, drop other rows, fill blanks. */
-function enforceSingleShippingOnImportRows(rows) {
+/** One upload → exactly one 物流单号 (or all blank). Multiple distinct values → reject. */
+function validateSingleShippingOnImport(rows) {
   const shipSet = [...new Set(rows.map(r => r.shippingNo).filter(Boolean))];
-  if (!shipSet.length) return { rows, dropped: [], note: '' };
-  const keep = shipSet[0];
-  const dropped = [];
-  const kept = [];
-  rows.forEach(r => {
-    if (r.shippingNo && r.shippingNo !== keep) {
-      dropped.push(r);
-      return;
-    }
-    kept.push({ ...r, shippingNo: r.shippingNo || keep });
-  });
-  let note = '';
-  if (shipSet.length > 1 || dropped.length) {
-    note = ` Only Shipping No. ${keep} was imported. Split the file and upload again for other tracking numbers.`;
+  if (shipSet.length > 1) {
+    const listed = shipSet.slice(0, 4).join('、');
+    const more = shipSet.length > 4 ? ` 等共 ${shipSet.length} 个` : '';
+    return {
+      ok: false,
+      message: `一次上传仅允许一个物流单号（Shipping No.）。当前文件包含：${listed}${more}。请按物流单号拆分 Excel 后分别创建 Inbound；同一采购单可对应多个 Inbound。`
+    };
   }
-  return { rows: kept, dropped, note };
+  const shippingNo = shipSet[0] || '';
+  const normalized = rows.map(r => ({ ...r, shippingNo: r.shippingNo || shippingNo }));
+  return { ok: true, rows: normalized, shippingNo };
 }
 
 function formatInboundLineAfterChange(line) {
@@ -5578,6 +5573,17 @@ async function startPoListImport() {
     receiptSourcePreviewMatrix = preview;
     receiptSourceFileData.name = file.name;
     updateReceiptSourceFileMeta();
+    fill.style.width = '55%';
+    label.textContent = '55%';
+    const shipCheck = validateSingleShippingOnImport(rows);
+    if (!shipCheck.ok) {
+      receiptEditorLines = [];
+      renderReceiptEditorLines();
+      renderUnmatchedPanel();
+      showToast(shipCheck.message, 'error');
+      return;
+    }
+    rows = shipCheck.rows;
     fill.style.width = '70%';
     label.textContent = '70%';
     const poSet = [...new Set(rows.map(r => r.purchaseOrder).filter(Boolean))];
@@ -5589,15 +5595,6 @@ async function startPoListImport() {
       dropped.forEach(r => receiptUnmatched.push({ row: r.row, importProductName: `${r.importProductName} (PO ${r.purchaseOrder})` }));
       poFilterNote = ` One Inbound allows one Purchase Order; kept ${keep}.`;
     }
-    const shipResult = enforceSingleShippingOnImportRows(rows);
-    rows = shipResult.rows;
-    let shipFilterNote = shipResult.note;
-    shipResult.dropped.forEach(r => {
-      receiptUnmatched.push({
-        row: r.row,
-        importProductName: `${r.importProductName} (Shipping ${r.shippingNo})`
-      });
-    });
     const wh = getInboundWarehouseScope();
     receiptEditorLines = [];
     rows.forEach(dr => buildReceiptLineFromPoRow(dr, wh));
@@ -5607,10 +5604,10 @@ async function startPoListImport() {
     renderUnmatchedPanel();
     fill.style.width = '100%';
     label.textContent = '100%';
-    const warn = receiptUnmatched.length || poFilterNote || shipFilterNote;
+    const warn = receiptUnmatched.length || poFilterNote;
     showToast(warn
-      ? `Parsed ${receiptEditorLines.length} line(s); ${receiptUnmatched.length} row(s) skipped/warn.${poFilterNote}${shipFilterNote}`
-      : `Parsed ${receiptEditorLines.length} line(s) from ${file.name}.`, warn ? 'warning' : 'success');
+      ? `Parsed ${receiptEditorLines.length} line(s); ${receiptUnmatched.length} row(s) skipped/warn.${poFilterNote}`
+      : `Parsed ${receiptEditorLines.length} line(s) from ${file.name}. Shipping No.: ${shipCheck.shippingNo || '—'}`, warn ? 'warning' : 'success');
   } catch (err) {
     console.error(err);
     showToast(err.message || 'Failed to parse purchase file.', 'error');
@@ -5686,11 +5683,11 @@ function confirmReceiptStockIn() {
     }
     const ships = collectShippingNosFromLines(receiptEditorLines);
     if (ships.length > 1) {
-      showToast('One upload allows only one Shipping No. (物流单号).', 'error');
+      showToast('一次上传仅允许一个物流单号（Shipping No.）。请拆分文件后分别入库。', 'error');
       return;
     }
     if (!ships.length) {
-      showToast('Shipping No. (物流单号) is required for purchase upload.', 'error');
+      showToast('采购入库须填写物流单号（Shipping No. / 物流单号）。', 'error');
       return;
     }
   }
