@@ -2003,6 +2003,16 @@ tbody tr.selected {
   color: #003a8c;
 }
 
+.page-demo-banner {
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  background: #f0f7ff;
+  border: 1px solid #bfdbfe;
+  font-size: 13px;
+  color: #1e3a5f;
+}
+
   </style>
 </head>
 <body>
@@ -2065,6 +2075,7 @@ tbody tr.selected {
             <h1 class="page-title">Dashboard</h1>
             <p class="page-subtitle">Warehouse inventory overview and recent activity</p>
           </div>
+          <p class="page-demo-banner">Demo：KPI 与今日操作来自种子库存/流水；侧栏可切换 <strong>Role (demo)</strong> 与仓库范围（Admin → All / SH001）。</p>
           <div class="page-body dashboard-body">
             <div class="dashboard-kpi-row dashboard-kpi-row-6" id="dashboard-kpi"></div>
 
@@ -2113,6 +2124,7 @@ tbody tr.selected {
             <h1 class="page-title">Warehouse Management</h1>
             <p class="page-subtitle">Create and maintain warehouse master data</p>
           </div>
+          <p class="page-demo-banner">Demo：预置 <strong>SH001</strong> 上海主仓、<strong>BJ001</strong> 北京仓；可新建仓体验编码规则。</p>
           <div class="page-body">
             <div class="filter-bar">
               <div class="filter-item">
@@ -2201,6 +2213,7 @@ tbody tr.selected {
             <h1 class="page-title">Zone Management</h1>
             <p class="page-subtitle">Manage warehouse zones and storage areas</p>
           </div>
+          <p class="page-demo-banner">Demo：各仓含 RCV / STO / SHP 等库区；出库分配仅占用 <strong>Storage Zone (STO)</strong> 行。</p>
           <div class="page-body">
             <div class="filter-bar">
               <div class="filter-item filter-wh-scope">
@@ -2280,6 +2293,7 @@ tbody tr.selected {
             <h1 class="page-title">SPU/SKU Inventory</h1>
             <p class="page-subtitle">View current product inventory by SPU or SKU</p>
           </div>
+          <p class="page-demo-banner">Demo：如 <strong>SKU-10001-BK</strong>（耳机）、<strong>SKU-10002-42</strong>（手表）在 SH001 有可用库存，可供出库 Sample 使用。</p>
           <div class="page-body">
             <div class="tabs" id="inventory-tabs">
               <div class="tab active" data-inv-tab="spu">SPU</div>
@@ -2411,6 +2425,7 @@ tbody tr.selected {
             <h1 class="page-title">Inventory Record</h1>
             <p class="page-subtitle">Track inventory changes: inbound, outbound, manual adjustment. Click a row or View icon for detail.</p>
           </div>
+          <p class="page-demo-banner">Demo：含采购入库、<strong>Outbound Occupy / Deduct</strong> 示例；出库分配后会生成关联 <strong>Inbound No.</strong>（IN-YYYYMMDDnnn）。</p>
           <div class="page-body">
             <div class="tabs" id="record-tabs">
               <div class="tab" data-record-tab="all">All</div>
@@ -2508,6 +2523,7 @@ tbody tr.selected {
             <h1 class="page-title">Inbound</h1>
             <p class="page-subtitle">上架入库；Stocked In 写库存与 Record</p>
           </div>
+          <p class="page-demo-banner">Demo：列表含采购/手工入库样例；导入采购单可使用 <strong>Use sample file</strong> 并查看行级校验结果。</p>
           <div class="page-body">
             <div class="filter-bar module-filter-bar inbound-filter-bar">
               <div class="filter-item">
@@ -2585,6 +2601,7 @@ tbody tr.selected {
             <h1 class="page-title">Outbound</h1>
             <p class="page-subtitle">导入订单 → 分配占用 → 打包发运；支持特殊出库（弹窗）</p>
           </div>
+          <p class="page-demo-banner">Demo：<strong>Import Orders → Use sample file</strong>（MO-DEMO-2026）校验通过后导入 → Confirm Allocation → Pack &amp; Ship；<strong>Special Outbound</strong> 弹窗可关键词选品。</p>
           <div class="page-body ob-oms-body">
             <div class="ob-status-tabs" id="ob-list-tabs" role="tablist"></div>
             <div class="ob-oms-filters filter-bar">
