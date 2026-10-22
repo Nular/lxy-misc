@@ -1192,8 +1192,10 @@ function onSxProductPick() {
   skuSelect.innerHTML = uniq.length
     ? uniq.map(s => `<option value="${s.skuId}">${s.skuId} · avail ${s.available}</option>`).join('')
     : '<option value="">No STO row for this product</option>';
-  if (uniq.length === 1) {
-    skuSelect.value = uniq[0].skuId;
+  if (uniq.length) {
+    if (uniq.length === 1 || !uniq.some(s => s.skuId === skuSelect.value)) {
+      skuSelect.value = uniq[0].skuId;
+    }
     onSxSkuPick();
   } else {
     document.getElementById('sx-spec').value = '';

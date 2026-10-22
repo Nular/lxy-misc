@@ -1118,12 +1118,17 @@
           <p class="hint"><strong>订单列表.xlsx</strong>: <code>MerchantOrderID</code> → Order No., <code>ItemQuantity</code> → Qty, <code>ItemDesc</code> → parse <code>qty*Product Name-SKU</code>. Warehouse picker only when Admin + context All.</p>
           <div class="form-group" id="ob-import-wh-wrap">
             <label>Warehouse</label>
-            <select id="ob-import-wh"></select>
+            <select id="ob-import-wh" onchange="revalidateOutboundImportPreview()"></select>
           </div>
           <div class="ob-upload-box" onclick="document.getElementById('ob-import-file').click()">+ Click to upload</div>
           <input type="file" id="ob-import-file" accept=".csv,text/csv,.xlsx,.xls" hidden onchange="onOutboundFilePicked(this, 'orders')">
           <button class="btn" type="button" onclick="fillSampleOrderCsv()">Use sample file</button>
           <p id="ob-import-file-msg" class="hint"></p>
+          <div id="ob-import-validate-panel" class="inbound-alert" hidden>
+            <strong>Import validation</strong>
+            <p class="hint" id="ob-import-validate-summary"></p>
+            <div class="table-wrapper" id="ob-import-validate-table-wrap"></div>
+          </div>
         </div>
         <div id="ob-import-step-progress" hidden>
           <p id="ob-import-progress-title">Importing</p>
@@ -1210,16 +1215,25 @@
       <div class="modal-body">
         <p class="hint">Mandatory reason · direct Outbound Deduct (no allocation).</p>
         <div class="form-card sx-form">
-          <div class="form-row">
+          <div class="form-row" id="sx-wh-wrap">
             <label for="sx-wh">Warehouse</label>
-            <select id="sx-wh" onchange="refreshSpecialSkuOptions()"></select>
+            <select id="sx-wh" onchange="onSxWarehouseChange()"></select>
           </div>
           <div class="form-row">
-            <label for="sx-sku">SKU (storage zone row)</label>
-            <select id="sx-sku"></select>
+            <label for="sx-product">Product Name</label>
+            <input type="text" id="sx-product" list="sx-product-list" placeholder="Type keyword to match" oninput="onSxProductInput()" onchange="onSxProductPick()">
+            <datalist id="sx-product-list"></datalist>
           </div>
           <div class="form-row">
-            <label for="sx-qty">Quantity</label>
+            <label for="sx-sku-id">SKU</label>
+            <select id="sx-sku-id" onchange="onSxSkuPick()"></select>
+          </div>
+          <div class="form-row">
+            <label for="sx-spec">SKU (spec)</label>
+            <input type="text" id="sx-spec" class="readonly" readonly placeholder="Auto from SKU">
+          </div>
+          <div class="form-row">
+            <label for="sx-qty">Qty</label>
             <input type="number" id="sx-qty" min="1" value="1">
           </div>
           <div class="form-row">
@@ -1227,8 +1241,8 @@
             <select id="sx-reason"></select>
           </div>
           <div class="form-row">
-            <label for="sx-note">Note</label>
-            <input type="text" id="sx-note" placeholder="Required when reason is Other">
+            <label for="sx-remarks">Remarks</label>
+            <input type="text" id="sx-remarks" placeholder="Required when reason is Other">
           </div>
         </div>
       </div>
