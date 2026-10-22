@@ -22,7 +22,9 @@ Warehouse Management System (WMS) interactive HTML prototype based on PRD specif
 python3 scripts/build-wms-html.py
 ```
 
-2. 用浏览器打开 **`export/KickBazar-WMS.html`**（约 1.2MB，内联 CSS/JS，与 `prototype/kickbazar-wms-prototype.html` 相同）。
+2. 用浏览器打开 **`export/KickBazar-WMS.html`** 或仓库根目录 **`KickBazar-WMS.html`**（约 1.2MB，内联 CSS/JS）。也可双击根目录 **`打开原型.html`** 自动跳转。
+
+   **验收：** 用记事本打开该 HTML，开头应能看到 `<style>` 大段 CSS，且**不应**出现 `href="css/styles.css"`。
 
 3. 需要 zip 分发时使用 **`export/KickBazar-WMS-Export.zip`**（须为上述 build 生成；旧 zip 内 HTML 仅 ~200KB，**无完整样式与 Outbound 等数据**）。
 

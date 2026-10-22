@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """Bundle prototype into export/KickBazar-WMS.html (single-file SPA) + Export.zip."""
+import re
+import sys
 import zipfile
 from pathlib import Path
 
@@ -12,19 +14,41 @@ js_app = (proto / "js" / "app.js").read_text(encoding="utf-8")
 js_inbound = (proto / "js" / "inbound.js").read_text(encoding="utf-8")
 js_outbound = (proto / "js" / "outbound.js").read_text(encoding="utf-8")
 js_bundle = js_xlsx + "\n\n" + js_app + "\n\n" + js_inbound + "\n\n" + js_outbound
-out = html.replace(
-    '  <link rel="stylesheet" href="css/styles.css">\n',
-    f"  <style>\n{css}\n  </style>\n",
-).replace(
-    '  <script src="vendor/xlsx.full.min.js?v=record-detail-v2"></script>\n  <script src="js/app.js?v=record-detail-v2"></script>\n  <script src="js/inbound.js?v=record-detail-v2"></script>\n  <script src="js/outbound.js?v=record-detail-v2"></script>\n',
-    f"  <script>\n{js_bundle}\n  </script>\n",
+
+css_link_pat = re.compile(
+    r'  <link rel="stylesheet" href="css/styles\.css"[^>]*>\s*\n',
+    re.MULTILINE,
 )
+script_block_pat = re.compile(
+    r'  <script src="vendor/xlsx\.full\.min\.js[^"]*"></script>\s*\n'
+    r'  <script src="js/app\.js[^"]*"></script>\s*\n'
+    r'  <script src="js/inbound\.js[^"]*"></script>\s*\n'
+    r'  <script src="js/outbound\.js[^"]*"></script>\s*\n',
+    re.MULTILINE,
+)
+def _inline_css(_match: re.Match[str]) -> str:
+    return f"  <style>\n{css}\n  </style>\n"
+
+
+def _inline_js(_match: re.Match[str]) -> str:
+    return f"  <script>\n{js_bundle}\n  </script>\n"
+
+
+out, n_css = css_link_pat.subn(_inline_css, html, count=1)
+if n_css != 1:
+    sys.exit(f"build failed: expected 1 css link replacement, got {n_css}")
+out, n_js = script_block_pat.subn(_inline_js, out, count=1)
+if n_js != 1:
+    sys.exit(f"build failed: expected 1 script bundle replacement, got {n_js}")
 out = out.replace("<title>KickBazar WMS - Prototype</title>", "<title>KickBazar WMS</title>")
 export = ROOT / "export"
 export.mkdir(exist_ok=True)
 (export / "KickBazar-WMS.html").write_text(out, encoding="utf-8")
 (proto / "kickbazar-wms-prototype.html").write_text(out, encoding="utf-8")
 (export / "KickBazar-WMS-Prototype.html").write_text(out, encoding="utf-8")
+(ROOT / "KickBazar-WMS.html").write_text(out, encoding="utf-8")
+if "href=\"css/styles.css\"" in out:
+    sys.exit("build failed: bundled HTML still references external css/styles.css")
 zip_path = export / "KickBazar-WMS-Export.zip"
 readme = export / "README.md"
 with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
