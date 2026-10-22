@@ -1650,6 +1650,81 @@ tbody tr.selected {
   margin-top: 8px;
 }
 
+.ob-oms-body {
+  padding-top: 0;
+}
+
+.ob-status-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 16px;
+}
+
+.ob-status-tab {
+  background: none;
+  border: none;
+  padding: 12px 20px;
+  font-size: 14px;
+  color: #666;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.ob-status-tab:hover {
+  color: var(--primary);
+}
+
+.ob-status-tab.active {
+  color: var(--primary);
+  font-weight: 600;
+  border-bottom-color: var(--primary);
+}
+
+.ob-oms-filters {
+  margin-bottom: 12px;
+}
+
+.ob-oms-toolbar {
+  margin-bottom: 12px;
+}
+
+.ob-oms-toolbar-left,
+.ob-oms-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ob-oms-toolbar {
+  justify-content: space-between;
+}
+
+.ob-product-cell strong {
+  display: block;
+  font-size: 13px;
+}
+
+.ob-product-cell .hint {
+  font-size: 12px;
+}
+
+.ob-hold-hint {
+  display: block;
+  font-size: 11px;
+  color: #c45c00;
+  margin-top: 4px;
+}
+
+.ob-empty {
+  text-align: center;
+  color: #999;
+  padding: 48px 16px !important;
+}
+
 .ob-picklist {
   font-size: 13px;
 }

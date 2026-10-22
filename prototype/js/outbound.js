@@ -1,15 +1,20 @@
 // Outbound — Regular (occupy → pack/tracking → deduct) + Special (direct deduct). PRD: KickBazar-WMS-Outbound-PRD.md
 
 const OB_STATUS = {
-  on_hold: { label: 'On Hold', cls: 'tag-cold' },
-  allocated: { label: 'Allocated (To Pack)', cls: 'tag-sto' },
-  ready_to_ship: { label: 'Awaiting Pickup', cls: 'tag-shp' },
-  shipped: { label: 'Shipped', cls: 'tag-enable' },
-  ready_to_pick: { label: 'Awaiting Pickup', cls: 'tag-shp' },
-  ready_to_pack: { label: 'Awaiting Pickup', cls: 'tag-shp' }
+  pending_allocation: { label: 'Pending Allocation', cls: 'tag-cold' },
+  pending_picking: { label: 'Pending Picking', cls: 'tag-sto' },
+  shipped: { label: 'Shipped', cls: 'tag-enable' }
 };
 
-const OB_TABS = ['all', 'on_hold', 'allocated', 'ready_to_ship', 'shipped'];
+const OB_LIST_TABS = [
+  { key: 'pending_allocation', label: 'Pending Allocation' },
+  { key: 'pending_picking', label: 'Pending Picking' },
+  { key: 'shipped', label: 'Shipped' },
+  { key: 'all', label: 'All' }
+];
+
+const OB_TABS = ['all', 'pending_allocation', 'pending_picking', 'shipped'];
+let outboundListTab = 'pending_allocation';
 
 let outboundBatches = [];
 let outboundLines = [];
@@ -38,9 +43,9 @@ function storageSku(warehouseId, skuId) {
 function batchStatus(lines) {
   if (!lines.length) return 'Pending Outbound';
   const shipped = lines.filter(l => l.status === 'shipped').length;
-  const held = lines.filter(l => l.status === 'on_hold').length;
+  const open = lines.filter(l => normalizeObStatus(l.status) !== 'shipped').length;
   if (shipped === lines.length) return 'Fully Outbound';
-  if (shipped > 0 || held > 0) return 'Partially Outbound';
+  if (shipped > 0 && open > 0) return 'Partially Outbound';
   return 'Pending Outbound';
 }
 
@@ -87,9 +92,9 @@ function seedOutbound() {
     warehouseCode: formatCanonicalWarehouseCode(wh)
   });
   const samples = [
-    { orderNo: 'SO-20260821001', skuId: 'SKU-10001-BK', name: 'Wireless Bluetooth Earbuds Pro', spec: 'Black; M', qty: 2, status: 'allocated' },
-    { orderNo: 'SO-20260821002', skuId: 'SKU-10001-WH', name: 'Wireless Bluetooth Earbuds Pro', spec: 'White; L', qty: 1, status: 'ready_to_ship', tracking: 'SF1029384756' },
-    { orderNo: 'SO-20260821003', skuId: 'SKU-10004-01', name: 'USB-C Flash Drive', spec: '128GB', qty: 2, status: 'on_hold' }
+    { orderNo: 'SO-20260821001', skuId: 'SKU-10001-BK', name: 'Wireless Bluetooth Earbuds Pro', spec: 'Black; M', qty: 2, status: 'pending_allocation' },
+    { orderNo: 'SO-20260821002', skuId: 'SKU-10001-WH', name: 'Wireless Bluetooth Earbuds Pro', spec: 'White; L', qty: 1, status: 'pending_picking', preOccupy: true },
+    { orderNo: 'SO-20260821003', skuId: 'SKU-10004-01', name: 'USB-C Flash Drive', spec: '128GB', qty: 2, status: 'pending_allocation', holdReason: 'Awaiting allocation (0 available in STO)' }
   ];
   samples.forEach(s => {
     const line = {
@@ -102,18 +107,18 @@ function seedOutbound() {
       spec: s.spec,
       qty: s.qty,
       warehouseId: wh,
-      zoneCode: s.status === 'on_hold' ? '—' : 'SH001STO',
-      zone: s.status === 'on_hold' ? '—' : 'Storage Zone',
+      zoneCode: '—',
+      zone: '—',
       shipmentNo: '—',
       trackingNo: '—',
       status: s.status,
-      holdReason: s.status === 'on_hold' ? 'Insufficient available inventory' : ''
+      holdReason: s.holdReason || ''
     };
-    if (s.tracking) {
-      line.trackingNo = s.tracking;
-      line.shipmentNo = nextDocNo('SHP', wh);
+    if (s.preOccupy) {
+      line.zoneCode = 'SH001STO';
+      line.zone = 'Storage Zone';
+      occupySku(wh, s.skuId, s.qty, no, s.orderNo);
     }
-    if (s.status !== 'on_hold') occupySku(wh, s.skuId, s.qty, no, s.orderNo);
     outboundLines.push(line);
   });
 }
@@ -136,7 +141,7 @@ function occupySku(warehouseId, skuId, qty, outboundNo, orderNo) {
     outboundNo,
     relatedOrderNo: orderNo,
     shipmentNo: '—',
-    status: 'Allocated'
+    status: 'Pending Picking'
   });
   return true;
 }
@@ -194,51 +199,95 @@ function refreshAfterInventoryChange() {
   if (document.getElementById('page-home').classList.contains('active')) renderHome();
 }
 
-function renderOutboundBatches() {
-  const body = document.getElementById('ob-batch-body');
-  if (!body) return;
-  const field = document.getElementById('ob-filter-field').value;
-  const keyword = (document.getElementById('ob-filter-keyword').value || '').trim().toLowerCase();
-  const scope = getWarehouseScope();
-  let rows = outboundBatches.filter(b => scope === 'all' || b.warehouseId === scope);
-  if (keyword) {
-    rows = rows.filter(b => {
-      const lines = outboundLines.filter(l => l.outboundNo === b.outboundNo);
-      const status = batchStatus(lines);
-      const hay = field === 'status' ? status : b.outboundNo;
-      return hay.toLowerCase().includes(keyword);
-    });
-  }
-  const hint = document.getElementById('ob-import-scope-hint');
-  if (hint) {
-    hint.textContent = scope === 'all'
-      ? 'Context is All. Choose a warehouse in the import dialog.'
-      : `Import uses ${getWarehouseScopeLabel()}.`;
-  }
-  body.innerHTML = rows.map(b => {
-    const lines = outboundLines.filter(l => l.outboundNo === b.outboundNo);
-    const orders = new Set(lines.map(l => l.orderNo)).size;
-    const skus = new Set(lines.map(l => l.skuId)).size;
-    const units = lines.reduce((s, l) => s + l.qty, 0);
-    return `<tr>
-      <td>${b.outboundNo}</td>
-      <td>${b.importedAt}</td>
-      <td><a class="btn-link" href="#" onclick="event.preventDefault();showToast('Download ${b.sourceFile}')">${b.sourceFile}</a></td>
-      <td>${b.warehouseCode}</td>
-      <td>${orders}</td>
-      <td>${skus}</td>
-      <td>${units}</td>
-      <td>${batchTag(batchStatus(lines))}</td>
-      <td><a class="btn-link" onclick="openOutboundDetail('${b.outboundNo}')">View</a></td>
-    </tr>`;
-  }).join('') || '<tr><td colspan="9" style="text-align:center;color:#999">No outbound batches</td></tr>';
+function normalizeObStatus(status) {
+  if (status === 'allocated' || status === 'ready_to_pick' || status === 'ready_to_pack' || status === 'ready_to_ship') return 'pending_picking';
+  if (status === 'on_hold') return 'pending_allocation';
+  return status;
 }
 
-function searchOutboundBatches() { renderOutboundBatches(); }
-function resetOutboundBatchFilters() {
-  document.getElementById('ob-filter-keyword').value = '';
-  renderOutboundBatches();
+function scopedOutboundLines() {
+  const scope = getWarehouseScope();
+  return outboundLines.filter(l => scope === 'all' || l.warehouseId === scope);
 }
+
+function countLinesByTab(tab) {
+  const lines = scopedOutboundLines();
+  if (tab === 'all') return lines.length;
+  return lines.filter(l => normalizeObStatus(l.status) === tab).length;
+}
+
+function renderOutboundOrderList() {
+  const tabsEl = document.getElementById('ob-list-tabs');
+  const body = document.getElementById('ob-order-list-body');
+  if (!tabsEl || !body) return;
+  tabsEl.innerHTML = OB_LIST_TABS.map(t => {
+    const n = countLinesByTab(t.key);
+    const active = outboundListTab === t.key ? 'active' : '';
+    return `<button type="button" class="ob-status-tab ${active}" role="tab" onclick="setOutboundListTab('${t.key}')">${t.label} (${n})</button>`;
+  }).join('');
+  const hint = document.getElementById('ob-import-scope-hint');
+  const scope = getWarehouseScope();
+  if (hint) {
+    hint.textContent = scope === 'all'
+      ? 'Warehouse context: All. Import dialog will ask for a warehouse.'
+      : `Warehouse context: ${getWarehouseScopeLabel()}.`;
+  }
+  const allocBtn = document.getElementById('ob-btn-allocate');
+  if (allocBtn) allocBtn.style.display = outboundListTab === 'pending_allocation' ? '' : 'none';
+  const orderKw = (document.getElementById('ob-filter-order')?.value || '').trim().toLowerCase();
+  const skuKw = (document.getElementById('ob-filter-sku')?.value || '').trim().toLowerCase();
+  const trackKw = (document.getElementById('ob-filter-tracking')?.value || '').trim().toLowerCase();
+  let lines = scopedOutboundLines();
+  if (outboundListTab !== 'all') lines = lines.filter(l => normalizeObStatus(l.status) === outboundListTab);
+  if (orderKw) lines = lines.filter(l => l.orderNo.toLowerCase().includes(orderKw));
+  if (skuKw) lines = lines.filter(l => l.skuId.toLowerCase().includes(skuKw));
+  if (trackKw) lines = lines.filter(l => (l.trackingNo || '').toLowerCase().includes(trackKw));
+  body.innerHTML = lines.map(l => {
+    const st = normalizeObStatus(l.status);
+    const productCell = `<div class="ob-product-cell"><strong>${l.productName}</strong><span class="hint">${l.skuId} · ${l.spec} · Qty ${l.qty}</span>${l.holdReason ? `<span class="ob-hold-hint">${l.holdReason}</span>` : ''}</div>`;
+    return `<tr>
+      <td><input type="checkbox" class="ob-line-check" value="${l.id}"></td>
+      <td>${productCell}</td>
+      <td><a class="btn-link" onclick="openOutboundDetail('${l.outboundNo}')">${l.orderNo}</a><div class="hint">${l.outboundNo}</div></td>
+      <td>${formatCanonicalWarehouseCode(l.warehouseId)}</td>
+      <td>${l.trackingNo === '—' ? '—' : l.trackingNo}</td>
+      <td>${l.orderTime || '—'}</td>
+      <td>${lineTag(l.status)}</td>
+      <td>${listRowAction(l, st)}</td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="8" class="ob-empty">No orders in this status.</td></tr>';
+}
+
+function setOutboundListTab(tab) {
+  outboundListTab = tab;
+  renderOutboundOrderList();
+}
+
+function resetOutboundListFilters() {
+  ['ob-filter-order', 'ob-filter-sku', 'ob-filter-tracking'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  renderOutboundOrderList();
+}
+
+function toggleOutboundListChecks(on) {
+  document.querySelectorAll('#ob-order-list-body .ob-line-check').forEach(el => { el.checked = on; });
+}
+
+function listRowAction(l, st) {
+  if (st === 'pending_allocation') {
+    return `<a class="btn-link" onclick="confirmAllocationLine('${l.id}')">Allocate</a>`;
+  }
+  if (st === 'pending_picking') {
+    return `<a class="btn-link" onclick="openPackTrackingModal('${l.id}')">Pack &amp; Ship</a>`;
+  }
+  return `<a class="btn-link" onclick="viewOutboundLine('${l.id}')">View</a>`;
+}
+
+function renderOutboundBatches() { renderOutboundOrderList(); }
+function searchOutboundBatches() { renderOutboundOrderList(); }
+function resetOutboundBatchFilters() { resetOutboundListFilters(); }
 
 function openOutboundDetail(no) {
   currentOutboundNo = no;
@@ -287,30 +336,19 @@ function setOutboundTab(tab) {
 }
 
 function detailActions(tab) {
-  if (tab === 'allocated') {
-    return `<span class="hint">Pack: verify label vs order, then enter Tracking No.</span><span>
-      <button class="btn" onclick="exportShippingOrder()">Export for Courier</button>
-      <button class="btn" onclick="openImportTracking()">Import Tracking</button>
-      <button class="btn btn-primary" onclick="openPackTrackingModal()">Enter Tracking</button>
-    </span>`;
+  if (tab === 'pending_allocation') {
+    return `<span class="hint">Select lines and confirm allocation to lock stock (Outbound Occupy).</span><button class="btn btn-primary" onclick="confirmAllocationBatch()">Confirm Allocation</button>`;
   }
-  if (tab === 'ready_to_ship') {
-    return `<span class="hint">Courier pickup → confirm to deduct stock.</span><button class="btn btn-primary" onclick="askConfirmShipment()">Confirm Shipment</button>`;
+  if (tab === 'pending_picking') {
+    return `<span class="hint">Pack and enter tracking to ship (Outbound Deduct).</span><button class="btn btn-primary" onclick="openPackTrackingModal()">Pack &amp; Ship</button>`;
   }
-  if (tab === 'on_hold') return `<span class="hint">Replenish via Inbound, then re-allocate.</span><button class="btn btn-primary" onclick="reallocateSelected(false)">Batch Re-allocate</button>`;
   return '';
-}
-
-function normalizeObStatus(status) {
-  if (status === 'ready_to_pick' || status === 'ready_to_pack') return 'ready_to_ship';
-  return status;
 }
 
 function lineAction(l) {
   const st = normalizeObStatus(l.status);
-  if (st === 'allocated') return `<a class="btn-link" onclick="openPackTrackingModal('${l.id}')">Enter Tracking</a>`;
-  if (st === 'ready_to_ship') return `<a class="btn-link" onclick="askConfirmShipment('${l.id}')">Confirm Shipment</a>`;
-  if (st === 'on_hold') return `<a class="btn-link" onclick="reallocateLine('${l.id}')">Re-allocate</a>`;
+  if (st === 'pending_allocation') return `<a class="btn-link" onclick="confirmAllocationLine('${l.id}')">Allocate</a>`;
+  if (st === 'pending_picking') return `<a class="btn-link" onclick="openPackTrackingModal('${l.id}')">Pack &amp; Ship</a>`;
   if (st === 'shipped') return `<a class="btn-link" onclick="viewOutboundLine('${l.id}')">View</a>`;
   return `<a class="btn-link" onclick="viewOutboundLine('${l.id}')">View</a>`;
 }
@@ -408,93 +446,66 @@ function advanceSelected(from, to, label) {
   renderOutboundDetail();
 }
 
-function confirmShipment(id) {
-  const line = outboundLines.find(l => l.id === id);
-  if (!line || normalizeObStatus(line.status) !== 'ready_to_ship') return;
-  if (!deductSku(line)) {
-    showToast('Insufficient locked stock. Entire line failed.', 'error');
-    return;
-  }
-  line.status = 'shipped';
-  showToast(`${line.orderNo} / ${line.productName} moved to Shipped`, 'success');
-  refreshAfterInventoryChange();
-  renderOutboundDetail();
-}
-
-function askConfirmShipment(onlyId) {
-  const ids = onlyId ? [onlyId] : selectedLineIds();
-  if (!ids.length) {
-    showToast('Select at least one line.', 'warning');
-    return;
-  }
-  askOutboundConfirm('Confirm shipment', 'Courier has collected the parcel. Confirm shipment and deduct locked stock?', () => {
-    ids.forEach(confirmShipment);
-  });
-}
-
 function tryAllocate(line) {
+  if (normalizeObStatus(line.status) !== 'pending_allocation') return false;
   const sku = storageSku(line.warehouseId, line.skuId);
   if (!sku || sku.available < line.qty) {
-    line.status = 'on_hold';
-    line.zone = '—';
-    line.zoneCode = '—';
     line.holdReason = 'Insufficient available inventory';
     return false;
   }
   if (!occupySku(line.warehouseId, line.skuId, line.qty, line.outboundNo, line.orderNo)) {
-    line.status = 'on_hold';
     line.holdReason = 'Insufficient available inventory';
     return false;
   }
-  line.status = 'allocated';
+  line.status = 'pending_picking';
   line.zone = 'Storage Zone';
   line.zoneCode = formatCanonicalWarehouseCode(line.warehouseId) + 'STO';
   line.holdReason = '';
   return true;
 }
 
-function showAllocateResult(rows) {
-  document.getElementById('ob-result-body').innerHTML = rows.map(r => `
-    <p>${r.ok ? '✓' : '!'} ${r.orderNo} / ${r.productName}<br>
-    <span class="hint">${r.ok ? 'Success: Moved to Allocated.' : 'Failed: Insufficient stock; row remains On Hold.'}</span></p>
-  `).join('') || '<p>No rows.</p>';
-  openModal('ob-result-modal');
-}
-
-function reallocateLine(id) {
-  askOutboundConfirm('Re-allocate', 'Confirm retrying allocation for the selected row(s)?', () => {
-    const line = outboundLines.find(l => l.id === id);
-    if (!line) return;
+function confirmAllocationLine(id) {
+  const line = outboundLines.find(l => l.id === id);
+  if (!line) return;
+  askOutboundConfirm('Confirm allocation', `Allocate stock for ${line.orderNo}? Available will move to locked (Outbound Occupy).`, () => {
     const ok = tryAllocate(line);
     refreshAfterInventoryChange();
-    if (document.getElementById('page-outbound-detail').classList.contains('active')) renderOutboundDetail();
-    renderOnHold();
+    renderOutboundOrderList();
+    if (document.getElementById('page-outbound-detail')?.classList.contains('active')) renderOutboundDetail();
     showAllocateResult([{ ok, orderNo: line.orderNo, productName: line.productName }]);
   });
 }
 
-function reallocateSelected(fromHoldPage) {
-  const ids = fromHoldPage
-    ? [...document.querySelectorAll('.ob-hold-check:checked')].map(el => el.value)
-    : selectedLineIds();
+function confirmAllocationBatch() {
+  const ids = selectedLineIds();
   if (!ids.length) {
-    showToast('Select at least one line.', 'warning');
+    showToast('Select at least one order line.', 'warning');
     return;
   }
-  askOutboundConfirm('Re-allocate', 'Confirm retrying allocation for the selected row(s)?', () => {
+  askOutboundConfirm('Confirm allocation', 'Allocate selected lines? Stock will be locked (Outbound Occupy) and status becomes Pending Picking.', () => {
     const rows = [];
     ids.forEach(id => {
-      const line = outboundLines.find(l => l.id === id && l.status === 'on_hold');
+      const line = outboundLines.find(l => l.id === id && normalizeObStatus(l.status) === 'pending_allocation');
       if (!line) return;
-      const ok = tryAllocate(line);
-      rows.push({ ok, orderNo: line.orderNo, productName: line.productName });
+      rows.push({ ok: tryAllocate(line), orderNo: line.orderNo, productName: line.productName });
     });
     refreshAfterInventoryChange();
-    renderOnHold();
-    if (document.getElementById('page-outbound-detail').classList.contains('active')) renderOutboundDetail();
+    renderOutboundOrderList();
+    if (document.getElementById('page-outbound-detail')?.classList.contains('active')) renderOutboundDetail();
     showAllocateResult(rows);
   });
 }
+
+function showAllocateResult(rows) {
+  document.getElementById('ob-result-body').innerHTML = rows.map(r => `
+    <p>${r.ok ? '✓' : '!'} ${r.orderNo} / ${r.productName}<br>
+    <span class="hint">${r.ok ? 'Pending Picking · Outbound Occupy recorded.' : 'Still Pending Allocation · insufficient available.'}</span></p>
+  `).join('') || '<p>No rows.</p>';
+  openModal('ob-result-modal');
+}
+
+function reallocateLine(id) { confirmAllocationLine(id); }
+function reallocateSelected() { confirmAllocationBatch(); }
 
 function viewOutboundLine(id) {
   const l = outboundLines.find(x => x.id === id);
@@ -515,7 +526,7 @@ function viewOutboundLine(id) {
 }
 
 function exportShippingOrder() {
-  const lines = outboundLines.filter(l => l.outboundNo === currentOutboundNo && l.status === 'allocated');
+  const lines = outboundLines.filter(l => l.outboundNo === currentOutboundNo && normalizeObStatus(l.status) === 'pending_picking');
   document.getElementById('ob-export-count').textContent = `${lines.length} records.`;
   openModal('ob-export-modal');
 }
@@ -523,7 +534,7 @@ function exportShippingOrder() {
 function confirmExportShippingOrder() {
   const ext = document.getElementById('ob-export-format').value;
   const batch = outboundBatches.find(b => b.outboundNo === currentOutboundNo);
-  const lines = outboundLines.filter(l => l.outboundNo === currentOutboundNo && l.status === 'allocated');
+  const lines = outboundLines.filter(l => l.outboundNo === currentOutboundNo && normalizeObStatus(l.status) === 'pending_picking');
   const header = 'Outbound No,Order No,SKU ID,Product Name,Qty,Warehouse,Zone,Tracking No';
   const csv = [header].concat(lines.map(l =>
     [l.outboundNo, l.orderNo, l.skuId, l.productName, l.qty, formatCanonicalWarehouseCode(l.warehouseId), l.zoneCode, ''].join(',')
@@ -634,7 +645,6 @@ function runImportOrders() {
   const wh = document.getElementById('ob-import-wh').value;
   const outboundNo = nextDocNo('OB', wh);
   let allocated = 0;
-  let held = 0;
   let ignored = 0;
   const seen = new Set();
   rows.forEach(r => {
@@ -658,13 +668,12 @@ function runImportOrders() {
       zoneCode: '—',
       shipmentNo: '—',
       trackingNo: '—',
-      status: 'on_hold',
+      status: 'pending_allocation',
       holdReason: ''
     };
     if (line.qty <= 0) return;
-    if (tryAllocate(line)) allocated += 1;
-    else held += 1;
     outboundLines.push(line);
+    allocated += 1;
   });
   outboundBatches.unshift({
     outboundNo,
@@ -678,7 +687,7 @@ function runImportOrders() {
     pct = Math.min(100, pct + 25);
     document.getElementById('ob-import-bar').style.width = pct + '%';
     document.getElementById('ob-import-progress-text').textContent =
-      `Processing ${pct}% · Allocated ${allocated} · On Hold ${held} · Ignore ${ignored}`;
+      `Processing ${pct}% · Imported ${allocated} · Ignore ${ignored}`;
     if (pct < 100) return;
     clearInterval(timer);
     document.getElementById('ob-import-progress-title').textContent = 'Import successful';
@@ -687,9 +696,10 @@ function runImportOrders() {
     document.getElementById('ob-import-btn').onclick = () => {
       closeModal('ob-import-modal');
       document.getElementById('ob-import-btn').onclick = runImportOrders;
+      outboundListTab = 'pending_allocation';
       refreshAfterInventoryChange();
-      renderOutboundBatches();
-      openOutboundDetail(outboundNo);
+      renderOutboundOrderList();
+      navigateTo('outbound-orders');
     };
   }, 250);
 }
@@ -702,7 +712,7 @@ function openImportTracking() {
 }
 
 function fillSampleTrackCsv() {
-  const lines = outboundLines.filter(l => l.outboundNo === currentOutboundNo && l.status === 'allocated');
+  const lines = outboundLines.filter(l => l.outboundNo === currentOutboundNo && normalizeObStatus(l.status) === 'pending_picking');
   obTrackCsv = 'Outbound No,Order No,SKU ID,Tracking No\n' + lines.map((l, i) => `${l.outboundNo},${l.orderNo},${l.skuId},TRK${ymd()}${String(i + 1).padStart(4, '0')}`).join('\n');
   document.getElementById('ob-track-preview').textContent = obTrackCsv || 'No allocated lines';
   document.getElementById('ob-track-btn').disabled = !lines.length;
@@ -715,7 +725,7 @@ function runImportTracking() {
   const shipmentByTracking = {};
   rows.forEach(r => {
     const line = outboundLines.find(l =>
-      l.status === 'allocated' &&
+      normalizeObStatus(l.status) === 'pending_picking' &&
       l.orderNo === r['Order No'] &&
       l.skuId === r['SKU ID'] &&
       (!r['Outbound No'] || l.outboundNo === r['Outbound No']) &&
@@ -729,12 +739,18 @@ function runImportTracking() {
     if (!shipmentByTracking[tracking]) shipmentByTracking[tracking] = nextDocNo('SHP', line.warehouseId);
     line.trackingNo = tracking;
     line.shipmentNo = shipmentByTracking[tracking];
-    line.status = 'ready_to_ship';
+    if (!deductSku(line)) {
+      failed += 1;
+      return;
+    }
+    line.status = 'shipped';
     matched += 1;
   });
   closeModal('ob-track-modal');
-  showToast(failed ? `Matched ${matched}. Failed ${failed}: data mismatch` : `Matched ${matched}. Awaiting pickup.`, failed ? 'warning' : 'success');
-  currentObTab = 'ready_to_ship';
+  refreshAfterInventoryChange();
+  renderOutboundOrderList();
+  showToast(failed ? `Shipped ${matched}, failed ${failed}.` : `Shipped ${matched} line(s).`, failed ? 'warning' : 'success');
+  currentObTab = 'shipped';
   renderOutboundDetail();
 }
 
@@ -744,7 +760,7 @@ function openPackTrackingModal(onlyId) {
   openModal('ob-pack-modal');
 }
 
-function submitPackTracking() {
+function submitPackAndShip() {
   const onlyId = document.getElementById('ob-pack-line-id').value;
   const tracking = (document.getElementById('ob-pack-tracking').value || '').trim();
   if (!tracking) {
@@ -752,25 +768,34 @@ function submitPackTracking() {
     return;
   }
   const ids = onlyId ? [onlyId] : selectedLineIds();
-  const targets = outboundLines.filter(l =>
-    l.outboundNo === currentOutboundNo &&
-    normalizeObStatus(l.status) === 'allocated' &&
-    (!ids.length || ids.includes(l.id))
-  );
+  let targets = outboundLines.filter(l => normalizeObStatus(l.status) === 'pending_picking' && (!ids.length || ids.includes(l.id)));
+  if (currentOutboundNo && document.getElementById('page-outbound-detail')?.classList.contains('active')) {
+    targets = targets.filter(l => l.outboundNo === currentOutboundNo);
+  }
   if (!targets.length) {
-    showToast('No Allocated lines selected.', 'warning');
+    showToast('No Pending Picking lines selected.', 'warning');
     return;
   }
-  const shipmentNo = nextDocNo('SHP', targets[0].warehouseId);
+  let ok = 0;
+  let fail = 0;
   targets.forEach(l => {
     l.trackingNo = tracking;
-    l.shipmentNo = shipmentNo;
-    l.status = 'ready_to_ship';
+    l.shipmentNo = nextDocNo('SHP', l.warehouseId);
+    if (!deductSku(l)) {
+      fail += 1;
+      return;
+    }
+    l.status = 'shipped';
+    ok += 1;
   });
   closeModal('ob-pack-modal');
-  showToast(`${targets.length} line(s) → Awaiting Pickup`, 'success');
-  currentObTab = 'ready_to_ship';
-  renderOutboundDetail();
+  refreshAfterInventoryChange();
+  renderOutboundOrderList();
+  if (document.getElementById('page-outbound-detail')?.classList.contains('active')) {
+    currentObTab = 'shipped';
+    renderOutboundDetail();
+  }
+  showToast(fail ? `Shipped ${ok}, failed ${fail} (locked stock).` : `Shipped ${ok} line(s). Outbound Deduct recorded.`, fail ? 'warning' : 'success');
 }
 
 const SPECIAL_REASONS = [
@@ -854,8 +879,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const orig = navigateTo;
   navigateTo = function (pageId) {
     orig(pageId);
-    if (pageId === 'outbound-orders') renderOutboundBatches();
-    if (pageId === 'outbound-onhold') renderOnHold();
+    if (pageId === 'outbound-orders') renderOutboundOrderList();
     if (pageId === 'outbound-detail') renderOutboundDetail();
     if (pageId === 'outbound-special') renderSpecialOutboundForm();
   };

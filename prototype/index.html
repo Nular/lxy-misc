@@ -52,9 +52,8 @@
           <span>Outbound</span>
           <span class="chevron">▼</span>
         </div>
-        <div class="nav-item sub" data-page="outbound-orders">Regular Outbound</div>
+        <div class="nav-item sub" data-page="outbound-orders">Outbound Orders</div>
         <div class="nav-item sub" data-page="outbound-special">Special Outbound</div>
-        <div class="nav-item sub" data-page="outbound-onhold">Waiting Queue</div>
 
         <div class="nav-item parent nav-warehouses-group" data-group="warehouses">
           <span>Warehouses</span>
@@ -587,65 +586,57 @@
           </div>
         </div>
 
-        <!-- ========== OUTBOUND ORDERS ========== -->
+        <!-- ========== OUTBOUND ORDERS (OMS-style) ========== -->
         <div class="page" id="page-outbound-orders">
-          <div class="page-header">
-            <h1 class="page-title">Regular Outbound</h1>
-            <p class="page-subtitle">Import merchant-exported orders (replaces outbound Excel). Occupy on allocate; deduct only after courier pickup. Insufficient stock → Waiting Queue without occupy.</p>
+          <div class="page-header ob-page-header">
+            <h1 class="page-title">Outbound Orders</h1>
+            <p class="page-subtitle">Import orders → Pending Allocation → confirm allocation (Outbound Occupy) → pack &amp; enter tracking (Outbound Deduct → Shipped).</p>
           </div>
-          <div class="page-body">
-            <div class="ob-flow ob-flow-v2" aria-label="Regular outbound flow">
-              <span>① Import</span>
-              <span>② Occupy or On Hold</span>
-              <span>③ Pack + Tracking No.</span>
-              <span>④ Courier pickup → Deduct</span>
-            </div>
-            <div class="filter-bar">
+          <div class="page-body ob-oms-body">
+            <div class="ob-status-tabs" id="ob-list-tabs" role="tablist"></div>
+            <div class="ob-oms-filters filter-bar">
               <div class="filter-item">
-                <label>Search by</label>
-                <select id="ob-filter-field">
-                  <option value="outboundNo">Outbound No.</option>
-                  <option value="status">Batch Status</option>
-                </select>
+                <label>Order No.</label>
+                <input type="text" id="ob-filter-order" placeholder="Order No.">
               </div>
               <div class="filter-item">
-                <label>Keyword</label>
-                <input type="text" id="ob-filter-keyword" placeholder="Contains">
+                <label>SKU ID</label>
+                <input type="text" id="ob-filter-sku" placeholder="SKU ID">
               </div>
               <div class="filter-item">
-                <label>Imported period</label>
-                <input type="date" id="ob-filter-from" aria-label="Start date">
-              </div>
-              <div class="filter-item">
-                <label>to</label>
-                <input type="date" id="ob-filter-to" aria-label="End date">
+                <label>Tracking No.</label>
+                <input type="text" id="ob-filter-tracking" placeholder="Tracking No.">
               </div>
               <div class="filter-actions">
-                <button class="btn btn-primary" onclick="searchOutboundBatches()">Confirm</button>
-                <button class="btn" onclick="resetOutboundBatchFilters()">Reset</button>
+                <button class="btn btn-primary" type="button" onclick="renderOutboundOrderList()">Search</button>
+                <button class="btn" type="button" onclick="resetOutboundListFilters()">Reset</button>
               </div>
             </div>
-            <div class="toolbar">
-              <span class="hint" id="ob-import-scope-hint">The selected warehouse applies only to this import. Switching context later does not change existing outbound records.</span>
-              <button class="btn" onclick="navigateTo('outbound-special')">Special Outbound</button>
-              <button class="btn btn-primary" onclick="openImportOrders()">Import Order</button>
+            <div class="ob-oms-toolbar toolbar">
+              <div class="ob-oms-toolbar-left">
+                <button class="btn btn-primary" type="button" id="ob-btn-allocate" onclick="confirmAllocationBatch()">Confirm Allocation</button>
+                <span class="hint" id="ob-import-scope-hint"></span>
+              </div>
+              <div class="ob-oms-toolbar-right">
+                <button class="btn" type="button" onclick="navigateTo('outbound-special')">Special Outbound</button>
+                <button class="btn btn-primary" type="button" onclick="openImportOrders()">Import / Export</button>
+              </div>
             </div>
-            <div class="table-wrapper">
+            <div class="table-wrapper ob-oms-table">
               <table>
                 <thead>
                   <tr>
-                    <th>Outbound No.</th>
-                    <th>Imported At</th>
-                    <th>Source File</th>
+                    <th style="width:36px"><input type="checkbox" id="ob-list-check-all" onchange="toggleOutboundListChecks(this.checked)"></th>
+                    <th>Product Info</th>
+                    <th>Order No.</th>
                     <th>Warehouse</th>
-                    <th>Orders</th>
-                    <th>SKU Count</th>
-                    <th>Total Units</th>
+                    <th>Tracking No.</th>
+                    <th>Time</th>
                     <th>Status</th>
-                    <th>Action</th>
+                    <th>Operation</th>
                   </tr>
                 </thead>
-                <tbody id="ob-batch-body"></tbody>
+                <tbody id="ob-order-list-body"></tbody>
               </table>
             </div>
           </div>
@@ -1212,11 +1203,11 @@
   <div class="modal-overlay" id="ob-pack-modal">
     <div class="modal modal-sm">
       <div class="modal-header">
-        <span class="modal-title">Pack — Enter Tracking No.</span>
+        <span class="modal-title">Pack &amp; Confirm Shipment</span>
         <button class="modal-close" onclick="closeModal('ob-pack-modal')">&times;</button>
       </div>
       <div class="modal-body">
-        <p class="hint">Verify shipping label against the order, then enter the courier tracking number.</p>
+        <p class="hint">After packing, enter the courier tracking number. Confirming will deduct locked stock (Outbound Deduct) and mark the line Shipped.</p>
         <input type="hidden" id="ob-pack-line-id" value="">
         <div class="form-group">
           <label for="ob-pack-tracking">Tracking No.</label>
@@ -1225,7 +1216,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn" onclick="closeModal('ob-pack-modal')">Cancel</button>
-        <button class="btn btn-primary" onclick="submitPackTracking()">Save</button>
+        <button class="btn btn-primary" onclick="submitPackAndShip()">Confirm Shipment</button>
       </div>
     </div>
   </div>
