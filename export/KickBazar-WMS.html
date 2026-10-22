@@ -2068,12 +2068,8 @@ tbody tr.selected {
         <div class="nav-item sub" data-page="spu-sku-inventory">SPU/SKU inventory</div>
         <div class="nav-item sub" data-page="record">Record</div>
 
-        <div class="nav-item parent" data-group="fulfillment">
-          <span>Fulfillment</span>
-          <span class="chevron">▼</span>
-        </div>
-        <div class="nav-item sub" data-page="inbound">Inbound</div>
-        <div class="nav-item sub" data-page="outbound-orders">Outbound</div>
+        <div class="nav-item" data-page="inbound">Inbound</div>
+        <div class="nav-item" data-page="outbound-orders">Outbound</div>
 
         <div class="nav-item parent nav-warehouses-group" data-group="warehouses">
           <span>Warehouses</span>
@@ -3757,7 +3753,7 @@ function initNavigation() {
   document.querySelectorAll('.nav-item.parent').forEach(item => {
     item.addEventListener('click', (e) => {
       const group = item.dataset.group;
-      if (group === 'fulfillment' || group === 'outbound') navigateTo('inbound');
+      if (group === 'outbound') navigateTo('outbound-orders');
     });
   });
 }

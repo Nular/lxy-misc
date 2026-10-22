@@ -395,7 +395,7 @@ function initNavigation() {
   document.querySelectorAll('.nav-item.parent').forEach(item => {
     item.addEventListener('click', (e) => {
       const group = item.dataset.group;
-      if (group === 'fulfillment' || group === 'outbound') navigateTo('inbound');
+      if (group === 'outbound') navigateTo('outbound-orders');
     });
   });
 }
