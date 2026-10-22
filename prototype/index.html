@@ -506,12 +506,8 @@
         <!-- ========== INBOUND ========== -->
         <div class="page" id="page-inbound">
           <div class="page-header">
-            <div class="module-switch-tabs" role="tablist">
-              <button type="button" class="module-switch-tab active" onclick="navigateTo('inbound')">Inbound</button>
-              <button type="button" class="module-switch-tab" onclick="navigateTo('outbound-orders')">Outbound</button>
-            </div>
             <h1 class="page-title">Inbound</h1>
-            <p class="page-subtitle">上架入库 · 与 Outbound 同属 Fulfillment；Stocked In 写库存与 Record</p>
+            <p class="page-subtitle">上架入库；Stocked In 写库存与 Record</p>
           </div>
           <div class="page-body">
             <div class="filter-bar module-filter-bar inbound-filter-bar">
@@ -592,7 +588,7 @@
               <button type="button" class="module-switch-tab active" onclick="navigateTo('outbound-orders')">Outbound</button>
             </div>
             <h1 class="page-title">Outbound</h1>
-            <p class="page-subtitle">出库作业 · 与 Inbound 同属 Fulfillment；导入订单后分配占用、打包发运；支持特殊出库</p>
+            <p class="page-subtitle">导入订单 → 分配占用 → 打包发运；支持特殊出库（弹窗）</p>
           </div>
           <div class="page-body ob-oms-body">
             <div class="ob-status-tabs" id="ob-list-tabs" role="tablist"></div>
@@ -1216,7 +1212,7 @@
         <button class="modal-close" onclick="closeModal('ob-special-modal')">&times;</button>
       </div>
       <div class="modal-body">
-        <p class="hint">Mandatory reason · direct Outbound Deduct (no allocation). Same Fulfillment area as sales outbound.</p>
+        <p class="hint">Mandatory reason · direct Outbound Deduct (no allocation).</p>
         <div class="form-card sx-form">
           <div class="form-row">
             <label for="sx-wh">Warehouse</label>

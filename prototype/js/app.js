@@ -411,13 +411,6 @@ function navigateTo(pageId) {
   if (navItem) navItem.classList.add('active');
 
   if (pageId === 'home') renderHome();
-  document.querySelectorAll('.module-switch-tab').forEach(btn => {
-    const onInbound = pageId === 'inbound';
-    const onOutbound = pageId === 'outbound-orders';
-    const isInboundBtn = btn.textContent.trim() === 'Inbound';
-    const isOutboundBtn = btn.textContent.trim() === 'Outbound';
-    btn.classList.toggle('active', (onInbound && isInboundBtn) || (onOutbound && isOutboundBtn));
-  });
   if (pageId === 'inbound') {
     if (typeof populateInboundListFilters === 'function') populateInboundListFilters();
     if (typeof syncInboundListWarehouseFilterVisibility === 'function') syncInboundListWarehouseFilterVisibility();
