@@ -1732,6 +1732,43 @@ tbody tr.selected {
   padding: 48px 16px !important;
 }
 
+.module-switch-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.module-switch-tab {
+  border: 1px solid var(--border-color);
+  background: #fafafa;
+  padding: 8px 18px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  color: #555;
+}
+
+.module-switch-tab.active {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+.ob-oms-table table {
+  font-size: 12px;
+}
+
+.ob-oms-table th,
+.ob-oms-table td {
+  white-space: nowrap;
+}
+
+.ob-oms-table td.ob-wrap {
+  white-space: normal;
+  max-width: 160px;
+}
+
 .ob-picklist {
   font-size: 13px;
 }
@@ -2031,14 +2068,12 @@ tbody tr.selected {
         <div class="nav-item sub" data-page="spu-sku-inventory">SPU/SKU inventory</div>
         <div class="nav-item sub" data-page="record">Record</div>
 
-        <div class="nav-item" data-page="inbound">Inbound</div>
-
-        <div class="nav-item parent" data-group="outbound">
-          <span>Outbound</span>
+        <div class="nav-item parent" data-group="fulfillment">
+          <span>Fulfillment</span>
           <span class="chevron">▼</span>
         </div>
-        <div class="nav-item sub" data-page="outbound-orders">Outbound Orders</div>
-        <div class="nav-item sub" data-page="outbound-special">Special Outbound</div>
+        <div class="nav-item sub" data-page="inbound">Inbound</div>
+        <div class="nav-item sub" data-page="outbound-orders">Outbound</div>
 
         <div class="nav-item parent nav-warehouses-group" data-group="warehouses">
           <span>Warehouses</span>
@@ -2497,8 +2532,12 @@ tbody tr.selected {
         <!-- ========== INBOUND ========== -->
         <div class="page" id="page-inbound">
           <div class="page-header">
+            <div class="module-switch-tabs" role="tablist">
+              <button type="button" class="module-switch-tab active" onclick="navigateTo('inbound')">Inbound</button>
+              <button type="button" class="module-switch-tab" onclick="navigateTo('outbound-orders')">Outbound</button>
+            </div>
             <h1 class="page-title">Inbound</h1>
-            <p class="page-subtitle">Inbound receipts (上架入库); writes inventory on Stocked In</p>
+            <p class="page-subtitle">上架入库 · 与 Outbound 同属 Fulfillment；Stocked In 写库存与 Record</p>
           </div>
           <div class="page-body">
             <div class="filter-bar module-filter-bar inbound-filter-bar">
@@ -2574,8 +2613,12 @@ tbody tr.selected {
         <!-- ========== OUTBOUND ORDERS (OMS-style) ========== -->
         <div class="page" id="page-outbound-orders">
           <div class="page-header ob-page-header">
-            <h1 class="page-title">Outbound Orders</h1>
-            <p class="page-subtitle">Import 订单列表.xlsx → Pending Allocation → Confirm Allocation (Occupy) → Pack &amp; enter Shipping No. (Deduct → Shipped). Lines split per SKU for partial ship.</p>
+            <div class="module-switch-tabs" role="tablist">
+              <button type="button" class="module-switch-tab" onclick="navigateTo('inbound')">Inbound</button>
+              <button type="button" class="module-switch-tab active" onclick="navigateTo('outbound-orders')">Outbound</button>
+            </div>
+            <h1 class="page-title">Outbound</h1>
+            <p class="page-subtitle">出库作业 · 与 Inbound 同属 Fulfillment；导入订单后分配占用、打包发运；支持特殊出库</p>
           </div>
           <div class="page-body ob-oms-body">
             <div class="ob-status-tabs" id="ob-list-tabs" role="tablist"></div>
@@ -2603,7 +2646,7 @@ tbody tr.selected {
                 <span class="hint" id="ob-import-scope-hint"></span>
               </div>
               <div class="ob-oms-toolbar-right">
-                <button class="btn" type="button" onclick="navigateTo('outbound-special')">Special Outbound</button>
+                <button class="btn" type="button" onclick="openSpecialOutboundModal()">Special Outbound</button>
                 <button class="btn btn-primary" type="button" onclick="openImportOrders()">Import / Export</button>
               </div>
             </div>
@@ -2612,12 +2655,15 @@ tbody tr.selected {
                 <thead>
                   <tr>
                     <th style="width:36px"><input type="checkbox" id="ob-list-check-all" onchange="toggleOutboundListChecks(this.checked)"></th>
-                    <th>Product Info</th>
-                    <th>Order No.</th>
-                    <th id="ob-col-warehouse">Warehouse</th>
-                    <th id="ob-col-zone">Zone</th>
-                    <th>Shipping No.</th>
                     <th>Time</th>
+                    <th>Outbound No.</th>
+                    <th>SKU ID</th>
+                    <th>Product Name</th>
+                    <th>SKU</th>
+                    <th>SKU QTY</th>
+                    <th>Order No.</th>
+                    <th>Inbound No.</th>
+                    <th>Operator</th>
                     <th>Status</th>
                     <th>Operation</th>
                   </tr>
@@ -2662,46 +2708,6 @@ tbody tr.selected {
                 </thead>
                 <tbody id="ob-line-body"></tbody>
               </table>
-            </div>
-          </div>
-        </div>
-
-        <!-- ========== SPECIAL OUTBOUND ========== -->
-        <div class="page" id="page-outbound-special">
-          <div class="page-header">
-            <h1 class="page-title">Special Outbound</h1>
-            <p class="page-subtitle">Non-sales outbound with mandatory reason. Direct Outbound Deduct (no Occupy). Replaces manual outbound Excel + inventory Excel for special cases.</p>
-          </div>
-          <div class="page-body">
-            <div class="ob-flow ob-flow-v2 ob-flow-special" aria-label="Special outbound flow">
-              <span>① Reason</span>
-              <span>② Confirm</span>
-              <span>③ Outbound Deduct</span>
-            </div>
-            <div class="form-card sx-form">
-              <div class="form-row">
-                <label for="sx-wh">Warehouse</label>
-                <select id="sx-wh" onchange="refreshSpecialSkuOptions()"></select>
-              </div>
-              <div class="form-row">
-                <label for="sx-sku">SKU (storage zone row)</label>
-                <select id="sx-sku"></select>
-              </div>
-              <div class="form-row">
-                <label for="sx-qty">Quantity</label>
-                <input type="number" id="sx-qty" min="1" value="1">
-              </div>
-              <div class="form-row">
-                <label for="sx-reason">Reason</label>
-                <select id="sx-reason"></select>
-              </div>
-              <div class="form-row">
-                <label for="sx-note">Note</label>
-                <input type="text" id="sx-note" placeholder="Required when reason is Other">
-              </div>
-              <div class="form-actions">
-                <button class="btn btn-primary" type="button" onclick="submitSpecialOutbound()">Confirm Special Outbound</button>
-              </div>
             </div>
           </div>
         </div>
@@ -3229,6 +3235,44 @@ tbody tr.selected {
     </div>
   </div>
 
+  <div class="modal-overlay" id="ob-special-modal">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <span class="modal-title">Special Outbound</span>
+        <button class="modal-close" onclick="closeModal('ob-special-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="hint">Mandatory reason · direct Outbound Deduct (no allocation). Same Fulfillment area as sales outbound.</p>
+        <div class="form-card sx-form">
+          <div class="form-row">
+            <label for="sx-wh">Warehouse</label>
+            <select id="sx-wh" onchange="refreshSpecialSkuOptions()"></select>
+          </div>
+          <div class="form-row">
+            <label for="sx-sku">SKU (storage zone row)</label>
+            <select id="sx-sku"></select>
+          </div>
+          <div class="form-row">
+            <label for="sx-qty">Quantity</label>
+            <input type="number" id="sx-qty" min="1" value="1">
+          </div>
+          <div class="form-row">
+            <label for="sx-reason">Reason</label>
+            <select id="sx-reason"></select>
+          </div>
+          <div class="form-row">
+            <label for="sx-note">Note</label>
+            <input type="text" id="sx-note" placeholder="Required when reason is Other">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('ob-special-modal')">Cancel</button>
+        <button class="btn btn-primary" type="button" onclick="submitSpecialOutbound()">Confirm</button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-overlay" id="ob-confirm-modal">
     <div class="modal modal-sm">
       <div class="modal-header">
@@ -3713,7 +3757,7 @@ function initNavigation() {
   document.querySelectorAll('.nav-item.parent').forEach(item => {
     item.addEventListener('click', (e) => {
       const group = item.dataset.group;
-      if (group === 'outbound') navigateTo('outbound-orders');
+      if (group === 'fulfillment' || group === 'outbound') navigateTo('inbound');
     });
   });
 }
@@ -3729,6 +3773,13 @@ function navigateTo(pageId) {
   if (navItem) navItem.classList.add('active');
 
   if (pageId === 'home') renderHome();
+  document.querySelectorAll('.module-switch-tab').forEach(btn => {
+    const onInbound = pageId === 'inbound';
+    const onOutbound = pageId === 'outbound-orders';
+    const isInboundBtn = btn.textContent.trim() === 'Inbound';
+    const isOutboundBtn = btn.textContent.trim() === 'Outbound';
+    btn.classList.toggle('active', (onInbound && isInboundBtn) || (onOutbound && isOutboundBtn));
+  });
   if (pageId === 'inbound') {
     if (typeof populateInboundListFilters === 'function') populateInboundListFilters();
     if (typeof syncInboundListWarehouseFilterVisibility === 'function') syncInboundListWarehouseFilterVisibility();
@@ -6192,8 +6243,26 @@ function lineShippingNo(line) {
   return line.shippingNo || line.trackingNo || '—';
 }
 
-function showOutboundWarehouseColumn() {
-  return typeof isAdminUser === 'function' && isAdminUser() && getWarehouseScope() === 'all';
+function outboundOperatorName() {
+  if (typeof currentOperatorName === 'function') return currentOperatorName();
+  return typeof isAdminUser === 'function' && isAdminUser() ? 'Admin' : 'Warehouse Manager';
+}
+
+function lineDisplayTime(line) {
+  return line.shippedAt || line.allocatedAt || line.importedAt || line.orderTime || '—';
+}
+
+function nextOutboundInboundLinkNo() {
+  const d = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  const prefix = `IN-${d}`;
+  let max = 0;
+  outboundLines.forEach(l => {
+    if (!l.inboundNo || !String(l.inboundNo).startsWith(prefix)) return;
+    const tail = String(l.inboundNo).slice(prefix.length);
+    const n = parseInt(tail, 10);
+    if (!Number.isNaN(n)) max = Math.max(max, n);
+  });
+  return `${prefix}${String(max + 1).padStart(3, '0')}`;
 }
 
 /** 订单列表.xlsx：ItemDesc 形如 qty*Product Name-SKU */
@@ -6378,6 +6447,11 @@ function seedOutbound() {
       zone: '—',
       shippingNo: '—',
       shipmentNo: '—',
+      inboundNo: '—',
+      importedAt: '2026-08-21 09:10:00',
+      allocatedAt: '',
+      shippedAt: '',
+      operator: 'System',
       status: s.status,
       holdReason: s.holdReason || ''
     };
@@ -6385,6 +6459,9 @@ function seedOutbound() {
       line.zoneCode = 'SH001STO';
       line.zone = 'Storage Zone';
       occupySku(wh, s.skuId, s.qty, no, s.orderNo);
+      line.inboundNo = nextOutboundInboundLinkNo();
+      line.allocatedAt = '2026-08-21 09:15:00';
+      line.operator = 'Warehouse Manager';
     }
     outboundLines.push(line);
   });
@@ -6507,27 +6584,26 @@ function renderOutboundOrderList() {
   const orderKw = (document.getElementById('ob-filter-order')?.value || '').trim().toLowerCase();
   const skuKw = (document.getElementById('ob-filter-sku')?.value || '').trim().toLowerCase();
   const trackKw = (document.getElementById('ob-filter-shipping')?.value || '').trim().toLowerCase();
-  const showWh = showOutboundWarehouseColumn();
-  const whHead = document.getElementById('ob-col-warehouse');
-  const zoneHead = document.getElementById('ob-col-zone');
-  if (whHead) whHead.style.display = showWh ? '' : 'none';
   let lines = scopedOutboundLines();
   if (outboundListTab !== 'all') lines = lines.filter(l => normalizeObStatus(l.status) === outboundListTab);
   if (orderKw) lines = lines.filter(l => l.orderNo.toLowerCase().includes(orderKw));
   if (skuKw) lines = lines.filter(l => l.skuId.toLowerCase().includes(skuKw));
   if (trackKw) lines = lines.filter(l => lineShippingNo(l).toLowerCase().includes(trackKw));
-  const colSpan = showWh ? 9 : 8;
+  const colSpan = 12;
   body.innerHTML = lines.map(l => {
     const st = normalizeObStatus(l.status);
-    const productCell = `<div class="ob-product-cell"><strong>${l.productName}</strong><span class="hint">${l.skuId} · ${l.spec} · Qty ${l.qty}</span>${l.holdReason ? `<span class="ob-hold-hint">${l.holdReason}</span>` : ''}</div>`;
+    const holdHint = l.holdReason ? `<div class="ob-hold-hint">${l.holdReason}</div>` : '';
     return `<tr>
       <td><input type="checkbox" class="ob-line-check" value="${l.id}"></td>
-      <td>${productCell}</td>
-      <td><a class="btn-link" onclick="openOutboundDetail('${l.outboundNo}')">${l.orderNo}</a><div class="hint">${l.outboundNo}</div></td>
-      ${showWh ? `<td>${formatCanonicalWarehouseCode(l.warehouseId)}</td>` : ''}
-      <td>${l.zoneCode && l.zoneCode !== '—' ? l.zoneCode : '—'}</td>
-      <td>${lineShippingNo(l) === '—' ? '—' : lineShippingNo(l)}</td>
-      <td>${l.orderTime || '—'}</td>
+      <td>${lineDisplayTime(l)}</td>
+      <td><a class="btn-link" onclick="openOutboundDetail('${l.outboundNo}')">${l.outboundNo}</a></td>
+      <td>${l.skuId}</td>
+      <td class="ob-wrap">${l.productName}${holdHint}</td>
+      <td class="ob-wrap">${l.spec || '—'}</td>
+      <td>${l.qty}</td>
+      <td>${l.orderNo}</td>
+      <td>${l.inboundNo && l.inboundNo !== '—' ? l.inboundNo : '—'}</td>
+      <td>${l.operator || '—'}</td>
       <td>${lineTag(l.status)}</td>
       <td>${listRowAction(l, st)}</td>
     </tr>`;
@@ -6737,6 +6813,9 @@ function tryAllocate(line) {
   line.zone = 'Storage Zone';
   line.zoneCode = formatCanonicalWarehouseCode(line.warehouseId) + 'STO';
   line.holdReason = '';
+  line.inboundNo = nextOutboundInboundLinkNo();
+  line.allocatedAt = new Date().toISOString().slice(0, 19).replace('T', ' ');
+  line.operator = outboundOperatorName();
   return true;
 }
 
@@ -6990,6 +7069,11 @@ function runImportOrders() {
       zoneCode: '—',
       shippingNo: '—',
       shipmentNo: '—',
+      inboundNo: '—',
+      importedAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+      allocatedAt: '',
+      shippedAt: '',
+      operator: 'System',
       status: 'pending_allocation',
       holdReason: ''
     };
@@ -7109,6 +7193,8 @@ function submitPackAndShip() {
       return;
     }
     l.status = 'shipped';
+    l.shippedAt = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    l.operator = outboundOperatorName();
     ok += 1;
   });
   closeModal('ob-pack-modal');
@@ -7127,6 +7213,11 @@ const SPECIAL_REASONS = [
   { code: 'INTERNAL', label: 'Internal use' },
   { code: 'OTHER', label: 'Other (note required)' }
 ];
+
+function openSpecialOutboundModal() {
+  renderSpecialOutboundForm();
+  openModal('ob-special-modal');
+}
 
 function renderSpecialOutboundForm() {
   const scope = getWarehouseScope();
@@ -7190,10 +7281,36 @@ function submitSpecialOutbound() {
     showToast('Deduction failed.', 'error');
     return;
   }
+  const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+  outboundLines.unshift({
+    id: line.id,
+    outboundNo,
+    outboundType: 'special',
+    orderNo: '(Special)',
+    orderTime: now,
+    skuId: line.skuId,
+    productName: line.productName,
+    spec: line.spec,
+    qty: line.qty,
+    warehouseId: wh,
+    zone: line.zone,
+    zoneCode: line.zoneCode,
+    shippingNo: '—',
+    shipmentNo: '—',
+    inboundNo: '—',
+    importedAt: now,
+    allocatedAt: '',
+    shippedAt: now,
+    operator: outboundOperatorName(),
+    status: 'shipped',
+    holdReason: line.specialReason
+  });
   document.getElementById('sx-qty').value = '1';
   document.getElementById('sx-note').value = '';
+  closeModal('ob-special-modal');
   showToast(`Special outbound ${outboundNo} recorded.`, 'success');
   refreshAfterInventoryChange();
+  renderOutboundOrderList();
 }
 
 seedOutbound();
@@ -7204,7 +7321,6 @@ document.addEventListener('DOMContentLoaded', () => {
     orig(pageId);
     if (pageId === 'outbound-orders') renderOutboundOrderList();
     if (pageId === 'outbound-detail') renderOutboundDetail();
-    if (pageId === 'outbound-special') renderSpecialOutboundForm();
   };
 });
 

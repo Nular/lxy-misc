@@ -29,8 +29,26 @@ function lineShippingNo(line) {
   return line.shippingNo || line.trackingNo || '—';
 }
 
-function showOutboundWarehouseColumn() {
-  return typeof isAdminUser === 'function' && isAdminUser() && getWarehouseScope() === 'all';
+function outboundOperatorName() {
+  if (typeof currentOperatorName === 'function') return currentOperatorName();
+  return typeof isAdminUser === 'function' && isAdminUser() ? 'Admin' : 'Warehouse Manager';
+}
+
+function lineDisplayTime(line) {
+  return line.shippedAt || line.allocatedAt || line.importedAt || line.orderTime || '—';
+}
+
+function nextOutboundInboundLinkNo() {
+  const d = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  const prefix = `IN-${d}`;
+  let max = 0;
+  outboundLines.forEach(l => {
+    if (!l.inboundNo || !String(l.inboundNo).startsWith(prefix)) return;
+    const tail = String(l.inboundNo).slice(prefix.length);
+    const n = parseInt(tail, 10);
+    if (!Number.isNaN(n)) max = Math.max(max, n);
+  });
+  return `${prefix}${String(max + 1).padStart(3, '0')}`;
 }
 
 /** 订单列表.xlsx：ItemDesc 形如 qty*Product Name-SKU */
@@ -215,6 +233,11 @@ function seedOutbound() {
       zone: '—',
       shippingNo: '—',
       shipmentNo: '—',
+      inboundNo: '—',
+      importedAt: '2026-08-21 09:10:00',
+      allocatedAt: '',
+      shippedAt: '',
+      operator: 'System',
       status: s.status,
       holdReason: s.holdReason || ''
     };
@@ -222,6 +245,9 @@ function seedOutbound() {
       line.zoneCode = 'SH001STO';
       line.zone = 'Storage Zone';
       occupySku(wh, s.skuId, s.qty, no, s.orderNo);
+      line.inboundNo = nextOutboundInboundLinkNo();
+      line.allocatedAt = '2026-08-21 09:15:00';
+      line.operator = 'Warehouse Manager';
     }
     outboundLines.push(line);
   });
@@ -344,27 +370,26 @@ function renderOutboundOrderList() {
   const orderKw = (document.getElementById('ob-filter-order')?.value || '').trim().toLowerCase();
   const skuKw = (document.getElementById('ob-filter-sku')?.value || '').trim().toLowerCase();
   const trackKw = (document.getElementById('ob-filter-shipping')?.value || '').trim().toLowerCase();
-  const showWh = showOutboundWarehouseColumn();
-  const whHead = document.getElementById('ob-col-warehouse');
-  const zoneHead = document.getElementById('ob-col-zone');
-  if (whHead) whHead.style.display = showWh ? '' : 'none';
   let lines = scopedOutboundLines();
   if (outboundListTab !== 'all') lines = lines.filter(l => normalizeObStatus(l.status) === outboundListTab);
   if (orderKw) lines = lines.filter(l => l.orderNo.toLowerCase().includes(orderKw));
   if (skuKw) lines = lines.filter(l => l.skuId.toLowerCase().includes(skuKw));
   if (trackKw) lines = lines.filter(l => lineShippingNo(l).toLowerCase().includes(trackKw));
-  const colSpan = showWh ? 9 : 8;
+  const colSpan = 12;
   body.innerHTML = lines.map(l => {
     const st = normalizeObStatus(l.status);
-    const productCell = `<div class="ob-product-cell"><strong>${l.productName}</strong><span class="hint">${l.skuId} · ${l.spec} · Qty ${l.qty}</span>${l.holdReason ? `<span class="ob-hold-hint">${l.holdReason}</span>` : ''}</div>`;
+    const holdHint = l.holdReason ? `<div class="ob-hold-hint">${l.holdReason}</div>` : '';
     return `<tr>
       <td><input type="checkbox" class="ob-line-check" value="${l.id}"></td>
-      <td>${productCell}</td>
-      <td><a class="btn-link" onclick="openOutboundDetail('${l.outboundNo}')">${l.orderNo}</a><div class="hint">${l.outboundNo}</div></td>
-      ${showWh ? `<td>${formatCanonicalWarehouseCode(l.warehouseId)}</td>` : ''}
-      <td>${l.zoneCode && l.zoneCode !== '—' ? l.zoneCode : '—'}</td>
-      <td>${lineShippingNo(l) === '—' ? '—' : lineShippingNo(l)}</td>
-      <td>${l.orderTime || '—'}</td>
+      <td>${lineDisplayTime(l)}</td>
+      <td><a class="btn-link" onclick="openOutboundDetail('${l.outboundNo}')">${l.outboundNo}</a></td>
+      <td>${l.skuId}</td>
+      <td class="ob-wrap">${l.productName}${holdHint}</td>
+      <td class="ob-wrap">${l.spec || '—'}</td>
+      <td>${l.qty}</td>
+      <td>${l.orderNo}</td>
+      <td>${l.inboundNo && l.inboundNo !== '—' ? l.inboundNo : '—'}</td>
+      <td>${l.operator || '—'}</td>
       <td>${lineTag(l.status)}</td>
       <td>${listRowAction(l, st)}</td>
     </tr>`;
@@ -574,6 +599,9 @@ function tryAllocate(line) {
   line.zone = 'Storage Zone';
   line.zoneCode = formatCanonicalWarehouseCode(line.warehouseId) + 'STO';
   line.holdReason = '';
+  line.inboundNo = nextOutboundInboundLinkNo();
+  line.allocatedAt = new Date().toISOString().slice(0, 19).replace('T', ' ');
+  line.operator = outboundOperatorName();
   return true;
 }
 
@@ -827,6 +855,11 @@ function runImportOrders() {
       zoneCode: '—',
       shippingNo: '—',
       shipmentNo: '—',
+      inboundNo: '—',
+      importedAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+      allocatedAt: '',
+      shippedAt: '',
+      operator: 'System',
       status: 'pending_allocation',
       holdReason: ''
     };
@@ -946,6 +979,8 @@ function submitPackAndShip() {
       return;
     }
     l.status = 'shipped';
+    l.shippedAt = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    l.operator = outboundOperatorName();
     ok += 1;
   });
   closeModal('ob-pack-modal');
@@ -964,6 +999,11 @@ const SPECIAL_REASONS = [
   { code: 'INTERNAL', label: 'Internal use' },
   { code: 'OTHER', label: 'Other (note required)' }
 ];
+
+function openSpecialOutboundModal() {
+  renderSpecialOutboundForm();
+  openModal('ob-special-modal');
+}
 
 function renderSpecialOutboundForm() {
   const scope = getWarehouseScope();
@@ -1027,10 +1067,36 @@ function submitSpecialOutbound() {
     showToast('Deduction failed.', 'error');
     return;
   }
+  const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
+  outboundLines.unshift({
+    id: line.id,
+    outboundNo,
+    outboundType: 'special',
+    orderNo: '(Special)',
+    orderTime: now,
+    skuId: line.skuId,
+    productName: line.productName,
+    spec: line.spec,
+    qty: line.qty,
+    warehouseId: wh,
+    zone: line.zone,
+    zoneCode: line.zoneCode,
+    shippingNo: '—',
+    shipmentNo: '—',
+    inboundNo: '—',
+    importedAt: now,
+    allocatedAt: '',
+    shippedAt: now,
+    operator: outboundOperatorName(),
+    status: 'shipped',
+    holdReason: line.specialReason
+  });
   document.getElementById('sx-qty').value = '1';
   document.getElementById('sx-note').value = '';
+  closeModal('ob-special-modal');
   showToast(`Special outbound ${outboundNo} recorded.`, 'success');
   refreshAfterInventoryChange();
+  renderOutboundOrderList();
 }
 
 seedOutbound();
@@ -1041,6 +1107,5 @@ document.addEventListener('DOMContentLoaded', () => {
     orig(pageId);
     if (pageId === 'outbound-orders') renderOutboundOrderList();
     if (pageId === 'outbound-detail') renderOutboundDetail();
-    if (pageId === 'outbound-special') renderSpecialOutboundForm();
   };
 });
