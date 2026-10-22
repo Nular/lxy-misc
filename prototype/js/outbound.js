@@ -74,17 +74,123 @@ function resolveOutboundSku(warehouseId, skuId, productName) {
     const row = skuData.find(s =>
       s.skuId === skuId && formatCanonicalWarehouseCode(skuWarehouseId(s)) === whCode
     );
-    if (row) return { skuId: row.skuId, productName: row.productName, spec: row.spec || '—' };
+    if (row) return { skuId: row.skuId, productName: row.productName, spec: row.spec || '—', ok: !!storageSku(warehouseId, skuId) };
     const sto = storageSku(warehouseId, skuId);
-    if (sto) return { skuId: sto.skuId, productName: sto.productName || productName, spec: sto.spec || '—' };
+    if (sto) return { skuId: sto.skuId, productName: sto.productName || productName, spec: sto.spec || '—', ok: true };
+    return { skuId, productName: productName || skuId, spec: '—', ok: false, error: 'No Storage Zone row for this SKU in warehouse' };
   }
   if (typeof matchSkusByProductName === 'function') {
-    const matches = matchSkusByProductName(productName, whCode);
+    const matches = matchSkusByProductName(productName, whCode).filter(s => storageSku(warehouseId, s.skuId));
     if (matches.length === 1) {
-      return { skuId: matches[0].skuId, productName: matches[0].productName, spec: matches[0].spec || '—' };
+      return { skuId: matches[0].skuId, productName: matches[0].productName, spec: matches[0].spec || '—', ok: true };
+    }
+    if (matches.length > 1) {
+      return { skuId: '—', productName, spec: '—', ok: false, error: `Ambiguous product name (${matches.length} SKUs)` };
     }
   }
-  return { skuId: skuId || '—', productName: productName || '—', spec: '—' };
+  return { skuId: skuId || '—', productName: productName || '—', spec: '—', ok: false, error: 'SKU not matched' };
+}
+
+function listStoSkusForWarehouse(warehouseId) {
+  const code = formatCanonicalWarehouseCode(warehouseId);
+  return skuData.filter(s =>
+    formatCanonicalWarehouseCode(skuWarehouseId(s)) === code && /STO|Storage/i.test((s.zoneCode || '') + s.zone)
+  );
+}
+
+function outboundImportWarehouseId() {
+  const scope = getWarehouseScope();
+  if (scope !== 'all') return scope;
+  const el = document.getElementById('ob-import-wh');
+  return el ? el.value : (warehouses[0] && warehouses[0].id);
+}
+
+let obImportValidatedRows = null;
+
+function validateAndResolveOutboundRows(warehouseId, rawRows) {
+  const normalized = normalizeImportRows(rawRows);
+  const errors = [];
+  const validRows = [];
+  normalized.forEach((r, i) => {
+    const rowNum = i + 2;
+    if (!r['Order No']) {
+      errors.push({ row: rowNum, order: '—', msg: 'Missing MerchantOrderID' });
+      return;
+    }
+    if (!r['Product Name'] && !r['SKU ID']) {
+      errors.push({ row: rowNum, order: r['Order No'], msg: 'ItemDesc format invalid (need qty*Product-SKU)' });
+      return;
+    }
+    const qty = parseInt(r.Qty, 10) || 0;
+    if (qty <= 0) {
+      errors.push({ row: rowNum, order: r['Order No'], msg: 'ItemQuantity must be positive' });
+      return;
+    }
+    const resolved = resolveOutboundSku(warehouseId, r['SKU ID'], r['Product Name']);
+    if (!resolved.ok) {
+      errors.push({ row: rowNum, order: r['Order No'], msg: resolved.error || 'SKU not found in warehouse STO' });
+      return;
+    }
+    validRows.push({
+      'Order No': r['Order No'],
+      Qty: qty,
+      'Product Name': resolved.productName,
+      'SKU ID': resolved.skuId,
+      Specification: resolved.spec,
+      'Order Time': r['Order Time'] || ''
+    });
+  });
+  return { errors, validRows, ok: errors.length === 0 && validRows.length > 0 };
+}
+
+function renderOutboundImportValidation(result) {
+  const panel = document.getElementById('ob-import-validate-panel');
+  const summary = document.getElementById('ob-import-validate-summary');
+  const wrap = document.getElementById('ob-import-validate-table-wrap');
+  if (!panel || !summary || !wrap) return;
+  if (!result || (!result.validRows.length && !result.errors.length)) {
+    panel.hidden = true;
+    return;
+  }
+  panel.hidden = false;
+  if (result.errors.length) {
+    panel.classList.add('inbound-alert-warn');
+    summary.textContent = `${result.errors.length} row(s) failed validation. Fix the file or warehouse before import.`;
+  } else {
+    panel.classList.remove('inbound-alert-warn');
+    summary.textContent = `All ${result.validRows.length} row(s) matched warehouse SKU rows. Ready to import.`;
+  }
+  const rows = result.validRows.map(v => `
+    <tr><td>${v['Order No']}</td><td>${v['SKU ID']}</td><td>${v['Product Name']}</td><td>${v.Specification}</td><td>${v.Qty}</td><td class="tag tag-enable">OK</td></tr>
+  `).concat(result.errors.map(e => `
+    <tr><td>${e.order}</td><td>—</td><td>—</td><td>—</td><td>—</td><td class="ob-hold-hint">Row ${e.row}: ${e.msg}</td></tr>
+  `));
+  wrap.innerHTML = `<table><thead><tr><th>Order No.</th><th>SKU ID</th><th>Product Name</th><th>SKU</th><th>Qty</th><th>Check</th></tr></thead><tbody>${rows.join('')}</tbody></table>`;
+}
+
+function applyOutboundImportPreview(rawRows) {
+  const wh = outboundImportWarehouseId();
+  if (!wh) {
+    document.getElementById('ob-import-btn').disabled = true;
+    document.getElementById('ob-import-file-msg').textContent = 'Select a warehouse.';
+    return;
+  }
+  const result = validateAndResolveOutboundRows(wh, rawRows);
+  obImportValidatedRows = result.ok ? result.validRows : null;
+  renderOutboundImportValidation(result);
+  const btn = document.getElementById('ob-import-btn');
+  if (btn) btn.disabled = !result.ok;
+  const msg = document.getElementById('ob-import-file-msg');
+  if (msg) {
+    if (result.ok) msg.textContent = `${result.validRows.length} row(s) validated for ${formatCanonicalWarehouseCode(wh)}.`;
+    else if (result.errors.length) msg.textContent = 'Validation failed. See details below.';
+    else msg.textContent = 'No importable rows.';
+  }
+}
+
+function revalidateOutboundImportPreview() {
+  if (obOrderImportRows && obOrderImportRows.length) applyOutboundImportPreview(obOrderImportRows);
+  else if (obOrderCsv) applyOutboundImportPreview(parseCsv(obOrderCsv));
 }
 
 function parseOrderListMatrix(matrix) {
@@ -159,7 +265,11 @@ function nextDocNo(prefix, warehouseId) {
 
 function storageSku(warehouseId, skuId) {
   const code = formatCanonicalWarehouseCode(warehouseId);
-  return skuData.find(s => formatCanonicalWarehouseCode(skuWarehouseId(s)) === code && /STO|Storage/i.test(s.zone + s.zoneCode));
+  return skuData.find(s =>
+    s.skuId === skuId &&
+    formatCanonicalWarehouseCode(skuWarehouseId(s)) === code &&
+    /STO|Storage/i.test((s.zoneCode || '') + s.zone)
+  );
 }
 
 function batchStatus(lines) {
@@ -204,7 +314,7 @@ function lineTag(status) {
 }
 
 function seedOutbound() {
-  const wh = 'SH-001';
+  const wh = 'SH001';
   const no = nextDocNo('OB', wh);
   outboundBatches.push({
     outboundNo: no,
@@ -715,9 +825,12 @@ function openImportOrders() {
   document.getElementById('ob-import-wh-wrap').style.display = showWhPick ? '' : 'none';
   obOrderCsv = '';
   obOrderImportRows = null;
+  obImportValidatedRows = null;
   document.getElementById('ob-import-step-upload').hidden = false;
   document.getElementById('ob-import-step-progress').hidden = true;
   document.getElementById('ob-import-preview').hidden = true;
+  const validatePanel = document.getElementById('ob-import-validate-panel');
+  if (validatePanel) validatePanel.hidden = true;
   document.getElementById('ob-import-file-msg').textContent = '';
   document.getElementById('ob-import-btn').disabled = true;
   document.getElementById('ob-import-btn').textContent = 'Import';
@@ -727,15 +840,12 @@ function openImportOrders() {
 }
 
 function fillSampleOrderCsv() {
-  obOrderImportRows = [
-    { MerchantOrderID: 'MO-10001', 'Order No': 'MO-10001', ItemQuantity: 2, Qty: 2, ItemDesc: '2*Wireless Bluetooth Earbuds Pro-SKU-10001-BK', 'Product Name': 'Wireless Bluetooth Earbuds Pro', 'SKU ID': 'SKU-10001-BK' },
-    { MerchantOrderID: 'MO-10001', 'Order No': 'MO-10001', ItemQuantity: 1, Qty: 1, ItemDesc: '1*USB-C Flash Drive-SKU-10004-01', 'Product Name': 'USB-C Flash Drive', 'SKU ID': 'SKU-10004-01' }
-  ];
-  obOrderCsv = 'MerchantOrderID,ItemQuantity,ItemDesc\nMO-10001,2,2*Wireless Bluetooth Earbuds Pro-SKU-10001-BK\nMO-10001,1,1*USB-C Flash Drive-SKU-10004-01';
+  obOrderImportRows = null;
+  obOrderCsv = 'MerchantOrderID,ItemQuantity,ItemDesc\nMO-DEMO-2026,1,1*Wireless Bluetooth Earbuds Pro-SKU-10001-BK\nMO-DEMO-2026,1,1*Smart Watch Series X-SKU-10002-42';
   document.getElementById('ob-import-preview').hidden = false;
   document.getElementById('ob-import-preview').textContent = obOrderCsv;
-  document.getElementById('ob-import-file-msg').textContent = 'Sample 订单列表: same MerchantOrderID, two SKU lines (partial ship).';
-  document.getElementById('ob-import-btn').disabled = false;
+  document.getElementById('ob-import-file-msg').textContent = 'Sample 订单列表 (MO-DEMO-2026): two SKU lines ready for allocate → pack & ship.';
+  applyOutboundImportPreview(parseCsv(obOrderCsv));
 }
 
 function onOutboundFilePicked(input, kind) {
@@ -748,11 +858,15 @@ function onOutboundFilePicked(input, kind) {
       obOrderCsv = '';
       document.getElementById('ob-import-preview').hidden = false;
       document.getElementById('ob-import-preview').textContent = JSON.stringify(rows.slice(0, 5), null, 2);
-      const ok = rows.length > 0;
-      document.getElementById('ob-import-btn').disabled = !ok;
-      document.getElementById('ob-import-file-msg').textContent = ok
-        ? `Parsed ${rows.length} line(s) from ${file.name}.`
-        : 'No valid rows.';
+      if (!rows.length) {
+        obImportValidatedRows = null;
+        document.getElementById('ob-import-btn').disabled = true;
+        document.getElementById('ob-import-file-msg').textContent = 'No valid rows.';
+        renderOutboundImportValidation({ errors: [], validRows: [] });
+        return;
+      }
+      document.getElementById('ob-import-file-msg').textContent = `Parsed ${rows.length} line(s) from ${file.name}. Validating…`;
+      applyOutboundImportPreview(rows);
     }).catch(err => {
       obOrderImportRows = null;
       document.getElementById('ob-import-btn').disabled = true;
@@ -769,10 +883,15 @@ function onOutboundFilePicked(input, kind) {
       document.getElementById('ob-import-preview').hidden = false;
       document.getElementById('ob-import-preview').textContent = obOrderCsv.slice(0, 800);
       const ok = /merchantorderid/i.test(obOrderCsv) || obOrderCsv.includes('SKU ID');
-      document.getElementById('ob-import-btn').disabled = !ok;
-      document.getElementById('ob-import-file-msg').textContent = ok
-        ? 'Upload successful. Ready to import.'
-        : 'Required: MerchantOrderID, ItemQuantity, ItemDesc.';
+      if (!ok) {
+        obImportValidatedRows = null;
+        document.getElementById('ob-import-btn').disabled = true;
+        document.getElementById('ob-import-file-msg').textContent = 'Required: MerchantOrderID, ItemQuantity, ItemDesc.';
+        renderOutboundImportValidation({ errors: [], validRows: [] });
+        return;
+      }
+      document.getElementById('ob-import-file-msg').textContent = 'Upload successful. Validating…';
+      applyOutboundImportPreview(parseCsv(obOrderCsv));
     } else {
       obTrackCsv = String(reader.result || '');
       document.getElementById('ob-track-preview').textContent = obTrackCsv.slice(0, 800);
@@ -815,12 +934,11 @@ function normalizeImportRows(raw) {
 }
 
 function runImportOrders() {
-  let rows = obOrderImportRows ? [...obOrderImportRows] : parseCsv(obOrderCsv);
-  rows = normalizeImportRows(rows);
-  if (!rows.length) {
-    showToast('No data rows.', 'error');
+  if (!obImportValidatedRows || !obImportValidatedRows.length) {
+    showToast('Fix validation errors or upload a valid file before import.', 'error');
     return;
   }
+  const rows = obImportValidatedRows.map(r => ({ ...r }));
   document.getElementById('ob-import-step-upload').hidden = true;
   document.getElementById('ob-import-preview').hidden = true;
   document.getElementById('ob-import-step-progress').hidden = false;
@@ -840,15 +958,14 @@ function runImportOrders() {
       return;
     }
     seen.add(key);
-    const resolved = resolveOutboundSku(wh, r['SKU ID'], r['Product Name']);
     const line = {
       id: 'L' + Date.now() + Math.random().toString(16).slice(2, 6),
       outboundNo,
       orderNo: r['Order No'],
       orderTime: r['Order Time'] || '',
-      skuId: resolved.skuId,
-      productName: resolved.productName,
-      spec: resolved.spec || r.Specification || '—',
+      skuId: r['SKU ID'],
+      productName: r['Product Name'],
+      spec: r.Specification || '—',
       qty: parseInt(r.Qty, 10) || 0,
       warehouseId: wh,
       zone: '—',
@@ -885,10 +1002,11 @@ function runImportOrders() {
     document.getElementById('ob-import-progress-title').textContent = 'Import successful';
     document.getElementById('ob-import-btn').disabled = false;
     document.getElementById('ob-import-btn').textContent = 'Confirm';
-    document.getElementById('ob-import-btn').onclick = () => {
+      document.getElementById('ob-import-btn').onclick = () => {
       closeModal('ob-import-modal');
       document.getElementById('ob-import-btn').onclick = runImportOrders;
       obOrderImportRows = null;
+      obImportValidatedRows = null;
       outboundListTab = 'pending_allocation';
       refreshAfterInventoryChange();
       renderOutboundOrderList();
@@ -1005,33 +1123,96 @@ function openSpecialOutboundModal() {
   openModal('ob-special-modal');
 }
 
+function specialOutboundWarehouseId() {
+  const scope = getWarehouseScope();
+  if (scope !== 'all') return scope;
+  const showWh = isAdminUser();
+  if (!showWh) return MANAGER_ASSIGNED_WH;
+  const el = document.getElementById('sx-wh');
+  return el ? el.value : (warehouses[0] && warehouses[0].id);
+}
+
 function renderSpecialOutboundForm() {
   const scope = getWarehouseScope();
+  const showWhPick = scope === 'all' && isAdminUser();
+  const whWrap = document.getElementById('sx-wh-wrap');
+  if (whWrap) whWrap.style.display = showWhPick ? '' : 'none';
   const whSelect = document.getElementById('sx-wh');
   const list = scope === 'all' ? warehouses : warehouses.filter(w => w.id === scope);
   whSelect.innerHTML = list.map(w => `<option value="${w.id}">${formatCanonicalWarehouseCode(w.id)} — ${w.name}</option>`).join('');
-  whSelect.disabled = scope !== 'all';
+  if (!showWhPick && scope !== 'all') whSelect.value = scope;
   const reason = document.getElementById('sx-reason');
   reason.innerHTML = SPECIAL_REASONS.map(r => `<option value="${r.code}">${r.label}</option>`).join('');
-  refreshSpecialSkuOptions();
+  document.getElementById('sx-product').value = '';
+  document.getElementById('sx-spec').value = '';
+  document.getElementById('sx-remarks').value = '';
+  onSxWarehouseChange();
 }
 
-function refreshSpecialSkuOptions() {
-  const wh = document.getElementById('sx-wh').value;
-  const select = document.getElementById('sx-sku');
-  const code = formatCanonicalWarehouseCode(wh);
-  const rows = skuData.filter(s => formatCanonicalWarehouseCode(skuWarehouseId(s)) === code && /STO|Storage/i.test((s.zoneCode || '') + s.zone));
-  select.innerHTML = rows.map(s =>
-    `<option value="${s.skuId}">${s.skuId} · avail ${s.available} · ${s.productName || ''}</option>`
-  ).join('') || '<option value="">No SKU rows in this warehouse</option>';
+function onSxWarehouseChange() {
+  onSxProductInput();
+  const skuSelect = document.getElementById('sx-sku-id');
+  if (skuSelect) skuSelect.innerHTML = '<option value="">Select product first</option>';
+  document.getElementById('sx-spec').value = '';
+}
+
+function onSxProductInput() {
+  const wh = specialOutboundWarehouseId();
+  const kw = (document.getElementById('sx-product').value || '').trim().toLowerCase();
+  const rows = listStoSkusForWarehouse(wh);
+  const names = new Set();
+  rows.forEach(s => {
+    const pn = (s.productName || '').toLowerCase();
+    if (!kw || pn.includes(kw)) names.add(s.productName || s.skuId);
+  });
+  const list = document.getElementById('sx-product-list');
+  list.innerHTML = [...names].sort().slice(0, 40).map(n => `<option value="${n.replace(/"/g, '&quot;')}">`).join('');
+}
+
+function onSxProductPick() {
+  const wh = specialOutboundWarehouseId();
+  const name = (document.getElementById('sx-product').value || '').trim();
+  const skuSelect = document.getElementById('sx-sku-id');
+  if (!name) {
+    skuSelect.innerHTML = '<option value="">Select product first</option>';
+    document.getElementById('sx-spec').value = '';
+    return;
+  }
+  const rows = listStoSkusForWarehouse(wh).filter(s =>
+    (s.productName || '').toLowerCase() === name.toLowerCase() ||
+    (typeof matchSkusByProductName === 'function' && matchSkusByProductName(name, wh).some(m => m.skuId === s.skuId))
+  );
+  const uniq = [];
+  const seen = new Set();
+  rows.forEach(s => {
+    if (seen.has(s.skuId)) return;
+    seen.add(s.skuId);
+    uniq.push(s);
+  });
+  skuSelect.innerHTML = uniq.length
+    ? uniq.map(s => `<option value="${s.skuId}">${s.skuId} · avail ${s.available}</option>`).join('')
+    : '<option value="">No STO row for this product</option>';
+  if (uniq.length === 1) {
+    skuSelect.value = uniq[0].skuId;
+    onSxSkuPick();
+  } else {
+    document.getElementById('sx-spec').value = '';
+  }
+}
+
+function onSxSkuPick() {
+  const wh = specialOutboundWarehouseId();
+  const skuId = document.getElementById('sx-sku-id').value;
+  const row = storageSku(wh, skuId);
+  document.getElementById('sx-spec').value = row ? (row.spec || '—') : '';
 }
 
 function submitSpecialOutbound() {
-  const wh = document.getElementById('sx-wh').value;
-  const skuId = document.getElementById('sx-sku').value;
+  const wh = specialOutboundWarehouseId();
+  const skuId = document.getElementById('sx-sku-id').value;
   const qty = parseInt(document.getElementById('sx-qty').value, 10);
   const reasonCode = document.getElementById('sx-reason').value;
-  const note = (document.getElementById('sx-note').value || '').trim();
+  const note = (document.getElementById('sx-remarks').value || '').trim();
   if (!skuId || !qty || qty < 1) {
     showToast('Select SKU and enter a valid quantity.', 'warning');
     return;
@@ -1054,6 +1235,7 @@ function submitSpecialOutbound() {
     orderNo: '—',
     skuId,
     productName: sku.productName || skuId,
+    spec: sku.spec || '—',
     qty,
     warehouseId: wh,
     zone: 'Storage Zone',
@@ -1092,7 +1274,7 @@ function submitSpecialOutbound() {
     holdReason: line.specialReason
   });
   document.getElementById('sx-qty').value = '1';
-  document.getElementById('sx-note').value = '';
+  document.getElementById('sx-remarks').value = '';
   closeModal('ob-special-modal');
   showToast(`Special outbound ${outboundNo} recorded.`, 'success');
   refreshAfterInventoryChange();
