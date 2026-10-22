@@ -16,24 +16,28 @@ Warehouse Management System (WMS) interactive HTML prototype based on PRD specif
 
 ### 单文件版（推荐，无需服务器）
 
-**单文件导出（推荐）** — zip 内只有一个 HTML，含全部页面与交互：
+1. 在仓库根目录执行打包（会更新 HTML **与** zip）：
 
+```bash
+python3 scripts/build-wms-html.py
 ```
-export/KickBazar-WMS-Export.zip   →  KickBazar-WMS.html
-```
 
-或直接打开 `export/KickBazar-WMS.html`（与 `prototype/kickbazar-wms-prototype.html` 同源，由 `scripts/build-wms-html.py` 生成）。
+2. 用浏览器打开 **`export/KickBazar-WMS.html`**（约 1.2MB，内联 CSS/JS，与 `prototype/kickbazar-wms-prototype.html` 相同）。
 
-`export/` 下其余分页面 HTML 为历史拆分稿，不再打入 zip。
+3. 需要 zip 分发时使用 **`export/KickBazar-WMS-Export.zip`**（须为上述 build 生成；旧 zip 内 HTML 仅 ~200KB，**无完整样式与 Outbound 等数据**）。
+
+`export/KickBazar-WMS-Dashboard.html` 等拆分文件为历史稿，**请勿用于验收**。
 
 ### 多文件版
+
+必须从 **`prototype` 目录**起本地服务（否则 `css/styles.css` 加载失败会无样式）：
 
 ```bash
 cd prototype
 python3 -m http.server 8080
 ```
 
-Open http://localhost:8080 in your browser (recommended viewport: 1440×900).
+浏览器打开 http://localhost:8080/（建议视口 1440×900）。若样式未加载，页面顶部会提示上述两种方式。
 
 ## Navigation Structure
 

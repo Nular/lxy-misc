@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Bundle prototype into export/KickBazar-WMS.html (single-file SPA)."""
+"""Bundle prototype into export/KickBazar-WMS.html (single-file SPA) + Export.zip."""
+import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -24,4 +25,33 @@ export.mkdir(exist_ok=True)
 (export / "KickBazar-WMS.html").write_text(out, encoding="utf-8")
 (proto / "kickbazar-wms-prototype.html").write_text(out, encoding="utf-8")
 (export / "KickBazar-WMS-Prototype.html").write_text(out, encoding="utf-8")
+zip_path = export / "KickBazar-WMS-Export.zip"
+readme = export / "README.md"
+with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+    zf.write(export / "KickBazar-WMS.html", arcname="KickBazar-WMS.html")
+    if readme.is_file():
+        zf.write(readme, arcname="README.md")
+legacy_banner = (
+    '<div id="wms-legacy-banner" style="background:#ff4d4f;color:#fff;padding:12px 16px;text-align:center;font:14px sans-serif">'
+    "此文件为旧版拆分稿，数据与样式不完整。请打开同目录 <a href=\"KickBazar-WMS.html\" style=\"color:#fff;text-decoration:underline\">KickBazar-WMS.html</a>。"
+    "</div>"
+)
+for legacy_name in (
+    "KickBazar-WMS-Dashboard.html",
+    "KickBazar-WMS-Inventory.html",
+    "KickBazar-WMS-Inventory-Record.html",
+    "KickBazar-WMS-Warehouse-Setup.html",
+):
+    legacy_path = export / legacy_name
+    if not legacy_path.is_file():
+        continue
+    legacy_html = legacy_path.read_text(encoding="utf-8")
+    if "wms-legacy-banner" in legacy_html:
+        continue
+    legacy_path.write_text(
+        legacy_html.replace("<body>", f"<body>\n{legacy_banner}\n", 1),
+        encoding="utf-8",
+    )
+
 print(f"Wrote {export / 'KickBazar-WMS.html'} ({len(out)} bytes)")
+print(f"Wrote {zip_path} ({zip_path.stat().st_size} bytes)")

@@ -4,7 +4,26 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=1440">
   <title>KickBazar WMS - Prototype</title>
-  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/styles.css" id="wms-main-css">
+  <script>
+    (function () {
+      function showStylesHelp() {
+        if (document.getElementById('wms-styles-help')) return;
+        var box = document.createElement('div');
+        box.id = 'wms-styles-help';
+        box.setAttribute('role', 'alert');
+        box.style.cssText = 'margin:0;padding:14px 18px;background:#fff2f0;border-bottom:2px solid #ff4d4f;color:#434343;font:14px/1.5 sans-serif;';
+        box.innerHTML = '<strong>样式未加载。</strong> 请任选一种方式打开：<br>① 在 <code>prototype</code> 目录执行 <code>python3 -m http.server 8080</code>，浏览器访问 <code>http://localhost:8080/</code><br>② 直接打开仓库内最新单文件 <code>export/KickBazar-WMS.html</code>（或重新运行 <code>python3 scripts/build-wms-html.py</code> 后解压 <code>export/KickBazar-WMS-Export.zip</code>）<br><span style="color:#8c8c8c">勿使用 export 目录下旧的拆分页（如 KickBazar-WMS-Dashboard.html）或 10 月前的 zip。</span>';
+        document.body.insertBefore(box, document.body.firstChild);
+      }
+      window.addEventListener('load', function () {
+        if (!document.getElementById('wms-main-css')) return;
+        var layout = document.querySelector('.main-layout');
+        if (!layout) return;
+        if (getComputedStyle(layout).display !== 'flex') showStylesHelp();
+      });
+    })();
+  </script>
 </head>
 <body>
   <div class="app-container">
