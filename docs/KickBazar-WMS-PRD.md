@@ -443,8 +443,8 @@ WMS **不在入库页面创建 SKU 主数据**；仓内可作业前提如下：
 |------|------|------|--------|----------|
 | 采购/手动入库确认上架 | ↑ | — | ↑ | Inbound |
 | 采购单状态流转（未上架） | 不变 | 不变 | 不变 | 仅 PO |
-| 出库确认导入（普通） | — | ↑ | ↓ | Outbound Occupy |
-| 出库扣减（普通取件） | ↓ | ↓ | — | Outbound Deduct |
+| 出库确认分配（普通） | — | ↑ | ↓ | Outbound Occupy |
+| 出库确认发货（录入运单） | ↓ | ↓ | — | Outbound Deduct |
 | 特殊出库确认 | ↓ | — | ↓ | Outbound Deduct |
 | 库存调整-增加 | ↑ | — | ↑ | Manual Adjustment |
 | 库存调整-减少 | ↓ | — | ↓ | Manual Adjustment |
