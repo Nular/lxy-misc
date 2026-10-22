@@ -2528,10 +2528,6 @@ tbody tr.selected {
         <!-- ========== INBOUND ========== -->
         <div class="page" id="page-inbound">
           <div class="page-header">
-            <div class="module-switch-tabs" role="tablist">
-              <button type="button" class="module-switch-tab active" onclick="navigateTo('inbound')">Inbound</button>
-              <button type="button" class="module-switch-tab" onclick="navigateTo('outbound-orders')">Outbound</button>
-            </div>
             <h1 class="page-title">Inbound</h1>
             <p class="page-subtitle">上架入库；Stocked In 写库存与 Record</p>
           </div>
@@ -2609,10 +2605,6 @@ tbody tr.selected {
         <!-- ========== OUTBOUND ORDERS (OMS-style) ========== -->
         <div class="page" id="page-outbound-orders">
           <div class="page-header ob-page-header">
-            <div class="module-switch-tabs" role="tablist">
-              <button type="button" class="module-switch-tab" onclick="navigateTo('inbound')">Inbound</button>
-              <button type="button" class="module-switch-tab active" onclick="navigateTo('outbound-orders')">Outbound</button>
-            </div>
             <h1 class="page-title">Outbound</h1>
             <p class="page-subtitle">导入订单 → 分配占用 → 打包发运；支持特殊出库（弹窗）</p>
           </div>
@@ -3769,13 +3761,6 @@ function navigateTo(pageId) {
   if (navItem) navItem.classList.add('active');
 
   if (pageId === 'home') renderHome();
-  document.querySelectorAll('.module-switch-tab').forEach(btn => {
-    const onInbound = pageId === 'inbound';
-    const onOutbound = pageId === 'outbound-orders';
-    const isInboundBtn = btn.textContent.trim() === 'Inbound';
-    const isOutboundBtn = btn.textContent.trim() === 'Outbound';
-    btn.classList.toggle('active', (onInbound && isInboundBtn) || (onOutbound && isOutboundBtn));
-  });
   if (pageId === 'inbound') {
     if (typeof populateInboundListFilters === 'function') populateInboundListFilters();
     if (typeof syncInboundListWarehouseFilterVisibility === 'function') syncInboundListWarehouseFilterVisibility();
