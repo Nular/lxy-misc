@@ -26,6 +26,9 @@
   </script>
 </head>
 <body>
+  <div id="wms-boot-alert" class="page-demo-banner" hidden role="alert" style="margin:0;border-radius:0;border-color:#ff4d4f;background:#fff2f0">
+    <strong>演示数据未加载。</strong> 请确认已拉取最新 <code>KickBazar-WMS.html</code> 与同目录 <code>KickBazar-WMS.bundle.js</code>（或重新解压 zip）。点击右上角 <strong>Reload demo data</strong>，或按 F12 查看 Console 是否有脚本错误。
+  </div>
   <div class="app-container">
     <!-- Header -->
     <header class="header">
@@ -34,6 +37,7 @@
         <span>KickBazar</span>
       </div>
       <div class="header-right" style="display:flex;align-items:center;gap:12px;margin-left:auto;padding-right:16px;font-size:13px;color:#666">
+        <button type="button" class="btn btn-sm" onclick="resetWmsDemoData()" title="Clear saved role/scope and reload seed data">Reload demo data</button>
         <span>Role (demo)</span>
         <select id="role-select" onchange="setUserRole(this.value)" style="padding:4px 8px;border:1px solid #e8e8e8;border-radius:4px">
           <option value="admin">Admin</option>

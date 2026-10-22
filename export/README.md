@@ -1,34 +1,24 @@
-# KickBazar WMS 原型（单文件）
+# KickBazar WMS 原型
 
-**一个 HTML 包含全部交互**：Dashboard、Inbound、Outbound、仓库/库区、SPU/SKU 库存、Inventory Record 等。
+## 打开方式（重要）
 
-- 分辨率：1440×900  
-- **推荐**：直接双击本目录下的 **`KickBazar-WMS.html`**（无需服务器，样式与脚本已内联）
+解压后**同一文件夹**内必须保留两个文件，再双击 HTML：
 
-## 下载 zip
+| 文件 | 作用 |
+|------|------|
+| **KickBazar-WMS.html** | 页面结构 + 内联 CSS |
+| **KickBazar-WMS.bundle.js** | 演示数据与全部交互逻辑 |
 
-`KickBazar-WMS-Export.zip` 与 **`KickBazar-WMS.html` 同源**，由 `python3 scripts/build-wms-html.py` 在每次打包时**同步生成**。若 zip 体积只有约 40KB、解压后 HTML 约 200KB，说明是旧包，请拉取最新代码后重新执行 build，或直接使用仓库里的 `KickBazar-WMS.html`（约 1.2MB）。
+只复制 HTML、或只解压了其中一个文件 → **有样式但表格/KPI 为空**。
 
-zip 内含：
+若必须单文件：使用 zip 内的 **`KickBazar-WMS-all-in-one.html`**（体积更大，部分环境加载较慢）。
 
-- `KickBazar-WMS.html` — 完整可交互原型  
-- `README.md` — 本说明  
+## 仍然没有数据？
 
-## 多文件开发版
+1. 右上角点击 **Reload demo data**（清除本地 Role/仓库范围后重载种子数据）。
+2. 侧栏 Warehouse 选 **All warehouses**，Role 选 **Admin**。
+3. F12 → Console 查看是否有 `KickBazar-WMS.bundle.js` 404 或脚本错误。
 
-```bash
-cd prototype
-python3 -m http.server 8080
-```
+## 打包
 
-浏览器打开 http://localhost:8080/（不要只复制 HTML 到别的目录，否则 `css/`、`js/` 相对路径会失效）。
-
-## 勿用旧拆分页
-
-`export/KickBazar-WMS-Dashboard.html`、`KickBazar-WMS-Inventory.html` 等为**历史单页稿**，数据与样式均不完整。请只用 **`KickBazar-WMS.html`**。
-
-## 演示提示
-
-1. 右上角 **Role** 切 Admin；侧栏 **Warehouse** 选 All 可看全仓数据。  
-2. **Outbound → Import Orders → Use sample file**（MO-DEMO-2026）可走分配与发运。  
-3. **localStorage** 在同文件内会保留角色/仓库范围等设置。
+仓库根目录：`python3 scripts/build-wms-html.py`（会更新本目录 HTML、`.bundle.js` 与 zip）。

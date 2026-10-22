@@ -1,5 +1,35 @@
 // KickBazar WMS Prototype - App Logic
 
+function wmsStorageGet(key, fallback = null) {
+  try {
+    const v = localStorage.getItem(key);
+    return v == null ? fallback : v;
+  } catch {
+    return fallback;
+  }
+}
+
+function wmsStorageSet(key, value) {
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    /* file:// or privacy mode */
+  }
+}
+
+function wmsStorageRemove(key) {
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    /* ignore */
+  }
+}
+
+function resetWmsDemoData() {
+  ['wms_role', 'wms_wh_scope', 'manual_records'].forEach(wmsStorageRemove);
+  location.reload();
+}
+
 // ========== Mock Data ==========
 let warehouses = [
   {
@@ -108,7 +138,8 @@ const WH_SWITCH_WINDOW_MS = 60000;
 let whSwitchTimestamps = [];
 
 function getUserRole() {
-  return localStorage.getItem('wms_role') || 'admin';
+  const role = wmsStorageGet('wms_role', 'admin');
+  return role === 'warehouse' ? 'warehouse' : 'admin';
 }
 
 function isAdminUser() {
@@ -143,12 +174,15 @@ function recordWarehouseId(r) {
 
 function getWarehouseScope() {
   if (!isAdminUser()) return MANAGER_ASSIGNED_WH;
-  const scope = localStorage.getItem('wms_wh_scope') || 'all';
-  return scope === 'all' ? 'all' : normalizeWarehouseId(scope);
+  const scope = wmsStorageGet('wms_wh_scope', 'all');
+  if (scope === 'all') return 'all';
+  const nid = normalizeWarehouseId(scope);
+  if (!warehouses.some(w => w.id === nid)) return 'all';
+  return nid;
 }
 
 function setWarehouseScope(scope) {
-  localStorage.setItem('wms_wh_scope', scope === 'all' ? 'all' : normalizeWarehouseId(scope));
+  wmsStorageSet('wms_wh_scope', scope === 'all' ? 'all' : normalizeWarehouseId(scope));
 }
 
 function rowInWarehouseScope(whId) {
@@ -302,7 +336,7 @@ function applyRoleAndScopeUI() {
 }
 
 function setUserRole(role) {
-  localStorage.setItem('wms_role', role);
+  wmsStorageSet('wms_role', role);
   const sel = document.getElementById('role-select');
   if (sel) sel.value = role;
   applyRoleAndScopeUI();
@@ -367,7 +401,7 @@ let currentRecordTab = 'inbound';
 let recordListCache = [];
 
 // ========== Init ==========
-document.addEventListener('DOMContentLoaded', () => {
+function bootWmsPrototype() {
   initUserRole();
   initNavigation();
   initInventoryTabs();
@@ -381,6 +415,26 @@ document.addEventListener('DOMContentLoaded', () => {
   populateWarehouseSelects();
   applyRoleAndScopeUI();
   applyWarehouseScopeToFilters();
+  if (typeof renderOutboundOrderList === 'function') renderOutboundOrderList();
+  if (typeof renderInboundReceiptList === 'function') renderInboundReceiptList();
+}
+
+function wmsBootHealthCheck() {
+  const kpi = document.getElementById('dashboard-kpi');
+  if (!kpi || kpi.innerHTML.trim()) return;
+  renderHome();
+  if (kpi.innerHTML.trim()) return;
+  const bar = document.getElementById('wms-boot-alert');
+  if (bar) bar.hidden = false;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  bootWmsPrototype();
+  window.setTimeout(wmsBootHealthCheck, 300);
+});
+
+window.addEventListener('load', () => {
+  wmsBootHealthCheck();
 });
 
 // ========== Navigation ==========
@@ -1137,9 +1191,9 @@ function submitAdjustment() {
   });
   recordData.manual.unshift(manualRecords[0]);
   try {
-    const ls = JSON.parse(localStorage.getItem('manual_records') || '[]');
+    const ls = JSON.parse(wmsStorageGet('manual_records', '[]') || '[]');
     ls.unshift({ ...manualRecords[0] });
-    localStorage.setItem('manual_records', JSON.stringify(ls.slice(0, 100)));
+    wmsStorageSet('manual_records', JSON.stringify(ls.slice(0, 100)));
   } catch (e) { /* prototype */ }
   closeModal('adj-modal');
   renderSkuTable();
@@ -1190,7 +1244,7 @@ function renderRecords() {
 
   const manualFromStorage = [];
   try {
-    JSON.parse(localStorage.getItem('manual_records') || '[]').forEach(r => {
+    JSON.parse(wmsStorageGet('manual_records', '[]') || '[]').forEach(r => {
       manualFromStorage.push({ ...r, sub: 'manual' });
     });
   } catch (e) { /* ignore */ }
