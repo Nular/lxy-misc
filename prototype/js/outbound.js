@@ -22,7 +22,111 @@ let obSeq = { OB: 1, SHP: 1, SX: 1 };
 let currentOutboundNo = null;
 let currentObTab = 'all';
 let obOrderCsv = '';
+let obOrderImportRows = null;
 let obTrackCsv = '';
+
+function lineShippingNo(line) {
+  return line.shippingNo || line.trackingNo || '—';
+}
+
+function showOutboundWarehouseColumn() {
+  return typeof isAdminUser === 'function' && isAdminUser() && getWarehouseScope() === 'all';
+}
+
+/** 订单列表.xlsx：ItemDesc 形如 qty*Product Name-SKU */
+function parseOutboundItemDesc(itemDesc, itemQuantity) {
+  const qtyCol = parseInt(String(itemQuantity).replace(/,/g, ''), 10);
+  let desc = String(itemDesc || '').trim().replace(/【/g, '').replace(/】/g, '');
+  const m = desc.match(/^(\d+)\s*\*\s*(.+)$/);
+  const rest = m ? m[2].trim() : desc;
+  const qtyFromDesc = m ? parseInt(m[1], 10) : 0;
+  const qty = qtyCol > 0 ? qtyCol : (qtyFromDesc || 1);
+  const skuMatch = rest.match(/-(SKU[\w-]+)$/i);
+  if (skuMatch) {
+    const skuId = skuMatch[1];
+    const productName = rest.slice(0, -skuMatch[0].length).trim();
+    return { qty, productName, skuId };
+  }
+  return { qty, productName: rest, skuId: '' };
+}
+
+function resolveOutboundSku(warehouseId, skuId, productName) {
+  const whCode = formatCanonicalWarehouseCode(warehouseId);
+  if (skuId) {
+    const row = skuData.find(s =>
+      s.skuId === skuId && formatCanonicalWarehouseCode(skuWarehouseId(s)) === whCode
+    );
+    if (row) return { skuId: row.skuId, productName: row.productName, spec: row.spec || '—' };
+    const sto = storageSku(warehouseId, skuId);
+    if (sto) return { skuId: sto.skuId, productName: sto.productName || productName, spec: sto.spec || '—' };
+  }
+  if (typeof matchSkusByProductName === 'function') {
+    const matches = matchSkusByProductName(productName, whCode);
+    if (matches.length === 1) {
+      return { skuId: matches[0].skuId, productName: matches[0].productName, spec: matches[0].spec || '—' };
+    }
+  }
+  return { skuId: skuId || '—', productName: productName || '—', spec: '—' };
+}
+
+function parseOrderListMatrix(matrix) {
+  if (!matrix || !matrix.length) return [];
+  const headers = matrix[0].map(c => (typeof cellToDisplay === 'function' ? cellToDisplay(c) : String(c || '').trim()));
+  const idxOrder = typeof findHeaderIndex === 'function'
+    ? findHeaderIndex(headers, ['merchantorderid', 'merchant order id', 'order no'])
+    : headers.findIndex(h => /merchantorderid/i.test(h));
+  const idxQty = typeof findHeaderIndex === 'function'
+    ? findHeaderIndex(headers, ['itemquantity', 'item quantity', 'qty'])
+    : headers.findIndex(h => /itemquantity/i.test(h));
+  const idxDesc = typeof findHeaderIndex === 'function'
+    ? findHeaderIndex(headers, ['itemdesc', 'item desc'])
+    : headers.findIndex(h => /itemdesc/i.test(h));
+  if (idxOrder < 0 || idxQty < 0 || idxDesc < 0) {
+    throw new Error('Required columns: MerchantOrderID, ItemQuantity, ItemDesc');
+  }
+  const rows = [];
+  for (let r = 1; r < matrix.length; r++) {
+    const line = matrix[r];
+    if (!line || !line.some(c => c !== '' && c != null)) continue;
+    const orderNo = (typeof cellToDisplay === 'function' ? cellToDisplay(line[idxOrder]) : String(line[idxOrder] || '').trim());
+    const itemQty = line[idxQty];
+    const itemDesc = typeof cellToDisplay === 'function' ? cellToDisplay(line[idxDesc]) : String(line[idxDesc] || '').trim();
+    if (!orderNo || !itemDesc) continue;
+    const parsed = parseOutboundItemDesc(itemDesc, itemQty);
+    rows.push({
+      'MerchantOrderID': orderNo,
+      'Order No': orderNo,
+      'ItemQuantity': parsed.qty,
+      'Qty': parsed.qty,
+      'ItemDesc': itemDesc,
+      'Product Name': parsed.productName,
+      'SKU ID': parsed.skuId
+    });
+  }
+  return rows;
+}
+
+function readOrderListXlsx(file) {
+  return new Promise((resolve, reject) => {
+    if (typeof XLSX === 'undefined') {
+      reject(new Error('XLSX parser not loaded'));
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const wb = XLSX.read(new Uint8Array(reader.result), { type: 'array', cellDates: true });
+        const sheet = wb.Sheets[wb.SheetNames[0]];
+        const matrix = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+        resolve(parseOrderListMatrix(matrix));
+      } catch (e) {
+        reject(e);
+      }
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsArrayBuffer(file);
+  });
+}
 
 function ymd(date) {
   const d = date || new Date();
@@ -109,8 +213,8 @@ function seedOutbound() {
       warehouseId: wh,
       zoneCode: '—',
       zone: '—',
+      shippingNo: '—',
       shipmentNo: '—',
-      trackingNo: '—',
       status: s.status,
       holdReason: s.holdReason || ''
     };
@@ -140,6 +244,7 @@ function occupySku(warehouseId, skuId, qty, outboundNo, orderNo) {
     operator: 'System',
     outboundNo,
     relatedOrderNo: orderNo,
+    shippingNo: '—',
     shipmentNo: '—',
     status: 'Pending Picking'
   });
@@ -165,6 +270,7 @@ function deductSku(line) {
       operator: 'Warehouse',
       outboundNo: line.outboundNo,
       relatedOrderNo: '—',
+      shippingNo: '—',
       shipmentNo: '—',
       status: 'Special',
       specialReason: line.specialReason || ''
@@ -187,7 +293,8 @@ function deductSku(line) {
     operator: 'Warehouse',
     outboundNo: line.outboundNo,
     relatedOrderNo: line.orderNo,
-    shipmentNo: line.shipmentNo,
+    shipmentNo: lineShippingNo(line),
+    shippingNo: lineShippingNo(line),
     status: 'Shipped'
   });
   return true;
@@ -236,12 +343,17 @@ function renderOutboundOrderList() {
   if (allocBtn) allocBtn.style.display = outboundListTab === 'pending_allocation' ? '' : 'none';
   const orderKw = (document.getElementById('ob-filter-order')?.value || '').trim().toLowerCase();
   const skuKw = (document.getElementById('ob-filter-sku')?.value || '').trim().toLowerCase();
-  const trackKw = (document.getElementById('ob-filter-tracking')?.value || '').trim().toLowerCase();
+  const trackKw = (document.getElementById('ob-filter-shipping')?.value || '').trim().toLowerCase();
+  const showWh = showOutboundWarehouseColumn();
+  const whHead = document.getElementById('ob-col-warehouse');
+  const zoneHead = document.getElementById('ob-col-zone');
+  if (whHead) whHead.style.display = showWh ? '' : 'none';
   let lines = scopedOutboundLines();
   if (outboundListTab !== 'all') lines = lines.filter(l => normalizeObStatus(l.status) === outboundListTab);
   if (orderKw) lines = lines.filter(l => l.orderNo.toLowerCase().includes(orderKw));
   if (skuKw) lines = lines.filter(l => l.skuId.toLowerCase().includes(skuKw));
-  if (trackKw) lines = lines.filter(l => (l.trackingNo || '').toLowerCase().includes(trackKw));
+  if (trackKw) lines = lines.filter(l => lineShippingNo(l).toLowerCase().includes(trackKw));
+  const colSpan = showWh ? 9 : 8;
   body.innerHTML = lines.map(l => {
     const st = normalizeObStatus(l.status);
     const productCell = `<div class="ob-product-cell"><strong>${l.productName}</strong><span class="hint">${l.skuId} · ${l.spec} · Qty ${l.qty}</span>${l.holdReason ? `<span class="ob-hold-hint">${l.holdReason}</span>` : ''}</div>`;
@@ -249,13 +361,14 @@ function renderOutboundOrderList() {
       <td><input type="checkbox" class="ob-line-check" value="${l.id}"></td>
       <td>${productCell}</td>
       <td><a class="btn-link" onclick="openOutboundDetail('${l.outboundNo}')">${l.orderNo}</a><div class="hint">${l.outboundNo}</div></td>
-      <td>${formatCanonicalWarehouseCode(l.warehouseId)}</td>
-      <td>${l.trackingNo === '—' ? '—' : l.trackingNo}</td>
+      ${showWh ? `<td>${formatCanonicalWarehouseCode(l.warehouseId)}</td>` : ''}
+      <td>${l.zoneCode && l.zoneCode !== '—' ? l.zoneCode : '—'}</td>
+      <td>${lineShippingNo(l) === '—' ? '—' : lineShippingNo(l)}</td>
       <td>${l.orderTime || '—'}</td>
       <td>${lineTag(l.status)}</td>
       <td>${listRowAction(l, st)}</td>
     </tr>`;
-  }).join('') || '<tr><td colspan="8" class="ob-empty">No orders in this status.</td></tr>';
+  }).join('') || `<tr><td colspan="${colSpan}" class="ob-empty">No orders in this status.</td></tr>`;
 }
 
 function setOutboundListTab(tab) {
@@ -264,7 +377,7 @@ function setOutboundListTab(tab) {
 }
 
 function resetOutboundListFilters() {
-  ['ob-filter-order', 'ob-filter-sku', 'ob-filter-tracking'].forEach(id => {
+  ['ob-filter-order', 'ob-filter-sku', 'ob-filter-shipping'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -323,7 +436,7 @@ function renderOutboundDetail() {
       <td>${l.qty}</td>
       <td>${l.zoneCode}</td>
       <td>${l.shipmentNo}</td>
-      <td>${l.trackingNo}</td>
+      <td>${lineShippingNo(l)}</td>
       <td>${lineTag(l.status)}</td>
       <td>${lineAction(l)}</td>
     </tr>
@@ -520,7 +633,7 @@ function viewOutboundLine(id) {
       <div class="label">Outbound No.</div><div class="value">${l.outboundNo}</div>
       <div class="label">Order No.</div><div class="value">${l.orderNo}</div>
       <div class="label">Shipment No.</div><div class="value">${l.shipmentNo}</div>
-      <div class="label">Tracking No.</div><div class="value">${l.trackingNo}</div>
+      <div class="label">Shipping No.</div><div class="value">${lineShippingNo(l)}</div>
     </div>`;
   openModal('ob-line-modal');
 }
@@ -570,8 +683,10 @@ function openImportOrders() {
   const scope = getWarehouseScope();
   const list = scope === 'all' ? warehouses : warehouses.filter(w => w.id === scope);
   select.innerHTML = list.map(w => `<option value="${w.id}">${formatCanonicalWarehouseCode(w.id)} — ${w.name}</option>`).join('');
-  document.getElementById('ob-import-wh-wrap').style.display = scope === 'all' ? '' : 'none';
+  const showWhPick = scope === 'all' && isAdminUser();
+  document.getElementById('ob-import-wh-wrap').style.display = showWhPick ? '' : 'none';
   obOrderCsv = '';
+  obOrderImportRows = null;
   document.getElementById('ob-import-step-upload').hidden = false;
   document.getElementById('ob-import-step-progress').hidden = true;
   document.getElementById('ob-import-preview').hidden = true;
@@ -584,35 +699,56 @@ function openImportOrders() {
 }
 
 function fillSampleOrderCsv() {
-  obOrderCsv = [
-    'Order No,Order Time,Product ID,SKU ID,Product Name,Specification,Qty',
-    'SO-NEW-01,2026-08-21 10:00:00,PRD-10001,SKU-10001-BK,Wireless Bluetooth Earbuds Pro,Black; M,1',
-    'SO-NEW-02,2026-08-21 10:01:00,PRD-10004,SKU-10004-01,USB-C Flash Drive,128GB,3'
-  ].join('\n');
+  obOrderImportRows = [
+    { MerchantOrderID: 'MO-10001', 'Order No': 'MO-10001', ItemQuantity: 2, Qty: 2, ItemDesc: '2*Wireless Bluetooth Earbuds Pro-SKU-10001-BK', 'Product Name': 'Wireless Bluetooth Earbuds Pro', 'SKU ID': 'SKU-10001-BK' },
+    { MerchantOrderID: 'MO-10001', 'Order No': 'MO-10001', ItemQuantity: 1, Qty: 1, ItemDesc: '1*USB-C Flash Drive-SKU-10004-01', 'Product Name': 'USB-C Flash Drive', 'SKU ID': 'SKU-10004-01' }
+  ];
+  obOrderCsv = 'MerchantOrderID,ItemQuantity,ItemDesc\nMO-10001,2,2*Wireless Bluetooth Earbuds Pro-SKU-10001-BK\nMO-10001,1,1*USB-C Flash Drive-SKU-10004-01';
   document.getElementById('ob-import-preview').hidden = false;
   document.getElementById('ob-import-preview').textContent = obOrderCsv;
-  document.getElementById('ob-import-file-msg').textContent = 'Upload successful. 2 orders found. Ready to import.';
+  document.getElementById('ob-import-file-msg').textContent = 'Sample 订单列表: same MerchantOrderID, two SKU lines (partial ship).';
   document.getElementById('ob-import-btn').disabled = false;
 }
 
 function onOutboundFilePicked(input, kind) {
   const file = input.files && input.files[0];
   if (!file) return;
+  const name = (file.name || '').toLowerCase();
+  if (kind === 'orders' && (name.endsWith('.xlsx') || name.endsWith('.xls'))) {
+    readOrderListXlsx(file).then(rows => {
+      obOrderImportRows = rows;
+      obOrderCsv = '';
+      document.getElementById('ob-import-preview').hidden = false;
+      document.getElementById('ob-import-preview').textContent = JSON.stringify(rows.slice(0, 5), null, 2);
+      const ok = rows.length > 0;
+      document.getElementById('ob-import-btn').disabled = !ok;
+      document.getElementById('ob-import-file-msg').textContent = ok
+        ? `Parsed ${rows.length} line(s) from ${file.name}.`
+        : 'No valid rows.';
+    }).catch(err => {
+      obOrderImportRows = null;
+      document.getElementById('ob-import-btn').disabled = true;
+      document.getElementById('ob-import-file-msg').textContent = err.message || 'Parse failed.';
+      showToast(err.message || 'Failed to parse xlsx.', 'error');
+    });
+    return;
+  }
   const reader = new FileReader();
   reader.onload = () => {
     if (kind === 'orders') {
       obOrderCsv = String(reader.result || '');
+      obOrderImportRows = null;
       document.getElementById('ob-import-preview').hidden = false;
       document.getElementById('ob-import-preview').textContent = obOrderCsv.slice(0, 800);
-      const ok = obOrderCsv.includes('SKU ID');
+      const ok = /merchantorderid/i.test(obOrderCsv) || obOrderCsv.includes('SKU ID');
       document.getElementById('ob-import-btn').disabled = !ok;
       document.getElementById('ob-import-file-msg').textContent = ok
         ? 'Upload successful. Ready to import.'
-        : 'The imported file contains invalid fields. Please re-upload.';
+        : 'Required: MerchantOrderID, ItemQuantity, ItemDesc.';
     } else {
       obTrackCsv = String(reader.result || '');
       document.getElementById('ob-track-preview').textContent = obTrackCsv.slice(0, 800);
-      document.getElementById('ob-track-btn').disabled = !obTrackCsv.includes('Tracking');
+      document.getElementById('ob-track-btn').disabled = !/shipping|tracking/i.test(obTrackCsv);
     }
   };
   reader.readAsText(file);
@@ -630,8 +766,29 @@ function parseCsv(text) {
   });
 }
 
+function normalizeImportRows(raw) {
+  return raw.map(r => {
+    if (r['MerchantOrderID'] || r.ItemDesc) {
+      const orderNo = r['MerchantOrderID'] || r['Order No'];
+      const parsed = r.ItemDesc
+        ? parseOutboundItemDesc(r.ItemDesc, r.ItemQuantity || r.Qty)
+        : { qty: parseInt(r.Qty, 10), productName: r['Product Name'], skuId: r['SKU ID'] };
+      return {
+        'Order No': orderNo,
+        Qty: parsed.qty,
+        'Product Name': parsed.productName,
+        'SKU ID': parsed.skuId,
+        'Order Time': r['Order Time'] || '',
+        Specification: r.Specification || '—'
+      };
+    }
+    return r;
+  });
+}
+
 function runImportOrders() {
-  const rows = parseCsv(obOrderCsv);
+  let rows = obOrderImportRows ? [...obOrderImportRows] : parseCsv(obOrderCsv);
+  rows = normalizeImportRows(rows);
   if (!rows.length) {
     showToast('No data rows.', 'error');
     return;
@@ -642,7 +799,8 @@ function runImportOrders() {
   document.getElementById('ob-import-btn').disabled = true;
   document.getElementById('ob-import-btn').textContent = 'Importing';
   document.getElementById('ob-import-cancel').disabled = true;
-  const wh = document.getElementById('ob-import-wh').value;
+  const scope = getWarehouseScope();
+  const wh = scope === 'all' ? document.getElementById('ob-import-wh').value : scope;
   const outboundNo = nextDocNo('OB', wh);
   let allocated = 0;
   let ignored = 0;
@@ -654,20 +812,21 @@ function runImportOrders() {
       return;
     }
     seen.add(key);
+    const resolved = resolveOutboundSku(wh, r['SKU ID'], r['Product Name']);
     const line = {
       id: 'L' + Date.now() + Math.random().toString(16).slice(2, 6),
       outboundNo,
       orderNo: r['Order No'],
       orderTime: r['Order Time'] || '',
-      skuId: r['SKU ID'],
-      productName: r['Product Name'] || r['SKU ID'],
-      spec: r.Specification || '—',
+      skuId: resolved.skuId,
+      productName: resolved.productName,
+      spec: resolved.spec || r.Specification || '—',
       qty: parseInt(r.Qty, 10) || 0,
       warehouseId: wh,
       zone: '—',
       zoneCode: '—',
+      shippingNo: '—',
       shipmentNo: '—',
-      trackingNo: '—',
       status: 'pending_allocation',
       holdReason: ''
     };
@@ -696,6 +855,7 @@ function runImportOrders() {
     document.getElementById('ob-import-btn').onclick = () => {
       closeModal('ob-import-modal');
       document.getElementById('ob-import-btn').onclick = runImportOrders;
+      obOrderImportRows = null;
       outboundListTab = 'pending_allocation';
       refreshAfterInventoryChange();
       renderOutboundOrderList();
@@ -735,9 +895,9 @@ function runImportTracking() {
       failed += 1;
       return;
     }
-    const tracking = r['Tracking No'];
+    const tracking = r['Shipping No'] || r['Tracking No'];
     if (!shipmentByTracking[tracking]) shipmentByTracking[tracking] = nextDocNo('SHP', line.warehouseId);
-    line.trackingNo = tracking;
+    line.shippingNo = tracking;
     line.shipmentNo = shipmentByTracking[tracking];
     if (!deductSku(line)) {
       failed += 1;
@@ -756,15 +916,15 @@ function runImportTracking() {
 
 function openPackTrackingModal(onlyId) {
   document.getElementById('ob-pack-line-id').value = onlyId || '';
-  document.getElementById('ob-pack-tracking').value = '';
+  document.getElementById('ob-pack-shipping').value = '';
   openModal('ob-pack-modal');
 }
 
 function submitPackAndShip() {
   const onlyId = document.getElementById('ob-pack-line-id').value;
-  const tracking = (document.getElementById('ob-pack-tracking').value || '').trim();
+  const tracking = (document.getElementById('ob-pack-shipping').value || '').trim();
   if (!tracking) {
-    showToast('Tracking No. is required.', 'warning');
+    showToast('Shipping No. is required.', 'warning');
     return;
   }
   const ids = onlyId ? [onlyId] : selectedLineIds();
@@ -779,7 +939,7 @@ function submitPackAndShip() {
   let ok = 0;
   let fail = 0;
   targets.forEach(l => {
-    l.trackingNo = tracking;
+    l.shippingNo = tracking;
     l.shipmentNo = nextDocNo('SHP', l.warehouseId);
     if (!deductSku(l)) {
       fail += 1;
@@ -859,7 +1019,7 @@ function submitSpecialOutbound() {
     zone: 'Storage Zone',
     zoneCode: formatCanonicalWarehouseCode(wh) + 'STO',
     shipmentNo: '—',
-    trackingNo: '—',
+    shippingNo: '—',
     status: 'shipped',
     specialReason: `${reasonLabel}${note ? ': ' + note : ''}`
   };

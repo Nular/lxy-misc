@@ -590,7 +590,7 @@
         <div class="page" id="page-outbound-orders">
           <div class="page-header ob-page-header">
             <h1 class="page-title">Outbound Orders</h1>
-            <p class="page-subtitle">Import orders → Pending Allocation → confirm allocation (Outbound Occupy) → pack &amp; enter tracking (Outbound Deduct → Shipped).</p>
+            <p class="page-subtitle">Import 订单列表.xlsx → Pending Allocation → Confirm Allocation (Occupy) → Pack &amp; enter Shipping No. (Deduct → Shipped). Lines split per SKU for partial ship.</p>
           </div>
           <div class="page-body ob-oms-body">
             <div class="ob-status-tabs" id="ob-list-tabs" role="tablist"></div>
@@ -604,8 +604,8 @@
                 <input type="text" id="ob-filter-sku" placeholder="SKU ID">
               </div>
               <div class="filter-item">
-                <label>Tracking No.</label>
-                <input type="text" id="ob-filter-tracking" placeholder="Tracking No.">
+                <label>Shipping No.</label>
+                <input type="text" id="ob-filter-shipping" placeholder="Shipping No.">
               </div>
               <div class="filter-actions">
                 <button class="btn btn-primary" type="button" onclick="renderOutboundOrderList()">Search</button>
@@ -629,8 +629,9 @@
                     <th style="width:36px"><input type="checkbox" id="ob-list-check-all" onchange="toggleOutboundListChecks(this.checked)"></th>
                     <th>Product Info</th>
                     <th>Order No.</th>
-                    <th>Warehouse</th>
-                    <th>Tracking No.</th>
+                    <th id="ob-col-warehouse">Warehouse</th>
+                    <th id="ob-col-zone">Zone</th>
+                    <th>Shipping No.</th>
                     <th>Time</th>
                     <th>Status</th>
                     <th>Operation</th>
@@ -1157,7 +1158,7 @@
       </div>
       <div class="modal-body">
         <div id="ob-import-step-upload">
-          <p class="hint">Header must include Order No, Order Time, Product ID, SKU ID, Product Name, Specification, Qty. A line is allocated in full or placed On Hold.</p>
+          <p class="hint"><strong>订单列表.xlsx</strong>: <code>MerchantOrderID</code> → Order No., <code>ItemQuantity</code> → Qty, <code>ItemDesc</code> → parse <code>qty*Product Name-SKU</code>. Warehouse picker only when Admin + context All.</p>
           <div class="form-group" id="ob-import-wh-wrap">
             <label>Warehouse</label>
             <select id="ob-import-wh"></select>
@@ -1210,8 +1211,8 @@
         <p class="hint">After packing, enter the courier tracking number. Confirming will deduct locked stock (Outbound Deduct) and mark the line Shipped.</p>
         <input type="hidden" id="ob-pack-line-id" value="">
         <div class="form-group">
-          <label for="ob-pack-tracking">Tracking No.</label>
-          <input type="text" id="ob-pack-tracking" placeholder="e.g. SF1029384756">
+          <label for="ob-pack-shipping">Shipping No.</label>
+          <input type="text" id="ob-pack-shipping" placeholder="e.g. SF1029384756">
         </div>
       </div>
       <div class="modal-footer">

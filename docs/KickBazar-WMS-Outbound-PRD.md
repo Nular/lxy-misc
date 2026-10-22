@@ -25,28 +25,20 @@
 
 系统承接 **商家后台导出订单**（或 API，一期以 **Import CSV** 为主），在 **当前仓 `warehouse_context`** 下：
 
-1. **普通出库**：识别 SKU 与 **Storage Zone** 可用量 → 足够则 **占用（Outbound Occupy）** → 打包录入 **快递单号** → 快递员取件后 **扣减（Outbound Deduct）**；不足则进入 **等待队列（On Hold）**，**不占用库存**，补货后 **再分配（Re-allocate）** 后走同一链路。
+1. **普通出库（订单中心）**：**Import** → 行状态 **Pending Allocation**（不占库存）→ 仓管 **确认分配** → **Pending Picking** 且 **Outbound Occupy**（Available→Locked）→ 打包后在系统录入 **快递单号并确认** → **Shipped**，**Outbound Deduct**（Locked↓、Total↓）。
 2. **特殊出库**：经办人 **必填出库原因**，不经占用，确认后 **直接扣减可用库存** 并写 **Outbound Deduct** 流水（关联特殊出库单号）。
 
 写账口径与基础 PRD **§8.2** 一致；流水展示与 **§6.2** 一致。
 
 ```mermaid
-flowchart TB
-  start([开始]) --> choice{出库类型}
-  choice -->|普通出库| imp[导入订单]
-  imp --> id[识别 SKU / 仓 / 库区 / 可用量]
-  id --> enough{行数量 ≤ Available?}
-  enough -->|是| occ[Outbound Occupy<br/>Available→Locked]
-  occ --> pack[对照面单与订单 · 打包 · 录入 Tracking No.]
-  pack --> pickup[快递员取件]
-  pickup --> ded[Outbound Deduct<br/>Total−N Locked−N]
-  enough -->|否| wait[等待队列 On Hold<br/>不占用]
-  wait --> repl[补货入库等]
-  repl --> realloc[选择已补货 / Re-allocate]
-  realloc --> occ
-  choice -->|特殊出库| reason[填写出库原因]
-  reason --> spec[确认特殊出库]
-  spec --> specded[Outbound Deduct<br/>Total−N 不经 Occupy]
+flowchart LR
+  imp[Import 订单] --> pa[Pending Allocation]
+  pa --> alloc[仓管确认分配]
+  alloc --> enough{Available ≥ Qty?}
+  enough -->|是| pp[Pending Picking + Outbound Occupy]
+  enough -->|否| pa
+  pp --> pack[打包 · 录入 Tracking · 确认]
+  pack --> sh[Shipped + Outbound Deduct]
 ```
 
 ---
@@ -101,33 +93,41 @@ flowchart TB
 
 ## 5 普通出库 — 流程与状态
 
-### 5.1 流程步骤（与现状映射）
+### 5.1 页面结构（参考订单中心）
 
-| 顺序 | WMS 步骤 | 替代现状 |
-|------|----------|----------|
-| 1 | **Import Order**（校验表头、去重） | 商家后台导出 + 筛选 |
-| 2 | 系统按 **当前仓 STO** 校验 `available ≥ qty` | 检查库存是否足够 |
-| 3a | 足够：**Outbound Occupy**，行状态 **Allocated** | （原无占用，现显式锁定） |
-| 3b | 不足：**On Hold**，进入等待队列，**不写 Occupy** | 等待 + 采购补货 |
-| 4 | **Export Shipping Order**（可选）→ 线下对接快递 → **Import Tracking** 或行内录入 | 上传快递、生成面单 |
-| 5 | 行状态 **Awaiting Pickup**（已录 Tracking，待取件） | 打包完成 |
-| 6 | **Confirm Shipment**（快递员已取件）→ **Outbound Deduct**，行 **Shipped** | 取件后库存 Excel -N |
-| 7 | 补货后在对 Hold 列表 **Re-allocate**（「选择已补货」） | 到货打包后合并到发运 |
+一期出库主界面为 **订单行列表**（非批次表），顶部 **状态 Tab**（与参考 OMS 一致）：
 
-**一期简化**：拣货单打印、Complete Picking / Packing **不作为独立库存节点**（与基础 PRD §8.2「打包不改库存」一致）；若作业需要，可作为 **Allocated / Awaiting Pickup** 上的可选操作，**不增加流水类型**。
+| Tab | 英文状态 | 说明 |
+|-----|----------|------|
+| 待分配 | **Pending Allocation** | Import 后默认；**不占库存** |
+| 拣货中 | **Pending Picking** | 仓管确认分配后；已 **Outbound Occupy** |
+| 已出库 | **Shipped** | 录入快递单号并确认后；已 **Outbound Deduct** |
+| 全部 | All | 汇总 |
 
-### 5.2 行状态（Line Status）
+支持筛选：Order No.、SKU ID、**Shipping No.**；列表列含 **Zone**；**Warehouse** 列仅 **Admin 且仓库上下文 = All** 时展示。工具栏 **Import**、**Confirm Allocation**、行内 **Pack & Ship**。
 
-| 状态 | 英文 | 进入条件 | 库存 |
-|------|------|----------|------|
-| **On Hold** | Waiting Queue | `available < qty` | 不变 |
-| **Allocated** | To Pack | 分配成功，已 Occupy | `locked +N`，`available −N` |
-| **Awaiting Pickup** | Ready for Courier | 已录入 Tracking No.（生成 Shipment No.） | 不变 |
-| **Shipped** | Shipped | Confirm Shipment | `total −N`，`locked −N` |
+### 5.2 流程步骤（与库存写账）
 
-导入完成时行 **仅可能** 为 **Allocated** 或 **On Hold**。
+| 顺序 | 操作 | 行状态 | 库存 / 流水 |
+|------|------|--------|-------------|
+| 1 | **Import Order**（校验表头） | **Pending Allocation** | 不变 |
+| 2 | 仓管勾选并 **Confirm Allocation** | 成功 → **Pending Picking**；失败保持待分配并提示缺货 | 成功：**Outbound Occupy**（`locked↑`、`available↓`） |
+| 3 | 线下打包、对照面单 | **Pending Picking** | 不变 |
+| 4 | 系统内录入 **Shipping No.**（面单/快递单号）并 **确认发货** | **Shipped** | **Outbound Deduct**（`locked↓`、`total↓`） |
 
-### 5.3 批次状态（Batch Status）
+分配失败时行仍为 **Pending Allocation**，可补货后再次确认分配（不自动占用）。
+
+### 5.3 行状态（Line Status）
+
+| 状态 | 英文 | 库存 |
+|------|------|------|
+| **Pending Allocation** | 待分配 | 不变 |
+| **Pending Picking** | 拣货中 | 已占用：locked 含本行 qty |
+| **Shipped** | 已出库 | 实物已扣减 |
+
+**导入完成时** 行状态 **仅为 Pending Allocation**。
+
+### 5.4 批次状态（Batch Status）
 
 | 状态 | 规则 |
 |------|------|
@@ -135,18 +135,35 @@ flowchart TB
 | **Partially Outbound** | 存在 On Hold 或部分 Shipped |
 | **Fully Outbound** | 全部行 Shipped |
 
-### 5.4 分配规则
+### 5.5 分配规则
 
 - 库区：**当前仓** 下 **Enable** 的 **Storage Zone**（默认 `SH001STO` 形态）。
 - 粒度：**订单行 × SKU**（Import 一行一条作业行）。
 - 并发：占用时 SQL 校验 `available ≥ qty`（与基础 PRD §5 一致）。
 - **Re-allocate**：仅对 On Hold；仍用原 `warehouse_code` + STO 规则；成功则 Occupy + 变 Allocated。
 
-### 5.5 缺货与补货策略（拍板）
+### 5.6 缺货、拆单与补货（拍板）
 
-- On Hold 行 **不占用** 现有 `available`，避免「占着不发」。
-- 新导入订单若库存足够，**可立即 Allocated**，与旧 On Hold 单 **并行**（对应现状「新单有货优先发」）。
-- 补货通过 **入库模块** 增加库存；WMS **不自动** 把 On Hold 改为 Allocated，需人工或批量 **Re-allocate**。
+作业粒度：**Import 一行 = Order No.（MerchantOrderID）× 一个 SKU 行**，同一商家订单多 SKU 为多行，**状态独立**。
+
+| 场景 | 行为 |
+|------|------|
+| 一单多 SKU，部分 SKU 有货 | 有货行可 **Confirm Allocation → 发货**；缺货行保持 **Pending Allocation**（先寄有货，等价拆成多票发运） |
+| 同一 SKU 行数量不足 | 该行保持 **Pending Allocation**，**不占用**；其他订单有货可先发 |
+| 补货入库后 | 对待分配行再次 **Confirm Allocation** |
+
+与流程图一致：缺货进等待队列、不占用；补货后「选择已补货」= 再次确认分配。
+
+### 5.7 与流程图对照（2026-10 修订）
+
+| 流程图节点 | 系统实现 | 备注 |
+|------------|----------|------|
+| 导入订单 → pending allocation | Import **订单列表.xlsx** | ✓ 一致 |
+| 仓管选择分配 → pending picking | **Confirm Allocation** + Occupy | ✓ 一致 |
+| 库存不足 → 等待、不占用 | 分配失败，保持 Pending Allocation | ✓ 一致 |
+| 补货后再占用 | 入库后再次 Confirm Allocation | ✓ 一致 |
+| 打包录入单号 → shipped + deduct | **Pack & Ship** + Shipping No. | ✓ 一致（录入与扣减一步完成） |
+| 特殊出库 | Special Outbound 页 | ✓ 一致 |
 
 ---
 
@@ -173,32 +190,35 @@ flowchart TB
 
 ## 7 字段字典
 
-### 7.1 订单导入模板（普通出库）
+### 7.1 订单导入文件（`订单列表.xlsx`）
+
+| 表格列 | 系统字段 | 规则 |
+|--------|----------|------|
+| **MerchantOrderID** | **Order No.** | 商家订单号；同一 ID 可多行（多 SKU） |
+| **ItemQuantity** | **Qty** | 正整数；优先于 ItemDesc 内数量 |
+| **ItemDesc** | Product Name + SKU | 解析 `qty*Product Name-SKU`（可含【】）；示例：`2*Wireless Bluetooth Earbuds Pro-SKU-10001-BK` |
+
+- 导入后每行 **Pending Allocation**；须匹配仓内 **SKU 库存行**（§5.0.2），否则分配失败。
+- 样例 CSV：[`docs/fixtures/订单列表-import-sample.csv`](fixtures/订单列表-import-sample.csv)。
+- **仓库**：Import 弹窗选仓仅 **Admin + 上下文 All**；仓管固定所属仓。
+
+### 7.2 列表与作业字段
+
+| 字段 | 说明 |
+|------|------|
+| **Zone** | 确认分配后写入目标 **Storage Zone**（如 `SH001STO`） |
+| **Shipping No.** | 打包确认时录入（原 Tracking No. 口径统一为本字段） |
+| **Warehouse** | 列表仅 Admin+All 展示 |
+
+### 7.3 运单批量回导（可选）
 
 | 列名 | 必填 | 说明 |
 |------|------|------|
-| Order No | Y | 平台/商家订单号 |
-| Order Time | N | 下单时间 |
-| Product ID | N | 商品 ID（展示/对账） |
-| SKU ID | Y | 须已在当前仓有库存行 |
-| Product Name | N | 展示 |
-| Specification | N | 规格 |
-| Qty | Y | 正整数 |
-
-**校验**：表头缺失、SKU 无库存行、Qty 非法 → 行失败明细；同批次 **Order No + SKU ID** 重复 → 忽略或报错（一期原型：**忽略并计数**）。
-
-### 7.2 运单回导模板
-
-| 列名 | 必填 | 说明 |
-|------|------|------|
-| Outbound No | N | 建议填 |
-| Order No | Y | 匹配行 |
+| Order No | Y | MerchantOrderID |
 | SKU ID | Y | 匹配行 |
-| Tracking No | Y | 承运商单号 |
+| Shipping No | Y | 确认发货并 Deduct |
 
-匹配 **Allocated** 行；成功生成 **Shipment No.**，状态 → **Awaiting Pickup**。
-
-### 7.3 出库批次（列表）
+### 7.4 出库批次（列表）
 
 | 字段 | 说明 |
 |------|------|
@@ -210,7 +230,7 @@ flowchart TB
 | order_count / sku_count / total_units | 聚合 |
 | batch_status | §5.3 |
 
-### 7.4 出库行（明细）
+### 7.5 出库行（明细）
 
 | 字段 | 说明 |
 |------|------|
@@ -224,7 +244,7 @@ flowchart TB
 | line_status | §5.2 |
 | hold_reason | On Hold 时展示 |
 
-### 7.5 特殊出库单
+### 7.6 特殊出库单
 
 | 字段 | 说明 |
 |------|------|
@@ -233,7 +253,7 @@ flowchart TB
 | reason_code, reason_note | 原因 |
 | operator, created_at | 审计 |
 
-### 7.6 库存流水（Record → Outbound）
+### 7.7 库存流水（Record → Outbound）
 
 与基础 PRD **§6.2** 一致：
 
@@ -242,7 +262,7 @@ flowchart TB
 | Outbound Occupy | 普通分配成功 | OB… |
 | Outbound Deduct | Confirm Shipment 或特殊出库 | OB… / SX… |
 
-详情扩展：**Related Order No.**、**Shipment No.**、**Tracking No.**、**Line Status**；特殊出库增加 **Reason**。
+详情扩展：**Related Order No.**、**Zone**、**Shipping No.**、**Line Status**；特殊出库增加 **Reason**。
 
 ---
 
@@ -250,11 +270,10 @@ flowchart TB
 
 | # | 页面 | 功能 |
 |---|------|------|
-| 1 | **Outbound Orders** | 流程说明条；筛选；**Import Order**；批次列表 |
-| 2 | **Outbound Detail** | Tab：All / On Hold / Allocated / Awaiting Pickup / Shipped；批量 Export Shipping Order、Import Tracking、Confirm Shipment |
-| 3 | **On Hold Orders** | 跨批次等待队列；**Re-allocate** |
-| 4 | **Special Outbound** | 表单创建特殊出库 |
-| 5 | **Record → Outbound** | 只读 Occupy / Deduct（基础 PRD） |
+| 1 | **Outbound Orders** | 状态 Tab 列表（参考 OMS）；Import；Confirm Allocation；Pack & Ship |
+| 2 | **Outbound Detail**（可选） | 按 Outbound No. 查看同批次行 |
+| 3 | **Special Outbound** | 表单创建特殊出库 |
+| 4 | **Record → Outbound** | 只读 Occupy / Deduct（基础 PRD） |
 
 ### 8.1 入口与权限
 
@@ -265,10 +284,10 @@ flowchart TB
 
 | KPI | 建议口径 |
 |-----|----------|
-| Pending Allocation | 批次已导入且存在 On Hold 或尚未全部 Allocated 的批次数/行数（产品可二选一，一期原型：**On Hold 行数**） |
-| Pending Picking | **Allocated** 行数（待打包录单） |
-| Pending Packing | **Awaiting Pickup** 行数 |
-| Shipped Today | 当日 Confirm Shipment 的订单行数 |
+| Pending Allocation | **Pending Allocation** 行数 |
+| Pending Picking | **Pending Picking** 行数 |
+| Pending Packing | 一期与 Pending Picking 合并展示（可选隐藏该 KPI） |
+| Shipped Today | 当日确认发货（Pack & Ship）的行数 |
 
 ---
 
@@ -276,8 +295,8 @@ flowchart TB
 
 | 事件 | 实物 total | locked | available | Record |
 |------|------------|--------|-----------|--------|
-| 普通分配 Occupy | — | ↑ | ↓ | Outbound Occupy |
-| Confirm Shipment | ↓ | ↓ | — | Outbound Deduct |
+| Confirm Allocation（普通） | — | ↑ | ↓ | Outbound Occupy |
+| Pack & Confirm Shipment | ↓ | ↓ | — | Outbound Deduct |
 | 特殊出库确认 | ↓ | — | ↓ | Outbound Deduct |
 | 录入 Tracking / 导出发货表 | — | — | — | 不写 |
 | 补货入库 | ↑ | — | ↑ | Inbound（入库 PRD） |
