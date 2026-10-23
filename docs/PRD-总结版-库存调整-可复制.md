@@ -1,0 +1,18 @@
+# 飞书 PRD 替换说明（非附录叠加）
+
+请将飞书主 PRD 中 **第 5、6、7、8 章整章替换** 为仓库文件 `docs/KickBazar-WMS-PRD.md` 中同名章节正文。  
+第 1–4 章保持飞书现有内容不变。
+
+完整可替换正文见：[KickBazar-WMS-PRD.md](./KickBazar-WMS-PRD.md)（自「## 5 库存查看」至「## 8 跨模块契约」结束）。
+
+**相对原稿的关键句修订（便于评审 diff）：**
+
+| 位置 | 原稿表述 | 修订后 |
+|------|----------|--------|
+| 6 章首段 | 只读。禁止手工调账。盘盈盘亏报损移库不出现。 | 只读展示；禁止在流水页改数；盘盈/盘亏/报溢/报损/录入纠错经 **5.3 库存调整单** 写账并自动出流水 |
+| 5 章 | 无初始化说明 | 新增 **5.0**：每仓每区 SKU 主数据来自 Admin，Total/Locked/Available 初始为 0 |
+| 5.2 列 | 至主条码为止 | 增加 **Operation → 5.3 库存调整单** |
+| 6 Record Tab | Inbound 内含 Manual | 独立 **Manual Adjustment** Tab；Inbound 仅采购入库（子筛 All/Purchase），取消 Opening |
+| 5.3 权限 | 管理员+仓管 | **仅 Admin** 可调整 |
+| 7.3 类型 | 无手动调整 | 增加 Manual Adjustment / Manual Adjustment (Decrease) |
+| 8.2 表 | 无调整行 | 增加库存调整增加、减少两行 |

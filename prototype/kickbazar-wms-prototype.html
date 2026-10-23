@@ -1,0 +1,3465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!-- WMS_BUILD bundle=KickBazar-WMS.bundle.js css=inline -->
+
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1440">
+  <title>KickBazar WMS</title>
+  <style>
+/* KickBazar WMS Prototype - 1440x900 */
+:root {
+  --header-height: 56px;
+  --sidebar-width: 220px;
+  --border-color: #e8e8e8;
+  --bg-gray: #f5f5f5;
+  --text-primary: #333;
+  --text-secondary: #666;
+  --text-muted: #999;
+  --primary: #1890ff;
+  --primary-light: #e6f7ff;
+  --success: #52c41a;
+  --success-bg: #f6ffed;
+  --danger: #ff4d4f;
+  --warning: #faad14;
+  --logo-pink: #e85d75;
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 14px;
+  color: var(--text-primary);
+  background: #fff;
+  overflow: hidden;
+}
+
+.app-container {
+  width: 1440px;
+  height: 900px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-color);
+  position: relative;
+}
+
+/* Header */
+.header {
+  height: var(--header-height);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  background: #fff;
+  flex-shrink: 0;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.logo-icon {
+  width: 32px;
+  height: 32px;
+  background: var(--logo-pink);
+  border-radius: 50% 50% 50% 20%;
+  position: relative;
+}
+
+.logo-icon::before {
+  content: "";
+  position: absolute;
+  width: 8px;
+  height: 12px;
+  background: #fff;
+  border-radius: 50%;
+  top: 8px;
+  left: 6px;
+  box-shadow: 14px 0 0 #fff;
+}
+
+.logo-icon::after {
+  content: "";
+  position: absolute;
+  width: 16px;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 0 0 8px 8px;
+  bottom: 4px;
+  left: 8px;
+}
+
+.main-layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Sidebar */
+.sidebar {
+  width: var(--sidebar-width);
+  background: var(--bg-gray);
+  border-right: 1px solid var(--border-color);
+  overflow-y: auto;
+  flex-shrink: 0;
+  padding: 12px 0;
+}
+
+.nav-group-title {
+  padding: 8px 16px 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.nav-item {
+  padding: 10px 16px 10px 24px;
+  cursor: pointer;
+  color: var(--text-primary);
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-item:hover {
+  background: #ebebeb;
+}
+
+.nav-item.active {
+  background: #fff;
+  color: var(--primary);
+  font-weight: 500;
+  border-right: 3px solid var(--primary);
+}
+
+.nav-item.sub {
+  padding-left: 40px;
+  font-size: 13px;
+}
+
+.nav-item.parent {
+  font-weight: 500;
+}
+
+.nav-item .chevron {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.sidebar-context {
+  margin: 0 12px 12px;
+  padding: 10px 12px;
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+}
+
+.sidebar-context-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.sidebar-context-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.sidebar-role-badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: #e6f4ff;
+  color: #1677ff;
+  font-weight: 500;
+}
+
+.sidebar-wh-select {
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 13px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: #fff;
+}
+
+.nav-admin-tag {
+  font-size: 10px;
+  color: #999;
+  margin-left: 4px;
+  font-weight: 400;
+}
+
+.sidebar-wh-static {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  line-height: 1.35;
+}
+
+.sidebar-context-hint {
+  display: block;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.3;
+}
+
+.dashboard-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.dashboard-wh-switcher {
+  flex-shrink: 0;
+  min-width: 260px;
+  max-width: 320px;
+  padding: 12px 14px;
+  background: var(--bg-gray);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+}
+
+.dashboard-wh-switcher label {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  margin-bottom: 6px;
+  color: var(--text-primary);
+}
+
+.dashboard-wh-select {
+  width: 100%;
+  padding: 8px 10px;
+  font-size: 13px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: #fff;
+}
+
+.dashboard-wh-switcher-hint {
+  display: block;
+  margin-top: 8px;
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+/* Content */
+.content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #fff;
+}
+
+.page {
+  display: none;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
+.page.active {
+  display: flex;
+}
+
+.page-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.page-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.page-subtitle {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.page-body {
+  flex: 1;
+  overflow: auto;
+  padding: 16px 24px;
+}
+
+/* Filters */
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+  margin-bottom: 16px;
+  padding: 16px;
+  background: var(--bg-gray);
+  border-radius: 4px;
+}
+
+.filter-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.filter-item label {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.filter-item input,
+.filter-item select {
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  font-size: 13px;
+  min-width: 140px;
+  background: #fff;
+}
+
+.filter-item input:focus,
+.filter-item select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+.filter-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
+/* Buttons */
+.btn {
+  height: 32px;
+  padding: 0 16px;
+  border-radius: 4px;
+  border: 1px solid #d9d9d9;
+  background: #fff;
+  cursor: pointer;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.btn-primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: #40a9ff;
+  border-color: #40a9ff;
+  color: #fff;
+}
+
+.btn-danger {
+  color: var(--danger);
+  border-color: #ffa39e;
+}
+
+.btn-danger:hover {
+  background: #fff1f0;
+}
+
+.btn:disabled,
+.btn.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-link {
+  border: none;
+  background: none;
+  color: var(--primary);
+  padding: 0 4px;
+  height: auto;
+}
+
+.btn-link:hover {
+  text-decoration: underline;
+}
+
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+/* Table */
+.table-wrapper {
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  overflow: auto;
+  flex: 1;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+thead {
+  background: #fafafa;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+th {
+  padding: 12px 12px;
+  text-align: left;
+  font-weight: 500;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
+}
+
+td {
+  padding: 12px 12px;
+  border-bottom: 1px solid var(--border-color);
+  vertical-align: middle;
+}
+
+tbody tr {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+tbody tr:hover {
+  background: #fafafa;
+}
+
+tbody tr.selected {
+  background: var(--primary-light);
+}
+
+.zone-count-cell {
+  color: var(--primary);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.zone-count-cell:hover {
+  color: #40a9ff;
+}
+
+/* Tags */
+.tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.tag-enable {
+  background: var(--success-bg);
+  color: var(--success);
+  border: 1px solid #b7eb8f;
+}
+
+.tag-disable {
+  background: #f5f5f5;
+  color: var(--text-muted);
+  border: 1px solid #d9d9d9;
+}
+
+.tag-normal { background: #f0f0f0; color: #666; }
+.tag-fireproof { background: #fff7e6; color: #d46b08; }
+.tag-thermostatic { background: #e6f7ff; color: #096dd9; }
+.tag-cold { background: #e6fffb; color: #08979c; }
+
+.tag-rcv { background: #fff7e6; color: #d46b08; }
+.tag-sto { background: #f6ffed; color: #389e0d; }
+.tag-shp { background: #e6f7ff; color: #096dd9; }
+.tag-dmg { background: #fff1f0; color: #cf1322; }
+
+/* Pagination */
+.pagination-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  padding: 12px 24px;
+  border-top: 1px solid var(--border-color);
+  flex-shrink: 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.pagination-pages {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.page-num {
+  min-width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  cursor: pointer;
+  background: #fff;
+}
+
+.page-num.active {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.page-num:hover:not(.active) {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.rows-select {
+  height: 28px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  padding: 0 4px;
+}
+
+.goto-input {
+  width: 48px;
+  height: 28px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  text-align: center;
+}
+
+/* Modal */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-overlay.show {
+  display: flex;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  max-height: 85vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-sm { width: 480px; }
+.modal-md { width: 640px; }
+.modal-lg { width: 800px; }
+
+.modal-header {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.modal-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: var(--text-muted);
+  line-height: 1;
+}
+
+.modal-body {
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.modal-footer {
+  padding: 12px 24px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* Form */
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px 24px;
+}
+
+.form-grid.single {
+  grid-template-columns: 1fr;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group.full {
+  grid-column: 1 / -1;
+}
+
+.form-group label {
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.form-group label .required {
+  color: var(--danger);
+  margin-left: 2px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.form-group textarea {
+  height: 64px;
+  padding: 8px 10px;
+  resize: vertical;
+}
+
+.form-group .hint {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.form-group .readonly {
+  background: #f5f5f5;
+  color: var(--text-secondary);
+}
+
+.form-section-title {
+  grid-column: 1 / -1;
+  font-weight: 600;
+  font-size: 14px;
+  margin-top: 8px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 16px;
+}
+
+.tab {
+  padding: 10px 20px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: all 0.2s;
+}
+
+.tab:hover {
+  color: var(--primary);
+}
+
+.tab.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  font-weight: 500;
+}
+
+.sub-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.sub-tab {
+  padding: 4px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-secondary);
+  border: 1px solid transparent;
+}
+
+.sub-tab.active {
+  background: var(--primary-light);
+  color: var(--primary);
+  border-color: #91d5ff;
+}
+
+/* Empty state */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  color: var(--text-muted);
+}
+
+.empty-state .icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.4;
+}
+
+.empty-state p {
+  margin-bottom: 16px;
+}
+
+/* Switch */
+.switch {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  display: inline-block;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch .slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #ccc;
+  border-radius: 22px;
+  transition: 0.3s;
+}
+
+.switch .slider::before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 2px;
+  bottom: 2px;
+  background: white;
+  border-radius: 50%;
+  transition: 0.3s;
+}
+
+.switch input:checked + .slider {
+  background: var(--primary);
+}
+
+.switch input:checked + .slider::before {
+  transform: translateX(18px);
+}
+
+/* Expandable rows */
+.expand-icon {
+  display: inline-block;
+  width: 16px;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: transform 0.2s;
+}
+
+.expand-icon.expanded {
+  transform: rotate(90deg);
+}
+
+.sku-subtable {
+  background: #fafafa;
+}
+
+.sku-subtable td {
+  padding-left: 48px;
+  font-size: 12px;
+}
+
+.sku-subtable td:first-child {
+  padding-left: 48px;
+}
+
+/* Toast */
+.toast-container {
+  position: fixed;
+  top: 72px;
+  right: 24px;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toast {
+  padding: 12px 20px;
+  background: #fff;
+  border-radius: 4px;
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--primary);
+  animation: slideIn 0.3s ease;
+  max-width: 400px;
+}
+
+.toast.success { border-left-color: var(--success); }
+.toast.error { border-left-color: var(--danger); }
+.toast.warning { border-left-color: var(--warning); }
+
+@keyframes slideIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* Action links */
+.action-links {
+  display: flex;
+  gap: 12px;
+}
+
+.action-links a {
+  color: var(--primary);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.action-links a:hover {
+  text-decoration: underline;
+}
+
+.action-links a.disabled {
+  color: var(--text-muted);
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.action-links a.danger {
+  color: var(--danger);
+}
+
+/* Barcode tooltip */
+.barcode-cell {
+  position: relative;
+  cursor: help;
+  border-bottom: 1px dashed var(--text-muted);
+}
+
+/* Record type badges */
+.type-inbound { color: #389e0d; }
+.type-manual { color: #722ed1; }
+
+.table-wrapper tbody tr.record-row-clickable {
+  cursor: pointer;
+}
+.table-wrapper tbody tr.record-row-clickable:hover {
+  background: #f5faff;
+}
+
+.record-view-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  background: #fff;
+  color: #1890ff;
+  cursor: pointer;
+  padding: 0;
+}
+.record-view-btn:hover {
+  border-color: #1890ff;
+  background: #e6f7ff;
+}
+.record-view-btn svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+.editor-lines-table input.input-required {
+  border-color: #fa8c16;
+  background: #fff7e6;
+}
+
+.record-detail-grid {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 10px 16px;
+  font-size: 13px;
+}
+.record-detail-grid .label {
+  color: #666;
+}
+.record-detail-grid .value {
+  color: #333;
+  word-break: break-word;
+}
+.record-detail-section {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+}
+.record-detail-section h4 {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  color: #333;
+}
+.type-occupy { color: #d46b08; }
+.type-deduct { color: #cf1322; }
+.type-unfreeze { color: #096dd9; }
+
+/* Placeholder pages */
+.placeholder-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+}
+
+.placeholder-page h2 {
+  font-size: 24px;
+  margin-bottom: 8px;
+  color: var(--text-secondary);
+}
+
+/* Stock summary cards */
+.stock-summary {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.stock-card {
+  flex: 1;
+  padding: 12px 16px;
+  background: var(--bg-gray);
+  border-radius: 4px;
+  border-left: 3px solid var(--primary);
+}
+
+.stock-card.locked { border-left-color: var(--warning); }
+.stock-card.available { border-left-color: var(--success); }
+
+.stock-card .label {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.stock-card .value {
+  font-size: 20px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+/* Inventory change columns */
+.stock-change {
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.stock-change .up { color: var(--success); }
+.stock-change .down { color: var(--danger); }
+.stock-change .same { color: var(--text-muted); }
+
+/* View mode readonly */
+.view-mode .form-group input,
+.view-mode .form-group select,
+.view-mode .form-group textarea {
+  pointer-events: none;
+  background: #f5f5f5;
+  border-color: #e8e8e8;
+}
+
+/* Prototype nav helper */
+.prototype-nav {
+  position: fixed;
+  bottom: 12px;
+  left: 12px;
+  background: rgba(0,0,0,0.75);
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 4px;
+  font-size: 11px;
+  z-index: 3000;
+  max-width: 280px;
+}
+
+.prototype-nav strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+/* Dashboard / Homepage */
+.dashboard-body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.dashboard-kpi-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.dashboard-kpi-row-5 {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.dashboard-kpi-row-6 {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+@media (max-width: 1200px) {
+  .dashboard-kpi-row-5,
+  .dashboard-kpi-row-6 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-kpi-row-5,
+  .dashboard-kpi-row-6 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.dashboard-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dashboard-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.dashboard-section-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dashboard-admin-pill {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: #fff1f0;
+  color: #cf1322;
+  border: 1px solid #ffccc7;
+}
+
+.dashboard-task-row,
+.dashboard-admin-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.dashboard-admin-row {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.dashboard-task-card,
+.dashboard-admin-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 20px;
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.dashboard-task-card:hover,
+.dashboard-admin-card:hover {
+  box-shadow: var(--shadow);
+  border-color: #d9d9d9;
+}
+
+.dashboard-admin-card {
+  border-color: #b37feb;
+  background: linear-gradient(180deg, #faf5ff 0%, #fff 100%);
+}
+
+.dashboard-task-title {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.dashboard-task-arrow {
+  color: #999;
+  font-size: 18px;
+}
+
+.dashboard-task-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: #f5f5f5;
+  flex-shrink: 0;
+}
+
+.task-icon-po { background: #e6f4ff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%231677ff' viewBox='0 0 24 24'%3E%3Cpath d='M7 3h10a2 2 0 0 1 2 2v16l-5-2.5L9 21V5a2 2 0 0 1 2-2z'/%3E%3C/svg%3E") center/22px no-repeat; }
+.task-icon-in { background: #e6fffb url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%2313c2c2' viewBox='0 0 24 24'%3E%3Cpath d='M12 4l8 6v10H4V10l8-6z'/%3E%3C/svg%3E") center/22px no-repeat; }
+.task-icon-out { background: #fff7e6 url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23fa8c16' viewBox='0 0 24 24'%3E%3Cpath d='M4 12h12m0 0l-4-4m4 4l-4 4'/%3E%3C/svg%3E") center/22px no-repeat; }
+.task-icon-wh { background: #f9f0ff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23722ed1' viewBox='0 0 24 24'%3E%3Cpath d='M3 21V9l9-6 9 6v12H3z'/%3E%3C/svg%3E") center/22px no-repeat; }
+.task-icon-zone { background: #f9f0ff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='%23722ed1' viewBox='0 0 24 24'%3E%3Cpath d='M4 6h16v4H4V6zm0 6h10v4H4v-4z'/%3E%3C/svg%3E") center/22px no-repeat; }
+
+.kpi-card.kpi-total { border-top: 3px solid #1677ff; }
+.kpi-card.kpi-total .kpi-value { color: #1677ff; }
+.kpi-card.kpi-pending-inbound { border-top: 3px solid #13c2c2; }
+.kpi-card.kpi-pending-inbound .kpi-value { color: #13c2c2; }
+.kpi-card.kpi-allocation { border-top: 3px solid #fa8c16; }
+.kpi-card.kpi-allocation .kpi-value { color: #fa8c16; }
+.kpi-card.kpi-picking { border-top: 3px solid #d48806; }
+.kpi-card.kpi-picking .kpi-value { color: #d48806; }
+.kpi-card.kpi-packing { border-top: 3px solid #722ed1; }
+.kpi-card.kpi-packing .kpi-value { color: #722ed1; }
+.kpi-card.kpi-shipped { border-top: 3px solid #52c41a; }
+.kpi-card.kpi-shipped .kpi-value { color: #52c41a; }
+
+.kpi-card[class*="kpi-"] {
+  cursor: pointer;
+}
+
+.dashboard-ops-panel {
+  margin-top: 4px;
+}
+
+.dashboard-ops-table {
+  max-height: none;
+}
+
+.dashboard-ops-table .qty-up {
+  color: #52c41a;
+  font-weight: 600;
+}
+
+.dashboard-ops-table .qty-down {
+  color: #ff4d4f;
+  font-weight: 600;
+}
+
+.dashboard-empty {
+  text-align: center;
+  color: #999;
+  padding: 24px;
+}
+
+.dashboard-ops-row {
+  cursor: pointer;
+}
+
+.dashboard-ops-row:hover {
+  background: #fafafa;
+}
+
+/* Inbound / PO module */
+.module-filter-bar .filter-grow {
+  flex: 1;
+  min-width: 200px;
+}
+
+.receipt-source-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.source-tab {
+  padding: 8px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.source-tab.active {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: #e6f4ff;
+}
+
+.source-tab.disabled,
+.source-tab:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.multi-select {
+  position: relative;
+}
+
+.multi-select-trigger {
+  padding: 6px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: #fff;
+  font-size: 13px;
+  min-width: 120px;
+  text-align: left;
+}
+
+.multi-select-panel {
+  position: absolute;
+  z-index: 20;
+  top: 100%;
+  left: 0;
+  margin-top: 4px;
+  padding: 8px 10px;
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 180px;
+}
+
+.multi-select-panel label {
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.form-span-2 {
+  grid-column: span 2;
+}
+
+.sku-picker-table {
+  max-height: 280px;
+  overflow: auto;
+  margin-top: 12px;
+}
+
+#receipt-sku-picker-search {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+}
+
+.source-panel {
+  margin-bottom: 12px;
+}
+
+.editor-mode-hint,
+.editor-lines-toolbar {
+  margin-bottom: 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.editor-lines-toolbar {
+  display: flex;
+  gap: 8px;
+}
+
+.editor-lines-table {
+  max-height: 240px;
+  overflow: auto;
+}
+
+.mini-progress {
+  width: 80px;
+  height: 6px;
+  background: #f0f0f0;
+  border-radius: 3px;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+
+.mini-progress div {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 3px;
+}
+
+.progress-track {
+  height: 8px;
+  background: #f0f0f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  width: 0;
+  background: var(--primary);
+  transition: width 0.3s;
+}
+
+.progress-label {
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.tag-warning {
+  background: #fff7e6;
+  color: #d48806;
+  border: 1px solid #ffd591;
+}
+
+.suggest-wrap {
+  position: relative;
+}
+
+.search-suggest {
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  right: 0;
+  top: 100%;
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  max-height: calc(5 * 32px);
+  overflow-y: auto;
+  box-shadow: var(--shadow);
+}
+
+.suggest-item {
+  padding: 7px 10px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.suggest-item:hover {
+  background: #e6f4ff;
+}
+
+.kpi-card {
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: box-shadow 0.2s;
+}
+
+.kpi-card:hover {
+  box-shadow: var(--shadow);
+}
+
+.kpi-card .kpi-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.kpi-card .kpi-value {
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.kpi-card .kpi-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.kpi-card.total { border-top: 3px solid var(--primary); }
+.kpi-card.locked { border-top: 3px solid var(--warning); }
+.kpi-card.available { border-top: 3px solid var(--success); }
+.kpi-card.warehouses { border-top: 3px solid #722ed1; }
+
+.kpi-card.total .kpi-value { color: var(--primary); }
+.kpi-card.locked .kpi-value { color: var(--warning); }
+.kpi-card.available .kpi-value { color: var(--success); }
+.kpi-card.warehouses .kpi-value { color: #722ed1; }
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.dashboard-panel {
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+  background: #fafafa;
+}
+
+.panel-header h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.dashboard-table {
+  border: none;
+  border-radius: 0;
+  max-height: 260px;
+}
+
+.dashboard-table table {
+  font-size: 12px;
+}
+
+.dashboard-table th,
+.dashboard-table td {
+  padding: 10px 16px;
+}
+
+.quick-access-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  padding: 16px 20px 20px;
+}
+
+.quick-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.quick-card:hover {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+.quick-card .quick-icon {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.quick-card .quick-title {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.quick-card .quick-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.quick-card:hover .quick-desc {
+  color: var(--primary);
+  opacity: 0.8;
+}
+
+.inbound-type-pick {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.inbound-type-card {
+  width: 100%;
+  padding: 14px 16px;
+  text-align: left;
+}
+
+.inbound-alert {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: #fff7e6;
+  border: 1px solid #ffd591;
+  font-size: 13px;
+}
+
+.inbound-alert ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+.inbound-filter-bar {
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+
+.inbound-type-pick-inline {
+  flex-direction: row;
+  margin-bottom: 16px;
+}
+
+.inbound-type-pick-inline .inbound-type-card {
+  flex: 1;
+  text-align: center;
+}
+
+.inbound-type-pick-inline .inbound-type-card.active {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+.manual-suggest-list {
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  margin: 8px 0 12px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.manual-suggest-item {
+  padding: 10px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.manual-suggest-item:hover {
+  background: var(--primary-light);
+}
+
+.manual-suggest-item strong {
+  display: block;
+  font-size: 13px;
+}
+
+.manual-suggest-item span {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.ob-flow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.ob-flow span {
+  font-size: 12px;
+  padding: 6px 10px;
+  background: #f5f5f5;
+  border-radius: 4px;
+  color: #555;
+}
+
+.ob-flow-v2 span {
+  background: #eef6ff;
+  border: 1px solid #c5ddf8;
+  color: #1a5fb4;
+  font-weight: 500;
+}
+
+.ob-flow-v2 span::after {
+  content: '→';
+  margin-left: 6px;
+  color: #999;
+  font-weight: 400;
+}
+
+.ob-flow-v2 span:last-child::after {
+  content: none;
+}
+
+.ob-flow-special span {
+  background: #fff4e6;
+  border-color: #f0c78a;
+  color: #9a6700;
+}
+
+.sx-form {
+  max-width: 520px;
+  margin-top: 8px;
+}
+
+.sx-form .form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.sx-form .form-row label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+}
+
+.sx-form .form-row input,
+.sx-form .form-row select {
+  padding: 8px 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+}
+
+.sx-form .form-actions {
+  margin-top: 8px;
+}
+
+.ob-oms-body {
+  padding-top: 0;
+}
+
+.ob-status-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0;
+  border-bottom: 1px solid var(--border-color);
+  margin-bottom: 16px;
+}
+
+.ob-status-tab {
+  background: none;
+  border: none;
+  padding: 12px 20px;
+  font-size: 14px;
+  color: #666;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+.ob-status-tab:hover {
+  color: var(--primary);
+}
+
+.ob-status-tab.active {
+  color: var(--primary);
+  font-weight: 600;
+  border-bottom-color: var(--primary);
+}
+
+.ob-oms-filters {
+  margin-bottom: 12px;
+}
+
+.ob-oms-toolbar {
+  margin-bottom: 12px;
+}
+
+.ob-oms-toolbar-left,
+.ob-oms-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.ob-oms-toolbar {
+  justify-content: space-between;
+}
+
+.ob-product-cell strong {
+  display: block;
+  font-size: 13px;
+}
+
+.ob-product-cell .hint {
+  font-size: 12px;
+}
+
+.ob-hold-hint {
+  display: block;
+  font-size: 11px;
+  color: #c45c00;
+  margin-top: 4px;
+}
+
+.ob-empty {
+  text-align: center;
+  color: #999;
+  padding: 48px 16px !important;
+}
+
+.ob-oms-table table {
+  font-size: 12px;
+}
+
+.ob-oms-table th,
+.ob-oms-table td {
+  white-space: nowrap;
+}
+
+.ob-oms-table td.ob-wrap {
+  white-space: normal;
+  max-width: 160px;
+}
+
+.ob-picklist {
+  font-size: 13px;
+}
+
+.ob-picklist table {
+  width: 100%;
+}
+
+.ob-upload-box {
+  margin: 12px 0;
+  padding: 28px 12px;
+  text-align: center;
+  border: 1px dashed var(--border-color);
+  border-radius: 8px;
+  color: var(--primary);
+  cursor: pointer;
+  background: #fafafa;
+}
+
+.ob-bar {
+  height: 8px;
+  background: #f0f0f0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin: 12px 0;
+}
+
+.ob-bar > div {
+  height: 100%;
+  width: 0;
+  background: var(--primary);
+  transition: width 0.2s;
+}
+
+.ob-preview {
+  margin-top: 12px;
+  max-height: 160px;
+  overflow: auto;
+  background: #fafafa;
+  border: 1px solid var(--border-color);
+  padding: 8px;
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
+.kpi-card {
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  transition: box-shadow 0.2s;
+}
+
+.kpi-card:hover {
+  box-shadow: var(--shadow);
+}
+
+.kpi-card .kpi-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.kpi-card .kpi-value {
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.kpi-card .kpi-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.kpi-card.total { border-top: 3px solid var(--primary); }
+.kpi-card.locked { border-top: 3px solid var(--warning); }
+.kpi-card.available { border-top: 3px solid var(--success); }
+.kpi-card.warehouses { border-top: 3px solid #722ed1; }
+
+.kpi-card.total .kpi-value { color: var(--primary); }
+.kpi-card.locked .kpi-value { color: var(--warning); }
+.kpi-card.available .kpi-value { color: var(--success); }
+.kpi-card.warehouses .kpi-value { color: #722ed1; }
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.dashboard-panel {
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+  background: #fafafa;
+}
+
+.panel-header h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.dashboard-table {
+  border: none;
+  border-radius: 0;
+  max-height: 260px;
+}
+
+.dashboard-table table {
+  font-size: 12px;
+}
+
+.dashboard-table th,
+.dashboard-table td {
+  padding: 10px 16px;
+}
+
+.quick-access-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  padding: 16px 20px 20px;
+}
+
+.quick-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 20px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: center;
+}
+
+.quick-card:hover {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+.quick-card .quick-icon {
+  font-size: 24px;
+  line-height: 1;
+}
+
+.quick-card .quick-title {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.quick-card .quick-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.quick-card:hover .quick-desc {
+  color: var(--primary);
+  opacity: 0.8;
+}
+
+.inbound-type-pick {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.inbound-type-card {
+  width: 100%;
+  padding: 14px 16px;
+  text-align: left;
+}
+
+.inbound-alert {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  background: #fff7e6;
+  border: 1px solid #ffd591;
+  font-size: 13px;
+}
+
+.inbound-alert ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+.inbound-filter-bar {
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+
+.inbound-type-pick-inline {
+  flex-direction: row;
+  margin-bottom: 16px;
+}
+
+.inbound-type-pick-inline .inbound-type-card {
+  flex: 1;
+  text-align: center;
+}
+
+.inbound-type-pick-inline .inbound-type-card.active {
+  border-color: var(--primary);
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+.manual-suggest-list {
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  margin: 8px 0 12px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.manual-suggest-item {
+  padding: 10px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.manual-suggest-item:hover {
+  background: var(--primary-light);
+}
+
+.manual-suggest-item strong {
+  display: block;
+  font-size: 13px;
+}
+
+.manual-suggest-item span {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.inbound-shipping-split-hint {
+  background: #e6f7ff;
+  border-color: #91d5ff;
+  color: #003a8c;
+}
+
+.page-demo-banner {
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border-radius: 6px;
+  background: #f0f7ff;
+  border: 1px solid #bfdbfe;
+  font-size: 13px;
+  color: #1e3a5f;
+}
+
+.header .btn-sm {
+  padding: 4px 10px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.ob-time-cell {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.ob-time-date {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.ob-time-clock {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.sx-form .req {
+  color: var(--danger);
+}
+
+.ob-pack-table-wrap {
+  margin-bottom: 12px;
+  max-height: 240px;
+  overflow: auto;
+}
+
+  </style>
+  <script>
+    (function () {
+      function showStylesHelp() {
+        if (document.getElementById('wms-styles-help')) return;
+        var box = document.createElement('div');
+        box.id = 'wms-styles-help';
+        box.setAttribute('role', 'alert');
+        box.style.cssText = 'margin:0;padding:14px 18px;background:#fff2f0;border-bottom:2px solid #ff4d4f;color:#434343;font:14px/1.5 sans-serif;';
+        box.innerHTML = '<strong>样式未加载。</strong> 请任选一种方式打开：<br>① 在 <code>prototype</code> 目录执行 <code>python3 -m http.server 8080</code>，浏览器访问 <code>http://localhost:8080/</code><br>② 直接打开仓库内最新单文件 <code>export/KickBazar-WMS.html</code>（或重新运行 <code>python3 scripts/build-wms-html.py</code> 后解压 <code>export/KickBazar-WMS-Export.zip</code>）<br><span style="color:#8c8c8c">勿使用 export 目录下旧的拆分页（如 KickBazar-WMS-Dashboard.html）或 10 月前的 zip。</span>';
+        document.body.insertBefore(box, document.body.firstChild);
+      }
+      window.addEventListener('load', function () {
+        if (!document.getElementById('wms-main-css')) return;
+        var layout = document.querySelector('.main-layout');
+        if (!layout) return;
+        if (getComputedStyle(layout).display !== 'flex') showStylesHelp();
+      });
+    })();
+  </script>
+  <script>
+    (function () {
+      function wmsBundleReady() {
+        return typeof window.navigateTo === 'function';
+      }
+      window.resetWmsDemoData = function () {
+        if (!wmsBundleReady()) {
+          var b = document.getElementById('wms-boot-alert');
+          if (b) b.hidden = false;
+          window.alert(
+            '未加载 KickBazar-WMS.bundle.js。\n\n' +
+            '请把 HTML 与 bundle.js 放在同一文件夹（运行 build 后打开 export/ 目录，或解压 KickBazar-WMS-Export.zip）。\n\n' +
+            '也可改用单文件：export/KickBazar-WMS-all-in-one.html'
+          );
+          return;
+        }
+        try {
+          ['wms_role', 'wms_wh_scope', 'manual_records'].forEach(function (k) {
+            localStorage.removeItem(k);
+          });
+        } catch (e) { /* ignore */ }
+        location.reload();
+      };
+      window.addEventListener('load', function () {
+        if (wmsBundleReady()) return;
+        var b = document.getElementById('wms-boot-alert');
+        if (b) b.hidden = false;
+      });
+    })();
+  </script>
+</head>
+<body>
+  <div id="wms-boot-alert" class="page-demo-banner" hidden role="alert" style="margin:0;border-radius:0;border-color:#ff4d4f;background:#fff2f0">
+    <strong>脚本未加载（Console 常见 <code>ERR_FILE_NOT_FOUND</code>）。</strong>
+    须将 <code>KickBazar-WMS.bundle.js</code> 与本文 <code>KickBazar-WMS.html</code> 放在<strong>同一文件夹</strong>后再打开（仓库内请用 <code>export/</code> 下两个文件，或解压 <code>KickBazar-WMS-Export.zip</code>）。
+    无需 bundle 时可打开 <code>KickBazar-WMS-all-in-one.html</code>。
+  </div>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="logo" onclick="navigateTo('home')" style="cursor:pointer" title="Back to Home">
+        <div class="logo-icon"></div>
+        <span>KickBazar</span>
+      </div>
+      <div class="header-right" style="display:flex;align-items:center;gap:12px;margin-left:auto;padding-right:16px;font-size:13px;color:#666">
+        <button type="button" class="btn btn-sm" onclick="resetWmsDemoData()" title="Clear saved role/scope and reload seed data">Reload demo data</button>
+        <span>Role (demo)</span>
+        <select id="role-select" onchange="setUserRole(this.value)" style="padding:4px 8px;border:1px solid #e8e8e8;border-radius:4px">
+          <option value="admin">Admin</option>
+          <option value="warehouse">Warehouse Manager</option>
+        </select>
+      </div>
+    </header>
+
+    <div class="main-layout">
+      <!-- Sidebar -->
+      <nav class="sidebar" id="sidebar">
+        <div class="sidebar-context" id="sidebar-wh-context">
+          <div class="sidebar-context-top">
+            <span class="sidebar-context-label">Warehouse</span>
+            <span class="sidebar-role-badge admin-only-action" id="sidebar-role-badge">Admin</span>
+          </div>
+          <select id="sidebar-wh-select" class="sidebar-wh-select admin-only-action" onchange="onDashboardWarehouseChange(this.value)" aria-label="Warehouse context"></select>
+          <div id="sidebar-wh-display" class="sidebar-wh-static" hidden>—</div>
+        </div>
+
+        <div class="nav-item active" data-page="home">
+          <span>Home</span>
+        </div>
+
+        <div class="nav-item parent" data-group="inventory">
+          <span>Inventory</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="nav-item sub" data-page="spu-sku-inventory">SPU/SKU inventory</div>
+        <div class="nav-item sub" data-page="record">Record</div>
+
+        <div class="nav-item" data-page="inbound">Inbound</div>
+        <div class="nav-item" data-page="outbound-orders">Outbound</div>
+
+        <div class="nav-item parent nav-warehouses-group" data-group="warehouses">
+          <span>Warehouses</span>
+          <span class="nav-admin-tag">Admin</span>
+          <span class="chevron">▼</span>
+        </div>
+        <div class="nav-item sub nav-warehouses-group" data-page="warehouse-management">Warehouse Management</div>
+        <div class="nav-item sub nav-warehouses-group" data-page="zone-management">Zone Management</div>
+      </nav>
+
+      <!-- Content Area -->
+      <main class="content">
+        <!-- ========== HOME / DASHBOARD ========== -->
+        <div class="page active" id="page-home">
+          <div class="page-header">
+            <h1 class="page-title">Dashboard</h1>
+            <p class="page-subtitle">Warehouse inventory overview and recent activity</p>
+          </div>
+          <p class="page-demo-banner">Demo：KPI 按当前仓库范围实时汇总（Total=SKU 实物合计；Pending Inbound=Inbound No.；其余三项=Outbound No. 去重）；侧栏切换 <strong>All / SH001</strong> 后返回 Home 刷新。</p>
+          <div class="page-body dashboard-body">
+            <div class="dashboard-kpi-row dashboard-kpi-row-5" id="dashboard-kpi"></div>
+
+            <div class="dashboard-section">
+              <h3 class="dashboard-section-title">Quick Actions</h3>
+              <div class="dashboard-task-row" id="dashboard-main-tasks"></div>
+            </div>
+
+            <div class="dashboard-section admin-only-action" id="dashboard-admin-setup">
+              <div class="dashboard-section-title-row">
+                <h3 class="dashboard-section-title">Warehouse Setup</h3>
+                <span class="dashboard-admin-pill">Admin Only</span>
+              </div>
+              <div class="dashboard-admin-row" id="dashboard-admin-tasks"></div>
+            </div>
+
+            <div class="dashboard-panel dashboard-ops-panel">
+              <div class="panel-header">
+                <h3>Today&apos;s Operations</h3>
+                <a class="btn-link" onclick="navigateToRecordToday()">View All →</a>
+              </div>
+              <div class="table-wrapper dashboard-table dashboard-ops-table">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Time</th>
+                      <th>Type</th>
+                      <th>Warehouse</th>
+                      <th>Zone</th>
+                      <th>SKU</th>
+                      <th>Qty</th>
+                      <th>Order No.</th>
+                      <th>Operator</th>
+                    </tr>
+                  </thead>
+                  <tbody id="dashboard-activity-table"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========== WAREHOUSE MANAGEMENT ========== -->
+        <div class="page" id="page-warehouse-management">
+          <div class="page-header">
+            <h1 class="page-title">Warehouse Management</h1>
+            <p class="page-subtitle">Create and maintain warehouse master data</p>
+          </div>
+          <p class="page-demo-banner">Demo：预置 <strong>SH001</strong> 上海主仓、<strong>BJ001</strong> 北京仓；可新建仓体验编码规则。</p>
+          <div class="page-body">
+            <div class="filter-bar">
+              <div class="filter-item">
+                <label>Search Field</label>
+                <select id="wh-search-field">
+                  <option value="warehouse_id">Warehouse ID</option>
+                  <option value="warehouse">Warehouse Name</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <label>Search Value</label>
+                <input type="text" placeholder="Enter search value" id="wh-search-value">
+              </div>
+              <div class="filter-item">
+                <label>Attribute</label>
+                <select id="wh-filter-attribute">
+                  <option value="">All</option>
+                  <option value="normal">Normal</option>
+                  <option value="fireproof">Fireproof</option>
+                  <option value="thermostatic">Thermostatic</option>
+                  <option value="cold chain">Cold Chain</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <label>Status</label>
+                <select id="wh-filter-status">
+                  <option value="">All</option>
+                  <option value="enable">Enable</option>
+                  <option value="disable">Disable</option>
+                </select>
+              </div>
+              <div class="filter-actions">
+                <button class="btn btn-primary" onclick="searchWarehouses()">Search</button>
+                <button class="btn" onclick="resetWarehouseFilters()">Reset</button>
+              </div>
+            </div>
+            <div class="toolbar">
+              <span></span>
+              <button class="btn btn-primary admin-only-action" onclick="openCreateWarehouse()">+ Add Warehouse</button>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Warehouse ID</th>
+                    <th>Warehouse</th>
+                    <th>Attribute</th>
+                    <th>Status</th>
+                    <th>Zone Count</th>
+                    <th>Total</th>
+                    <th>Locked</th>
+                    <th>Available</th>
+                    <th>Address</th>
+                    <th>Owner</th>
+                    <th>Contact / Phone</th>
+                    <th>Operation</th>
+                  </tr>
+                </thead>
+                <tbody id="warehouse-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="pagination-bar">
+            <span>Total <strong id="wh-total">5</strong> records</span>
+            <div class="pagination-pages">
+              <span class="page-num">&lt;</span>
+              <span class="page-num active">1</span>
+              <span class="page-num">2</span>
+              <span class="page-num">3</span>
+              <span>...</span>
+              <span class="page-num">&gt;</span>
+            </div>
+            <select class="rows-select">
+              <option>20/page</option>
+              <option>50/page</option>
+              <option>100/page</option>
+              <option>150/page</option>
+            </select>
+            <span>Go to <input type="text" class="goto-input" value="1"></span>
+          </div>
+        </div>
+
+        <!-- ========== ZONE MANAGEMENT ========== -->
+        <div class="page" id="page-zone-management">
+          <div class="page-header">
+            <h1 class="page-title">Zone Management</h1>
+            <p class="page-subtitle">Manage warehouse zones and storage areas</p>
+          </div>
+          <p class="page-demo-banner">Demo：各仓含 RCV / STO / SHP 等库区；出库分配仅占用 <strong>Storage Zone (STO)</strong> 行。</p>
+          <div class="page-body">
+            <div class="filter-bar">
+              <div class="filter-item filter-wh-scope">
+                <label>Warehouse ID</label>
+                <select id="zone-filter-warehouse">
+                  <option value="">All</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <label>Zone Code</label>
+                <input type="text" placeholder="Zone code" id="zone-filter-code">
+              </div>
+              <div class="filter-item">
+                <label>Zone Type</label>
+                <select id="zone-filter-type">
+                  <option value="">All</option>
+                  <option value="Receiving Zone">Receiving Zone</option>
+                  <option value="Storage Zone">Storage Zone</option>
+                  <option value="Shipping Zone">Shipping Zone</option>
+                  <option value="Damaged Goods Zone">Damaged Goods Zone</option>
+                  <option value="Packing Zone">Packing Zone</option>
+                  <option value="Returns Zone">Returns Zone</option>
+                  <option value="Quarantine Zone">Quarantine Zone</option>
+                  <option value="Special Zone">Special Zone</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <label>Status</label>
+                <select id="zone-filter-status">
+                  <option value="">All</option>
+                  <option value="enable">Enable</option>
+                  <option value="disable">Disable</option>
+                </select>
+              </div>
+              <div class="filter-actions">
+                <button class="btn btn-primary" onclick="searchZones()">Search</button>
+                <button class="btn" onclick="resetZoneFilters()">Reset</button>
+              </div>
+            </div>
+            <div class="toolbar">
+              <span></span>
+              <button class="btn btn-primary admin-only-action" onclick="openCreateZone()">+ Add Zone</button>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Warehouse ID</th>
+                    <th>Zone Code</th>
+                    <th>Zone</th>
+                    <th>Status</th>
+                    <th>Total</th>
+                    <th>Locked</th>
+                    <th>Available</th>
+                    <th>Operation</th>
+                  </tr>
+                </thead>
+                <tbody id="zone-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="pagination-bar">
+            <span>Total <strong id="zone-total">12</strong> records</span>
+            <div class="pagination-pages">
+              <span class="page-num">&lt;</span>
+              <span class="page-num active">1</span>
+              <span class="page-num">&gt;</span>
+            </div>
+            <select class="rows-select"><option>20/page</option></select>
+            <span>Go to <input type="text" class="goto-input" value="1"></span>
+          </div>
+        </div>
+
+        <!-- ========== SPU/SKU INVENTORY ========== -->
+        <div class="page" id="page-spu-sku-inventory">
+          <div class="page-header">
+            <h1 class="page-title">SPU/SKU Inventory</h1>
+            <p class="page-subtitle">View current product inventory by SPU or SKU</p>
+          </div>
+          <p class="page-demo-banner">Demo：如 <strong>SKU-10001-BK</strong>（耳机）、<strong>SKU-10002-42</strong>（手表）在 SH001 有可用库存，可供出库 Sample 使用。</p>
+          <div class="page-body">
+            <div class="tabs" id="inventory-tabs">
+              <div class="tab active" data-inv-tab="spu">SPU</div>
+              <div class="tab" data-inv-tab="sku">SKU</div>
+            </div>
+
+            <!-- SPU View -->
+            <div id="inv-view-spu">
+              <div class="filter-bar">
+                <div class="filter-item filter-wh-scope">
+                  <label>Warehouse ID/Name</label>
+                  <select id="spu-filter-warehouse"><option value="">All</option></select>
+                </div>
+                <div class="filter-item">
+                  <label>Zone Code</label>
+                  <input type="text" placeholder="Zone code" id="spu-filter-zone">
+                </div>
+                <div class="filter-item">
+                  <label>Product ID</label>
+                  <input type="text" placeholder="Exact match" id="spu-filter-product-id">
+                </div>
+                <div class="filter-item">
+                  <label>Product Name</label>
+                  <input type="text" placeholder="Fuzzy search" id="spu-filter-product-name">
+                </div>
+                <div class="filter-item">
+                  <label>In Stock Only</label>
+                  <label class="switch"><input type="checkbox" id="spu-in-stock"><span class="slider"></span></label>
+                </div>
+                <div class="filter-actions">
+                  <button class="btn btn-primary">Search</button>
+                  <button class="btn">Reset</button>
+                </div>
+              </div>
+              <div class="table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th style="width:40px"></th>
+                      <th>Product ID</th>
+                      <th>Product Name</th>
+                      <th>SKU</th>
+                      <th>Total</th>
+                      <th>Locked</th>
+                      <th>Available</th>
+                      <th>Warehouse</th>
+                      <th>Zone</th>
+                    </tr>
+                  </thead>
+                  <tbody id="spu-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- SKU View -->
+            <div id="inv-view-sku" style="display:none">
+              <div class="filter-bar">
+                <div class="filter-item filter-wh-scope">
+                  <label>Warehouse ID/Name</label>
+                  <select id="sku-filter-warehouse"><option value="">All</option></select>
+                </div>
+                <div class="filter-item">
+                  <label>Zone Code</label>
+                  <input type="text" placeholder="Zone code" id="sku-filter-zone">
+                </div>
+                <div class="filter-item">
+                  <label>Product ID</label>
+                  <input type="text" placeholder="Exact match">
+                </div>
+                <div class="filter-item">
+                  <label>Product Name</label>
+                  <input type="text" placeholder="Fuzzy search">
+                </div>
+                <div class="filter-item">
+                  <label>SKU ID</label>
+                  <input type="text" placeholder="Exact match">
+                </div>
+                <div class="filter-item">
+                  <label>In Stock Only</label>
+                  <label class="switch"><input type="checkbox"><span class="slider"></span></label>
+                </div>
+                <div class="filter-actions">
+                  <button class="btn btn-primary">Search</button>
+                  <button class="btn">Reset</button>
+                </div>
+              </div>
+              <div class="table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>SKU ID</th>
+                      <th>Specification</th>
+                      <th>Product Name</th>
+                      <th>Total</th>
+                      <th>Locked</th>
+                      <th>Available</th>
+                      <th>Warehouse</th>
+                      <th>Zone</th>
+                      <th>Zone Code</th>
+                      <th>Primary Barcode</th>
+                      <th>PAN</th>
+                      <th>Operation</th>
+                    </tr>
+                  </thead>
+                  <tbody id="sku-table-body"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="pagination-bar">
+            <span>Total <strong>128</strong> records</span>
+            <div class="pagination-pages">
+              <span class="page-num">&lt;</span>
+              <span class="page-num active">1</span>
+              <span class="page-num">2</span>
+              <span class="page-num">3</span>
+              <span>...</span>
+              <span class="page-num">7</span>
+              <span class="page-num">&gt;</span>
+            </div>
+            <select class="rows-select"><option>20/page</option></select>
+            <span>Go to <input type="text" class="goto-input"></span>
+          </div>
+        </div>
+
+        <!-- ========== INVENTORY RECORD ========== -->
+        <div class="page" id="page-record">
+          <div class="page-header">
+            <h1 class="page-title">Inventory Record</h1>
+            <p class="page-subtitle">Track inventory changes: inbound, outbound, manual adjustment. Click a row or View icon for detail.</p>
+          </div>
+          <p class="page-demo-banner">Demo：含采购入库、<strong>Outbound Occupy / Deduct</strong> 示例；出库分配后会生成关联 <strong>Inbound No.</strong>（IN-YYYYMMDDnnn）。</p>
+          <div class="page-body">
+            <div class="tabs" id="record-tabs">
+              <div class="tab" data-record-tab="all">All</div>
+              <div class="tab active" data-record-tab="inbound">Inbound</div>
+              <div class="tab" data-record-tab="outbound">Outbound</div>
+              <div class="tab" data-record-tab="manual">Manual Adjustment</div>
+            </div>
+
+            <div class="filter-bar">
+              <div class="filter-item">
+                <label>Time Range</label>
+                <select>
+                  <option>Last 7 days</option>
+                  <option>Last 30 days</option>
+                  <option>Custom</option>
+                </select>
+              </div>
+              <div class="filter-item filter-wh-scope">
+                <label>Warehouse</label>
+                <select id="record-filter-warehouse"><option value="">All</option></select>
+              </div>
+              <div class="filter-item">
+                <label>Zone</label>
+                <select><option value="">All</option></select>
+              </div>
+              <div class="filter-item">
+                <label>SKU</label>
+                <input type="text" placeholder="SKU ID">
+              </div>
+              <div class="filter-item">
+                <label>Related Order No.</label>
+                <input type="text" placeholder="Order number">
+              </div>
+              <div class="filter-item">
+                <label>Operator</label>
+                <input type="text" placeholder="Operator name">
+              </div>
+              <div class="filter-actions">
+                <button class="btn btn-primary">Search</button>
+                <button class="btn">Reset</button>
+              </div>
+            </div>
+
+            <!-- Sub filter for inbound -->
+            <div class="sub-tabs" id="inbound-sub-tabs">
+              <div class="sub-tab active">All</div>
+              <div class="sub-tab">Manual</div>
+              <div class="sub-tab">Purchase</div>
+            </div>
+
+            <div class="sub-tabs" id="outbound-sub-tabs" style="display:none">
+              <div class="sub-tab active" data-outbound-sub="all">All</div>
+              <div class="sub-tab" data-outbound-sub="occupy">Occupy</div>
+              <div class="sub-tab" data-outbound-sub="deduct">Deduct</div>
+              <div class="sub-tab" data-outbound-sub="manual">Manual</div>
+            </div>
+
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>Warehouse</th>
+                    <th>Zone</th>
+                    <th>SKU</th>
+                    <th>Qty</th>
+                    <th>After Change (Total/Locked/Available)</th>
+                    <th>Type</th>
+                    <th>Related Order No.</th>
+                    <th>Operator</th>
+                    <th style="width:56px;text-align:center">View</th>
+                  </tr>
+                </thead>
+                <tbody id="record-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="pagination-bar">
+            <span>Total <strong>356</strong> records</span>
+            <div class="pagination-pages">
+              <span class="page-num">&lt;</span>
+              <span class="page-num active">1</span>
+              <span class="page-num">2</span>
+              <span>...</span>
+              <span class="page-num">18</span>
+              <span class="page-num">&gt;</span>
+            </div>
+            <select class="rows-select"><option>20/page</option></select>
+            <span>Go to <input type="text" class="goto-input"></span>
+          </div>
+        </div>
+
+        <!-- ========== INBOUND ========== -->
+        <div class="page" id="page-inbound">
+          <div class="page-header">
+            <h1 class="page-title">Inbound</h1>
+            <p class="page-subtitle">上架入库；Stocked In 写库存与 Record</p>
+          </div>
+          <p class="page-demo-banner">Demo：列表含采购/手工入库样例；导入采购单可使用 <strong>Use sample file</strong> 并查看行级校验结果。</p>
+          <div class="page-body">
+            <div class="filter-bar module-filter-bar inbound-filter-bar">
+              <div class="filter-item">
+                <label>Time (from)</label>
+                <input type="date" id="inbound-filter-date-from" aria-label="Start date">
+              </div>
+              <div class="filter-item">
+                <label>Time (to)</label>
+                <input type="date" id="inbound-filter-date-to" aria-label="End date">
+              </div>
+              <div class="filter-item">
+                <label>Inbound No.</label>
+                <input type="text" id="inbound-filter-no" placeholder="Contains" autocomplete="off">
+              </div>
+              <div class="filter-item">
+                <label>Inbound Type</label>
+                <select id="inbound-filter-type">
+                  <option value="">All</option>
+                  <option value="Purchase Receipt">Purchase Inbound</option>
+                  <option value="Manual Receipt">Manual Inbound</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <label>Operator</label>
+                <input type="text" id="inbound-filter-operator" placeholder="Operator name" list="inbound-operator-list">
+                <datalist id="inbound-operator-list"></datalist>
+              </div>
+              <div class="filter-item filter-wh-scope" id="inbound-filter-warehouse-wrap">
+                <label>Warehouse</label>
+                <select id="inbound-filter-warehouse"><option value="">All</option></select>
+              </div>
+              <div class="filter-actions">
+                <button class="btn btn-primary" type="button" onclick="searchInboundReceipts()">Search</button>
+                <button class="btn" type="button" onclick="resetInboundFilters()">Reset</button>
+              </div>
+            </div>
+            <div class="toolbar">
+              <span>Total <strong id="inbound-list-total">0</strong></span>
+              <button class="btn btn-primary" onclick="openNewInboundTask()">+ New Inbound</button>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>Inbound No.</th>
+                    <th>Purchase Order</th>
+                    <th>Shipping No.</th>
+                    <th>Inbound Type</th>
+                    <th>SKU Qty</th>
+                    <th>Operator</th>
+                    <th style="width:56px;text-align:center">View</th>
+                  </tr>
+                </thead>
+                <tbody id="inbound-table-body"></tbody>
+              </table>
+            </div>
+            <div class="pagination-bar">
+              <select id="inbound-page-size" onchange="inboundListPage=1;renderInboundReceiptList()">
+                <option value="20">20/page</option>
+                <option value="50">50/page</option>
+                <option value="100">100/page</option>
+                <option value="500">500/page</option>
+              </select>
+              <span id="inbound-pagination-info">Page 1 / 1</span>
+              <button type="button" class="btn" onclick="inboundPrevPage()">Prev</button>
+              <button type="button" class="btn" onclick="inboundNextPage()">Next</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========== OUTBOUND ORDERS (OMS-style) ========== -->
+        <div class="page" id="page-outbound-orders">
+          <div class="page-header ob-page-header">
+            <h1 class="page-title">Outbound</h1>
+            <p class="page-subtitle">导入订单 → 分配占用 → 打包发运；Pending Allocation 支持 Manual outbound</p>
+          </div>
+          <p class="page-demo-banner">Demo：<strong>Import Orders → Use sample file</strong> 或 <strong>Manual outbound</strong> → Confirm Allocation → Pack &amp; Ship。</p>
+          <div class="page-body ob-oms-body">
+            <div class="ob-status-tabs" id="ob-list-tabs" role="tablist"></div>
+            <div class="ob-oms-filters filter-bar">
+              <div class="filter-item">
+                <label>Order No.</label>
+                <input type="text" id="ob-filter-order" placeholder="Order No.">
+              </div>
+              <div class="filter-item">
+                <label>SKU ID</label>
+                <input type="text" id="ob-filter-sku" placeholder="SKU ID">
+              </div>
+              <div class="filter-item">
+                <label>PAN</label>
+                <input type="text" id="ob-filter-pan" placeholder="8-digit PAN" maxlength="8" inputmode="numeric">
+              </div>
+              <div class="filter-item">
+                <label>Time</label>
+                <input type="datetime-local" id="ob-filter-time" aria-label="Filter by time">
+              </div>
+              <div class="filter-actions">
+                <button class="btn btn-primary" type="button" onclick="renderOutboundOrderList()">Search</button>
+                <button class="btn" type="button" onclick="resetOutboundListFilters()">Reset</button>
+              </div>
+            </div>
+            <div class="ob-oms-toolbar toolbar">
+              <div class="ob-oms-toolbar-left">
+                <button class="btn btn-primary" type="button" id="ob-btn-allocate" onclick="confirmAllocationBatch()">Confirm Allocation</button>
+                <span class="hint" id="ob-import-scope-hint"></span>
+              </div>
+              <div class="ob-oms-toolbar-right">
+                <button class="btn" type="button" id="ob-btn-manual-outbound" onclick="openManualOutboundModal()">Manual outbound</button>
+                <button class="btn btn-primary" type="button" id="ob-btn-import-export" onclick="openImportOrders()">Import / Export</button>
+              </div>
+            </div>
+            <div class="table-wrapper ob-oms-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width:36px"><input type="checkbox" id="ob-list-check-all" onchange="toggleOutboundListChecks(this.checked)"></th>
+                    <th>Time</th>
+                    <th>Outbound No.</th>
+                    <th>SKU ID</th>
+                    <th>Product Name</th>
+                    <th>SKU</th>
+                    <th>QTY</th>
+                    <th>PAN</th>
+                    <th>Order No.</th>
+                    <th>Outbound Type</th>
+                    <th>Operator</th>
+                    <th>Status</th>
+                    <th>Operation</th>
+                  </tr>
+                </thead>
+                <tbody id="ob-order-list-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========== OUTBOUND DETAIL ========== -->
+        <div class="page" id="page-outbound-detail">
+          <div class="page-header">
+            <div class="dashboard-page-header">
+              <div>
+                <h1 class="page-title" id="ob-detail-title">Outbound Detail</h1>
+                <p class="page-subtitle" id="ob-detail-sub"></p>
+              </div>
+              <button class="btn" onclick="navigateTo('outbound-orders')">Back</button>
+            </div>
+          </div>
+          <div class="page-body">
+            <div class="tabs" id="ob-line-tabs"></div>
+            <div class="toolbar" id="ob-detail-actions"></div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width:36px"><input type="checkbox" id="ob-check-all" onchange="toggleOutboundChecks(this.checked)"></th>
+                    <th>Outbound No.</th>
+                    <th>Order No.</th>
+                    <th>Order Time</th>
+                    <th>Product</th>
+                    <th>Specification</th>
+                    <th>Qty</th>
+                    <th>Zone</th>
+                    <th>Shipment No.</th>
+                    <th>Tracking No.</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="ob-line-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========== ON HOLD ========== -->
+        <div class="page" id="page-outbound-onhold">
+          <div class="page-header">
+            <h1 class="page-title">Waiting Queue</h1>
+            <p class="page-subtitle">On Hold lines (no stock occupy). Replenish via Inbound, then Re-allocate — same as「选择已补货」in the target flow.</p>
+          </div>
+          <div class="page-body">
+            <div class="toolbar">
+              <span></span>
+              <button class="btn btn-primary" onclick="reallocateSelected(true)">Batch Re-allocate</button>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th style="width:36px"><input type="checkbox" onchange="toggleHoldChecks(this.checked)"></th>
+                    <th>Outbound No.</th>
+                    <th>Order No.</th>
+                    <th>SKU</th>
+                    <th>Product</th>
+                    <th>Qty</th>
+                    <th>Warehouse</th>
+                    <th>Reason</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="ob-hold-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Create/Edit Warehouse Modal -->
+  <div class="modal-overlay" id="warehouse-modal">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <span class="modal-title" id="warehouse-modal-title">Create Warehouse</span>
+        <button class="modal-close" onclick="closeModal('warehouse-modal')">&times;</button>
+      </div>
+      <div class="modal-body" id="warehouse-form-container">
+        <form class="form-grid" id="warehouse-form">
+          <div class="form-group" id="wh-id-group" style="display:none">
+            <label>Warehouse ID</label>
+            <input type="text" class="readonly" id="wh-id" readonly>
+          </div>
+          <div class="form-group">
+            <label>Warehouse Name <span class="required">*</span></label>
+            <input type="text" placeholder="Warehouse Name, 2-50 characters" id="wh-name" maxlength="50">
+            <span class="hint">2-50 characters. Chinese, letters, and numbers only.</span>
+          </div>
+          <div class="form-group">
+            <label>Attribute <span class="required">*</span></label>
+            <select id="wh-attribute">
+              <option value="normal">Normal</option>
+              <option value="fireproof">Fireproof</option>
+              <option value="thermostatic">Thermostatic</option>
+              <option value="cold chain">Cold Chain</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Status</label>
+            <span class="tag tag-disable" id="wh-status-tag">Disable</span>
+            <select id="wh-status" style="display:none;margin-top:6px">
+              <option value="disable">Disable</option>
+              <option value="enable">Enable</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Zone Count</label>
+            <input type="text" class="readonly" value="3 (Auto-generate: Receiving Zone, Storage Zone, Shipping Zone)" readonly id="wh-zone-count">
+            <a class="btn-link" id="wh-manage-zones" style="display:none" onclick="navigateToZonesFromWarehouse()">Manage Zones</a>
+          </div>
+
+          <div class="form-section-title">Address</div>
+          <div class="form-group">
+            <label>Country <span class="required">*</span></label>
+            <select id="wh-country">
+              <option value="">Select Country</option>
+              <option value="CN">China</option>
+              <option value="SG">Singapore</option>
+              <option value="US">United States</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>State/Province <span class="required">*</span></label>
+            <select id="wh-state">
+              <option value="">Select State/Province</option>
+              <option value="SH">Shanghai</option>
+              <option value="BJ">Beijing</option>
+              <option value="GD">Guangdong</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>City/County <span class="required">*</span></label>
+            <select id="wh-city">
+              <option value="">Select City/County</option>
+              <option value="PD">Pudong</option>
+              <option value="HP">Huangpu</option>
+            </select>
+          </div>
+          <div class="form-group full">
+            <label>Detailed Address <span class="required">*</span></label>
+            <input type="text" placeholder="Unit Number, Building, Street" id="wh-address" maxlength="200">
+          </div>
+
+          <div class="form-section-title">Additional Info</div>
+          <div class="form-group">
+            <label>Longitude</label>
+            <input type="text" placeholder="eg: 103.1234" id="wh-longitude">
+          </div>
+          <div class="form-group">
+            <label>Latitude</label>
+            <input type="text" placeholder="eg: 31.2304" id="wh-latitude">
+            <span class="hint">Longitude and latitude are both required or leave blank.</span>
+          </div>
+          <div class="form-group">
+            <label>Area (㎡)</label>
+            <input type="number" placeholder="Gross Floor Area" min="0" id="wh-area">
+          </div>
+          <div class="form-group">
+            <label>Ceiling Height (m)</label>
+            <input type="number" placeholder="Clear Height" min="0" id="wh-height">
+          </div>
+          <div class="form-group">
+            <label>Weighing Compliance</label>
+            <select id="wh-weighing">
+              <option value="pending">Pending</option>
+              <option value="compliant">Compliant</option>
+              <option value="error">Error</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Fire Safety Compliance</label>
+            <select id="wh-fire">
+              <option value="pending">Pending</option>
+              <option value="compliant">Compliant</option>
+              <option value="error">Error</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Owner</label>
+            <input type="text" placeholder="Warehouse Owner" id="wh-owner">
+          </div>
+          <div class="form-group">
+            <label>Contact</label>
+            <input type="text" placeholder="Contact Person" id="wh-contact">
+          </div>
+          <div class="form-group">
+            <label>Phone Number</label>
+            <input type="text" placeholder="with Country Code, eg: +65 1234 5678" id="wh-phone">
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer" id="warehouse-modal-footer">
+        <button class="btn" onclick="closeModal('warehouse-modal')">Cancel</button>
+        <button class="btn btn-primary" id="warehouse-submit-btn" onclick="submitWarehouse()">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Warehouse Confirm -->
+  <div class="modal-overlay" id="delete-warehouse-modal">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <span class="modal-title">Confirm Delete</span>
+        <button class="modal-close" onclick="closeModal('delete-warehouse-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="delete-warehouse-msg">Delete warehouse?</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('delete-warehouse-modal')">Cancel</button>
+        <button class="btn btn-danger" onclick="confirmDeleteWarehouse()">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create/Edit Zone Modal -->
+  <div class="modal-overlay" id="zone-modal">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <span class="modal-title" id="zone-modal-title">Create Zone</span>
+        <button class="modal-close" onclick="closeModal('zone-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form class="form-grid single" id="zone-form">
+          <div class="form-group">
+            <label>Warehouse ID</label>
+            <select id="zone-wh-id"></select>
+          </div>
+          <div class="form-group">
+            <label>Zone <span class="required">*</span></label>
+            <select id="zone-type">
+              <option value="">Select Zone Type</option>
+              <option value="Damaged Goods Zone">Damaged Goods Zone (DMG)</option>
+              <option value="Packing Zone">Packing Zone (PKG)</option>
+              <option value="Returns Zone">Returns Zone (RTN)</option>
+              <option value="Quarantine Zone">Quarantine Zone (HLD)</option>
+              <option value="Special Zone">Special Zone (SPC)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Zone Code <span class="required">*</span></label>
+            <input type="text" placeholder="e.g. SH001DMG" id="zone-code">
+            <span class="hint">Unique within warehouse. Cannot be changed after creation.</span>
+          </div>
+          <div class="form-group">
+            <label>Status <span class="required">*</span></label>
+            <select id="zone-status">
+              <option value="enable">Enable</option>
+              <option value="disable">Disable</option>
+            </select>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer" id="zone-modal-footer">
+        <button class="btn" onclick="closeModal('zone-modal')">Cancel</button>
+        <button class="btn btn-primary" id="zone-submit-btn" onclick="submitZone()">Create</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delete Zone Confirm -->
+  <div class="modal-overlay" id="delete-zone-modal">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <span class="modal-title">Confirm Delete</span>
+        <button class="modal-close" onclick="closeModal('delete-zone-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="delete-zone-msg">Delete zone?</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('delete-zone-modal')">Cancel</button>
+        <button class="btn btn-danger" onclick="confirmDeleteZone()">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Inventory Adjustment Modal -->
+  <div class="modal-overlay" id="adj-modal">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <span class="modal-title">Inventory Adjustment</span>
+        <button class="modal-close" onclick="closeModal('adj-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form class="form-grid single" id="adj-form">
+          <div class="form-group"><label>SKU</label><input class="readonly" id="adj-sku" readonly></div>
+          <div class="form-group"><label>Warehouse / Zone</label><input class="readonly" id="adj-loc" readonly></div>
+          <div class="form-group"><label>Qty Before</label><input class="readonly" id="adj-before" readonly></div>
+          <div class="form-group"><label>Direction <span class="required">*</span></label><select id="adj-dir"><option value="increase">Increase</option><option value="decrease">Decrease</option></select></div>
+          <div class="form-group"><label>Adjustment Qty <span class="required">*</span></label><input type="number" min="1" id="adj-qty"></div>
+          <div class="form-group"><label>Adjustment Type <span class="required">*</span></label><select id="adj-type"><option value="">Select</option><option>Inventory Gain (盘盈)</option><option>Inventory Loss (盘亏)</option><option>Overage (报溢)</option><option>Damage (报损)</option><option>Data Correction (录入纠错)</option></select></div>
+          <div class="form-group full"><label>Reason <span class="required">*</span></label><textarea id="adj-reason" maxlength="200"></textarea></div>
+          <div class="form-group full"><label>Attachment</label><input type="file" id="adj-file"></div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('adj-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitAdjustment()">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="adj-attachment-preview-modal">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <span class="modal-title" id="adj-attachment-preview-title">Attachment preview</span>
+        <button class="modal-close" onclick="closeModal('adj-attachment-preview-modal')">&times;</button>
+      </div>
+      <div class="modal-body" id="adj-attachment-preview-body">
+        <p class="hint">Demo static preview (prototype only).</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="closeModal('adj-attachment-preview-modal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Inventory Record Detail -->
+  <div class="modal-overlay" id="record-detail-modal">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <span class="modal-title">Record Detail</span>
+        <button class="modal-close" onclick="closeModal('record-detail-modal')">&times;</button>
+      </div>
+      <div class="modal-body" id="record-detail-body"></div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="closeModal('record-detail-modal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="inbound-source-preview-modal">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <span class="modal-title" id="inbound-source-preview-title">Source file preview</span>
+        <button class="modal-close" onclick="closeModal('inbound-source-preview-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="hint" id="inbound-source-preview-hint"></p>
+        <div class="table-wrapper" id="inbound-source-preview-table-wrap"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="closeModal('inbound-source-preview-modal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="inbound-detail-modal">
+    <div class="modal modal-lg modal-inbound-detail">
+      <div class="modal-header">
+        <span class="modal-title" id="inbound-detail-title">Inbound Detail</span>
+        <button class="modal-close" onclick="closeModal('inbound-detail-modal')">&times;</button>
+      </div>
+      <div class="modal-body" id="inbound-detail-body"></div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="closeModal('inbound-detail-modal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Inbound Receipt Editor -->
+  <div class="modal-overlay" id="receipt-editor-modal">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <span class="modal-title" id="receipt-editor-title">Create Receipt</span>
+        <button class="modal-close" onclick="closeModal('receipt-editor-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="hint" id="receipt-type-hint">Select Inbound Type, then complete the form. Type cannot change after lines are added.</p>
+        <div class="form-group" id="receipt-type-select-wrap" style="max-width:320px;margin-bottom:12px">
+          <label>Inbound Type</label>
+          <select id="receipt-type-select" onchange="onReceiptTypeSelectChange(this.value)">
+            <option value="">Select…</option>
+            <option value="po-import">Purchase Inbound</option>
+            <option value="manual">Manual Inbound</option>
+          </select>
+        </div>
+        <div id="receipt-editor-body" hidden>
+        <form class="form-grid" id="receipt-editor-form">
+          <div class="form-group"><label>Inbound No.</label><input class="readonly" id="receipt-inbound-no-preview" readonly placeholder="Auto on submit"></div>
+          <div class="form-group"><label>Inbound Type</label><input class="readonly" id="receipt-type-label" readonly></div>
+          <div class="form-group"><label>Context Warehouse</label><input class="readonly" id="receipt-warehouse" readonly></div>
+          <div class="form-group" id="receipt-purchase-order-wrap" hidden>
+            <label>Purchase Order</label>
+            <input class="readonly" id="receipt-purchase-order-summary" readonly placeholder="One PO per Inbound (采购单号)">
+          </div>
+          <div class="form-group" id="receipt-shipping-no-wrap" hidden>
+            <label>Shipping No.</label>
+            <input class="readonly" id="receipt-shipping-no-summary" readonly placeholder="From 采购.xlsx (物流单号)">
+          </div>
+        </form>
+        <input type="hidden" id="receipt-type" value="">
+        <div id="receipt-source-po-import" class="source-panel" hidden>
+          <p class="hint">Upload <strong>采购.xlsx</strong>: <code>采购单号</code> → Purchase Order (one per Inbound), <code>物流单号</code> → Shipping No.（<strong>每次上传仅允许一个</strong>）, <code>Product Name</code>, <code>需求数量</code> → Order Qty.</p>
+          <div class="inbound-alert inbound-shipping-split-hint" id="receipt-shipping-split-hint" role="note">
+            <strong>每次上传仅允许一个物流单号</strong>
+            <p style="margin:8px 0 0">若 Excel 中存在多个不同的 <code>物流单号</code>，系统将<strong>拒绝解析</strong>并提示拆分文件。请按运单号筛选或拆表后分别点击「+ New Inbound」入库；同一 <code>采购单号</code> 可对应多个 Inbound（每个运单一次入库）。</p>
+          </div>
+          <input type="file" id="receipt-import-file" accept=".xlsx,.xls">
+          <button type="button" class="btn btn-primary" id="receipt-import-btn" disabled onclick="startPoListImport()">Parse file</button>
+          <div id="receipt-source-file-meta" class="hint" hidden></div>
+          <button type="button" class="btn" id="receipt-source-preview-btn" hidden onclick="openReceiptSourcePreview()">Preview source file</button>
+          <div id="receipt-unmatched-panel" class="inbound-alert" hidden>
+            <strong>Warn — unmatched Product Name</strong> — Check spelling or list the product on Seller before inbound.
+            <ul id="receipt-unmatched-list"></ul>
+          </div>
+        </div>
+        <div id="receipt-source-manual" class="source-panel" hidden>
+          <label class="field-label">Product Name（模糊搜索）</label>
+          <input type="text" id="receipt-manual-search" class="manual-product-search" placeholder="输入商品名称关键词…" oninput="renderReceiptManualSearch()">
+          <div id="receipt-manual-suggest" class="manual-suggest-list" hidden></div>
+          <span class="hint">下拉仅显示 Product Name；在表格中选择 SKU 后回显 SKU ID。</span>
+        </div>
+        <div class="editor-lines-toolbar" id="receipt-lines-toolbar">
+          <button type="button" class="btn" id="receipt-delete-all-btn" hidden onclick="deleteAllReceiptLines()">Delete All</button>
+        </div>
+        <div class="table-wrapper editor-lines-table">
+          <table>
+            <thead id="receipt-editor-lines-head">
+              <tr>
+                <th>SKU ID</th><th>Product Name</th><th>Spec</th><th>Warehouse</th><th>Zone</th><th>Order Qty</th><th>Receipt Qty</th><th>Remark</th><th style="width:72px">Action</th>
+              </tr>
+            </thead>
+            <tbody id="receipt-editor-lines"></tbody>
+          </table>
+        </div>
+        <div class="import-progress" id="receipt-import-progress" hidden>
+          <div class="progress-label">Importing… <span id="receipt-import-pct">0%</span></div>
+          <div class="progress-track"><div class="progress-fill" id="receipt-import-fill"></div></div>
+        </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" id="receipt-cancel-btn" onclick="closeModal('receipt-editor-modal')">Cancel</button>
+        <button class="btn btn-primary" id="receipt-stock-in-btn" onclick="confirmReceiptStockIn()">确认入库</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="receipt-sku-picker-modal">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <span class="modal-title">Add Products — SKU Picker</span>
+        <button class="modal-close" onclick="closeModal('receipt-sku-picker-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <input type="text" id="receipt-sku-picker-search" placeholder="Filter by SKU ID or product name" oninput="renderReceiptSkuPickerList()">
+        <div class="table-wrapper sku-picker-table">
+          <table>
+            <thead><tr><th></th><th>SKU ID</th><th>Product</th><th>Spec</th><th>Zone</th><th>Total</th></tr></thead>
+            <tbody id="receipt-sku-picker-body"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('receipt-sku-picker-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="confirmReceiptSkuPicker()">Add Selected</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="receipt-progress-modal">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <span class="modal-title">Import Progress</span>
+        <button class="modal-close" onclick="closeModal('receipt-progress-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="receipt-progress-label">Processing import…</p>
+        <div class="progress-track"><div class="progress-fill" id="receipt-progress-modal-fill"></div></div>
+        <p class="hint" id="receipt-progress-detail"></p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="closeModal('receipt-progress-modal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+<div class="modal-overlay" id="ob-import-modal">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <span class="modal-title">Import Orders</span>
+        <button class="modal-close" onclick="closeModal('ob-import-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="ob-import-step-upload">
+          <p class="hint"><strong>订单列表.xlsx</strong>: <code>MerchantOrderID</code> → Order No., <code>ItemQuantity</code> → Qty, <code>ItemDesc</code> → parse <code>qty*Product Name-SKU</code>. Warehouse picker only when Admin + context All.</p>
+          <div class="form-group" id="ob-import-wh-wrap">
+            <label>Warehouse</label>
+            <select id="ob-import-wh" onchange="revalidateOutboundImportPreview()"></select>
+          </div>
+          <div class="ob-upload-box" onclick="document.getElementById('ob-import-file').click()">+ Click to upload</div>
+          <input type="file" id="ob-import-file" accept=".csv,text/csv,.xlsx,.xls" hidden onchange="onOutboundFilePicked(this, 'orders')">
+          <button class="btn" type="button" onclick="fillSampleOrderCsv()">Use sample file</button>
+          <button class="btn" type="button" onclick="downloadOutboundOrderSampleFile()">Download sample .xlsx</button>
+          <p id="ob-import-file-msg" class="hint"></p>
+          <div id="ob-import-validate-panel" class="inbound-alert" hidden>
+            <strong>Import validation</strong>
+            <p class="hint" id="ob-import-validate-summary"></p>
+            <div class="table-wrapper" id="ob-import-validate-table-wrap"></div>
+          </div>
+        </div>
+        <div id="ob-import-step-progress" hidden>
+          <p id="ob-import-progress-title">Importing</p>
+          <div class="ob-bar"><div id="ob-import-bar"></div></div>
+          <p id="ob-import-progress-text"></p>
+        </div>
+        <pre id="ob-import-preview" class="ob-preview" hidden></pre>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" id="ob-import-cancel" onclick="closeModal('ob-import-modal')">Cancel</button>
+        <button class="btn btn-primary" id="ob-import-btn" disabled onclick="runImportOrders()">Import</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="ob-track-modal">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <span class="modal-title">Import Tracking No.</span>
+        <button class="modal-close" onclick="closeModal('ob-track-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="hint">After courier label is ready. Columns: Order No, SKU ID, Tracking No. Lines move to Awaiting Pickup. Inventory unchanged until Confirm Shipment.</p>
+        <input type="file" id="ob-track-file" accept=".csv,text/csv" onchange="onOutboundFilePicked(this, 'track')">
+        <button class="btn" type="button" onclick="fillSampleTrackCsv()">Use sample for selected Allocated lines</button>
+        <pre id="ob-track-preview" class="ob-preview"></pre>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('ob-track-modal')">Cancel</button>
+        <button class="btn btn-primary" id="ob-track-btn" disabled onclick="runImportTracking()">Import</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="ob-pack-modal">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <span class="modal-title">Pack &amp; Confirm Shipment</span>
+        <button class="modal-close" onclick="closeModal('ob-pack-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="hint" id="ob-pack-hint">Confirm the lines below. Shipping No. is required for imported orders and optional for Manual outbound.</p>
+        <input type="hidden" id="ob-pack-line-id" value="">
+        <div class="table-wrapper ob-pack-table-wrap" id="ob-pack-table-wrap"></div>
+        <div class="form-group">
+          <label for="ob-pack-shipping">Shipping No.</label>
+          <input type="text" id="ob-pack-shipping" placeholder="e.g. SF1029384756">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('ob-pack-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="submitPackAndShip()">Confirm Shipment</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="ob-export-modal">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <span class="modal-title">Export Shipping Order</span>
+        <button class="modal-close" onclick="closeModal('ob-export-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <label>Please select export format</label>
+        <select id="ob-export-format">
+          <option value="xlsx">xlsx</option>
+          <option value="xls">xls</option>
+          <option value="csv">csv</option>
+        </select>
+        <p class="hint" id="ob-export-count"></p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('ob-export-modal')">Cancel</button>
+        <button class="btn btn-primary" onclick="confirmExportShippingOrder()">Export</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="ob-special-modal">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <span class="modal-title">Manual outbound</span>
+        <button class="modal-close" onclick="closeModal('ob-special-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="hint">Creates a Pending Allocation line · same allocate → pack &amp; ship flow as imported orders.</p>
+        <div class="form-card sx-form">
+          <div class="form-row" id="sx-wh-wrap">
+            <label for="sx-wh">Warehouse</label>
+            <select id="sx-wh" onchange="onSxWarehouseChange()"></select>
+          </div>
+          <div class="form-row">
+            <label for="sx-sku-id-display">SKU ID</label>
+            <input type="text" id="sx-sku-id-display" class="readonly" readonly placeholder="Select SKU below">
+          </div>
+          <div class="form-row">
+            <label for="sx-product">Product Name <span class="req">*</span></label>
+            <input type="text" id="sx-product" list="sx-product-list" placeholder="Required · keyword match" oninput="onSxProductInput()" onchange="onSxProductPick()" required>
+            <datalist id="sx-product-list"></datalist>
+          </div>
+          <div class="form-row">
+            <label for="sx-sku-id">SKU <span class="req">*</span></label>
+            <select id="sx-sku-id" onchange="onSxSkuPick()" required></select>
+          </div>
+          <div class="form-row">
+            <label for="sx-qty">QTY <span class="req">*</span></label>
+            <input type="number" id="sx-qty" min="1" value="1">
+          </div>
+          <div class="form-row">
+            <label for="sx-reason">Reason <span class="req">*</span></label>
+            <select id="sx-reason"></select>
+          </div>
+          <div class="form-row">
+            <label for="sx-remarks">Remarks</label>
+            <input type="text" id="sx-remarks" placeholder="Required when reason is Other">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('ob-special-modal')">Cancel</button>
+        <button class="btn btn-primary" type="button" onclick="submitManualOutbound()">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="ob-confirm-modal">
+    <div class="modal modal-sm">
+      <div class="modal-header">
+        <span class="modal-title" id="ob-confirm-title">Confirm</span>
+        <button class="modal-close" onclick="closeModal('ob-confirm-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p id="ob-confirm-msg"></p>
+        <p class="hint">Review the selected rows before continuing.</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('ob-confirm-modal')">Cancel</button>
+        <button class="btn btn-primary" id="ob-confirm-ok" onclick="runOutboundConfirm()">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="ob-result-modal">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <span class="modal-title">Allocation result</span>
+        <button class="modal-close" onclick="closeModal('ob-result-modal')">&times;</button>
+      </div>
+      <div class="modal-body" id="ob-result-body"></div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="closeModal('ob-result-modal')">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="ob-picklist-modal">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <span class="modal-title">Pick List (PDF preview)</span>
+        <button class="modal-close" onclick="closeModal('ob-picklist-modal')">&times;</button>
+      </div>
+      <div class="modal-body" id="ob-picklist-body"></div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('ob-picklist-modal')">Close</button>
+        <button class="btn btn-primary" onclick="printPickListWindow()">Print / Save PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="ob-line-modal">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <span class="modal-title">Line Detail</span>
+        <button class="modal-close" onclick="closeModal('ob-line-modal')">&times;</button>
+      </div>
+      <div class="modal-body" id="ob-line-detail"></div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="closeModal('ob-line-modal')">Close</button>
+      </div>
+    </div>
+  </div>
+
+  
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="KickBazar-WMS.bundle.js" defer onerror="var b=document.getElementById('wms-boot-alert');if(b)b.hidden=false;"></script>
+</body>
+</html>
