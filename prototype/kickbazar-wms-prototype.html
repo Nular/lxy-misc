@@ -3250,6 +3250,7 @@ tbody tr.selected {
           <div class="ob-upload-box" onclick="document.getElementById('ob-import-file').click()">+ Click to upload</div>
           <input type="file" id="ob-import-file" accept=".csv,text/csv,.xlsx,.xls" hidden onchange="onOutboundFilePicked(this, 'orders')">
           <button class="btn" type="button" onclick="fillSampleOrderCsv()">Use sample file</button>
+          <button class="btn" type="button" onclick="downloadOutboundOrderSampleFile()">Download sample .xlsx</button>
           <p id="ob-import-file-msg" class="hint"></p>
           <div id="ob-import-validate-panel" class="inbound-alert" hidden>
             <strong>Import validation</strong>

@@ -3905,6 +3905,62 @@ function renderOnHold() {
   `).join('') || '<tr><td colspan="9" style="text-align:center;color:#999">No on-hold lines</td></tr>';
 }
 
+function ensureOutboundImportWarehouseOptions() {
+  const select = document.getElementById('ob-import-wh');
+  if (!select) return;
+  if (select.options.length) return;
+  const scope = getWarehouseScope();
+  const list = scope === 'all' ? warehouses : warehouses.filter(w => w.id === scope);
+  select.innerHTML = list.map(w => `<option value="${w.id}">${formatCanonicalWarehouseCode(w.id)} — ${w.name}</option>`).join('');
+}
+
+function outboundSampleItemDescsForWarehouse(warehouseId) {
+  const wh = formatCanonicalWarehouseCode(warehouseId);
+  const stoRows = listStoSkusForWarehouse(wh).filter(s => (s.available ?? 0) > 0 || (s.total ?? 0) > 0);
+  const pick = stoRows.slice(0, 2);
+  if (!pick.length) return null;
+  return pick.map(s => `1*${s.productName}-${s.skuId}`);
+}
+
+function buildOutboundSampleCsv(warehouseId) {
+  const descs = outboundSampleItemDescsForWarehouse(warehouseId);
+  if (!descs || !descs.length) return null;
+  const orderId = 'MO-DEMO-2026';
+  const header = 'MerchantOrderID,ItemQuantity,ItemDesc';
+  const body = descs.map(d => `${orderId},1,${d}`).join('\n');
+  return `${header}\n${body}`;
+}
+
+function outboundSampleMatrixForWarehouse(warehouseId) {
+  const descs = outboundSampleItemDescsForWarehouse(warehouseId);
+  if (!descs || !descs.length) return null;
+  const orderId = 'MO-DEMO-2026';
+  return [['MerchantOrderID', 'ItemQuantity', 'ItemDesc']].concat(
+    descs.map(d => [orderId, 1, d])
+  );
+}
+
+function downloadOutboundOrderSampleFile() {
+  ensureOutboundImportWarehouseOptions();
+  const wh = outboundImportWarehouseId() || 'SH001';
+  const matrix = outboundSampleMatrixForWarehouse(wh) || outboundSampleMatrixForWarehouse('SH001');
+  if (!matrix) {
+    showToast('No demo STO SKUs for sample file.', 'error');
+    return;
+  }
+  if (typeof XLSX !== 'undefined') {
+    const ws = XLSX.utils.aoa_to_sheet(matrix);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Orders');
+    XLSX.writeFile(wb, '订单列表-demo.xlsx');
+    showToast('Downloaded 订单列表-demo.xlsx — upload or click Use sample file.', 'success');
+    return;
+  }
+  const csv = matrix.map(row => row.join(',')).join('\n');
+  downloadTextFile('订单列表-demo.csv', csv);
+  showToast('Downloaded 订单列表-demo.csv', 'success');
+}
+
 function openImportOrders() {
   const select = document.getElementById('ob-import-wh');
   const scope = getWarehouseScope();
@@ -3929,12 +3985,38 @@ function openImportOrders() {
 }
 
 function fillSampleOrderCsv() {
-  obOrderImportRows = null;
-  obOrderCsv = 'MerchantOrderID,ItemQuantity,ItemDesc\nMO-DEMO-2026,1,1*Wireless Bluetooth Earbuds Pro-SKU-10001-BK\nMO-DEMO-2026,1,1*Smart Watch Series X-SKU-10002-42';
-  document.getElementById('ob-import-preview').hidden = false;
-  document.getElementById('ob-import-preview').textContent = obOrderCsv;
-  document.getElementById('ob-import-file-msg').textContent = 'Sample 订单列表 (MO-DEMO-2026): two SKU lines ready for allocate → pack & ship.';
-  applyOutboundImportPreview(parseCsv(obOrderCsv));
+  try {
+    ensureOutboundImportWarehouseOptions();
+    const whSelect = document.getElementById('ob-import-wh');
+    const scope = getWarehouseScope();
+    if (whSelect && scope === 'all' && [...whSelect.options].some(o => o.value === 'SH001')) {
+      whSelect.value = 'SH001';
+    }
+    const wh = outboundImportWarehouseId();
+    if (!wh) {
+      showToast('Select a warehouse before using the sample.', 'warning');
+      return;
+    }
+    obOrderImportRows = null;
+    obOrderCsv = buildOutboundSampleCsv(wh);
+    if (!obOrderCsv) {
+      showToast(`Sample needs STO inventory in ${formatCanonicalWarehouseCode(wh)}. Switch sidebar warehouse to SH001 or BJ001.`, 'error');
+      return;
+    }
+    const preview = document.getElementById('ob-import-preview');
+    const msg = document.getElementById('ob-import-file-msg');
+    if (preview) {
+      preview.hidden = false;
+      preview.textContent = obOrderCsv;
+    }
+    if (msg) {
+      msg.textContent = `Sample 订单列表 (MO-DEMO-2026) for ${formatCanonicalWarehouseCode(wh)}: ${parseCsv(obOrderCsv).length} line(s). Allocate → Pack & Ship.`;
+    }
+    applyOutboundImportPreview(parseCsv(obOrderCsv));
+  } catch (err) {
+    console.error(err);
+    showToast(err.message || 'Sample file failed to load.', 'error');
+  }
 }
 
 function onOutboundFilePicked(input, kind) {
