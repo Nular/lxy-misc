@@ -296,14 +296,15 @@
 
 ## 12 Dashboard KPI（衔接主 PRD §7.1）
 
+Home 首行 **5** 张 KPI 中，下列 **3** 项来自出库（**Outbound No. 去重**，当前 `warehouse_context`）：
+
 | KPI | 口径 |
 |-----|------|
-| Pending Allocation | `pending_allocation` 行数（当前上下文） |
-| Pending Picking | `pending_picking` 行数 |
-| Pending Packing | 一期可与 Pending Picking 合并展示 |
-| Shipped Today | 当日 Pack & Ship 完成行数 |
+| Pending Allocation | 至少一行 `pending_allocation` 的 **Outbound No.** 数量 |
+| Pending Picking | 至少一行 `pending_picking` 的 **Outbound No.** 数量 |
+| Shipped Today | 当日至少一行 `shipped` 的 **Outbound No.** 数量 |
 
-点击跳转 **Outbound Orders** 并带入对应 Tab（建议）。
+点击卡片跳转 **Outbound Orders** 对应状态 Tab。
 
 ---
 

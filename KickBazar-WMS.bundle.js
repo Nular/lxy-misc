@@ -499,23 +499,73 @@ function navigateTo(pageId) {
 }
 
 // ========== Home / Dashboard ==========
-const DASHBOARD_PENDING_DEMO = {
-  inbound: 3,
-  allocation: 12,
-  picking: 8,
-  packing: 5,
-  shipped: 156
-};
+function dashboardWarehouseIdsInScope() {
+  return warehousesInScope(warehouses).map(w => normalizeWarehouseId(w.id));
+}
 
-function getDashboardPendingMetrics(scopedWh) {
-  const factor = getWarehouseScope() === 'all' ? 1 : (scopedWh.length === 1 ? 0.35 : 1);
-  const f = (n) => Math.max(0, Math.round(n * factor));
+/** Σ SKU total in current warehouse context (all zones). */
+function getDashboardTotalInventoryUnits() {
+  const scopeIds = new Set(dashboardWarehouseIdsInScope());
+  return skuData
+    .filter(s => scopeIds.has(normalizeWarehouseId(skuWarehouseId(s))))
+    .reduce((sum, s) => sum + (Number(s.total) || 0), 0);
+}
+
+/** Count Inbound No. not yet Stocked In (e.g. Processing). */
+function countDashboardPendingInboundNos() {
+  const scopeIds = new Set(dashboardWarehouseIdsInScope());
+  const list = typeof inboundReceipts !== 'undefined' ? inboundReceipts : [];
+  return list.filter(r => {
+    if (r.status === 'Stocked In') return false;
+    const wh = normalizeWarehouseId(r.warehouseCode || '');
+    return scopeIds.has(wh);
+  }).length;
+}
+
+/** Distinct Outbound No. with ≥1 line in given outbound line status. */
+function countDashboardOutboundNosByLineStatus(statusKey) {
+  const scopeIds = new Set(dashboardWarehouseIdsInScope());
+  const lines = typeof outboundLines !== 'undefined' ? outboundLines : [];
+  const normalize = typeof normalizeObStatus === 'function'
+    ? normalizeObStatus
+    : (s) => String(s || '').toLowerCase().replace(/\s+/g, '_');
+  const nos = new Set();
+  lines.forEach(l => {
+    const wh = normalizeWarehouseId(l.warehouseId || '');
+    if (!scopeIds.has(wh)) return;
+    if (normalize(l.status) !== statusKey) return;
+    if (l.outboundNo) nos.add(l.outboundNo);
+  });
+  return nos.size;
+}
+
+/** Distinct Outbound No. with ≥1 line shipped today (local calendar day, UTC date slice in demo). */
+function countDashboardShippedTodayOutboundNos() {
+  const scopeIds = new Set(dashboardWarehouseIdsInScope());
+  const lines = typeof outboundLines !== 'undefined' ? outboundLines : [];
+  const normalize = typeof normalizeObStatus === 'function'
+    ? normalizeObStatus
+    : (s) => String(s || '').toLowerCase().replace(/\s+/g, '_');
+  const today = new Date().toISOString().slice(0, 10);
+  const nos = new Set();
+  lines.forEach(l => {
+    const wh = normalizeWarehouseId(l.warehouseId || '');
+    if (!scopeIds.has(wh)) return;
+    if (normalize(l.status) !== 'shipped') return;
+    const day = (l.shippedAt || l.importedAt || '').slice(0, 10);
+    if (day !== today) return;
+    if (l.outboundNo) nos.add(l.outboundNo);
+  });
+  return nos.size;
+}
+
+function getDashboardKpiMetrics() {
   return {
-    inbound: f(DASHBOARD_PENDING_DEMO.inbound),
-    allocation: f(DASHBOARD_PENDING_DEMO.allocation),
-    picking: f(DASHBOARD_PENDING_DEMO.picking),
-    packing: f(DASHBOARD_PENDING_DEMO.packing),
-    shipped: f(DASHBOARD_PENDING_DEMO.shipped)
+    totalInventory: getDashboardTotalInventoryUnits(),
+    pendingInbound: countDashboardPendingInboundNos(),
+    pendingAllocation: countDashboardOutboundNosByLineStatus('pending_allocation'),
+    pendingPicking: countDashboardOutboundNosByLineStatus('pending_picking'),
+    shippedToday: countDashboardShippedTodayOutboundNos()
   };
 }
 
@@ -529,41 +579,41 @@ function navigateToRecordToday() {
   renderRecords();
 }
 
+function openOutboundListTab(tabKey) {
+  if (typeof outboundListTab !== 'undefined') outboundListTab = tabKey;
+  navigateTo('outbound-orders');
+  if (typeof renderOutboundOrderList === 'function') renderOutboundOrderList();
+}
+
 function renderHome() {
   updateSidebarWarehouseDisplay();
-  const scopedWh = warehousesInScope(warehouses);
-  const totalStock = scopedWh.reduce((s, w) => s + w.total, 0);
-  const pending = getDashboardPendingMetrics(scopedWh);
+  const kpi = getDashboardKpiMetrics();
 
   document.getElementById('dashboard-kpi').innerHTML = `
     <div class="kpi-card kpi-total" onclick="navigateTo('spu-sku-inventory')" title="Go to Inventory">
       <span class="kpi-label">Total Inventory</span>
-      <span class="kpi-value">${totalStock.toLocaleString()}</span>
+      <span class="kpi-value">${kpi.totalInventory.toLocaleString()}</span>
+      <span class="kpi-sub">units · current warehouse scope</span>
     </div>
-    <div class="kpi-card kpi-pending-inbound" onclick="navigateTo('inbound')">
+    <div class="kpi-card kpi-pending-inbound" onclick="navigateTo('inbound')" title="Inbound not Stocked In">
       <span class="kpi-label">Pending Inbound</span>
-      <span class="kpi-value">${pending.inbound}</span>
-      <span class="kpi-sub">vehicles</span>
+      <span class="kpi-value">${kpi.pendingInbound}</span>
+      <span class="kpi-sub">inbound nos.</span>
     </div>
-    <div class="kpi-card kpi-allocation" onclick="navigateTo('outbound-orders')">
+    <div class="kpi-card kpi-allocation" onclick="openOutboundListTab('pending_allocation')">
       <span class="kpi-label">Pending Allocation</span>
-      <span class="kpi-value">${pending.allocation}</span>
-      <span class="kpi-sub">orders</span>
+      <span class="kpi-value">${kpi.pendingAllocation}</span>
+      <span class="kpi-sub">outbound nos.</span>
     </div>
-    <div class="kpi-card kpi-picking" onclick="navigateTo('outbound-orders')">
+    <div class="kpi-card kpi-picking" onclick="openOutboundListTab('pending_picking')">
       <span class="kpi-label">Pending Picking</span>
-      <span class="kpi-value">${pending.picking}</span>
-      <span class="kpi-sub">orders</span>
+      <span class="kpi-value">${kpi.pendingPicking}</span>
+      <span class="kpi-sub">outbound nos.</span>
     </div>
-    <div class="kpi-card kpi-packing" onclick="navigateTo('outbound-orders')">
-      <span class="kpi-label">Pending Packing</span>
-      <span class="kpi-value">${pending.packing}</span>
-      <span class="kpi-sub">orders</span>
-    </div>
-    <div class="kpi-card kpi-shipped" onclick="navigateTo('outbound-orders')">
+    <div class="kpi-card kpi-shipped" onclick="openOutboundListTab('shipped')">
       <span class="kpi-label">Shipped Today</span>
-      <span class="kpi-value">${pending.shipped}</span>
-      <span class="kpi-sub">orders</span>
+      <span class="kpi-value">${kpi.shippedToday}</span>
+      <span class="kpi-sub">outbound nos. · today</span>
     </div>
   `;
 

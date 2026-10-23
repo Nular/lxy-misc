@@ -338,8 +338,8 @@ WMS **不在入库页面创建 SKU 主数据**；仓内可作业前提如下：
 **页面结构（自上而下，与原型一致）**：
 
 1. 页头：标题 Dashboard + 副标题 *Warehouse inventory overview and recent activity*
-2. **关键指标卡片**（一行 6 张）
-3. **Quick Actions**（一行 3 张任务卡）
+2. **关键指标卡片**（一行 **5** 张）
+3. **Quick Actions**（一行任务卡，本期 **2** 张：Inbound、Outbound）
 4. **Warehouse Setup (Admin Only)**（一行 2 张，仅 Admin）
 5. **Today's Operations**（全宽表格 = 当前上下文下的**库存流水摘要**）
 
@@ -347,7 +347,7 @@ WMS **不在入库页面创建 SKU 主数据**；仓内可作业前提如下：
 
 | 角色 | 位置 | 可选值 | 切换后 |
 |------|------|--------|--------|
-| Admin | **侧栏 Warehouse 下拉**（在 Home 页可操作） | All、各仓库 | 刷新 Dashboard 六项 KPI、今日作业表；更新**全局上下文**（各模块默认范围） |
+| Admin | **侧栏 Warehouse 下拉**（在 Home 页可操作） | All、各仓库 | 刷新 Dashboard **五项** KPI、今日作业表；更新**全局上下文**（各模块默认范围） |
 | 仓管 | 侧栏只读文案 | 固定所属仓 | — |
 
 - 非 Home 页禁止切换上下文（§2.1）。
@@ -355,25 +355,27 @@ WMS **不在入库页面创建 SKU 主数据**；仓内可作业前提如下：
 
 ### 7.1 关键指标卡片
 
-**布局**：单行 **6** 张只读卡片，顺序固定：
+**布局**：单行 **5** 张只读卡片，顺序固定；统计范围均为当前 **`warehouse_context`**（All = 全系统汇总；指定仓 = 该 `warehouse_code`）。
 
-| # | 中文 | 英文 | 单位/说明 |
-|---|------|------|-----------|
-| 1 | 总库存 | Total Inventory | 件数；当前视图 Σ `total` |
-| 2 | 待入库 | Pending Inbound | **shipments** 或 **open receipts**（当前上下文下待完成上架的入库任务/运单数；**Processing** 及未 Stocked In 的异步任务；**不按 PO 聚合**） |
-| 3 | 待分配 | Pending Allocation | orders |
-| 4 | 待拣货 | Pending Picking | orders |
-| 5 | 待打包 | Pending Packing | orders |
-| 6 | 今日已发货 | Shipped Today | orders（当日已完成发运） |
+| # | 中文 | 英文 | 统计口径 |
+|---|------|------|----------|
+| 1 | 总库存 | Total Inventory | 当前范围内所有 SKU 库存行的 **Σ `total`（实物件数）** |
+| 2 | 待入库 | Pending Inbound | 状态 **非 Stocked In** 的 **Inbound No.** 个数（如 **Processing**） |
+| 3 | 待分配 | Pending Allocation | 存在 **≥1** 行 `line_status = pending_allocation` 的 **Outbound No.** 去重个数 |
+| 4 | 待拣货 | Pending Picking | 存在 **≥1** 行 `line_status = pending_picking` 的 **Outbound No.** 去重个数 |
+| 5 | 今日已发货 | Shipped Today | 当日（自然日）存在 **≥1** 行 `line_status = shipped` 的 **Outbound No.** 去重个数 |
 
-- Pending / Shipped 来自入出库模块聚合；Dashboard **不改单据状态**。入库指标口径与二期建议见 [`KickBazar-WMS-Inbound-PRD.md`](KickBazar-WMS-Inbound-PRD.md) **§14**。
+- **不含**「待打包 Pending Packing」独立 KPI（打包与拣货同属 **Pending Picking** 作业阶段，见出库 PRD）。
+- Dashboard **不改单据状态**；指标由入出库模块数据聚合。
 - **点击跳转**（带入当前仓库上下文）：
 
 | 卡片 | 跳转 |
 |------|------|
 | Total Inventory | Inventory → SPU/SKU Inventory（**默认 SKU Tab**） |
-| Pending Inbound | Inbound 列表（预置 **Processing** 或近期待办筛选；详情见 PO / Shipping No.） |
-| Pending Allocation / Picking / Packing / Shipped Today | Outbound（对应状态筛选） |
+| Pending Inbound | Inbound 列表 |
+| Pending Allocation | Outbound 列表 → **Pending Allocation** Tab |
+| Pending Picking | Outbound 列表 → **Pending Picking** Tab |
+| Shipped Today | Outbound 列表 → **Shipped** Tab（当日发运口径与列表一致） |
 
 - 进入 Home、**切换仓库**、从其他页返回 Home 时刷新；无数据展示 `0`。失败 Toast：`Failed to load dashboard metrics.`
 

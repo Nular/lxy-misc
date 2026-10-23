@@ -1065,8 +1065,26 @@ tbody tr.selected {
   gap: 16px;
 }
 
+.dashboard-kpi-row-5 {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
 .dashboard-kpi-row-6 {
-  grid-template-columns: repeat(6, 1fr);
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+@media (max-width: 1200px) {
+  .dashboard-kpi-row-5,
+  .dashboard-kpi-row-6 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .dashboard-kpi-row-5,
+  .dashboard-kpi-row-6 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .dashboard-section {
@@ -2165,9 +2183,9 @@ tbody tr.selected {
             <h1 class="page-title">Dashboard</h1>
             <p class="page-subtitle">Warehouse inventory overview and recent activity</p>
           </div>
-          <p class="page-demo-banner">Demo：KPI 与今日操作来自种子库存/流水；侧栏可切换 <strong>Role (demo)</strong> 与仓库范围（Admin → All / SH001）。</p>
+          <p class="page-demo-banner">Demo：KPI 按当前仓库范围实时汇总（Total=SKU 实物合计；Pending Inbound=Inbound No.；其余三项=Outbound No. 去重）；侧栏切换 <strong>All / SH001</strong> 后返回 Home 刷新。</p>
           <div class="page-body dashboard-body">
-            <div class="dashboard-kpi-row dashboard-kpi-row-6" id="dashboard-kpi"></div>
+            <div class="dashboard-kpi-row dashboard-kpi-row-5" id="dashboard-kpi"></div>
 
             <div class="dashboard-section">
               <h3 class="dashboard-section-title">Quick Actions</h3>
