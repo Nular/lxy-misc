@@ -4993,6 +4993,8 @@ let inboundReceipts = [
     operator: 'Admin',
     sourceFile: '采购单文档订单列表_0823.xlsx',
     entryMethod: 'po-import',
+    purchaseOrder: '2026082301',
+    shippingNo: 'KY4002388777140',
     lines: []
   },
   {
@@ -5021,8 +5023,10 @@ let inboundReceipts = [
     operator: 'Li Ming',
     sourceFile: '采购单文档订单列表.xlsx',
     entryMethod: 'po-import',
+    purchaseOrder: '2026082001',
+    shippingNo: 'KY4002088777120',
     lines: [
-      { itemDesc: '2 * KT88 Smart Watch Specification - Black / With light', skuId: 'SKU-10002-42', productName: 'Smart Watch Series X', spec: '42mm Silver', orderQty: 2, receiptQty: 2, warehouseCode: 'SH001', zoneCode: 'SH001STO', afterQty: 402 }
+      { purchaseOrder: '2026082001', shippingNo: 'KY4002088777120', itemDesc: '2 * KT88 Smart Watch Specification - Black / With light', skuId: 'SKU-10002-42', productName: 'Smart Watch Series X', spec: '42mm Silver', orderQty: 2, receiptQty: 2, warehouseCode: 'SH001', zoneCode: 'SH001STO', afterQty: 402 }
     ]
   },
   {
@@ -5051,8 +5055,10 @@ let inboundReceipts = [
     operator: 'Warehouse Manager',
     sourceFile: '采购单文档订单列表.xlsx',
     entryMethod: 'po-import',
+    purchaseOrder: '2026082401',
+    shippingNo: 'SF1088776622',
     lines: [
-      { itemDesc: '1 * XD Mini Wireless 1080P HD Security Camera', skuId: 'SKU-10003-01', productName: 'Portable Power Bank 20000mAh', spec: 'Standard', orderQty: 1, receiptQty: 1, warehouseCode: 'BJ001', zoneCode: 'BJ001STO', afterQty: 3281 }
+      { purchaseOrder: '2026082401', shippingNo: 'SF1088776622', itemDesc: '1 * XD Mini Wireless 1080P HD Security Camera', skuId: 'SKU-10003-01', productName: 'Portable Power Bank 20000mAh', spec: 'Standard', orderQty: 1, receiptQty: 1, warehouseCode: 'BJ001', zoneCode: 'BJ001STO', afterQty: 3281 }
     ]
   },
   {
@@ -5081,8 +5087,10 @@ let inboundReceipts = [
     operator: 'Zhang Wei',
     sourceFile: '采购单文档订单列表_0825.xlsx',
     entryMethod: 'po-import',
+    purchaseOrder: '2026082501',
+    shippingNo: 'KY4002588777155',
     lines: [
-      { itemDesc: '1 * R31 headphones - Lightning', skuId: 'SKU-10001-BK', productName: 'Wireless Bluetooth Earbuds Pro', spec: 'Black; M', orderQty: 1, receiptQty: 120, warehouseCode: 'SH001', zoneCode: 'SH001STO', afterQty: 1320 }
+      { purchaseOrder: '2026082501', shippingNo: 'KY4002588777155', itemDesc: '1 * R31 headphones - Lightning', skuId: 'SKU-10001-BK', productName: 'Wireless Bluetooth Earbuds Pro', spec: 'Black; M', orderQty: 1, receiptQty: 120, warehouseCode: 'SH001', zoneCode: 'SH001STO', afterQty: 1320 }
     ]
   },
   {
@@ -5265,14 +5273,24 @@ async function parsePurchaseXlsxFile(file) {
   return parsePurchaseXlsxMatrix(matrix);
 }
 
+function isManualInboundReceipt(receipt) {
+  return receipt?.receiptType === 'Manual Receipt' || receipt?.entryMethod === 'manual';
+}
+
 function receiptPurchaseOrder(receipt) {
   if (!receipt || receipt.receiptType !== 'Purchase Receipt') return '';
   return receipt.purchaseOrder || receipt.purchaseOrderSummary || (receipt.lines || []).map(l => l.purchaseOrder).find(Boolean) || '';
 }
 
-function summarizePurchaseOrders(receipt) {
+/** Inbound list: Manual → empty; Purchase → PO when present */
+function formatInboundListPurchaseOrder(receipt) {
+  if (isManualInboundReceipt(receipt)) return '—';
   const po = receiptPurchaseOrder(receipt);
   return po || '—';
+}
+
+function summarizePurchaseOrders(receipt) {
+  return formatInboundListPurchaseOrder(receipt);
 }
 
 function summarizeShippingNos(receipt) {
@@ -5737,7 +5755,7 @@ function renderInboundReceiptList() {
     <tr>
       <td>${r.updatedAt}</td>
       <td><strong>${r.receiptNo}</strong></td>
-      <td>${summarizePurchaseOrders(r)}</td>
+      <td>${formatInboundListPurchaseOrder(r)}</td>
       <td>${summarizeShippingNos(r)}</td>
       <td>${inboundTypeLabel(r.receiptType)}</td>
       <td>${r.lines.length}</td>
