@@ -3056,6 +3056,21 @@ tbody tr.selected {
     </div>
   </div>
 
+  <div class="modal-overlay" id="adj-attachment-preview-modal">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <span class="modal-title" id="adj-attachment-preview-title">Attachment preview</span>
+        <button class="modal-close" onclick="closeModal('adj-attachment-preview-modal')">&times;</button>
+      </div>
+      <div class="modal-body" id="adj-attachment-preview-body">
+        <p class="hint">Demo static preview (prototype only).</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-primary" onclick="closeModal('adj-attachment-preview-modal')">Close</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Inventory Record Detail -->
   <div class="modal-overlay" id="record-detail-modal">
     <div class="modal modal-md">
@@ -3828,8 +3843,8 @@ const recordData = {
     { time: '2026-08-19 11:00:00', warehouse: 'BJ001', zone: 'BJ001STO (Storage Zone)', sku: 'SKU-10003-01', qty: '+80', after: { total: 3280, locked: 560, available: 2720 }, type: 'Manual Inbound', order: 'IN-20260819005', operator: 'Admin', sub: 'manual', inboundNo: 'IN-20260819005', inboundType: 'Manual', purchaseOrderNo: null }
   ],
   manual: [
-    { time: '2026-08-19 10:05:30', warehouse: 'BJ001', zone: 'BJ001STO (Storage Zone)', sku: 'SKU-10003-01', qty: '+500', after: { total: 3200, locked: 560, available: 2640 }, type: 'Manual Adjustment', order: 'ADJ-20260819001', operator: 'Admin', sub: 'manual', direction: 'Increase', adjQty: '500', adjType: 'Inventory Gain (盘盈)', reason: 'Cycle count surplus confirmed by supervisor.', attachment: 'count-sheet-0819.pdf' },
-    { time: '2026-08-17 15:20:11', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10001-WH', qty: '-10', after: { total: 970, locked: 150, available: 820 }, type: 'Manual Adjustment (Decrease)', order: 'ADJ-20260817002', operator: 'Admin', sub: 'manual', direction: 'Decrease', adjQty: '10', adjType: 'Damage (报损)', reason: 'Carton crushed in storage aisle.', attachment: '—' }
+    { time: '2026-08-19 10:05:30', warehouse: 'BJ001', zone: 'BJ001STO (Storage Zone)', sku: 'SKU-10003-01', productName: 'Portable Power Bank 20000mAh', specification: 'Standard', qty: '+500', after: { total: 3200, locked: 560, available: 2640 }, type: 'Manual Adjustment', order: 'ADJ-20260819001', operator: 'Admin', sub: 'manual', direction: 'Increase', adjQty: '500', adjType: 'Inventory Gain (盘盈)', reason: 'Cycle count surplus confirmed by supervisor.', attachment: 'count-sheet-0819.pdf' },
+    { time: '2026-08-17 15:20:11', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10001-WH', productName: 'Wireless Bluetooth Earbuds Pro', specification: 'White; L', qty: '-10', after: { total: 970, locked: 150, available: 820 }, type: 'Manual Adjustment (Decrease)', order: 'ADJ-20260817002', operator: 'Admin', sub: 'manual', direction: 'Decrease', adjQty: '10', adjType: 'Damage (报损)', reason: 'Carton crushed in storage aisle.', attachment: '—' }
   ],
   occupy: [
     { time: '2026-08-21 11:45:22', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10001-BK', qty: '50', after: { total: 1200, locked: 200, available: 1000 }, type: 'Outbound Occupy', order: 'OUT-20260821005', operator: 'System', outboundNo: 'OUT-20260821005', relatedOrderNo: 'SO-20260821001', shipmentNo: '—', status: 'Allocated' },
@@ -4640,7 +4655,9 @@ function submitAdjustment() {
     adjQty: String(qty),
     adjType: type,
     reason,
-    attachment: attachmentName
+    attachment: attachmentName,
+    productName: s.productName,
+    specification: s.spec
   });
   recordData.manual.unshift(manualRecords[0]);
   try {
@@ -4834,11 +4851,15 @@ function enrichRecordDetail(r) {
     if (!row.inboundRemarks) row.inboundRemarks = row.inboundRemarks || '';
   }
   if (row.type && row.type.includes('Manual Adjustment')) {
+    const skuRow = skuData.find(s => s.skuId === row.sku);
+    row.productName = row.productName || skuRow?.productName || '—';
+    row.specification = row.specification || skuRow?.spec || '—';
     row.direction = row.direction || (row.qty.startsWith('+') ? 'Increase' : 'Decrease');
     row.adjQty = row.adjQty || row.qty.replace(/^[+-]/, '');
     row.adjType = row.adjType || '—';
     row.reason = row.reason || '—';
     row.attachment = row.attachment || '—';
+    row.adjustmentNo = row.order;
   }
   if (row.type === 'Outbound Occupy' || row.type === 'Outbound Deduct' || row.type === 'Manual outbound') {
     row.outboundNo = row.outboundNo || row.order;
@@ -4890,6 +4911,58 @@ function isInboundRecordType(type) {
   return type === 'Purchase Inbound' || type === 'Manual Inbound';
 }
 
+function isManualAdjustmentRecordType(type) {
+  return type && type.includes('Manual Adjustment');
+}
+
+function formatAdjustmentAttachmentHtml(r) {
+  const name = (r.attachment || '').trim();
+  if (!name || name === '—') return '—';
+  const safe = name.replace(/'/g, "\\'");
+  const adjNo = (r.adjustmentNo || r.order || '').replace(/'/g, "\\'");
+  return `${name} <button type="button" class="btn btn-sm" onclick="openAdjustmentAttachmentPreview('${safe}','${adjNo}')">Preview</button>`;
+}
+
+function openAdjustmentAttachmentPreview(fileName, adjustmentNo) {
+  const title = document.getElementById('adj-attachment-preview-title');
+  const body = document.getElementById('adj-attachment-preview-body');
+  if (!body) return;
+  if (title) title.textContent = `Attachment · ${fileName}`;
+  body.innerHTML = `
+    <p class="hint">Adjustment <strong>${adjustmentNo || '—'}</strong> · Demo static preview (not a real file).</p>
+    <div class="table-wrapper">
+      <table class="data-table">
+        <thead><tr><th>SKU ID</th><th>System Qty</th><th>Counted Qty</th><th>Variance</th></tr></thead>
+        <tbody>
+          <tr><td>SKU-10003-01</td><td>2,700</td><td>3,200</td><td class="up">+500</td></tr>
+          <tr><td>SKU-10003-01</td><td colspan="3" style="color:#8c8c8c">Signed: Supervisor Wang · 2026-08-19</td></tr>
+        </tbody>
+      </table>
+    </div>`;
+  openModal('adj-attachment-preview-modal');
+}
+
+/** Inventory Record → Manual Adjustment detail */
+function renderManualAdjustmentRecordDetailHtml(r) {
+  return `<div class="record-detail-grid record-detail-manual-adj">
+      ${detailRow('Time', r.time)}
+      ${detailRow('Warehouse', r.warehouse)}
+      ${detailRow('Zone', r.zone)}
+      ${detailRow('SKU ID', r.sku)}
+      ${detailRow('Product Name', r.productName || '—')}
+      ${detailRow('SKU', r.specification || '—')}
+      ${detailRow('Qty', r.qty)}
+      ${detailRow('After Change', formatAfterChangeDetailHtml(r))}
+      ${detailRow('Type', r.type)}
+      ${detailRow('Adjustment No.', r.adjustmentNo || r.order)}
+      ${detailRow('Operator', r.operator)}
+      ${detailRow('Direction', r.direction || '—')}
+      ${detailRow('Adjustment Type', r.adjType || '—')}
+      ${detailRow('Reason', r.reason || '—')}
+      ${detailRow('Attachment', formatAdjustmentAttachmentHtml(r))}
+    </div>`;
+}
+
 /** Inventory Record → Inbound detail (single grid, no legacy Inbound subsection). */
 function renderInboundRecordDetailHtml(r) {
   const poPreview = r.purchaseOrderNo && r.inboundReceiptNo
@@ -4922,6 +4995,8 @@ function openRecordDetail(index) {
     html = renderInboundRecordDetailHtml(r);
   } else if (isOutboundRecordType(r.type)) {
     html = renderOutboundRecordDetailHtml(r);
+  } else if (isManualAdjustmentRecordType(r.type)) {
+    html = renderManualAdjustmentRecordDetailHtml(r);
   } else {
     html = `<div class="record-detail-grid">
       ${detailRow('Time', r.time)}
@@ -4934,17 +5009,6 @@ function openRecordDetail(index) {
       ${detailRow('Related Order No.', r.order)}
       ${detailRow('Operator', r.operator)}
     </div>`;
-  }
-
-  if (r.type && r.type.includes('Manual Adjustment')) {
-    html += `<div class="record-detail-section"><h4>Inventory Adjustment</h4><div class="record-detail-grid">
-      ${detailRow('Adjustment No.', r.order)}
-      ${detailRow('Direction', r.direction)}
-      ${detailRow('Adjustment Qty', r.adjQty)}
-      ${detailRow('Adjustment Type', r.adjType)}
-      ${detailRow('Reason', r.reason)}
-      ${detailRow('Attachment', r.attachment)}
-    </div></div>`;
   }
 
   document.getElementById('record-detail-body').innerHTML = html;
