@@ -46,6 +46,14 @@ function formatObListTimeCell(line) {
   return `<span class="ob-time-cell"><span class="ob-time-date">${parts[0]}</span><span class="ob-time-clock">${parts.slice(1).join(' ')}</span></span>`;
 }
 
+function lineOutboundTypeDisplay(line) {
+  if (line.outboundType === 'manual') return 'Manual outbound';
+  const st = normalizeObStatus(line.status);
+  if (st === 'shipped') return 'Outbound deduct';
+  if (st === 'pending_picking') return 'Outbound occupy';
+  return '—';
+}
+
 function linePan(line) {
   if (line.pan && /^\d{8}$/.test(line.pan)) return line.pan;
   const row = storageSku(line.warehouseId, line.skuId) || skuData.find(s => s.skuId === line.skuId);
@@ -521,7 +529,7 @@ function renderOutboundOrderList() {
       <td>${l.qty}</td>
       <td>${linePan(l)}</td>
       <td>${l.orderNo}</td>
-      <td>${l.inboundNo && l.inboundNo !== '—' ? l.inboundNo : '—'}</td>
+      <td>${lineOutboundTypeDisplay(l)}</td>
       <td>${l.operator || '—'}</td>
       <td>${lineTag(l.status)}</td>
       <td>${listRowAction(l, st)}</td>
@@ -1190,7 +1198,8 @@ function renderManualOutboundForm() {
   const reason = document.getElementById('sx-reason');
   reason.innerHTML = MANUAL_OUTBOUND_REASONS.map(r => `<option value="${r.code}">${r.label}</option>`).join('');
   document.getElementById('sx-product').value = '';
-  document.getElementById('sx-spec').value = '';
+  const skuDisp = document.getElementById('sx-sku-id-display');
+  if (skuDisp) skuDisp.value = '';
   document.getElementById('sx-remarks').value = '';
   onSxWarehouseChange();
 }
@@ -1199,7 +1208,8 @@ function onSxWarehouseChange() {
   onSxProductInput();
   const skuSelect = document.getElementById('sx-sku-id');
   if (skuSelect) skuSelect.innerHTML = '<option value="">Select product first</option>';
-  document.getElementById('sx-spec').value = '';
+  const skuDisp = document.getElementById('sx-sku-id-display');
+  if (skuDisp) skuDisp.value = '';
 }
 
 function onSxProductInput() {
@@ -1221,7 +1231,8 @@ function onSxProductPick() {
   const skuSelect = document.getElementById('sx-sku-id');
   if (!name) {
     skuSelect.innerHTML = '<option value="">Select product first</option>';
-    document.getElementById('sx-spec').value = '';
+    const skuDisp = document.getElementById('sx-sku-id-display');
+    if (skuDisp) skuDisp.value = '';
     return;
   }
   const rows = listStoSkusForWarehouse(wh).filter(s =>
@@ -1236,27 +1247,24 @@ function onSxProductPick() {
     uniq.push(s);
   });
   skuSelect.innerHTML = uniq.length
-    ? uniq.map(s => `<option value="${s.skuId}">${s.skuId} · avail ${s.available}</option>`).join('')
+    ? uniq.map(s => `<option value="${s.skuId}">${s.spec || s.skuId}</option>`).join('')
     : '<option value="">No STO row for this product</option>';
   if (uniq.length) {
     if (uniq.length === 1 || !uniq.some(s => s.skuId === skuSelect.value)) {
       skuSelect.value = uniq[0].skuId;
     }
     onSxSkuPick();
-    if (uniq.length === 1) document.getElementById('sx-spec').value = '—';
   } else {
-    document.getElementById('sx-spec').value = '';
+    const skuDisp = document.getElementById('sx-sku-id-display');
+    if (skuDisp) skuDisp.value = '';
   }
 }
 
 function onSxSkuPick() {
   const wh = specialOutboundWarehouseId();
   const skuId = document.getElementById('sx-sku-id').value;
-  const row = storageSku(wh, skuId);
-  const skuSelect = document.getElementById('sx-sku-id');
-  const optionCount = skuSelect ? skuSelect.options.length : 0;
-  const single = optionCount === 1;
-  document.getElementById('sx-spec').value = single ? '—' : (row ? (row.spec || '—') : '');
+  const skuDisp = document.getElementById('sx-sku-id-display');
+  if (skuDisp) skuDisp.value = skuId || '';
 }
 
 function submitManualOutbound() {
@@ -1287,8 +1295,6 @@ function submitManualOutbound() {
     showToast('SKU not found in warehouse STO.', 'error');
     return;
   }
-  const skuSelect = document.getElementById('sx-sku-id');
-  const singleSkuProduct = skuSelect && skuSelect.options.length === 1;
   const outboundNo = nextDocNo('MO', wh);
   const reasonLabel = MANUAL_OUTBOUND_REASONS.find(r => r.code === reasonCode)?.label || reasonCode;
   const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
@@ -1301,8 +1307,8 @@ function submitManualOutbound() {
     orderTime: now,
     skuId,
     productName: sku.productName || productName,
-    spec: singleSkuProduct ? '—' : (sku.spec || '—'),
-    singleSkuProduct,
+    spec: sku.spec || '—',
+    singleSkuProduct: false,
     qty,
     pan,
     warehouseId: wh,

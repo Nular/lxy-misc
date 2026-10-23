@@ -525,7 +525,7 @@ function receiptSkuSelectHtml(line, lineIndex, ro) {
     return candidates.length === 1 ? candidates[0].spec : (line.spec || '—');
   }
   const opts = candidates.map(c =>
-    `<option value="${c.skuId}" ${line.skuId === c.skuId ? 'selected' : ''}>${c.spec} (${c.skuId})</option>`
+    `<option value="${c.skuId}" ${line.skuId === c.skuId ? 'selected' : ''}>${c.spec || c.skuId}</option>`
   ).join('');
   return `<select class="${line.skuId ? '' : 'input-required'}" onchange="applyReceiptLineSku(${lineIndex}, this.value)"><option value="">Select SKU (required)…</option>${opts}</select>`;
 }
@@ -540,7 +540,7 @@ function renderReceiptEditorLinesHead() {
     </tr>`;
   } else {
     head.innerHTML = `<tr>
-      <th>SKU ID</th><th>Product Name</th><th>SKU</th><th>Warehouse</th><th>Zone</th>
+      <th>Product Name</th><th>SKU</th><th>SKU ID</th><th>Warehouse</th><th>Zone</th>
       <th>Order Qty</th><th>Receipt Qty</th><th>Remark</th><th style="width:72px">Action</th>
     </tr>`;
   }
@@ -961,9 +961,15 @@ function renderReceiptEditorLines() {
         <td>${deleteCell}</td>
       </tr>`;
     }
+    const skuCell = (l.skuCandidates && l.skuCandidates.length && !ro)
+      ? receiptSkuSelectHtml(l, i, ro)
+      : (l.skuCandidates && l.skuCandidates.length === 1 ? (l.spec || l.skuCandidates[0].spec) : (l.spec || '—'));
+    const skuIdCell = l.skuId ? `<strong>${l.skuId}</strong>` : '—';
     return `
     <tr>
-      <td>${l.skuId}</td><td>${l.productName}</td><td>${l.spec || '—'}</td>
+      <td>${l.productName || '—'}</td>
+      <td>${skuCell}</td>
+      <td>${skuIdCell}</td>
       <td>${warehouseSelectHtml(wh, i, ro)}</td>
       <td>${zoneSelectHtml(wh, zc, i, zoneRo)}</td>
       <td>${orderCell}</td>
@@ -1158,6 +1164,10 @@ function confirmReceiptStockIn() {
     }
     if (receiptEditorSource === 'po-import' && !line.skuId) {
       showToast('Select SKU for each purchase line with multiple matches.', 'error');
+      return;
+    }
+    if (receiptEditorSource === 'manual' && !line.skuId) {
+      showToast('Select SKU for each manual line in the table.', 'error');
       return;
     }
   }
@@ -1376,39 +1386,53 @@ function renderReceiptManualSearch() {
     return;
   }
   const wh = getInboundWarehouseScope();
-  let rows = listWarehouseInventorySkus(wh).filter(s =>
-    s.skuId.toLowerCase().includes(kw) || (s.productName || '').toLowerCase().includes(kw)
-  ).slice(0, 8);
+  const pool = listWarehouseInventorySkus(wh);
+  const names = [];
+  const seen = new Set();
+  pool.forEach(s => {
+    const pn = s.productName || '';
+    if (!pn) return;
+    if (!pn.toLowerCase().includes(kw)) return;
+    const key = pn.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    names.push(pn);
+  });
+  const rows = names.slice(0, 8);
   if (!rows.length) {
     panel.hidden = true;
     return;
   }
-  panel.innerHTML = rows.map(s =>
-    `<div class="manual-suggest-item" data-sku="${s.skuId}" data-zone="${s.zoneCode}">
-      <strong>${s.productName}</strong>
-      <span>SKU ID: ${s.skuId} · SKU: ${s.spec}</span>
+  panel.innerHTML = rows.map(pn =>
+    `<div class="manual-suggest-item" data-product="${pn.replace(/"/g, '&quot;')}">
+      <strong>${pn}</strong>
     </div>`
   ).join('');
   panel.hidden = false;
   panel.onclick = e => {
     const item = e.target.closest('.manual-suggest-item');
     if (!item) return;
-    const inv = findInventoryRow(item.dataset.sku, wh, item.dataset.zone);
-    if (!inv || receiptEditorLines.some(l => l.skuId === inv.skuId && l.zoneCode === inv.zoneCode)) return;
+    const productName = item.dataset.product || '';
+    const candidates = pool.filter(s => (s.productName || '') === productName)
+      .map(s => ({ skuId: s.skuId, spec: s.spec || '—', zoneCode: s.zoneCode }));
+    if (!candidates.length) return;
+    const auto = candidates.length === 1 ? candidates[0] : null;
     receiptEditorLines.push({
-      skuId: inv.skuId,
-      productName: inv.productName,
-      spec: inv.spec,
+      productName,
+      skuCandidates: candidates,
+      skuId: auto ? auto.skuId : '',
+      spec: auto ? auto.spec : '',
+      skuResolved: !!auto,
       orderQty: 0,
       receiptQty: 1,
       warehouseCode: wh,
-      zoneCode: inv.zoneCode,
-      barcode: primaryBarcode(inv)
+      zoneCode: auto ? auto.zoneCode : getDefaultStorageZoneCode(wh),
+      barcode: ''
     });
     input.value = '';
     panel.hidden = true;
     renderReceiptEditorLines();
-    showToast('SKU line added.', 'success');
+    showToast('Product line added — select SKU in table.', 'success');
   };
 }
 

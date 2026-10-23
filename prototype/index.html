@@ -664,7 +664,7 @@
                     <th>QTY</th>
                     <th>PAN</th>
                     <th>Order No.</th>
-                    <th>Inbound No.</th>
+                    <th>Outbound Type</th>
                     <th>Operator</th>
                     <th>Status</th>
                     <th>Operation</th>
@@ -1076,7 +1076,7 @@
           <label class="field-label">Product Name（模糊搜索）</label>
           <input type="text" id="receipt-manual-search" class="manual-product-search" placeholder="输入商品名称关键词…" oninput="renderReceiptManualSearch()">
           <div id="receipt-manual-suggest" class="manual-suggest-list" hidden></div>
-          <span class="hint">选中推荐行后填写 Warehouse、Zone、数量；仅展示已初始化库存行（含 Total=0）。</span>
+          <span class="hint">下拉仅显示 Product Name；在表格中选择 SKU 后回显 SKU ID。</span>
         </div>
         <div class="editor-lines-toolbar" id="receipt-lines-toolbar">
           <button type="button" class="btn" id="receipt-delete-all-btn" hidden onclick="deleteAllReceiptLines()">Delete All</button>
@@ -1257,6 +1257,10 @@
             <select id="sx-wh" onchange="onSxWarehouseChange()"></select>
           </div>
           <div class="form-row">
+            <label for="sx-sku-id-display">SKU ID</label>
+            <input type="text" id="sx-sku-id-display" class="readonly" readonly placeholder="Select SKU below">
+          </div>
+          <div class="form-row">
             <label for="sx-product">Product Name <span class="req">*</span></label>
             <input type="text" id="sx-product" list="sx-product-list" placeholder="Required · keyword match" oninput="onSxProductInput()" onchange="onSxProductPick()" required>
             <datalist id="sx-product-list"></datalist>
@@ -1264,10 +1268,6 @@
           <div class="form-row">
             <label for="sx-sku-id">SKU <span class="req">*</span></label>
             <select id="sx-sku-id" onchange="onSxSkuPick()" required></select>
-          </div>
-          <div class="form-row">
-            <label for="sx-spec">SKU (spec)</label>
-            <input type="text" id="sx-spec" class="readonly" readonly placeholder="Auto from SKU">
           </div>
           <div class="form-row">
             <label for="sx-qty">QTY <span class="req">*</span></label>

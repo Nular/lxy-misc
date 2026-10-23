@@ -2089,7 +2089,7 @@ function receiptSkuSelectHtml(line, lineIndex, ro) {
     return candidates.length === 1 ? candidates[0].spec : (line.spec || '—');
   }
   const opts = candidates.map(c =>
-    `<option value="${c.skuId}" ${line.skuId === c.skuId ? 'selected' : ''}>${c.spec} (${c.skuId})</option>`
+    `<option value="${c.skuId}" ${line.skuId === c.skuId ? 'selected' : ''}>${c.spec || c.skuId}</option>`
   ).join('');
   return `<select class="${line.skuId ? '' : 'input-required'}" onchange="applyReceiptLineSku(${lineIndex}, this.value)"><option value="">Select SKU (required)…</option>${opts}</select>`;
 }
@@ -2104,7 +2104,7 @@ function renderReceiptEditorLinesHead() {
     </tr>`;
   } else {
     head.innerHTML = `<tr>
-      <th>SKU ID</th><th>Product Name</th><th>SKU</th><th>Warehouse</th><th>Zone</th>
+      <th>Product Name</th><th>SKU</th><th>SKU ID</th><th>Warehouse</th><th>Zone</th>
       <th>Order Qty</th><th>Receipt Qty</th><th>Remark</th><th style="width:72px">Action</th>
     </tr>`;
   }
@@ -2372,7 +2372,7 @@ function renderInboundReceiptList() {
       <td>${r.updatedAt}</td>
       <td><strong>${r.receiptNo}</strong></td>
       <td>${formatInboundListPurchaseOrder(r)}</td>
-      <td>${summarizeShippingNos(r)}</td>
+      <td>${formatInboundListShippingNo(r)}</td>
       <td>${inboundTypeLabel(r.receiptType)}</td>
       <td>${r.lines.length}</td>
       <td>${r.operator || '—'}</td>
@@ -2525,9 +2525,15 @@ function renderReceiptEditorLines() {
         <td>${deleteCell}</td>
       </tr>`;
     }
+    const skuCell = (l.skuCandidates && l.skuCandidates.length && !ro)
+      ? receiptSkuSelectHtml(l, i, ro)
+      : (l.skuCandidates && l.skuCandidates.length === 1 ? (l.spec || l.skuCandidates[0].spec) : (l.spec || '—'));
+    const skuIdCell = l.skuId ? `<strong>${l.skuId}</strong>` : '—';
     return `
     <tr>
-      <td>${l.skuId}</td><td>${l.productName}</td><td>${l.spec || '—'}</td>
+      <td>${l.productName || '—'}</td>
+      <td>${skuCell}</td>
+      <td>${skuIdCell}</td>
       <td>${warehouseSelectHtml(wh, i, ro)}</td>
       <td>${zoneSelectHtml(wh, zc, i, zoneRo)}</td>
       <td>${orderCell}</td>
@@ -2722,6 +2728,10 @@ function confirmReceiptStockIn() {
     }
     if (receiptEditorSource === 'po-import' && !line.skuId) {
       showToast('Select SKU for each purchase line with multiple matches.', 'error');
+      return;
+    }
+    if (receiptEditorSource === 'manual' && !line.skuId) {
+      showToast('Select SKU for each manual line in the table.', 'error');
       return;
     }
   }
@@ -2940,39 +2950,53 @@ function renderReceiptManualSearch() {
     return;
   }
   const wh = getInboundWarehouseScope();
-  let rows = listWarehouseInventorySkus(wh).filter(s =>
-    s.skuId.toLowerCase().includes(kw) || (s.productName || '').toLowerCase().includes(kw)
-  ).slice(0, 8);
+  const pool = listWarehouseInventorySkus(wh);
+  const names = [];
+  const seen = new Set();
+  pool.forEach(s => {
+    const pn = s.productName || '';
+    if (!pn) return;
+    if (!pn.toLowerCase().includes(kw)) return;
+    const key = pn.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    names.push(pn);
+  });
+  const rows = names.slice(0, 8);
   if (!rows.length) {
     panel.hidden = true;
     return;
   }
-  panel.innerHTML = rows.map(s =>
-    `<div class="manual-suggest-item" data-sku="${s.skuId}" data-zone="${s.zoneCode}">
-      <strong>${s.productName}</strong>
-      <span>SKU ID: ${s.skuId} · SKU: ${s.spec}</span>
+  panel.innerHTML = rows.map(pn =>
+    `<div class="manual-suggest-item" data-product="${pn.replace(/"/g, '&quot;')}">
+      <strong>${pn}</strong>
     </div>`
   ).join('');
   panel.hidden = false;
   panel.onclick = e => {
     const item = e.target.closest('.manual-suggest-item');
     if (!item) return;
-    const inv = findInventoryRow(item.dataset.sku, wh, item.dataset.zone);
-    if (!inv || receiptEditorLines.some(l => l.skuId === inv.skuId && l.zoneCode === inv.zoneCode)) return;
+    const productName = item.dataset.product || '';
+    const candidates = pool.filter(s => (s.productName || '') === productName)
+      .map(s => ({ skuId: s.skuId, spec: s.spec || '—', zoneCode: s.zoneCode }));
+    if (!candidates.length) return;
+    const auto = candidates.length === 1 ? candidates[0] : null;
     receiptEditorLines.push({
-      skuId: inv.skuId,
-      productName: inv.productName,
-      spec: inv.spec,
+      productName,
+      skuCandidates: candidates,
+      skuId: auto ? auto.skuId : '',
+      spec: auto ? auto.spec : '',
+      skuResolved: !!auto,
       orderQty: 0,
       receiptQty: 1,
       warehouseCode: wh,
-      zoneCode: inv.zoneCode,
-      barcode: primaryBarcode(inv)
+      zoneCode: auto ? auto.zoneCode : getDefaultStorageZoneCode(wh),
+      barcode: ''
     });
     input.value = '';
     panel.hidden = true;
     renderReceiptEditorLines();
-    showToast('SKU line added.', 'success');
+    showToast('Product line added — select SKU in table.', 'success');
   };
 }
 
@@ -3029,6 +3053,14 @@ function formatObListTimeCell(line) {
   const parts = String(raw).trim().split(/\s+/);
   if (parts.length < 2) return `<span class="ob-time-cell"><span class="ob-time-date">${raw}</span></span>`;
   return `<span class="ob-time-cell"><span class="ob-time-date">${parts[0]}</span><span class="ob-time-clock">${parts.slice(1).join(' ')}</span></span>`;
+}
+
+function lineOutboundTypeDisplay(line) {
+  if (line.outboundType === 'manual') return 'Manual outbound';
+  const st = normalizeObStatus(line.status);
+  if (st === 'shipped') return 'Outbound deduct';
+  if (st === 'pending_picking') return 'Outbound occupy';
+  return '—';
 }
 
 function linePan(line) {
@@ -3506,7 +3538,7 @@ function renderOutboundOrderList() {
       <td>${l.qty}</td>
       <td>${linePan(l)}</td>
       <td>${l.orderNo}</td>
-      <td>${l.inboundNo && l.inboundNo !== '—' ? l.inboundNo : '—'}</td>
+      <td>${lineOutboundTypeDisplay(l)}</td>
       <td>${l.operator || '—'}</td>
       <td>${lineTag(l.status)}</td>
       <td>${listRowAction(l, st)}</td>
@@ -4175,7 +4207,8 @@ function renderManualOutboundForm() {
   const reason = document.getElementById('sx-reason');
   reason.innerHTML = MANUAL_OUTBOUND_REASONS.map(r => `<option value="${r.code}">${r.label}</option>`).join('');
   document.getElementById('sx-product').value = '';
-  document.getElementById('sx-spec').value = '';
+  const skuDisp = document.getElementById('sx-sku-id-display');
+  if (skuDisp) skuDisp.value = '';
   document.getElementById('sx-remarks').value = '';
   onSxWarehouseChange();
 }
@@ -4184,7 +4217,8 @@ function onSxWarehouseChange() {
   onSxProductInput();
   const skuSelect = document.getElementById('sx-sku-id');
   if (skuSelect) skuSelect.innerHTML = '<option value="">Select product first</option>';
-  document.getElementById('sx-spec').value = '';
+  const skuDisp = document.getElementById('sx-sku-id-display');
+  if (skuDisp) skuDisp.value = '';
 }
 
 function onSxProductInput() {
@@ -4206,7 +4240,8 @@ function onSxProductPick() {
   const skuSelect = document.getElementById('sx-sku-id');
   if (!name) {
     skuSelect.innerHTML = '<option value="">Select product first</option>';
-    document.getElementById('sx-spec').value = '';
+    const skuDisp = document.getElementById('sx-sku-id-display');
+    if (skuDisp) skuDisp.value = '';
     return;
   }
   const rows = listStoSkusForWarehouse(wh).filter(s =>
@@ -4221,27 +4256,24 @@ function onSxProductPick() {
     uniq.push(s);
   });
   skuSelect.innerHTML = uniq.length
-    ? uniq.map(s => `<option value="${s.skuId}">${s.skuId} · avail ${s.available}</option>`).join('')
+    ? uniq.map(s => `<option value="${s.skuId}">${s.spec || s.skuId}</option>`).join('')
     : '<option value="">No STO row for this product</option>';
   if (uniq.length) {
     if (uniq.length === 1 || !uniq.some(s => s.skuId === skuSelect.value)) {
       skuSelect.value = uniq[0].skuId;
     }
     onSxSkuPick();
-    if (uniq.length === 1) document.getElementById('sx-spec').value = '—';
   } else {
-    document.getElementById('sx-spec').value = '';
+    const skuDisp = document.getElementById('sx-sku-id-display');
+    if (skuDisp) skuDisp.value = '';
   }
 }
 
 function onSxSkuPick() {
   const wh = specialOutboundWarehouseId();
   const skuId = document.getElementById('sx-sku-id').value;
-  const row = storageSku(wh, skuId);
-  const skuSelect = document.getElementById('sx-sku-id');
-  const optionCount = skuSelect ? skuSelect.options.length : 0;
-  const single = optionCount === 1;
-  document.getElementById('sx-spec').value = single ? '—' : (row ? (row.spec || '—') : '');
+  const skuDisp = document.getElementById('sx-sku-id-display');
+  if (skuDisp) skuDisp.value = skuId || '';
 }
 
 function submitManualOutbound() {
@@ -4272,8 +4304,6 @@ function submitManualOutbound() {
     showToast('SKU not found in warehouse STO.', 'error');
     return;
   }
-  const skuSelect = document.getElementById('sx-sku-id');
-  const singleSkuProduct = skuSelect && skuSelect.options.length === 1;
   const outboundNo = nextDocNo('MO', wh);
   const reasonLabel = MANUAL_OUTBOUND_REASONS.find(r => r.code === reasonCode)?.label || reasonCode;
   const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
@@ -4286,8 +4316,8 @@ function submitManualOutbound() {
     orderTime: now,
     skuId,
     productName: sku.productName || productName,
-    spec: singleSkuProduct ? '—' : (sku.spec || '—'),
-    singleSkuProduct,
+    spec: sku.spec || '—',
+    singleSkuProduct: false,
     qty,
     pan,
     warehouseId: wh,
