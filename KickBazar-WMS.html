@@ -2021,6 +2021,33 @@ tbody tr.selected {
   line-height: 1.4;
 }
 
+.ob-time-cell {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.ob-time-date {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.ob-time-clock {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.sx-form .req {
+  color: var(--danger);
+}
+
+.ob-pack-table-wrap {
+  margin-bottom: 12px;
+  max-height: 240px;
+  overflow: auto;
+}
+
   </style>
   <script>
     (function () {
@@ -2508,9 +2535,10 @@ tbody tr.selected {
             </div>
 
             <div class="sub-tabs" id="outbound-sub-tabs" style="display:none">
-              <div class="sub-tab active">All</div>
-              <div class="sub-tab">Outbound Deduct</div>
-              <div class="sub-tab">Outbound Occupy</div>
+              <div class="sub-tab active" data-outbound-sub="all">All</div>
+              <div class="sub-tab" data-outbound-sub="occupy">Occupy</div>
+              <div class="sub-tab" data-outbound-sub="deduct">Deduct</div>
+              <div class="sub-tab" data-outbound-sub="manual">Manual</div>
             </div>
 
             <div class="table-wrapper">
@@ -2630,9 +2658,9 @@ tbody tr.selected {
         <div class="page" id="page-outbound-orders">
           <div class="page-header ob-page-header">
             <h1 class="page-title">Outbound</h1>
-            <p class="page-subtitle">导入订单 → 分配占用 → 打包发运；支持特殊出库（弹窗）</p>
+            <p class="page-subtitle">导入订单 → 分配占用 → 打包发运；Pending Allocation 支持 Manual outbound</p>
           </div>
-          <p class="page-demo-banner">Demo：<strong>Import Orders → Use sample file</strong>（MO-DEMO-2026）校验通过后导入 → Confirm Allocation → Pack &amp; Ship；<strong>Special Outbound</strong> 弹窗可关键词选品。</p>
+          <p class="page-demo-banner">Demo：<strong>Import Orders → Use sample file</strong> 或 <strong>Manual outbound</strong> → Confirm Allocation → Pack &amp; Ship。</p>
           <div class="page-body ob-oms-body">
             <div class="ob-status-tabs" id="ob-list-tabs" role="tablist"></div>
             <div class="ob-oms-filters filter-bar">
@@ -2645,8 +2673,12 @@ tbody tr.selected {
                 <input type="text" id="ob-filter-sku" placeholder="SKU ID">
               </div>
               <div class="filter-item">
-                <label>Shipping No.</label>
-                <input type="text" id="ob-filter-shipping" placeholder="Shipping No.">
+                <label>PAN</label>
+                <input type="text" id="ob-filter-pan" placeholder="8-digit PAN" maxlength="8" inputmode="numeric">
+              </div>
+              <div class="filter-item">
+                <label>Time</label>
+                <input type="datetime-local" id="ob-filter-time" aria-label="Filter by time">
               </div>
               <div class="filter-actions">
                 <button class="btn btn-primary" type="button" onclick="renderOutboundOrderList()">Search</button>
@@ -2659,8 +2691,8 @@ tbody tr.selected {
                 <span class="hint" id="ob-import-scope-hint"></span>
               </div>
               <div class="ob-oms-toolbar-right">
-                <button class="btn" type="button" onclick="openSpecialOutboundModal()">Special Outbound</button>
-                <button class="btn btn-primary" type="button" onclick="openImportOrders()">Import / Export</button>
+                <button class="btn" type="button" id="ob-btn-manual-outbound" onclick="openManualOutboundModal()">Manual outbound</button>
+                <button class="btn btn-primary" type="button" id="ob-btn-import-export" onclick="openImportOrders()">Import / Export</button>
               </div>
             </div>
             <div class="table-wrapper ob-oms-table">
@@ -2673,7 +2705,8 @@ tbody tr.selected {
                     <th>SKU ID</th>
                     <th>Product Name</th>
                     <th>SKU</th>
-                    <th>SKU QTY</th>
+                    <th>QTY</th>
+                    <th>PAN</th>
                     <th>Order No.</th>
                     <th>Inbound No.</th>
                     <th>Operator</th>
@@ -3211,14 +3244,15 @@ tbody tr.selected {
   </div>
 
   <div class="modal-overlay" id="ob-pack-modal">
-    <div class="modal modal-sm">
+    <div class="modal modal-md">
       <div class="modal-header">
         <span class="modal-title">Pack &amp; Confirm Shipment</span>
         <button class="modal-close" onclick="closeModal('ob-pack-modal')">&times;</button>
       </div>
       <div class="modal-body">
-        <p class="hint">After packing, enter the courier tracking number. Confirming will deduct locked stock (Outbound Deduct) and mark the line Shipped.</p>
+        <p class="hint" id="ob-pack-hint">Confirm the lines below. Shipping No. is required for imported orders and optional for Manual outbound.</p>
         <input type="hidden" id="ob-pack-line-id" value="">
+        <div class="table-wrapper ob-pack-table-wrap" id="ob-pack-table-wrap"></div>
         <div class="form-group">
           <label for="ob-pack-shipping">Shipping No.</label>
           <input type="text" id="ob-pack-shipping" placeholder="e.g. SF1029384756">
@@ -3256,35 +3290,35 @@ tbody tr.selected {
   <div class="modal-overlay" id="ob-special-modal">
     <div class="modal modal-md">
       <div class="modal-header">
-        <span class="modal-title">Special Outbound</span>
+        <span class="modal-title">Manual outbound</span>
         <button class="modal-close" onclick="closeModal('ob-special-modal')">&times;</button>
       </div>
       <div class="modal-body">
-        <p class="hint">Mandatory reason · direct Outbound Deduct (no allocation).</p>
+        <p class="hint">Creates a Pending Allocation line · same allocate → pack &amp; ship flow as imported orders.</p>
         <div class="form-card sx-form">
           <div class="form-row" id="sx-wh-wrap">
             <label for="sx-wh">Warehouse</label>
             <select id="sx-wh" onchange="onSxWarehouseChange()"></select>
           </div>
           <div class="form-row">
-            <label for="sx-product">Product Name</label>
-            <input type="text" id="sx-product" list="sx-product-list" placeholder="Type keyword to match" oninput="onSxProductInput()" onchange="onSxProductPick()">
+            <label for="sx-product">Product Name <span class="req">*</span></label>
+            <input type="text" id="sx-product" list="sx-product-list" placeholder="Required · keyword match" oninput="onSxProductInput()" onchange="onSxProductPick()" required>
             <datalist id="sx-product-list"></datalist>
           </div>
           <div class="form-row">
-            <label for="sx-sku-id">SKU</label>
-            <select id="sx-sku-id" onchange="onSxSkuPick()"></select>
+            <label for="sx-sku-id">SKU <span class="req">*</span></label>
+            <select id="sx-sku-id" onchange="onSxSkuPick()" required></select>
           </div>
           <div class="form-row">
             <label for="sx-spec">SKU (spec)</label>
             <input type="text" id="sx-spec" class="readonly" readonly placeholder="Auto from SKU">
           </div>
           <div class="form-row">
-            <label for="sx-qty">Qty</label>
+            <label for="sx-qty">QTY <span class="req">*</span></label>
             <input type="number" id="sx-qty" min="1" value="1">
           </div>
           <div class="form-row">
-            <label for="sx-reason">Reason</label>
+            <label for="sx-reason">Reason <span class="req">*</span></label>
             <select id="sx-reason"></select>
           </div>
           <div class="form-row">
@@ -3295,7 +3329,7 @@ tbody tr.selected {
       </div>
       <div class="modal-footer">
         <button class="btn" onclick="closeModal('ob-special-modal')">Cancel</button>
-        <button class="btn btn-primary" type="button" onclick="submitSpecialOutbound()">Confirm</button>
+        <button class="btn btn-primary" type="button" onclick="submitManualOutbound()">Confirm</button>
       </div>
     </div>
   </div>

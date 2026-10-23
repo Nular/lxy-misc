@@ -2011,3 +2011,30 @@ tbody tr.selected {
   font-size: 12px;
   line-height: 1.4;
 }
+
+.ob-time-cell {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+.ob-time-date {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.ob-time-clock {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.sx-form .req {
+  color: var(--danger);
+}
+
+.ob-pack-table-wrap {
+  margin-bottom: 12px;
+  max-height: 240px;
+  overflow: auto;
+}

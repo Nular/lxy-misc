@@ -355,7 +355,7 @@ function initUserRole() {
 }
 
 const skuData = [
-  { skuId: 'SKU-10001-BK', spec: 'Black; M', productName: 'Wireless Bluetooth Earbuds Pro', total: 1200, locked: 200, available: 1000, warehouse: 'Shanghai Main Warehouse', zone: 'Storage Zone', zoneCode: 'SH001STO', warehouseCode: 'SH001', barcode: 'EAN: 6901234567890', pan: 'KB-10001-BK', barcodes: ['EAN: 6901234567890', 'UPC: 012345678901', 'PAN: KB-10001-BK'] },
+  { skuId: 'SKU-10001-BK', spec: 'Black; M', productName: 'Wireless Bluetooth Earbuds Pro', total: 1200, locked: 200, available: 1000, warehouse: 'Shanghai Main Warehouse', zone: 'Storage Zone', zoneCode: 'SH001STO', warehouseCode: 'SH001', barcode: 'EAN: 6901234567890', pan: '69012378', barcodes: ['EAN: 6901234567890', 'UPC: 012345678901', 'PAN: 69012378'] },
   { skuId: 'SKU-10001-WH', spec: 'White; L', productName: 'Wireless Bluetooth Earbuds Pro', total: 980, locked: 150, available: 830, warehouse: 'Shanghai Main Warehouse', zone: 'Storage Zone', zoneCode: 'SH001STO', warehouseCode: 'SH001', barcode: 'EAN: 6901234567891', pan: '-', barcodes: ['EAN: 6901234567891'] },
   { skuId: 'SKU-10001-BL', spec: 'Blue; XS', productName: 'Wireless Bluetooth Earbuds Pro', total: 400, locked: 70, available: 330, warehouse: 'Beijing Distribution Center', zone: 'Storage Zone', zoneCode: 'BJ001STO', warehouseCode: 'BJ001', barcode: 'UPC: 012345678902', pan: 'KB-10001-BL', barcodes: ['UPC: 012345678902', 'PAN: KB-10001-BL'] },
   { skuId: 'SKU-10002-42', spec: '42mm Silver', productName: 'Smart Watch Series X', total: 900, locked: 160, available: 740, warehouse: 'Shanghai Main Warehouse', zone: 'Storage Zone', zoneCode: 'SH001STO', warehouseCode: 'SH001', barcode: 'EAN: 6901234567900', pan: '-', barcodes: ['EAN: 6901234567900'] },
@@ -1238,6 +1238,11 @@ function initRecordTabs() {
   });
 }
 
+function getOutboundRecordSubFilter() {
+  const activeSub = document.querySelector('#outbound-sub-tabs .sub-tab.active');
+  return activeSub?.dataset?.outboundSub || 'all';
+}
+
 function renderRecords() {
   const tbody = document.getElementById('record-table-body');
   let data = [];
@@ -1266,12 +1271,10 @@ function renderRecords() {
     }
   } else if (currentRecordTab === 'outbound') {
     data = [...recordData.occupy, ...recordData.deduct];
-    const activeSub = document.querySelector('#outbound-sub-tabs .sub-tab.active');
-    if (activeSub) {
-      const subText = activeSub.textContent.trim().toLowerCase();
-      if (subText.includes('deduct')) data = data.filter(d => d.type === 'Outbound Deduct');
-      if (subText.includes('occupy')) data = data.filter(d => d.type === 'Outbound Occupy');
-    }
+    const sub = getOutboundRecordSubFilter();
+    if (sub === 'occupy') data = data.filter(d => d.type === 'Outbound Occupy');
+    if (sub === 'deduct') data = data.filter(d => d.type === 'Outbound Deduct');
+    if (sub === 'manual') data = data.filter(d => d.type === 'Manual outbound');
     data.sort((a, b) => b.time.localeCompare(a.time));
   } else if (currentRecordTab === 'manual') {
     data = allManual.sort((a, b) => b.time.localeCompare(a.time));
@@ -1286,7 +1289,9 @@ function renderRecords() {
     'Manual Inbound': 'type-inbound',
     'Manual Adjustment': 'type-manual',
     'Manual Adjustment (Decrease)': 'type-manual',
-    'Outbound Occupy': 'type-occupy', 'Outbound Deduct': 'type-deduct'
+    'Outbound Occupy': 'type-occupy',
+    'Outbound Deduct': 'type-deduct',
+    'Manual outbound': 'type-deduct'
   };
 
   tbody.innerHTML = recordListCache.map((r, idx) => {
@@ -1321,7 +1326,7 @@ function getAfterChangeArrows(r) {
   if (type === 'Outbound Occupy') {
     return { t: 'same', l: 'up', a: 'down' };
   }
-  if (type === 'Outbound Deduct') {
+  if (type === 'Outbound Deduct' || type === 'Manual outbound') {
     return { t: 'down', l: 'down', a: 'same' };
   }
   return { t: 'same', l: 'same', a: 'same' };
@@ -1382,13 +1387,46 @@ function enrichRecordDetail(r) {
     row.reason = row.reason || '—';
     row.attachment = row.attachment || '—';
   }
-  if (row.type === 'Outbound Occupy' || row.type === 'Outbound Deduct') {
+  if (row.type === 'Outbound Occupy' || row.type === 'Outbound Deduct' || row.type === 'Manual outbound') {
     row.outboundNo = row.outboundNo || row.order;
     row.relatedOrderNo = row.relatedOrderNo || '—';
     row.shipmentNo = row.shipmentNo || row.trackingNo || '—';
+    row.shippingNo = row.shippingNo || '—';
     row.status = row.status || (row.type === 'Outbound Occupy' ? 'Allocated' : 'Shipped');
+    const skuRow = skuData.find(s => s.skuId === row.sku);
+    row.productName = row.productName || skuRow?.productName || '—';
+    row.specification = row.specification || skuRow?.spec || '—';
   }
   return row;
+}
+
+function isOutboundRecordType(type) {
+  return type === 'Outbound Occupy' || type === 'Outbound Deduct' || type === 'Manual outbound';
+}
+
+function renderOutboundRecordDetailHtml(r) {
+  let html = `<div class="record-detail-grid record-detail-outbound">
+      ${detailRow('Time', r.time)}
+      ${detailRow('Warehouse', r.warehouse)}
+      ${detailRow('Zone', r.zone)}
+      ${detailRow('SKU ID', r.sku)}
+      ${detailRow('Product Name', r.productName || '—')}
+      ${detailRow('SKU', r.specification || '—')}
+      ${detailRow('Qty', r.qty)}
+      ${detailRow('After Change', formatAfterChangeDetailHtml(r))}
+      ${detailRow('Type', r.type)}
+      ${detailRow('Outbound No.', r.outboundNo || r.order)}
+      ${detailRow('Operator', r.operator)}
+      ${detailRow('Related Order No.', r.relatedOrderNo || '—')}
+      ${detailRow('Shipping No.', r.shippingNo || '—')}
+    </div>`;
+  if (r.type === 'Manual outbound') {
+    html += `<div class="record-detail-grid">
+      ${detailRow('Reason', r.manualReason || '—')}
+      ${detailRow('Remarks', r.manualRemarks || '—')}
+    </div>`;
+  }
+  return html;
 }
 
 function detailRow(label, valueHtml) {
@@ -1429,6 +1467,8 @@ function openRecordDetail(index) {
 
   if (isInboundRecordType(r.type)) {
     html = renderInboundRecordDetailHtml(r);
+  } else if (isOutboundRecordType(r.type)) {
+    html = renderOutboundRecordDetailHtml(r);
   } else {
     html = `<div class="record-detail-grid">
       ${detailRow('Time', r.time)}
@@ -1451,15 +1491,6 @@ function openRecordDetail(index) {
       ${detailRow('Adjustment Type', r.adjType)}
       ${detailRow('Reason', r.reason)}
       ${detailRow('Attachment', r.attachment)}
-    </div></div>`;
-  }
-
-  if (r.type === 'Outbound Occupy' || r.type === 'Outbound Deduct') {
-    html += `<div class="record-detail-section"><h4>Outbound</h4><div class="record-detail-grid">
-      ${detailRow('Outbound No.', r.outboundNo)}
-      ${detailRow('Related Order No.', r.relatedOrderNo)}
-      ${detailRow('Shipment No.', r.shipmentNo)}
-      ${detailRow('Status', r.status)}
     </div></div>`;
   }
 
