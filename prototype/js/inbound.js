@@ -334,13 +334,24 @@ function summarizePurchaseOrders(receipt) {
   return formatInboundListPurchaseOrder(receipt);
 }
 
-function summarizeShippingNos(receipt) {
-  if (!receipt || receipt.receiptType !== 'Purchase Receipt') return '—';
+function receiptShippingNo(receipt) {
+  if (!receipt || receipt.receiptType !== 'Purchase Receipt') return '';
   if (receipt.shippingNo) return receipt.shippingNo;
   const fromLines = [...new Set((receipt.lines || []).map(l => l.shippingNo).filter(Boolean))];
-  if (!fromLines.length) return '—';
+  if (!fromLines.length) return '';
   if (fromLines.length <= 2) return fromLines.join(', ');
   return `${fromLines[0]} +${fromLines.length - 1}`;
+}
+
+/** Inbound list: Manual → empty; Purchase → shipping no. when present */
+function formatInboundListShippingNo(receipt) {
+  if (isManualInboundReceipt(receipt)) return '—';
+  const ship = receiptShippingNo(receipt);
+  return ship || '—';
+}
+
+function summarizeShippingNos(receipt) {
+  return formatInboundListShippingNo(receipt);
 }
 
 function collectShippingNosFromLines(lines) {
@@ -797,7 +808,7 @@ function renderInboundReceiptList() {
       <td>${r.updatedAt}</td>
       <td><strong>${r.receiptNo}</strong></td>
       <td>${formatInboundListPurchaseOrder(r)}</td>
-      <td>${summarizeShippingNos(r)}</td>
+      <td>${formatInboundListShippingNo(r)}</td>
       <td>${inboundTypeLabel(r.receiptType)}</td>
       <td>${r.lines.length}</td>
       <td>${r.operator || '—'}</td>
