@@ -24,10 +24,42 @@
       });
     })();
   </script>
+  <script>
+    (function () {
+      function wmsBundleReady() {
+        return typeof window.navigateTo === 'function';
+      }
+      window.resetWmsDemoData = function () {
+        if (!wmsBundleReady()) {
+          var b = document.getElementById('wms-boot-alert');
+          if (b) b.hidden = false;
+          window.alert(
+            '未加载 KickBazar-WMS.bundle.js。\n\n' +
+            '请把 HTML 与 bundle.js 放在同一文件夹（运行 build 后打开 export/ 目录，或解压 KickBazar-WMS-Export.zip）。\n\n' +
+            '也可改用单文件：export/KickBazar-WMS-all-in-one.html'
+          );
+          return;
+        }
+        try {
+          ['wms_role', 'wms_wh_scope', 'manual_records'].forEach(function (k) {
+            localStorage.removeItem(k);
+          });
+        } catch (e) { /* ignore */ }
+        location.reload();
+      };
+      window.addEventListener('load', function () {
+        if (wmsBundleReady()) return;
+        var b = document.getElementById('wms-boot-alert');
+        if (b) b.hidden = false;
+      });
+    })();
+  </script>
 </head>
 <body>
   <div id="wms-boot-alert" class="page-demo-banner" hidden role="alert" style="margin:0;border-radius:0;border-color:#ff4d4f;background:#fff2f0">
-    <strong>演示数据未加载。</strong> 请确认已拉取最新 <code>KickBazar-WMS.html</code> 与同目录 <code>KickBazar-WMS.bundle.js</code>（或重新解压 zip）。点击右上角 <strong>Reload demo data</strong>，或按 F12 查看 Console 是否有脚本错误。
+    <strong>脚本未加载（Console 常见 <code>ERR_FILE_NOT_FOUND</code>）。</strong>
+    须将 <code>KickBazar-WMS.bundle.js</code> 与本文 <code>KickBazar-WMS.html</code> 放在<strong>同一文件夹</strong>后再打开（仓库内请用 <code>export/</code> 下两个文件，或解压 <code>KickBazar-WMS-Export.zip</code>）。
+    无需 bundle 时可打开 <code>KickBazar-WMS-all-in-one.html</code>。
   </div>
   <div class="app-container">
     <!-- Header -->
