@@ -494,6 +494,15 @@ function inboundDetailSourceFileHtml(r) {
   return `${r.sourceFile} <span class="hint">(kept in system)</span> ${previewBtn} ${downloadBtn}`;
 }
 
+function enrichReceiptLineCommercialFields(line, skuId) {
+  const sku = skuId ? skuData.find(s => s.skuId === skuId) : null;
+  if (sku) {
+    if (line.purchasePrice == null || line.purchasePrice === '') line.purchasePrice = sku.purchasePrice || '';
+    if (line.supplier == null || line.supplier === '') line.supplier = sku.supplier || '';
+    if (line.pan == null || line.pan === '') line.pan = sku.pan && sku.pan !== '-' ? sku.pan : (sku.pan || '');
+  }
+}
+
 function applyReceiptLineSku(lineIndex, skuId) {
   if (!skuId) {
     receiptEditorLines[lineIndex].skuId = '';
@@ -515,6 +524,7 @@ function applyReceiptLineSku(lineIndex, skuId) {
   line.zoneCode = inv.zoneCode || getDefaultStorageZoneCode(wh);
   line.warehouseCode = wh;
   line.skuResolved = true;
+  enrichReceiptLineCommercialFields(line, inv.skuId);
   renderReceiptEditorLines();
 }
 
@@ -533,17 +543,19 @@ function receiptSkuSelectHtml(line, lineIndex, ro) {
 function renderReceiptEditorLinesHead() {
   const head = document.getElementById('receipt-editor-lines-head');
   if (!head) return;
-  if (receiptEditorSource === 'po-import') {
-    head.innerHTML = `<tr>
-      <th>Product Name</th><th>SKU ID</th><th>SKU</th>
-      <th>Warehouse</th><th>Zone</th><th>Order Qty</th><th>Receipt Qty</th><th>Remark</th><th style="width:72px">Action</th>
-    </tr>`;
-  } else {
-    head.innerHTML = `<tr>
-      <th>Product Name</th><th>SKU</th><th>SKU ID</th><th>Warehouse</th><th>Zone</th>
-      <th>Order Qty</th><th>Receipt Qty</th><th>Remark</th><th style="width:72px">Action</th>
-    </tr>`;
-  }
+  head.innerHTML = `<tr>
+    <th>Product Name</th><th>SKU ID</th><th>SKU</th>
+    <th>Warehouse</th><th>Zone</th><th>Purchase Price</th>
+    <th>Order Qty</th><th>Receipt Qty</th><th>Supplier</th><th>PAN</th><th>Remark</th>
+    <th style="width:72px">Action</th>
+  </tr>`;
+}
+
+function receiptCommercialInputHtml(field, lineIndex, line, ro, inputType) {
+  const val = line[field] != null ? String(line[field]) : '';
+  if (ro) return val || '—';
+  const type = inputType || 'text';
+  return `<input type="${type}" value="${val.replace(/"/g, '&quot;')}" onchange="receiptEditorLines[${lineIndex}].${field}=this.value">`;
 }
 
 function warehouseSelectHtml(selected, lineIndex, ro) {
@@ -721,7 +733,7 @@ function populateInboundListFilters() {
 function syncInboundListWarehouseFilterVisibility() {
   const wrap = document.getElementById('inbound-filter-warehouse-wrap');
   if (!wrap) return;
-  const show = isAdminUser() && getWarehouseScope() === 'all';
+  const show = typeof isAdminAllWarehouseScope === 'function' ? isAdminAllWarehouseScope() : (isAdminUser() && getWarehouseScope() === 'all');
   wrap.style.display = show ? '' : 'none';
   if (!show) {
     const sel = document.getElementById('inbound-filter-warehouse');
@@ -926,7 +938,7 @@ function renderReceiptEditorLines() {
   const whDefault = getInboundWarehouseScope();
   const zoneRo = ro || receiptZoneReadonlyForSource();
   const poMode = receiptEditorSource === 'po-import';
-  const colSpan = poMode ? 9 : 9;
+  const colSpan = 12;
   document.getElementById('receipt-editor-lines').innerHTML = receiptEditorLines.map((l, i) => {
     const wh = l.warehouseCode || whDefault;
     const zc = l.zoneCode || getDefaultStorageZoneCode(wh);
@@ -942,38 +954,23 @@ function renderReceiptEditorLines() {
     const deleteCell = ro
       ? '—'
       : `<button type="button" class="btn btn-sm" onclick="deleteReceiptLine(${i})">Delete</button>`;
-    if (poMode) {
-      const displayName = l.importProductName || l.productName || '—';
-      const skuIdCell = l.skuId || '—';
-      const skuCell = (l.skuCandidates && l.skuCandidates.length > 1 && !ro)
-        ? receiptSkuSelectHtml(l, i, ro)
-        : (l.spec || (l.skuCandidates && l.skuCandidates[0] && l.skuCandidates[0].spec) || '—');
-      return `
-      <tr>
-        <td>${displayName}</td>
-        <td><strong>${skuIdCell}</strong></td>
-        <td>${skuCell}</td>
-        <td>${warehouseSelectHtml(wh, i, ro)}</td>
-        <td>${zoneSelectHtml(wh, zc, i, zoneRo)}</td>
-        <td>${orderCell}</td>
-        <td>${ro ? l.receiptQty : `<input type="number" min="1" max="9999999" value="${l.receiptQty}" onchange="receiptEditorLines[${i}].receiptQty=parseInt(this.value,10)||0;renderReceiptEditorLines()">`}</td>
-        <td>${remarkCell}</td>
-        <td>${deleteCell}</td>
-      </tr>`;
-    }
-    const skuCell = (l.skuCandidates && l.skuCandidates.length && !ro)
-      ? receiptSkuSelectHtml(l, i, ro)
-      : (l.skuCandidates && l.skuCandidates.length === 1 ? (l.spec || l.skuCandidates[0].spec) : (l.spec || '—'));
+    const displayName = poMode ? (l.importProductName || l.productName || '—') : (l.productName || '—');
     const skuIdCell = l.skuId ? `<strong>${l.skuId}</strong>` : '—';
+    const skuCell = (l.skuCandidates && l.skuCandidates.length > 1 && !ro)
+      ? receiptSkuSelectHtml(l, i, ro)
+      : (l.spec || (l.skuCandidates && l.skuCandidates[0] && l.skuCandidates[0].spec) || '—');
     return `
     <tr>
-      <td>${l.productName || '—'}</td>
-      <td>${skuCell}</td>
+      <td>${displayName}</td>
       <td>${skuIdCell}</td>
+      <td>${skuCell}</td>
       <td>${warehouseSelectHtml(wh, i, ro)}</td>
       <td>${zoneSelectHtml(wh, zc, i, zoneRo)}</td>
+      <td>${receiptCommercialInputHtml('purchasePrice', i, l, ro, 'number')}</td>
       <td>${orderCell}</td>
       <td>${ro ? l.receiptQty : `<input type="number" min="1" max="9999999" value="${l.receiptQty}" onchange="receiptEditorLines[${i}].receiptQty=parseInt(this.value,10)||0;renderReceiptEditorLines()">`}</td>
+      <td>${receiptCommercialInputHtml('supplier', i, l, ro)}</td>
+      <td>${receiptCommercialInputHtml('pan', i, l, ro)}</td>
       <td>${remarkCell}</td>
       <td>${deleteCell}</td>
     </tr>`;
@@ -1036,8 +1033,13 @@ function buildReceiptLineFromPoRow(dr, wh) {
     receiptQty: dr.orderQty,
     barcode: single ? primaryBarcode(single) : '',
     warehouseCode: wh,
-    zoneCode: single ? (single.zoneCode || zoneCode) : zoneCode
+    zoneCode: single ? (single.zoneCode || zoneCode) : zoneCode,
+    purchasePrice: '',
+    supplier: '',
+    pan: ''
   });
+  const last = receiptEditorLines[receiptEditorLines.length - 1];
+  if (last) enrichReceiptLineCommercialFields(last, last.skuId);
 }
 
 async function startPoListImport() {
@@ -1417,7 +1419,7 @@ function renderReceiptManualSearch() {
       .map(s => ({ skuId: s.skuId, spec: s.spec || '—', zoneCode: s.zoneCode }));
     if (!candidates.length) return;
     const auto = candidates.length === 1 ? candidates[0] : null;
-    receiptEditorLines.push({
+    const newLine = {
       productName,
       skuCandidates: candidates,
       skuId: auto ? auto.skuId : '',
@@ -1427,8 +1429,13 @@ function renderReceiptManualSearch() {
       receiptQty: 1,
       warehouseCode: wh,
       zoneCode: auto ? auto.zoneCode : getDefaultStorageZoneCode(wh),
-      barcode: ''
-    });
+      barcode: '',
+      purchasePrice: '',
+      supplier: '',
+      pan: ''
+    };
+    if (auto) enrichReceiptLineCommercialFields(newLine, auto.skuId);
+    receiptEditorLines.push(newLine);
     input.value = '';
     panel.hidden = true;
     renderReceiptEditorLines();

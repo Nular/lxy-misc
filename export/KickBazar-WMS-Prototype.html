@@ -1065,6 +1065,21 @@ tbody tr.selected {
   gap: 16px;
 }
 
+.wh-managers-select {
+  width: 100%;
+  min-height: 96px;
+  padding: 6px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.ob-alt-wh-hint {
+  color: #d48806;
+  display: inline-block;
+  margin-top: 4px;
+}
+
 .dashboard-kpi-row-5 {
   grid-template-columns: repeat(5, minmax(0, 1fr));
 }
@@ -2286,7 +2301,7 @@ tbody tr.selected {
                     <th>Locked</th>
                     <th>Available</th>
                     <th>Address</th>
-                    <th>Owner</th>
+                    <th>Warehouse Manager</th>
                     <th>Contact / Phone</th>
                     <th>Operation</th>
                   </tr>
@@ -2503,6 +2518,7 @@ tbody tr.selected {
                       <th>Zone Code</th>
                       <th>Primary Barcode</th>
                       <th>PAN</th>
+                      <th>Store</th>
                       <th>Operation</th>
                     </tr>
                   </thead>
@@ -2714,6 +2730,10 @@ tbody tr.selected {
           <div class="page-body ob-oms-body">
             <div class="ob-status-tabs" id="ob-list-tabs" role="tablist"></div>
             <div class="ob-oms-filters filter-bar">
+              <div class="filter-item filter-wh-scope" id="ob-filter-warehouse-wrap">
+                <label>Warehouse</label>
+                <select id="ob-filter-warehouse"><option value="">All</option></select>
+              </div>
               <div class="filter-item">
                 <label>Order No.</label>
                 <input type="text" id="ob-filter-order" placeholder="Order No.">
@@ -2951,8 +2971,9 @@ tbody tr.selected {
             </select>
           </div>
           <div class="form-group">
-            <label>Owner</label>
-            <input type="text" placeholder="Warehouse Owner" id="wh-owner">
+            <label>Warehouse Manager</label>
+            <select id="wh-managers" multiple size="5" class="wh-managers-select" title="Hold Ctrl/Cmd to select multiple"></select>
+            <span class="hint">From Admin user directory · multi-select · displayed as names separated by ;</span>
           </div>
           <div class="form-group">
             <label>Contact</label>

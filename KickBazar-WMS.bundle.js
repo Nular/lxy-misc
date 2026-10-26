@@ -62,7 +62,7 @@ let warehouses = [
     id: 'SH001', name: 'Shanghai Main Warehouse', attribute: 'normal', status: 'enable',
     zoneCount: 5, total: 12580, locked: 2340, available: 10240,
     address: 'China, Shanghai, Pudong, No.888 Zhangyang Road',
-    owner: 'Zhang Wei', contact: 'Li Ming', phone: '+86 138 0013 8000',
+    owner: 'Zhang Wei', warehouseManagers: ['Zhang Wei', 'Li Ming'], contact: 'Li Ming', phone: '+86 138 0013 8000',
     country: 'CN', state: 'SH', city: 'PD', detail: 'No.888 Zhangyang Road',
     longitude: '121.5447', latitude: '31.2244', area: 5000, height: 12,
     weighing: 'compliant', fire: 'compliant', hasStock: true, hasPendingOrders: false
@@ -71,7 +71,7 @@ let warehouses = [
     id: 'BJ001', name: 'Beijing Distribution Center', attribute: 'cold chain', status: 'enable',
     zoneCount: 3, total: 8920, locked: 1560, available: 7360,
     address: 'China, Beijing, Chaoyang, No.15 Jianguo Road',
-    owner: 'Wang Fang', contact: 'Chen Hua', phone: '+86 139 0013 9000',
+    owner: 'Wang Fang', warehouseManagers: ['Wang Fang'], contact: 'Chen Hua', phone: '+86 139 0013 9000',
     country: 'CN', state: 'BJ', city: 'CY', detail: 'No.15 Jianguo Road',
     longitude: '116.4551', latitude: '39.9189', area: 3200, height: 10,
     weighing: 'pending', fire: 'compliant', hasStock: true, hasPendingOrders: false
@@ -80,7 +80,7 @@ let warehouses = [
     id: 'GZ001', name: 'Guangzhou South Hub', attribute: 'fireproof', status: 'disable',
     zoneCount: 3, total: 0, locked: 0, available: 0,
     address: 'China, Guangdong, Guangzhou, No.100 Tianhe Road',
-    owner: 'Liu Yang', contact: 'Liu Yang', phone: '+86 137 0013 7000',
+    owner: 'Liu Yang', warehouseManagers: ['Liu Yang'], contact: 'Liu Yang', phone: '+86 137 0013 7000',
     country: 'CN', state: 'GD', city: 'GZ', detail: 'No.100 Tianhe Road',
     longitude: '', latitude: '', area: 2800, height: 8,
     weighing: 'pending', fire: 'pending', hasStock: false, hasPendingOrders: false
@@ -89,7 +89,7 @@ let warehouses = [
     id: 'SG001', name: 'Singapore Regional Warehouse', attribute: 'thermostatic', status: 'enable',
     zoneCount: 4, total: 4560, locked: 890, available: 3670,
     address: 'Singapore, Central, 10 Anson Road',
-    owner: 'Tan Wei Ming', contact: 'Tan Wei Ming', phone: '+65 9123 4567',
+    owner: 'Tan Wei Ming', warehouseManagers: ['Tan Wei Ming'], contact: 'Tan Wei Ming', phone: '+65 9123 4567',
     country: 'SG', state: 'Central', city: 'SG', detail: '10 Anson Road',
     longitude: '103.8198', latitude: '1.2754', area: 1500, height: 6,
     weighing: 'compliant', fire: 'compliant', hasStock: true, hasPendingOrders: true
@@ -98,7 +98,7 @@ let warehouses = [
     id: 'SH002', name: 'Shanghai Backup Warehouse', attribute: 'normal', status: 'disable',
     zoneCount: 3, total: 0, locked: 0, available: 0,
     address: 'China, Shanghai, Minhang, No.200 Humin Road',
-    owner: 'Zhao Lei', contact: 'Zhao Lei', phone: '+86 136 0013 6000',
+    owner: 'Zhao Lei', warehouseManagers: ['Zhao Lei'], contact: 'Zhao Lei', phone: '+86 136 0013 6000',
     country: 'CN', state: 'SH', city: 'MH', detail: 'No.200 Humin Road',
     longitude: '', latitude: '', area: 1800, height: 8,
     weighing: 'pending', fire: 'pending', hasStock: false, hasPendingOrders: false
@@ -313,14 +313,51 @@ function onDashboardWarehouseChange(value) {
   showToast(`Loading data for: ${label}`, 'success');
 }
 
+function isAdminAllWarehouseScope() {
+  return isAdminUser() && getWarehouseScope() === 'all';
+}
+
+function applyAdminAllWarehouseFilterVisibility() {
+  const show = isAdminAllWarehouseScope();
+  document.querySelectorAll('.filter-wh-scope').forEach(el => {
+    el.style.display = show ? '' : 'none';
+  });
+  if (typeof syncInboundListWarehouseFilterVisibility === 'function') syncInboundListWarehouseFilterVisibility();
+  if (typeof syncOutboundListWarehouseFilterVisibility === 'function') syncOutboundListWarehouseFilterVisibility();
+}
+
 function applyWarehouseScopeToFilters() {
   const scope = getWarehouseScope();
   const whVal = scope === 'all' ? '' : scope;
-  ['zone-filter-warehouse', 'spu-filter-warehouse', 'sku-filter-warehouse', 'record-filter-warehouse'].forEach(id => {
+  ['zone-filter-warehouse', 'spu-filter-warehouse', 'sku-filter-warehouse', 'record-filter-warehouse', 'ob-filter-warehouse'].forEach(id => {
     const el = document.getElementById(id);
     if (el && scope !== 'all') el.value = whVal;
   });
   if (scope !== 'all') lockedZoneWarehouse = scope;
+  applyAdminAllWarehouseFilterVisibility();
+}
+
+/** Admin 用户目录（原型：来自 Admin 端同步） */
+const WMS_ADMIN_USERS = ['Zhang Wei', 'Li Ming', 'Wang Fang', 'Chen Hua', 'Tan Wei Ming', 'Zhao Lei', 'Admin'];
+
+function formatWarehouseManagers(wh) {
+  if (wh.warehouseManagers && wh.warehouseManagers.length) return wh.warehouseManagers.join('; ');
+  return wh.owner || '—';
+}
+
+function populateWhManagersSelect(selected) {
+  const sel = document.getElementById('wh-managers');
+  if (!sel) return;
+  const picked = new Set((selected || []).map(String));
+  sel.innerHTML = WMS_ADMIN_USERS.map(u =>
+    `<option value="${u.replace(/"/g, '&quot;')}" ${picked.has(u) ? 'selected' : ''}>${u}</option>`
+  ).join('');
+}
+
+function readWhManagersFromForm() {
+  const sel = document.getElementById('wh-managers');
+  if (!sel) return [];
+  return [...sel.selectedOptions].map(o => o.value);
 }
 
 function refreshAllScopedViews() {
@@ -354,11 +391,7 @@ function applyRoleAndScopeUI() {
     }
   }
 
-  const hideFilters = getWarehouseScope() !== 'all';
-  document.querySelectorAll('.filter-wh-scope').forEach(el => {
-    el.style.display = hideFilters ? 'none' : '';
-  });
-  if (typeof syncInboundListWarehouseFilterVisibility === 'function') syncInboundListWarehouseFilterVisibility();
+  applyAdminAllWarehouseFilterVisibility();
 }
 
 function setUserRole(role) {
@@ -381,13 +414,13 @@ function initUserRole() {
 }
 
 const skuData = [
-  { skuId: 'SKU-10001-BK', spec: 'Black; M', productName: 'Wireless Bluetooth Earbuds Pro', total: 1200, locked: 200, available: 1000, warehouse: 'Shanghai Main Warehouse', zone: 'Storage Zone', zoneCode: 'SH001STO', warehouseCode: 'SH001', barcode: 'EAN: 6901234567890', pan: '69012378', barcodes: ['EAN: 6901234567890', 'UPC: 012345678901', 'PAN: 69012378'] },
-  { skuId: 'SKU-10001-WH', spec: 'White; L', productName: 'Wireless Bluetooth Earbuds Pro', total: 980, locked: 150, available: 830, warehouse: 'Shanghai Main Warehouse', zone: 'Storage Zone', zoneCode: 'SH001STO', warehouseCode: 'SH001', barcode: 'EAN: 6901234567891', pan: '-', barcodes: ['EAN: 6901234567891'] },
-  { skuId: 'SKU-10001-BL', spec: 'Blue; XS', productName: 'Wireless Bluetooth Earbuds Pro', total: 400, locked: 70, available: 330, warehouse: 'Beijing Distribution Center', zone: 'Storage Zone', zoneCode: 'BJ001STO', warehouseCode: 'BJ001', barcode: 'UPC: 012345678902', pan: 'KB-10001-BL', barcodes: ['UPC: 012345678902', 'PAN: KB-10001-BL'] },
-  { skuId: 'SKU-10002-42', spec: '42mm Silver', productName: 'Smart Watch Series X', total: 900, locked: 160, available: 740, warehouse: 'Shanghai Main Warehouse', zone: 'Storage Zone', zoneCode: 'SH001STO', warehouseCode: 'SH001', barcode: 'EAN: 6901234567900', pan: '-', barcodes: ['EAN: 6901234567900'] },
-  { skuId: 'SKU-10002-46', spec: '46mm Black', productName: 'Smart Watch Series X', total: 660, locked: 120, available: 540, warehouse: 'Shanghai Main Warehouse', zone: 'Storage Zone', zoneCode: 'SH001STO', warehouseCode: 'SH001', barcode: 'EAN: 6901234567901', pan: 'KB-10002-46', barcodes: ['EAN: 6901234567901', 'PAN: KB-10002-46'] },
-  { skuId: 'SKU-10003-01', spec: 'Standard', productName: 'Portable Power Bank 20000mAh', total: 3200, locked: 560, available: 2640, warehouse: 'Beijing Distribution Center', zone: 'Storage Zone', zoneCode: 'BJ001STO', warehouseCode: 'BJ001', barcode: 'EAN: 6901234567910', pan: '-', barcodes: ['EAN: 6901234567910'] },
-  { skuId: 'SKU-10004-01', spec: '128GB', productName: 'USB-C Flash Drive', total: 0, locked: 0, available: 0, warehouse: 'Shanghai Main Warehouse', zone: 'Receiving Zone', zoneCode: 'SH001RCV', warehouseCode: 'SH001', barcode: '-', pan: 'KB-10004-01', barcodes: ['PAN: KB-10004-01'] }
+  { skuId: 'SKU-10001-BK', spec: 'Black; M', productName: 'Wireless Bluetooth Earbuds Pro', total: 1200, locked: 200, available: 1000, warehouse: 'Shanghai Main Warehouse', zone: 'Storage Zone', zoneCode: 'SH001STO', warehouseCode: 'SH001', barcode: 'EAN: 6901234567890', pan: '69012378', purchasePrice: '18.50', supplier: 'Shenzhen Audio Supply Co.', stores: 'KickBazar Official Store; Tmall Global', barcodes: ['EAN: 6901234567890', 'UPC: 012345678901', 'PAN: 69012378'] },
+  { skuId: 'SKU-10001-WH', spec: 'White; L', productName: 'Wireless Bluetooth Earbuds Pro', total: 980, locked: 150, available: 830, warehouse: 'Shanghai Main Warehouse', zone: 'Storage Zone', zoneCode: 'SH001STO', warehouseCode: 'SH001', barcode: 'EAN: 6901234567891', pan: '69012379', purchasePrice: '18.50', supplier: 'Shenzhen Audio Supply Co.', stores: 'KickBazar Official Store', barcodes: ['EAN: 6901234567891'] },
+  { skuId: 'SKU-10001-BL', spec: 'Blue; XS', productName: 'Wireless Bluetooth Earbuds Pro', total: 400, locked: 70, available: 330, warehouse: 'Beijing Distribution Center', zone: 'Storage Zone', zoneCode: 'BJ001STO', warehouseCode: 'BJ001', barcode: 'UPC: 012345678902', pan: 'KB-10001-BL', purchasePrice: '17.20', supplier: 'Shenzhen Audio Supply Co.', stores: 'Tmall Global', barcodes: ['UPC: 012345678902', 'PAN: KB-10001-BL'] },
+  { skuId: 'SKU-10002-42', spec: '42mm Silver', productName: 'Smart Watch Series X', total: 900, locked: 160, available: 740, warehouse: 'Shanghai Main Warehouse', zone: 'Storage Zone', zoneCode: 'SH001STO', warehouseCode: 'SH001', barcode: 'EAN: 6901234567900', pan: '45679001', purchasePrice: '42.00', supplier: 'Huizhou Wearables Ltd.', stores: 'KickBazar Official Store; Shopee SG', barcodes: ['EAN: 6901234567900'] },
+  { skuId: 'SKU-10002-46', spec: '46mm Black', productName: 'Smart Watch Series X', total: 660, locked: 120, available: 540, warehouse: 'Shanghai Main Warehouse', zone: 'Storage Zone', zoneCode: 'SH001STO', warehouseCode: 'SH001', barcode: 'EAN: 6901234567901', pan: 'KB-10002-46', purchasePrice: '44.00', supplier: 'Huizhou Wearables Ltd.', stores: 'KickBazar Official Store', barcodes: ['EAN: 6901234567901', 'PAN: KB-10002-46'] },
+  { skuId: 'SKU-10003-01', spec: 'Standard', productName: 'Portable Power Bank 20000mAh', total: 3200, locked: 560, available: 2640, warehouse: 'Beijing Distribution Center', zone: 'Storage Zone', zoneCode: 'BJ001STO', warehouseCode: 'BJ001', barcode: 'EAN: 6901234567910', pan: '45679102', purchasePrice: '9.80', supplier: 'Dongguan Power Components', stores: 'Tmall Global; JD Flagship', barcodes: ['EAN: 6901234567910'] },
+  { skuId: 'SKU-10004-01', spec: '128GB', productName: 'USB-C Flash Drive', total: 0, locked: 0, available: 0, warehouse: 'Shanghai Main Warehouse', zone: 'Receiving Zone', zoneCode: 'SH001RCV', warehouseCode: 'SH001', barcode: '-', pan: 'KB-10004-01', purchasePrice: '6.50', supplier: 'Shenzhen Storage Devices', stores: 'KickBazar Official Store', barcodes: ['PAN: KB-10004-01'] }
 ];
 
 let currentAdjSkuId = null;
@@ -735,7 +768,7 @@ function renderWarehouses() {
       <td>${wh.locked.toLocaleString()}</td>
       <td>${wh.available.toLocaleString()}</td>
       <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${wh.address}">${wh.address}</td>
-      <td>${wh.owner}</td>
+      <td>${formatWarehouseManagers(wh)}</td>
       <td>${wh.contact}<br><span style="color:#999;font-size:12px">${wh.phone}</span></td>
       <td onclick="event.stopPropagation()">
         <div class="action-links">
@@ -779,6 +812,7 @@ function openCreateWarehouse() {
 
   document.getElementById('warehouse-form').reset();
   document.getElementById('wh-attribute').value = 'normal';
+  populateWhManagersSelect([]);
   openModal('warehouse-modal');
 }
 
@@ -829,7 +863,7 @@ function fillWarehouseForm(wh, readonly) {
   document.getElementById('wh-height').value = wh.height || '';
   document.getElementById('wh-weighing').value = wh.weighing;
   document.getElementById('wh-fire').value = wh.fire;
-  document.getElementById('wh-owner').value = wh.owner;
+  populateWhManagersSelect(wh.warehouseManagers || (wh.owner ? [wh.owner] : []));
   document.getElementById('wh-contact').value = wh.contact;
   document.getElementById('wh-phone').value = wh.phone;
 }
@@ -857,7 +891,8 @@ function submitWarehouse() {
     currentWarehouseEdit.height = document.getElementById('wh-height').value;
     currentWarehouseEdit.weighing = document.getElementById('wh-weighing').value;
     currentWarehouseEdit.fire = document.getElementById('wh-fire').value;
-    currentWarehouseEdit.owner = document.getElementById('wh-owner').value;
+    currentWarehouseEdit.warehouseManagers = readWhManagersFromForm();
+    currentWarehouseEdit.owner = currentWarehouseEdit.warehouseManagers[0] || '';
     currentWarehouseEdit.contact = document.getElementById('wh-contact').value;
     currentWarehouseEdit.phone = document.getElementById('wh-phone').value;
     currentWarehouseEdit.address = `${currentWarehouseEdit.country}, ${currentWarehouseEdit.state}, ${currentWarehouseEdit.city}, ${currentWarehouseEdit.detail}`;
@@ -876,7 +911,8 @@ function submitWarehouse() {
       id: newId, name, attribute: document.getElementById('wh-attribute').value, status: 'disable',
       zoneCount: 3, total: 0, locked: 0, available: 0,
       address: 'China, Shanghai, Pudong, New Address',
-      owner: 'Current User', contact: 'Current User', phone: '+86 138 0000 0000',
+      owner: 'Current User', warehouseManagers: readWhManagersFromForm().length ? readWhManagersFromForm() : ['Current User'],
+      contact: 'Current User', phone: '+86 138 0000 0000',
       country: document.getElementById('wh-country').value || 'CN',
       state: document.getElementById('wh-state').value || 'SH',
       city: document.getElementById('wh-city').value || 'PD',
@@ -1195,12 +1231,13 @@ function renderSkuTable() {
       <td>${s.zoneCode}</td>
       <td><span class="barcode-cell" title="${s.barcodes.join('\n')}">${s.barcode}</span></td>
       <td>${s.pan || '-'}</td>
+      <td class="ob-wrap" title="${(s.stores || '').replace(/"/g, '&quot;')}">${s.stores || '—'}</td>
       <td>${isAdminUser()
         ? `<a class="btn-link" onclick="openAdjustment('${s.skuId}','${s.zoneCode}')">Inventory Adjustment</a>`
         : `<span class="text-muted" title="Admin only" style="color:#999;cursor:not-allowed">Admin only</span>`}
       </td>
     </tr>
-  `).join('') || '<tr><td colspan="12" style="text-align:center;color:#999">No SKU rows in current warehouse context</td></tr>';
+  `).join('') || '<tr><td colspan="13" style="text-align:center;color:#999">No SKU rows in current warehouse context</td></tr>';
 }
 
 function openAdjustment(skuId, zoneCode) {
@@ -1628,7 +1665,7 @@ function populateWarehouseSelects() {
   const options = '<option value="">All</option>' +
     warehouses.map(w => `<option value="${w.id}">${w.id} - ${w.name}</option>`).join('');
 
-  ['zone-filter-warehouse', 'spu-filter-warehouse', 'sku-filter-warehouse', 'record-filter-warehouse'].forEach(id => {
+  ['zone-filter-warehouse', 'spu-filter-warehouse', 'sku-filter-warehouse', 'record-filter-warehouse', 'ob-filter-warehouse'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.innerHTML = options;
   });
@@ -1637,10 +1674,6 @@ function populateWarehouseSelects() {
     document.getElementById('zone-filter-warehouse').value = lockedZoneWarehouse;
   }
   applyWarehouseScopeToFilters();
-  const hideFilters = getWarehouseScope() !== 'all';
-  document.querySelectorAll('.filter-wh-scope').forEach(el => {
-    el.style.display = hideFilters ? 'none' : '';
-  });
 }
 
 function openModal(id) {
@@ -2157,6 +2190,15 @@ function inboundDetailSourceFileHtml(r) {
   return `${r.sourceFile} <span class="hint">(kept in system)</span> ${previewBtn} ${downloadBtn}`;
 }
 
+function enrichReceiptLineCommercialFields(line, skuId) {
+  const sku = skuId ? skuData.find(s => s.skuId === skuId) : null;
+  if (sku) {
+    if (line.purchasePrice == null || line.purchasePrice === '') line.purchasePrice = sku.purchasePrice || '';
+    if (line.supplier == null || line.supplier === '') line.supplier = sku.supplier || '';
+    if (line.pan == null || line.pan === '') line.pan = sku.pan && sku.pan !== '-' ? sku.pan : (sku.pan || '');
+  }
+}
+
 function applyReceiptLineSku(lineIndex, skuId) {
   if (!skuId) {
     receiptEditorLines[lineIndex].skuId = '';
@@ -2178,6 +2220,7 @@ function applyReceiptLineSku(lineIndex, skuId) {
   line.zoneCode = inv.zoneCode || getDefaultStorageZoneCode(wh);
   line.warehouseCode = wh;
   line.skuResolved = true;
+  enrichReceiptLineCommercialFields(line, inv.skuId);
   renderReceiptEditorLines();
 }
 
@@ -2196,17 +2239,19 @@ function receiptSkuSelectHtml(line, lineIndex, ro) {
 function renderReceiptEditorLinesHead() {
   const head = document.getElementById('receipt-editor-lines-head');
   if (!head) return;
-  if (receiptEditorSource === 'po-import') {
-    head.innerHTML = `<tr>
-      <th>Product Name</th><th>SKU ID</th><th>SKU</th>
-      <th>Warehouse</th><th>Zone</th><th>Order Qty</th><th>Receipt Qty</th><th>Remark</th><th style="width:72px">Action</th>
-    </tr>`;
-  } else {
-    head.innerHTML = `<tr>
-      <th>Product Name</th><th>SKU</th><th>SKU ID</th><th>Warehouse</th><th>Zone</th>
-      <th>Order Qty</th><th>Receipt Qty</th><th>Remark</th><th style="width:72px">Action</th>
-    </tr>`;
-  }
+  head.innerHTML = `<tr>
+    <th>Product Name</th><th>SKU ID</th><th>SKU</th>
+    <th>Warehouse</th><th>Zone</th><th>Purchase Price</th>
+    <th>Order Qty</th><th>Receipt Qty</th><th>Supplier</th><th>PAN</th><th>Remark</th>
+    <th style="width:72px">Action</th>
+  </tr>`;
+}
+
+function receiptCommercialInputHtml(field, lineIndex, line, ro, inputType) {
+  const val = line[field] != null ? String(line[field]) : '';
+  if (ro) return val || '—';
+  const type = inputType || 'text';
+  return `<input type="${type}" value="${val.replace(/"/g, '&quot;')}" onchange="receiptEditorLines[${lineIndex}].${field}=this.value">`;
 }
 
 function warehouseSelectHtml(selected, lineIndex, ro) {
@@ -2384,7 +2429,7 @@ function populateInboundListFilters() {
 function syncInboundListWarehouseFilterVisibility() {
   const wrap = document.getElementById('inbound-filter-warehouse-wrap');
   if (!wrap) return;
-  const show = isAdminUser() && getWarehouseScope() === 'all';
+  const show = typeof isAdminAllWarehouseScope === 'function' ? isAdminAllWarehouseScope() : (isAdminUser() && getWarehouseScope() === 'all');
   wrap.style.display = show ? '' : 'none';
   if (!show) {
     const sel = document.getElementById('inbound-filter-warehouse');
@@ -2589,7 +2634,7 @@ function renderReceiptEditorLines() {
   const whDefault = getInboundWarehouseScope();
   const zoneRo = ro || receiptZoneReadonlyForSource();
   const poMode = receiptEditorSource === 'po-import';
-  const colSpan = poMode ? 9 : 9;
+  const colSpan = 12;
   document.getElementById('receipt-editor-lines').innerHTML = receiptEditorLines.map((l, i) => {
     const wh = l.warehouseCode || whDefault;
     const zc = l.zoneCode || getDefaultStorageZoneCode(wh);
@@ -2605,38 +2650,23 @@ function renderReceiptEditorLines() {
     const deleteCell = ro
       ? '—'
       : `<button type="button" class="btn btn-sm" onclick="deleteReceiptLine(${i})">Delete</button>`;
-    if (poMode) {
-      const displayName = l.importProductName || l.productName || '—';
-      const skuIdCell = l.skuId || '—';
-      const skuCell = (l.skuCandidates && l.skuCandidates.length > 1 && !ro)
-        ? receiptSkuSelectHtml(l, i, ro)
-        : (l.spec || (l.skuCandidates && l.skuCandidates[0] && l.skuCandidates[0].spec) || '—');
-      return `
-      <tr>
-        <td>${displayName}</td>
-        <td><strong>${skuIdCell}</strong></td>
-        <td>${skuCell}</td>
-        <td>${warehouseSelectHtml(wh, i, ro)}</td>
-        <td>${zoneSelectHtml(wh, zc, i, zoneRo)}</td>
-        <td>${orderCell}</td>
-        <td>${ro ? l.receiptQty : `<input type="number" min="1" max="9999999" value="${l.receiptQty}" onchange="receiptEditorLines[${i}].receiptQty=parseInt(this.value,10)||0;renderReceiptEditorLines()">`}</td>
-        <td>${remarkCell}</td>
-        <td>${deleteCell}</td>
-      </tr>`;
-    }
-    const skuCell = (l.skuCandidates && l.skuCandidates.length && !ro)
-      ? receiptSkuSelectHtml(l, i, ro)
-      : (l.skuCandidates && l.skuCandidates.length === 1 ? (l.spec || l.skuCandidates[0].spec) : (l.spec || '—'));
+    const displayName = poMode ? (l.importProductName || l.productName || '—') : (l.productName || '—');
     const skuIdCell = l.skuId ? `<strong>${l.skuId}</strong>` : '—';
+    const skuCell = (l.skuCandidates && l.skuCandidates.length > 1 && !ro)
+      ? receiptSkuSelectHtml(l, i, ro)
+      : (l.spec || (l.skuCandidates && l.skuCandidates[0] && l.skuCandidates[0].spec) || '—');
     return `
     <tr>
-      <td>${l.productName || '—'}</td>
-      <td>${skuCell}</td>
+      <td>${displayName}</td>
       <td>${skuIdCell}</td>
+      <td>${skuCell}</td>
       <td>${warehouseSelectHtml(wh, i, ro)}</td>
       <td>${zoneSelectHtml(wh, zc, i, zoneRo)}</td>
+      <td>${receiptCommercialInputHtml('purchasePrice', i, l, ro, 'number')}</td>
       <td>${orderCell}</td>
       <td>${ro ? l.receiptQty : `<input type="number" min="1" max="9999999" value="${l.receiptQty}" onchange="receiptEditorLines[${i}].receiptQty=parseInt(this.value,10)||0;renderReceiptEditorLines()">`}</td>
+      <td>${receiptCommercialInputHtml('supplier', i, l, ro)}</td>
+      <td>${receiptCommercialInputHtml('pan', i, l, ro)}</td>
       <td>${remarkCell}</td>
       <td>${deleteCell}</td>
     </tr>`;
@@ -2699,8 +2729,13 @@ function buildReceiptLineFromPoRow(dr, wh) {
     receiptQty: dr.orderQty,
     barcode: single ? primaryBarcode(single) : '',
     warehouseCode: wh,
-    zoneCode: single ? (single.zoneCode || zoneCode) : zoneCode
+    zoneCode: single ? (single.zoneCode || zoneCode) : zoneCode,
+    purchasePrice: '',
+    supplier: '',
+    pan: ''
   });
+  const last = receiptEditorLines[receiptEditorLines.length - 1];
+  if (last) enrichReceiptLineCommercialFields(last, last.skuId);
 }
 
 async function startPoListImport() {
@@ -3080,7 +3115,7 @@ function renderReceiptManualSearch() {
       .map(s => ({ skuId: s.skuId, spec: s.spec || '—', zoneCode: s.zoneCode }));
     if (!candidates.length) return;
     const auto = candidates.length === 1 ? candidates[0] : null;
-    receiptEditorLines.push({
+    const newLine = {
       productName,
       skuCandidates: candidates,
       skuId: auto ? auto.skuId : '',
@@ -3090,8 +3125,13 @@ function renderReceiptManualSearch() {
       receiptQty: 1,
       warehouseCode: wh,
       zoneCode: auto ? auto.zoneCode : getDefaultStorageZoneCode(wh),
-      barcode: ''
-    });
+      barcode: '',
+      purchasePrice: '',
+      supplier: '',
+      pan: ''
+    };
+    if (auto) enrichReceiptLineCommercialFields(newLine, auto.skuId);
+    receiptEditorLines.push(newLine);
     input.value = '';
     panel.hidden = true;
     renderReceiptEditorLines();
@@ -3578,6 +3618,57 @@ function normalizeObStatus(status) {
   return status;
 }
 
+function syncOutboundListWarehouseFilterVisibility() {
+  const wrap = document.getElementById('ob-filter-warehouse-wrap');
+  if (!wrap) return;
+  const show = typeof isAdminAllWarehouseScope === 'function' ? isAdminAllWarehouseScope() : (isAdminUser() && getWarehouseScope() === 'all');
+  wrap.style.display = show ? '' : 'none';
+  if (!show) {
+    const sel = document.getElementById('ob-filter-warehouse');
+    if (sel) sel.value = '';
+  }
+}
+
+function findAlternateWarehouseStock(line) {
+  const need = line.qty || 1;
+  const current = normalizeWarehouseId(line.warehouseId);
+  const skuId = line.skuId;
+  const alts = [];
+  const seen = new Set();
+  skuData.forEach(s => {
+    const wh = normalizeWarehouseId(skuWarehouseId(s));
+    if (wh === current) return;
+    if (skuId && s.skuId !== skuId) return;
+    if (!/STO|Storage/i.test((s.zoneCode || '') + s.zone)) return;
+    if ((s.available || 0) < need) return;
+    const key = wh + '|' + s.skuId;
+    if (seen.has(key)) return;
+    seen.add(key);
+    alts.push({ warehouse: wh, skuId: s.skuId, available: s.available });
+  });
+  if (!alts.length && line.productName) {
+    skuData.forEach(s => {
+      if ((s.productName || '') !== line.productName) return;
+      const wh = normalizeWarehouseId(skuWarehouseId(s));
+      if (wh === current) return;
+      if (!/STO|Storage/i.test((s.zoneCode || '') + s.zone)) return;
+      if ((s.available || 0) < need) return;
+      const key = wh + '|' + s.skuId;
+      if (seen.has(key)) return;
+      seen.add(key);
+      alts.push({ warehouse: wh, skuId: s.skuId, available: s.available });
+    });
+  }
+  return alts;
+}
+
+function formatAlternateWarehouseHint(line) {
+  const alts = findAlternateWarehouseStock(line);
+  if (!alts.length) return '';
+  const list = alts.map(a => `${a.warehouse} (${a.skuId} avail ${a.available})`).join('; ');
+  return `<br><span class="hint ob-alt-wh-hint">Other warehouses with stock: ${list}. Consider transfer or re-import for that warehouse.</span>`;
+}
+
 function scopedOutboundLines() {
   const scope = getWarehouseScope();
   return outboundLines.filter(l => scope === 'all' || l.warehouseId === scope);
@@ -3590,6 +3681,7 @@ function countLinesByTab(tab) {
 }
 
 function renderOutboundOrderList() {
+  syncOutboundListWarehouseFilterVisibility();
   const tabsEl = document.getElementById('ob-list-tabs');
   const body = document.getElementById('ob-order-list-body');
   if (!tabsEl || !body) return;
@@ -3622,6 +3714,8 @@ function renderOutboundOrderList() {
   if (skuKw) lines = lines.filter(l => l.skuId.toLowerCase().includes(skuKw));
   if (panKw) lines = lines.filter(l => linePan(l).includes(panKw));
   if (timeKw) lines = lines.filter(l => lineMatchesObTimeFilter(l, timeKw));
+  const whFilter = document.getElementById('ob-filter-warehouse')?.value || '';
+  if (whFilter) lines = lines.filter(l => normalizeWarehouseId(l.warehouseId) === normalizeWarehouseId(whFilter));
   const colSpan = 13;
   body.innerHTML = lines.map(l => {
     const st = normalizeObStatus(l.status);
@@ -3651,7 +3745,7 @@ function setOutboundListTab(tab) {
 }
 
 function resetOutboundListFilters() {
-  ['ob-filter-order', 'ob-filter-sku', 'ob-filter-pan', 'ob-filter-time'].forEach(id => {
+  ['ob-filter-order', 'ob-filter-sku', 'ob-filter-pan', 'ob-filter-time', 'ob-filter-warehouse'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -3662,9 +3756,27 @@ function toggleOutboundListChecks(on) {
   document.querySelectorAll('#ob-order-list-body .ob-line-check').forEach(el => { el.checked = on; });
 }
 
+function deleteOutboundLine(id) {
+  const line = outboundLines.find(l => l.id === id);
+  if (!line) return;
+  if (normalizeObStatus(line.status) !== 'pending_allocation') {
+    showToast('Only Pending Allocation lines can be deleted.', 'warning');
+    return;
+  }
+  askOutboundConfirm('Delete order line', `Remove ${line.orderNo} / ${line.skuId} from outbound queue?`, () => {
+    outboundLines = outboundLines.filter(l => l.id !== id);
+    const still = outboundLines.some(l => l.outboundNo === line.outboundNo);
+    if (!still) outboundBatches = outboundBatches.filter(b => b.outboundNo !== line.outboundNo);
+    refreshAfterInventoryChange();
+    renderOutboundOrderList();
+    showToast('Order line deleted.', 'success');
+  });
+}
+
 function listRowAction(l, st) {
   if (st === 'pending_allocation') {
-    return `<a class="btn-link" onclick="confirmAllocationLine('${l.id}')">Allocate</a>`;
+    return `<a class="btn-link" onclick="confirmAllocationLine('${l.id}')">Allocate</a>
+      <a class="btn-link danger" onclick="deleteOutboundLine('${l.id}')">Delete</a>`;
   }
   if (st === 'pending_picking') {
     return `<a class="btn-link" onclick="openPackTrackingModal('${l.id}')">Pack &amp; Ship</a>`;
@@ -3862,7 +3974,7 @@ function confirmAllocationLine(id) {
     refreshAfterInventoryChange();
     renderOutboundOrderList();
     if (document.getElementById('page-outbound-detail')?.classList.contains('active')) renderOutboundDetail();
-    showAllocateResult([{ ok, orderNo: line.orderNo, productName: line.productName }]);
+    showAllocateResult([{ ok, orderNo: line.orderNo, productName: line.productName, line }]);
   });
 }
 
@@ -3877,7 +3989,7 @@ function confirmAllocationBatch() {
     ids.forEach(id => {
       const line = outboundLines.find(l => l.id === id && normalizeObStatus(l.status) === 'pending_allocation');
       if (!line) return;
-      rows.push({ ok: tryAllocate(line), orderNo: line.orderNo, productName: line.productName });
+      rows.push({ ok: tryAllocate(line), orderNo: line.orderNo, productName: line.productName, line });
     });
     refreshAfterInventoryChange();
     renderOutboundOrderList();
@@ -3889,7 +4001,8 @@ function confirmAllocationBatch() {
 function showAllocateResult(rows) {
   document.getElementById('ob-result-body').innerHTML = rows.map(r => `
     <p>${r.ok ? '✓' : '!'} ${r.orderNo} / ${r.productName}<br>
-    <span class="hint">${r.ok ? 'Pending Picking · Outbound Occupy recorded.' : 'Still Pending Allocation · insufficient available.'}</span></p>
+    <span class="hint">${r.ok ? 'Pending Picking · Outbound Occupy recorded.' : 'Still Pending Allocation · insufficient available in this warehouse.'}</span>
+    ${!r.ok && r.line ? formatAlternateWarehouseHint(r.line) : ''}</p>
   `).join('') || '<p>No rows.</p>';
   openModal('ob-result-modal');
 }

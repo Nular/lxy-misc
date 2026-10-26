@@ -1056,6 +1056,21 @@ tbody tr.selected {
   gap: 16px;
 }
 
+.wh-managers-select {
+  width: 100%;
+  min-height: 96px;
+  padding: 6px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 13px;
+}
+
+.ob-alt-wh-hint {
+  color: #d48806;
+  display: inline-block;
+  margin-top: 4px;
+}
+
 .dashboard-kpi-row-5 {
   grid-template-columns: repeat(5, minmax(0, 1fr));
 }

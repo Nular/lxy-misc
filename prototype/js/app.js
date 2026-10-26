@@ -36,7 +36,7 @@ let warehouses = [
     id: 'SH001', name: 'Shanghai Main Warehouse', attribute: 'normal', status: 'enable',
     zoneCount: 5, total: 12580, locked: 2340, available: 10240,
     address: 'China, Shanghai, Pudong, No.888 Zhangyang Road',
-    owner: 'Zhang Wei', contact: 'Li Ming', phone: '+86 138 0013 8000',
+    owner: 'Zhang Wei', warehouseManagers: ['Zhang Wei', 'Li Ming'], contact: 'Li Ming', phone: '+86 138 0013 8000',
     country: 'CN', state: 'SH', city: 'PD', detail: 'No.888 Zhangyang Road',
     longitude: '121.5447', latitude: '31.2244', area: 5000, height: 12,
     weighing: 'compliant', fire: 'compliant', hasStock: true, hasPendingOrders: false
@@ -45,7 +45,7 @@ let warehouses = [
     id: 'BJ001', name: 'Beijing Distribution Center', attribute: 'cold chain', status: 'enable',
     zoneCount: 3, total: 8920, locked: 1560, available: 7360,
     address: 'China, Beijing, Chaoyang, No.15 Jianguo Road',
-    owner: 'Wang Fang', contact: 'Chen Hua', phone: '+86 139 0013 9000',
+    owner: 'Wang Fang', warehouseManagers: ['Wang Fang'], contact: 'Chen Hua', phone: '+86 139 0013 9000',
     country: 'CN', state: 'BJ', city: 'CY', detail: 'No.15 Jianguo Road',
     longitude: '116.4551', latitude: '39.9189', area: 3200, height: 10,
     weighing: 'pending', fire: 'compliant', hasStock: true, hasPendingOrders: false
@@ -54,7 +54,7 @@ let warehouses = [
     id: 'GZ001', name: 'Guangzhou South Hub', attribute: 'fireproof', status: 'disable',
     zoneCount: 3, total: 0, locked: 0, available: 0,
     address: 'China, Guangdong, Guangzhou, No.100 Tianhe Road',
-    owner: 'Liu Yang', contact: 'Liu Yang', phone: '+86 137 0013 7000',
+    owner: 'Liu Yang', warehouseManagers: ['Liu Yang'], contact: 'Liu Yang', phone: '+86 137 0013 7000',
     country: 'CN', state: 'GD', city: 'GZ', detail: 'No.100 Tianhe Road',
     longitude: '', latitude: '', area: 2800, height: 8,
     weighing: 'pending', fire: 'pending', hasStock: false, hasPendingOrders: false
@@ -63,7 +63,7 @@ let warehouses = [
     id: 'SG001', name: 'Singapore Regional Warehouse', attribute: 'thermostatic', status: 'enable',
     zoneCount: 4, total: 4560, locked: 890, available: 3670,
     address: 'Singapore, Central, 10 Anson Road',
-    owner: 'Tan Wei Ming', contact: 'Tan Wei Ming', phone: '+65 9123 4567',
+    owner: 'Tan Wei Ming', warehouseManagers: ['Tan Wei Ming'], contact: 'Tan Wei Ming', phone: '+65 9123 4567',
     country: 'SG', state: 'Central', city: 'SG', detail: '10 Anson Road',
     longitude: '103.8198', latitude: '1.2754', area: 1500, height: 6,
     weighing: 'compliant', fire: 'compliant', hasStock: true, hasPendingOrders: true
@@ -72,7 +72,7 @@ let warehouses = [
     id: 'SH002', name: 'Shanghai Backup Warehouse', attribute: 'normal', status: 'disable',
     zoneCount: 3, total: 0, locked: 0, available: 0,
     address: 'China, Shanghai, Minhang, No.200 Humin Road',
-    owner: 'Zhao Lei', contact: 'Zhao Lei', phone: '+86 136 0013 6000',
+    owner: 'Zhao Lei', warehouseManagers: ['Zhao Lei'], contact: 'Zhao Lei', phone: '+86 136 0013 6000',
     country: 'CN', state: 'SH', city: 'MH', detail: 'No.200 Humin Road',
     longitude: '', latitude: '', area: 1800, height: 8,
     weighing: 'pending', fire: 'pending', hasStock: false, hasPendingOrders: false
@@ -287,14 +287,51 @@ function onDashboardWarehouseChange(value) {
   showToast(`Loading data for: ${label}`, 'success');
 }
 
+function isAdminAllWarehouseScope() {
+  return isAdminUser() && getWarehouseScope() === 'all';
+}
+
+function applyAdminAllWarehouseFilterVisibility() {
+  const show = isAdminAllWarehouseScope();
+  document.querySelectorAll('.filter-wh-scope').forEach(el => {
+    el.style.display = show ? '' : 'none';
+  });
+  if (typeof syncInboundListWarehouseFilterVisibility === 'function') syncInboundListWarehouseFilterVisibility();
+  if (typeof syncOutboundListWarehouseFilterVisibility === 'function') syncOutboundListWarehouseFilterVisibility();
+}
+
 function applyWarehouseScopeToFilters() {
   const scope = getWarehouseScope();
   const whVal = scope === 'all' ? '' : scope;
-  ['zone-filter-warehouse', 'spu-filter-warehouse', 'sku-filter-warehouse', 'record-filter-warehouse'].forEach(id => {
+  ['zone-filter-warehouse', 'spu-filter-warehouse', 'sku-filter-warehouse', 'record-filter-warehouse', 'ob-filter-warehouse'].forEach(id => {
     const el = document.getElementById(id);
     if (el && scope !== 'all') el.value = whVal;
   });
   if (scope !== 'all') lockedZoneWarehouse = scope;
+  applyAdminAllWarehouseFilterVisibility();
+}
+
+/** Admin 用户目录（原型：来自 Admin 端同步） */
+const WMS_ADMIN_USERS = ['Zhang Wei', 'Li Ming', 'Wang Fang', 'Chen Hua', 'Tan Wei Ming', 'Zhao Lei', 'Admin'];
+
+function formatWarehouseManagers(wh) {
+  if (wh.warehouseManagers && wh.warehouseManagers.length) return wh.warehouseManagers.join('; ');
+  return wh.owner || '—';
+}
+
+function populateWhManagersSelect(selected) {
+  const sel = document.getElementById('wh-managers');
+  if (!sel) return;
+  const picked = new Set((selected || []).map(String));
+  sel.innerHTML = WMS_ADMIN_USERS.map(u =>
+    `<option value="${u.replace(/"/g, '&quot;')}" ${picked.has(u) ? 'selected' : ''}>${u}</option>`
+  ).join('');
+}
+
+function readWhManagersFromForm() {
+  const sel = document.getElementById('wh-managers');
+  if (!sel) return [];
+  return [...sel.selectedOptions].map(o => o.value);
 }
 
 function refreshAllScopedViews() {
@@ -328,11 +365,7 @@ function applyRoleAndScopeUI() {
     }
   }
 
-  const hideFilters = getWarehouseScope() !== 'all';
-  document.querySelectorAll('.filter-wh-scope').forEach(el => {
-    el.style.display = hideFilters ? 'none' : '';
-  });
-  if (typeof syncInboundListWarehouseFilterVisibility === 'function') syncInboundListWarehouseFilterVisibility();
+  applyAdminAllWarehouseFilterVisibility();
 }
 
 function setUserRole(role) {
@@ -355,13 +388,13 @@ function initUserRole() {
 }
 
 const skuData = [
-  { skuId: 'SKU-10001-BK', spec: 'Black; M', productName: 'Wireless Bluetooth Earbuds Pro', total: 1200, locked: 200, available: 1000, warehouse: 'Shanghai Main Warehouse', zone: 'Storage Zone', zoneCode: 'SH001STO', warehouseCode: 'SH001', barcode: 'EAN: 6901234567890', pan: '69012378', barcodes: ['EAN: 6901234567890', 'UPC: 012345678901', 'PAN: 69012378'] },
-  { skuId: 'SKU-10001-WH', spec: 'White; L', productName: 'Wireless Bluetooth Earbuds Pro', total: 980, locked: 150, available: 830, warehouse: 'Shanghai Main Warehouse', zone: 'Storage Zone', zoneCode: 'SH001STO', warehouseCode: 'SH001', barcode: 'EAN: 6901234567891', pan: '-', barcodes: ['EAN: 6901234567891'] },
-  { skuId: 'SKU-10001-BL', spec: 'Blue; XS', productName: 'Wireless Bluetooth Earbuds Pro', total: 400, locked: 70, available: 330, warehouse: 'Beijing Distribution Center', zone: 'Storage Zone', zoneCode: 'BJ001STO', warehouseCode: 'BJ001', barcode: 'UPC: 012345678902', pan: 'KB-10001-BL', barcodes: ['UPC: 012345678902', 'PAN: KB-10001-BL'] },
-  { skuId: 'SKU-10002-42', spec: '42mm Silver', productName: 'Smart Watch Series X', total: 900, locked: 160, available: 740, warehouse: 'Shanghai Main Warehouse', zone: 'Storage Zone', zoneCode: 'SH001STO', warehouseCode: 'SH001', barcode: 'EAN: 6901234567900', pan: '-', barcodes: ['EAN: 6901234567900'] },
-  { skuId: 'SKU-10002-46', spec: '46mm Black', productName: 'Smart Watch Series X', total: 660, locked: 120, available: 540, warehouse: 'Shanghai Main Warehouse', zone: 'Storage Zone', zoneCode: 'SH001STO', warehouseCode: 'SH001', barcode: 'EAN: 6901234567901', pan: 'KB-10002-46', barcodes: ['EAN: 6901234567901', 'PAN: KB-10002-46'] },
-  { skuId: 'SKU-10003-01', spec: 'Standard', productName: 'Portable Power Bank 20000mAh', total: 3200, locked: 560, available: 2640, warehouse: 'Beijing Distribution Center', zone: 'Storage Zone', zoneCode: 'BJ001STO', warehouseCode: 'BJ001', barcode: 'EAN: 6901234567910', pan: '-', barcodes: ['EAN: 6901234567910'] },
-  { skuId: 'SKU-10004-01', spec: '128GB', productName: 'USB-C Flash Drive', total: 0, locked: 0, available: 0, warehouse: 'Shanghai Main Warehouse', zone: 'Receiving Zone', zoneCode: 'SH001RCV', warehouseCode: 'SH001', barcode: '-', pan: 'KB-10004-01', barcodes: ['PAN: KB-10004-01'] }
+  { skuId: 'SKU-10001-BK', spec: 'Black; M', productName: 'Wireless Bluetooth Earbuds Pro', total: 1200, locked: 200, available: 1000, warehouse: 'Shanghai Main Warehouse', zone: 'Storage Zone', zoneCode: 'SH001STO', warehouseCode: 'SH001', barcode: 'EAN: 6901234567890', pan: '69012378', purchasePrice: '18.50', supplier: 'Shenzhen Audio Supply Co.', stores: 'KickBazar Official Store; Tmall Global', barcodes: ['EAN: 6901234567890', 'UPC: 012345678901', 'PAN: 69012378'] },
+  { skuId: 'SKU-10001-WH', spec: 'White; L', productName: 'Wireless Bluetooth Earbuds Pro', total: 980, locked: 150, available: 830, warehouse: 'Shanghai Main Warehouse', zone: 'Storage Zone', zoneCode: 'SH001STO', warehouseCode: 'SH001', barcode: 'EAN: 6901234567891', pan: '69012379', purchasePrice: '18.50', supplier: 'Shenzhen Audio Supply Co.', stores: 'KickBazar Official Store', barcodes: ['EAN: 6901234567891'] },
+  { skuId: 'SKU-10001-BL', spec: 'Blue; XS', productName: 'Wireless Bluetooth Earbuds Pro', total: 400, locked: 70, available: 330, warehouse: 'Beijing Distribution Center', zone: 'Storage Zone', zoneCode: 'BJ001STO', warehouseCode: 'BJ001', barcode: 'UPC: 012345678902', pan: 'KB-10001-BL', purchasePrice: '17.20', supplier: 'Shenzhen Audio Supply Co.', stores: 'Tmall Global', barcodes: ['UPC: 012345678902', 'PAN: KB-10001-BL'] },
+  { skuId: 'SKU-10002-42', spec: '42mm Silver', productName: 'Smart Watch Series X', total: 900, locked: 160, available: 740, warehouse: 'Shanghai Main Warehouse', zone: 'Storage Zone', zoneCode: 'SH001STO', warehouseCode: 'SH001', barcode: 'EAN: 6901234567900', pan: '45679001', purchasePrice: '42.00', supplier: 'Huizhou Wearables Ltd.', stores: 'KickBazar Official Store; Shopee SG', barcodes: ['EAN: 6901234567900'] },
+  { skuId: 'SKU-10002-46', spec: '46mm Black', productName: 'Smart Watch Series X', total: 660, locked: 120, available: 540, warehouse: 'Shanghai Main Warehouse', zone: 'Storage Zone', zoneCode: 'SH001STO', warehouseCode: 'SH001', barcode: 'EAN: 6901234567901', pan: 'KB-10002-46', purchasePrice: '44.00', supplier: 'Huizhou Wearables Ltd.', stores: 'KickBazar Official Store', barcodes: ['EAN: 6901234567901', 'PAN: KB-10002-46'] },
+  { skuId: 'SKU-10003-01', spec: 'Standard', productName: 'Portable Power Bank 20000mAh', total: 3200, locked: 560, available: 2640, warehouse: 'Beijing Distribution Center', zone: 'Storage Zone', zoneCode: 'BJ001STO', warehouseCode: 'BJ001', barcode: 'EAN: 6901234567910', pan: '45679102', purchasePrice: '9.80', supplier: 'Dongguan Power Components', stores: 'Tmall Global; JD Flagship', barcodes: ['EAN: 6901234567910'] },
+  { skuId: 'SKU-10004-01', spec: '128GB', productName: 'USB-C Flash Drive', total: 0, locked: 0, available: 0, warehouse: 'Shanghai Main Warehouse', zone: 'Receiving Zone', zoneCode: 'SH001RCV', warehouseCode: 'SH001', barcode: '-', pan: 'KB-10004-01', purchasePrice: '6.50', supplier: 'Shenzhen Storage Devices', stores: 'KickBazar Official Store', barcodes: ['PAN: KB-10004-01'] }
 ];
 
 let currentAdjSkuId = null;
@@ -709,7 +742,7 @@ function renderWarehouses() {
       <td>${wh.locked.toLocaleString()}</td>
       <td>${wh.available.toLocaleString()}</td>
       <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${wh.address}">${wh.address}</td>
-      <td>${wh.owner}</td>
+      <td>${formatWarehouseManagers(wh)}</td>
       <td>${wh.contact}<br><span style="color:#999;font-size:12px">${wh.phone}</span></td>
       <td onclick="event.stopPropagation()">
         <div class="action-links">
@@ -753,6 +786,7 @@ function openCreateWarehouse() {
 
   document.getElementById('warehouse-form').reset();
   document.getElementById('wh-attribute').value = 'normal';
+  populateWhManagersSelect([]);
   openModal('warehouse-modal');
 }
 
@@ -803,7 +837,7 @@ function fillWarehouseForm(wh, readonly) {
   document.getElementById('wh-height').value = wh.height || '';
   document.getElementById('wh-weighing').value = wh.weighing;
   document.getElementById('wh-fire').value = wh.fire;
-  document.getElementById('wh-owner').value = wh.owner;
+  populateWhManagersSelect(wh.warehouseManagers || (wh.owner ? [wh.owner] : []));
   document.getElementById('wh-contact').value = wh.contact;
   document.getElementById('wh-phone').value = wh.phone;
 }
@@ -831,7 +865,8 @@ function submitWarehouse() {
     currentWarehouseEdit.height = document.getElementById('wh-height').value;
     currentWarehouseEdit.weighing = document.getElementById('wh-weighing').value;
     currentWarehouseEdit.fire = document.getElementById('wh-fire').value;
-    currentWarehouseEdit.owner = document.getElementById('wh-owner').value;
+    currentWarehouseEdit.warehouseManagers = readWhManagersFromForm();
+    currentWarehouseEdit.owner = currentWarehouseEdit.warehouseManagers[0] || '';
     currentWarehouseEdit.contact = document.getElementById('wh-contact').value;
     currentWarehouseEdit.phone = document.getElementById('wh-phone').value;
     currentWarehouseEdit.address = `${currentWarehouseEdit.country}, ${currentWarehouseEdit.state}, ${currentWarehouseEdit.city}, ${currentWarehouseEdit.detail}`;
@@ -850,7 +885,8 @@ function submitWarehouse() {
       id: newId, name, attribute: document.getElementById('wh-attribute').value, status: 'disable',
       zoneCount: 3, total: 0, locked: 0, available: 0,
       address: 'China, Shanghai, Pudong, New Address',
-      owner: 'Current User', contact: 'Current User', phone: '+86 138 0000 0000',
+      owner: 'Current User', warehouseManagers: readWhManagersFromForm().length ? readWhManagersFromForm() : ['Current User'],
+      contact: 'Current User', phone: '+86 138 0000 0000',
       country: document.getElementById('wh-country').value || 'CN',
       state: document.getElementById('wh-state').value || 'SH',
       city: document.getElementById('wh-city').value || 'PD',
@@ -1169,12 +1205,13 @@ function renderSkuTable() {
       <td>${s.zoneCode}</td>
       <td><span class="barcode-cell" title="${s.barcodes.join('\n')}">${s.barcode}</span></td>
       <td>${s.pan || '-'}</td>
+      <td class="ob-wrap" title="${(s.stores || '').replace(/"/g, '&quot;')}">${s.stores || '—'}</td>
       <td>${isAdminUser()
         ? `<a class="btn-link" onclick="openAdjustment('${s.skuId}','${s.zoneCode}')">Inventory Adjustment</a>`
         : `<span class="text-muted" title="Admin only" style="color:#999;cursor:not-allowed">Admin only</span>`}
       </td>
     </tr>
-  `).join('') || '<tr><td colspan="12" style="text-align:center;color:#999">No SKU rows in current warehouse context</td></tr>';
+  `).join('') || '<tr><td colspan="13" style="text-align:center;color:#999">No SKU rows in current warehouse context</td></tr>';
 }
 
 function openAdjustment(skuId, zoneCode) {
@@ -1602,7 +1639,7 @@ function populateWarehouseSelects() {
   const options = '<option value="">All</option>' +
     warehouses.map(w => `<option value="${w.id}">${w.id} - ${w.name}</option>`).join('');
 
-  ['zone-filter-warehouse', 'spu-filter-warehouse', 'sku-filter-warehouse', 'record-filter-warehouse'].forEach(id => {
+  ['zone-filter-warehouse', 'spu-filter-warehouse', 'sku-filter-warehouse', 'record-filter-warehouse', 'ob-filter-warehouse'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.innerHTML = options;
   });
@@ -1611,10 +1648,6 @@ function populateWarehouseSelects() {
     document.getElementById('zone-filter-warehouse').value = lockedZoneWarehouse;
   }
   applyWarehouseScopeToFilters();
-  const hideFilters = getWarehouseScope() !== 'all';
-  document.querySelectorAll('.filter-wh-scope').forEach(el => {
-    el.style.display = hideFilters ? 'none' : '';
-  });
 }
 
 function openModal(id) {

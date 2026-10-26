@@ -470,6 +470,57 @@ function normalizeObStatus(status) {
   return status;
 }
 
+function syncOutboundListWarehouseFilterVisibility() {
+  const wrap = document.getElementById('ob-filter-warehouse-wrap');
+  if (!wrap) return;
+  const show = typeof isAdminAllWarehouseScope === 'function' ? isAdminAllWarehouseScope() : (isAdminUser() && getWarehouseScope() === 'all');
+  wrap.style.display = show ? '' : 'none';
+  if (!show) {
+    const sel = document.getElementById('ob-filter-warehouse');
+    if (sel) sel.value = '';
+  }
+}
+
+function findAlternateWarehouseStock(line) {
+  const need = line.qty || 1;
+  const current = normalizeWarehouseId(line.warehouseId);
+  const skuId = line.skuId;
+  const alts = [];
+  const seen = new Set();
+  skuData.forEach(s => {
+    const wh = normalizeWarehouseId(skuWarehouseId(s));
+    if (wh === current) return;
+    if (skuId && s.skuId !== skuId) return;
+    if (!/STO|Storage/i.test((s.zoneCode || '') + s.zone)) return;
+    if ((s.available || 0) < need) return;
+    const key = wh + '|' + s.skuId;
+    if (seen.has(key)) return;
+    seen.add(key);
+    alts.push({ warehouse: wh, skuId: s.skuId, available: s.available });
+  });
+  if (!alts.length && line.productName) {
+    skuData.forEach(s => {
+      if ((s.productName || '') !== line.productName) return;
+      const wh = normalizeWarehouseId(skuWarehouseId(s));
+      if (wh === current) return;
+      if (!/STO|Storage/i.test((s.zoneCode || '') + s.zone)) return;
+      if ((s.available || 0) < need) return;
+      const key = wh + '|' + s.skuId;
+      if (seen.has(key)) return;
+      seen.add(key);
+      alts.push({ warehouse: wh, skuId: s.skuId, available: s.available });
+    });
+  }
+  return alts;
+}
+
+function formatAlternateWarehouseHint(line) {
+  const alts = findAlternateWarehouseStock(line);
+  if (!alts.length) return '';
+  const list = alts.map(a => `${a.warehouse} (${a.skuId} avail ${a.available})`).join('; ');
+  return `<br><span class="hint ob-alt-wh-hint">Other warehouses with stock: ${list}. Consider transfer or re-import for that warehouse.</span>`;
+}
+
 function scopedOutboundLines() {
   const scope = getWarehouseScope();
   return outboundLines.filter(l => scope === 'all' || l.warehouseId === scope);
@@ -482,6 +533,7 @@ function countLinesByTab(tab) {
 }
 
 function renderOutboundOrderList() {
+  syncOutboundListWarehouseFilterVisibility();
   const tabsEl = document.getElementById('ob-list-tabs');
   const body = document.getElementById('ob-order-list-body');
   if (!tabsEl || !body) return;
@@ -514,6 +566,8 @@ function renderOutboundOrderList() {
   if (skuKw) lines = lines.filter(l => l.skuId.toLowerCase().includes(skuKw));
   if (panKw) lines = lines.filter(l => linePan(l).includes(panKw));
   if (timeKw) lines = lines.filter(l => lineMatchesObTimeFilter(l, timeKw));
+  const whFilter = document.getElementById('ob-filter-warehouse')?.value || '';
+  if (whFilter) lines = lines.filter(l => normalizeWarehouseId(l.warehouseId) === normalizeWarehouseId(whFilter));
   const colSpan = 13;
   body.innerHTML = lines.map(l => {
     const st = normalizeObStatus(l.status);
@@ -543,7 +597,7 @@ function setOutboundListTab(tab) {
 }
 
 function resetOutboundListFilters() {
-  ['ob-filter-order', 'ob-filter-sku', 'ob-filter-pan', 'ob-filter-time'].forEach(id => {
+  ['ob-filter-order', 'ob-filter-sku', 'ob-filter-pan', 'ob-filter-time', 'ob-filter-warehouse'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -554,9 +608,27 @@ function toggleOutboundListChecks(on) {
   document.querySelectorAll('#ob-order-list-body .ob-line-check').forEach(el => { el.checked = on; });
 }
 
+function deleteOutboundLine(id) {
+  const line = outboundLines.find(l => l.id === id);
+  if (!line) return;
+  if (normalizeObStatus(line.status) !== 'pending_allocation') {
+    showToast('Only Pending Allocation lines can be deleted.', 'warning');
+    return;
+  }
+  askOutboundConfirm('Delete order line', `Remove ${line.orderNo} / ${line.skuId} from outbound queue?`, () => {
+    outboundLines = outboundLines.filter(l => l.id !== id);
+    const still = outboundLines.some(l => l.outboundNo === line.outboundNo);
+    if (!still) outboundBatches = outboundBatches.filter(b => b.outboundNo !== line.outboundNo);
+    refreshAfterInventoryChange();
+    renderOutboundOrderList();
+    showToast('Order line deleted.', 'success');
+  });
+}
+
 function listRowAction(l, st) {
   if (st === 'pending_allocation') {
-    return `<a class="btn-link" onclick="confirmAllocationLine('${l.id}')">Allocate</a>`;
+    return `<a class="btn-link" onclick="confirmAllocationLine('${l.id}')">Allocate</a>
+      <a class="btn-link danger" onclick="deleteOutboundLine('${l.id}')">Delete</a>`;
   }
   if (st === 'pending_picking') {
     return `<a class="btn-link" onclick="openPackTrackingModal('${l.id}')">Pack &amp; Ship</a>`;
@@ -754,7 +826,7 @@ function confirmAllocationLine(id) {
     refreshAfterInventoryChange();
     renderOutboundOrderList();
     if (document.getElementById('page-outbound-detail')?.classList.contains('active')) renderOutboundDetail();
-    showAllocateResult([{ ok, orderNo: line.orderNo, productName: line.productName }]);
+    showAllocateResult([{ ok, orderNo: line.orderNo, productName: line.productName, line }]);
   });
 }
 
@@ -769,7 +841,7 @@ function confirmAllocationBatch() {
     ids.forEach(id => {
       const line = outboundLines.find(l => l.id === id && normalizeObStatus(l.status) === 'pending_allocation');
       if (!line) return;
-      rows.push({ ok: tryAllocate(line), orderNo: line.orderNo, productName: line.productName });
+      rows.push({ ok: tryAllocate(line), orderNo: line.orderNo, productName: line.productName, line });
     });
     refreshAfterInventoryChange();
     renderOutboundOrderList();
@@ -781,7 +853,8 @@ function confirmAllocationBatch() {
 function showAllocateResult(rows) {
   document.getElementById('ob-result-body').innerHTML = rows.map(r => `
     <p>${r.ok ? '✓' : '!'} ${r.orderNo} / ${r.productName}<br>
-    <span class="hint">${r.ok ? 'Pending Picking · Outbound Occupy recorded.' : 'Still Pending Allocation · insufficient available.'}</span></p>
+    <span class="hint">${r.ok ? 'Pending Picking · Outbound Occupy recorded.' : 'Still Pending Allocation · insufficient available in this warehouse.'}</span>
+    ${!r.ok && r.line ? formatAlternateWarehouseHint(r.line) : ''}</p>
   `).join('') || '<p>No rows.</p>';
   openModal('ob-result-modal');
 }

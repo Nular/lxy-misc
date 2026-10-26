@@ -149,7 +149,8 @@
 
 - 勾选行批量确认；粒度：**订单行 × SKU**（Import 一行一条作业行）。
 - 成功：`line_status → pending_picking`，写入 **zone_code**（目标 STO），写 **Outbound Occupy**。
-- 失败：保持 **pending_allocation**，提示缺货或 SKU 无 STO 行；**不部分占用**（行级原子）。
+- 失败：保持 **pending_allocation**，提示缺货或 SKU 无 STO 行；**不部分占用**（行级原子）。若本仓不足，结果弹层 **提示其他仓库可用库存**（同 SKU 或同 Product Name 的 STO 行），供调拨/改仓参考（一期仅提示，不自动调拨）。
+- **Pending Allocation** 行支持 **Delete** 删除作业行（未占用、未发运）。
 - 并发：`available ≥ qty`（主 PRD §5）。
 
 ### 6.4 打包发运（Pack & Ship）

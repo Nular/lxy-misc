@@ -68,7 +68,7 @@ Dashboard **Quick Actions** 与侧栏 **Inbound** / **Outbound** 跳转对应列
 1. **切换入口**：Admin 在 **侧栏 Warehouse 下拉**选择 All / 指定仓；**仅当用户位于 Home（Dashboard）时**允许切换（非 Home 页操作则 Toast 并回退选择）。
 2. **侧栏展示**：仓管无下拉，只读展示所属仓名称；Admin 旁可展示 **Admin** 角色标识。
 3. **性能**：切换仓库触发多聚合查询，故**不在** Inventory、Record、Zone 等业务页提供切换器。
-4. **筛选 UI 联动**：当上下文为**指定仓库**时，Inventory、Record、Zone Management 等页 **隐藏 Warehouse 筛选**；接口仍强制注入 `warehouse_code`（及用户 id），忽略前端越权参数。
+4. **筛选 UI 联动**：当上下文为**指定仓库**时，Inventory、Record、Zone、Inbound、Outbound 等页 **隐藏 Warehouse 筛选**；当 **Admin + All warehouses** 时，上述列表/搜索 **展示 Warehouse 筛选**（及表单内行级 Warehouse）。接口仍强制注入 `warehouse_code`（及用户 id），忽略前端越权参数。
 5. **切换限制（建议）**：存在未关闭弹窗时禁止切换；可选频控（如每分钟 3 次）；失败保持原上下文并 Toast。
 
 **商品与条码**：商品只读 C 端 Seller 库；SKU 条码仅缓存与展示，不在 WMS 建品、不在 WMS 维护条码主数据。
@@ -81,7 +81,7 @@ Dashboard **Quick Actions** 与侧栏 **Inbound** / **Outbound** 跳转对应列
 
 ### 3.1 仓库列表
 
-筛选/搜索：Warehouse Code、Warehouse、属性、状态；**点击「搜索」后刷新**（非实时）。列表列含 Warehouse Code、Warehouse、Attribute、Status、Zone count（双击进库区管理）、Total、Locked、Available、Address、Owner、Contact/Phone、Operation（Edit/Delete/View/Stock）。
+筛选/搜索：Warehouse Code、Warehouse、属性、状态；**点击「搜索」后刷新**（非实时）。列表列含 Warehouse Code、Warehouse、Attribute、Status、Zone count（双击进库区管理）、Total、Locked、Available、Address、**Warehouse Manager**（多人以 `;` 分隔）、Contact/Phone、Operation（Edit/Delete/View/Stock）。创建/编辑仓：**Warehouse Manager** 自 **Admin 用户目录**多选下拉。
 
 - **Stock**：新标签打开 SPU/SKU Inventory，URL 带 `warehouse_code`；若用户已在 Dashboard 选定单仓，则与全局上下文一致（Warehouse 筛选隐藏时由上下文注入）。
 - 删除、空态、分页等规则同飞书原稿 §3.1。
@@ -243,7 +243,7 @@ WMS **不在入库页面创建 SKU 主数据**；仓内可作业前提如下：
 
 筛选：同 5.1 + SKU ID。
 
-表格列：SKU ID、Specification、Product Name、Total、Locked、Available、Warehouse、**Zone**、Zone Code、Primary Barcode、PAN、Operation（库存调整 §5.3）。
+表格列：SKU ID、Specification、Product Name、Total、Locked、Available、Warehouse、**Zone**、Zone Code、Primary Barcode、PAN、**Store**（店铺名称，多个以 `;` 分隔，只读同步自 Admin/Seller）、Operation（库存调整 §5.3）。
 
 从仓库 **Stock** 跳转：URL 带 `warehouse_code`；参数丢失则展示全部并提示手动选择（若已实现全局单仓上下文，则以上下文为准）。
 
