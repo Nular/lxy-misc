@@ -180,7 +180,7 @@
 | **MerchantOrderID** | **Order No.** | 同一 ID 可多行（多 SKU） |
 | **ItemQuantity** | **Qty** | 正整数；**优先**于 ItemDesc 内数量 |
 | **ItemDesc** | Product Name + SKU ID | 解析 `qty*Product Name-SKU`（可含【】）；示例：`1*Wireless Bluetooth Earbuds Pro-SKU-10001-BK` |
-| **Shop**（可选） | **Store**（列表/流水展示） | 店铺名；缺省为空；**Manual outbound** 固定 **—** |
+| **Shop**（可选） | 作业行 **Store**（Outbound 列表）+ 流水详情 **Shop** | 店铺名；缺省为空；**Manual outbound** 列表与详情均为 **—** |
 
 - 支持 **.xlsx / .xls / .csv**；xlsx 解析依赖内置 XLSX（与入库一致）。
 - **仓库**：Import 弹窗选仓仅 **Admin + 上下文 All**；仓管固定所属仓。

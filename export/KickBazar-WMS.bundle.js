@@ -1368,20 +1368,13 @@ function getOutboundRecordSubFilter() {
   return activeSub?.dataset?.outboundSub || 'all';
 }
 
-function syncRecordStoreColumnVisibility() {
-  const show = currentRecordTab === 'outbound';
-  document.querySelectorAll('.record-col-store').forEach(el => { el.hidden = !show; });
-}
-
-function recordStoreDisplay(r) {
+function outboundRecordShopDisplay(r) {
   if (r.type === 'Manual outbound') return '—';
-  if (!isOutboundRecordType(r.type)) return '—';
   const shop = (r.shop || '').trim();
   return shop || '—';
 }
 
 function renderRecords() {
-  syncRecordStoreColumnVisibility();
   const tbody = document.getElementById('record-table-body');
   let data = [];
 
@@ -1432,12 +1425,8 @@ function renderRecords() {
     'Manual outbound': 'type-deduct'
   };
 
-  const showStoreCol = currentRecordTab === 'outbound';
   tbody.innerHTML = recordListCache.map((r, idx) => {
     const qtyClass = r.qty.startsWith('+') ? 'up' : r.qty.startsWith('-') ? 'down' : '';
-    const storeCell = showStoreCol
-      ? `<td class="record-col-store">${recordStoreDisplay(r)}</td>`
-      : '';
     return `
       <tr class="record-row-clickable" onclick="openRecordDetail(${idx})" title="View detail">
         <td>${r.time}</td>
@@ -1448,7 +1437,6 @@ function renderRecords() {
         <td class="stock-change">${formatAfterChangeHtml(r)}</td>
         <td class="${typeClass[r.type] || ''}">${r.type}</td>
         <td>${r.order}</td>
-        ${storeCell}
         <td>${r.operator}</td>
         <td style="text-align:center">${recordViewButtonHtml(idx)}</td>
       </tr>
@@ -1571,7 +1559,7 @@ function renderOutboundRecordDetailHtml(r) {
       ${detailRow('Outbound No.', r.outboundNo || r.order)}
       ${detailRow('Operator', r.operator)}
       ${detailRow('Related Order No.', r.relatedOrderNo || '—')}
-      ${detailRow('Store', recordStoreDisplay(r))}
+      ${detailRow('Shop', outboundRecordShopDisplay(r))}
       ${detailRow('Shipping No.', r.shippingNo || '—')}
     </div>`;
   if (r.type === 'Manual outbound') {
