@@ -116,7 +116,7 @@
 | 2 | **Import / Export**：上传 **订单列表.xlsx**；**Use sample file** / **Download sample .xlsx**；导入前 **行级校验面板**（对齐入库 Import 体验） |
 | 3 | **Manual outbound** 弹窗：SKU ID（只读）→ Product Name（模糊）→ SKU（规格）→ QTY、Reason、Remarks |
 | 4 | 行内 / 批量 **Pack & Ship**：表格确认行 + **Shipping No.**（导入单必填，Manual 选填） |
-| 5 | 列表列：Time（日期+时间两行）、Outbound No.、SKU ID、Product Name、SKU、**QTY**、**PAN**、Order No.、**Outbound Type**、Operator、Status、Operation |
+| 5 | 列表列：Time（日期+时间两行）、**Warehouse**（Admin + All 时）、Outbound No.、SKU ID、Product Name、SKU、**QTY**、**PAN**、Order No.、**Outbound Type**、Operator、Status、Operation |
 | 6 | 筛选：Order No.、SKU ID、**PAN（8 位）**、Time（`datetime-local`，展示时间 ≥ 筛选时间） |
 | 7 | **Outbound Detail**（按批次）：行表、Export Shipping Order、Import Tracking（可选） |
 | 8 | **On Hold**（缺货/待补货行）列表与 **Re-allocate** |
@@ -149,7 +149,7 @@
 
 - 勾选行批量确认；粒度：**订单行 × SKU**（Import 一行一条作业行）。
 - 成功：`line_status → pending_picking`，写入 **zone_code**（目标 STO），写 **Outbound Occupy**。
-- 失败：保持 **pending_allocation**，提示缺货或 SKU 无 STO 行；**不部分占用**（行级原子）。若本仓不足，结果弹层 **提示其他仓库可用库存**（同 SKU 或同 Product Name 的 STO 行），供调拨/改仓参考（一期仅提示，不自动调拨）。
+- 失败：保持 **pending_allocation**，提示缺货或 SKU 无 STO 行；**不部分占用**（行级原子）。若本仓不足，后端按**同一 SKU ID** 检索其他仓库 **STO** 可用量并汇总；结果弹层在缺货文案旁展示 **`Other warehouses: {仓库名} {可用量}, …`**（一期仅提示，不自动调拨）。
 - **Pending Allocation** 行支持 **Delete** 删除作业行（未占用、未发运）。
 - 并发：`available ≥ qty`（主 PRD §5）。
 

@@ -471,54 +471,54 @@ function normalizeObStatus(status) {
 }
 
 function syncOutboundListWarehouseFilterVisibility() {
-  const wrap = document.getElementById('ob-filter-warehouse-wrap');
-  if (!wrap) return;
   const show = typeof isAdminAllWarehouseScope === 'function' ? isAdminAllWarehouseScope() : (isAdminUser() && getWarehouseScope() === 'all');
-  wrap.style.display = show ? '' : 'none';
-  if (!show) {
-    const sel = document.getElementById('ob-filter-warehouse');
-    if (sel) sel.value = '';
+  const wrap = document.getElementById('ob-filter-warehouse-wrap');
+  if (wrap) {
+    wrap.style.display = show ? '' : 'none';
+    if (!show) {
+      const sel = document.getElementById('ob-filter-warehouse');
+      if (sel) sel.value = '';
+    }
   }
+  const th = document.getElementById('outbound-th-warehouse');
+  if (th) th.hidden = !show;
 }
 
-function findAlternateWarehouseStock(line) {
-  const need = line.qty || 1;
-  const current = normalizeWarehouseId(line.warehouseId);
+/** Same SKU in other warehouses (STO); sums available per warehouse (prototype “backend” lookup). */
+function findAlternateWarehouseStockSameSku(line) {
   const skuId = line.skuId;
-  const alts = [];
-  const seen = new Set();
+  if (!skuId) return [];
+  const current = normalizeWarehouseId(line.warehouseId);
+  const byWh = new Map();
   skuData.forEach(s => {
+    if (s.skuId !== skuId) return;
     const wh = normalizeWarehouseId(skuWarehouseId(s));
     if (wh === current) return;
-    if (skuId && s.skuId !== skuId) return;
     if (!/STO|Storage/i.test((s.zoneCode || '') + s.zone)) return;
-    if ((s.available || 0) < need) return;
-    const key = wh + '|' + s.skuId;
-    if (seen.has(key)) return;
-    seen.add(key);
-    alts.push({ warehouse: wh, skuId: s.skuId, available: s.available });
+    const av = Number(s.available) || 0;
+    if (av <= 0) return;
+    byWh.set(wh, (byWh.get(wh) || 0) + av);
   });
-  if (!alts.length && line.productName) {
-    skuData.forEach(s => {
-      if ((s.productName || '') !== line.productName) return;
-      const wh = normalizeWarehouseId(skuWarehouseId(s));
-      if (wh === current) return;
-      if (!/STO|Storage/i.test((s.zoneCode || '') + s.zone)) return;
-      if ((s.available || 0) < need) return;
-      const key = wh + '|' + s.skuId;
-      if (seen.has(key)) return;
-      seen.add(key);
-      alts.push({ warehouse: wh, skuId: s.skuId, available: s.available });
-    });
-  }
-  return alts;
+  return [...byWh.entries()].map(([wh, available]) => ({
+    warehouseCode: wh,
+    warehouseName: typeof warehouseDisplayName === 'function' ? warehouseDisplayName(wh) : wh,
+    available
+  }));
 }
 
 function formatAlternateWarehouseHint(line) {
-  const alts = findAlternateWarehouseStock(line);
+  const alts = findAlternateWarehouseStockSameSku(line);
   if (!alts.length) return '';
-  const list = alts.map(a => `${a.warehouse} (${a.skuId} avail ${a.available})`).join('; ');
-  return `<br><span class="hint ob-alt-wh-hint">Other warehouses with stock: ${list}. Consider transfer or re-import for that warehouse.</span>`;
+  const list = alts.map(a => `${a.warehouseName} ${a.available}`).join(', ');
+  return `<span class="ob-alt-wh-hint">Other warehouses: ${list}</span>`;
+}
+
+function outboundListWarehouseCell(warehouseId) {
+  const show = typeof isAdminAllWarehouseScope === 'function' && isAdminAllWarehouseScope();
+  if (!show) return '';
+  const code = formatCanonicalWarehouseCode(warehouseId);
+  const label = typeof warehouseDisplayName === 'function' ? warehouseDisplayName(code) : code;
+  return `<td>${code}<br><span class="hint">${label}</span></td>`;
 }
 
 function scopedOutboundLines() {
@@ -568,7 +568,8 @@ function renderOutboundOrderList() {
   if (timeKw) lines = lines.filter(l => lineMatchesObTimeFilter(l, timeKw));
   const whFilter = document.getElementById('ob-filter-warehouse')?.value || '';
   if (whFilter) lines = lines.filter(l => normalizeWarehouseId(l.warehouseId) === normalizeWarehouseId(whFilter));
-  const colSpan = 13;
+  const showWhCol = typeof isAdminAllWarehouseScope === 'function' && isAdminAllWarehouseScope();
+  const colSpan = showWhCol ? 14 : 13;
   body.innerHTML = lines.map(l => {
     const st = normalizeObStatus(l.status);
     const holdHint = l.holdReason && l.outboundType !== 'manual' ? `<div class="ob-hold-hint">${l.holdReason}</div>` : '';
@@ -576,6 +577,7 @@ function renderOutboundOrderList() {
     return `<tr>
       <td><input type="checkbox" class="ob-line-check" value="${l.id}"></td>
       <td>${formatObListTimeCell(l)}</td>
+      ${outboundListWarehouseCell(l.warehouseId)}
       <td><a class="btn-link" onclick="openOutboundDetail('${l.outboundNo}')">${l.outboundNo}</a></td>
       <td>${l.skuId}</td>
       <td class="ob-wrap">${l.productName}${holdHint}</td>
@@ -851,11 +853,13 @@ function confirmAllocationBatch() {
 }
 
 function showAllocateResult(rows) {
-  document.getElementById('ob-result-body').innerHTML = rows.map(r => `
-    <p>${r.ok ? '✓' : '!'} ${r.orderNo} / ${r.productName}<br>
-    <span class="hint">${r.ok ? 'Pending Picking · Outbound Occupy recorded.' : 'Still Pending Allocation · insufficient available in this warehouse.'}</span>
-    ${!r.ok && r.line ? formatAlternateWarehouseHint(r.line) : ''}</p>
-  `).join('') || '<p>No rows.</p>';
+  document.getElementById('ob-result-body').innerHTML = rows.map(r => {
+    if (r.ok) {
+      return `<p>✓ ${r.orderNo} / ${r.productName}<br><span class="hint">Pending Picking · Outbound Occupy recorded.</span></p>`;
+    }
+    const alt = r.line ? formatAlternateWarehouseHint(r.line) : '';
+    return `<p>! ${r.orderNo} / ${r.productName}<br><span class="hint">Insufficient available in this warehouse.${alt ? ` ${alt}` : ''}</span></p>`;
+  }).join('') || '<p>No rows.</p>';
   openModal('ob-result-modal');
 }
 

@@ -732,13 +732,24 @@ function populateInboundListFilters() {
 
 function syncInboundListWarehouseFilterVisibility() {
   const wrap = document.getElementById('inbound-filter-warehouse-wrap');
-  if (!wrap) return;
   const show = typeof isAdminAllWarehouseScope === 'function' ? isAdminAllWarehouseScope() : (isAdminUser() && getWarehouseScope() === 'all');
-  wrap.style.display = show ? '' : 'none';
-  if (!show) {
-    const sel = document.getElementById('inbound-filter-warehouse');
-    if (sel) sel.value = '';
+  if (wrap) {
+    wrap.style.display = show ? '' : 'none';
+    if (!show) {
+      const sel = document.getElementById('inbound-filter-warehouse');
+      if (sel) sel.value = '';
+    }
   }
+  const th = document.getElementById('inbound-th-warehouse');
+  if (th) th.hidden = !show;
+}
+
+function inboundListWarehouseCell(warehouseCode) {
+  const show = typeof isAdminAllWarehouseScope === 'function' && isAdminAllWarehouseScope();
+  if (!show) return '';
+  const code = normalizeWarehouseId(warehouseCode || '');
+  const label = typeof warehouseDisplayName === 'function' ? warehouseDisplayName(code) : code;
+  return `<td>${code}<br><span class="hint">${label}</span></td>`;
 }
 
 function receiptDateKey(updatedAt) {
@@ -815,9 +826,12 @@ function renderInboundReceiptList() {
   const pageRows = rows.slice(start, start + pageSize);
 
   document.getElementById('inbound-list-total').textContent = total;
+  const showWhCol = typeof isAdminAllWarehouseScope === 'function' && isAdminAllWarehouseScope();
+  const emptyColspan = showWhCol ? 9 : 8;
   tbody.innerHTML = pageRows.map(r => `
     <tr>
       <td>${r.updatedAt}</td>
+      ${inboundListWarehouseCell(r.warehouseCode)}
       <td><strong>${r.receiptNo}</strong></td>
       <td>${formatInboundListPurchaseOrder(r)}</td>
       <td>${formatInboundListShippingNo(r)}</td>
@@ -826,7 +840,7 @@ function renderInboundReceiptList() {
       <td>${r.operator || '—'}</td>
       <td style="text-align:center">${inboundViewButton(r.receiptNo)}</td>
     </tr>
-  `).join('') || '<tr><td colspan="8" style="text-align:center;color:#999">No data</td></tr>';
+  `).join('') || `<tr><td colspan="${emptyColspan}" style="text-align:center;color:#999">No data</td></tr>`;
 
   const pagBar = document.getElementById('inbound-pagination-info');
   if (pagBar) {

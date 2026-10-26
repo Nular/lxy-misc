@@ -317,6 +317,12 @@ function isAdminAllWarehouseScope() {
   return isAdminUser() && getWarehouseScope() === 'all';
 }
 
+function warehouseDisplayName(warehouseId) {
+  const id = normalizeWarehouseId(warehouseId);
+  const w = warehouses.find(x => normalizeWarehouseId(x.id) === id);
+  return w ? w.name : id;
+}
+
 function applyAdminAllWarehouseFilterVisibility() {
   const show = isAdminAllWarehouseScope();
   document.querySelectorAll('.filter-wh-scope').forEach(el => {
@@ -415,6 +421,7 @@ function initUserRole() {
 
 const skuData = [
   { skuId: 'SKU-10001-BK', spec: 'Black; M', productName: 'Wireless Bluetooth Earbuds Pro', total: 1200, locked: 200, available: 1000, warehouse: 'Shanghai Main Warehouse', zone: 'Storage Zone', zoneCode: 'SH001STO', warehouseCode: 'SH001', barcode: 'EAN: 6901234567890', pan: '69012378', purchasePrice: '18.50', supplier: 'Shenzhen Audio Supply Co.', stores: 'KickBazar Official Store; Tmall Global', barcodes: ['EAN: 6901234567890', 'UPC: 012345678901', 'PAN: 69012378'] },
+  { skuId: 'SKU-10001-BK', spec: 'Black; M', productName: 'Wireless Bluetooth Earbuds Pro', total: 120, locked: 0, available: 120, warehouse: 'Beijing Distribution Center', zone: 'Storage Zone', zoneCode: 'BJ001STO', warehouseCode: 'BJ001', barcode: 'EAN: 6901234567890', pan: '69012378', purchasePrice: '18.50', supplier: 'Shenzhen Audio Supply Co.', stores: 'Tmall Global', barcodes: ['EAN: 6901234567890'] },
   { skuId: 'SKU-10001-WH', spec: 'White; L', productName: 'Wireless Bluetooth Earbuds Pro', total: 980, locked: 150, available: 830, warehouse: 'Shanghai Main Warehouse', zone: 'Storage Zone', zoneCode: 'SH001STO', warehouseCode: 'SH001', barcode: 'EAN: 6901234567891', pan: '69012379', purchasePrice: '18.50', supplier: 'Shenzhen Audio Supply Co.', stores: 'KickBazar Official Store', barcodes: ['EAN: 6901234567891'] },
   { skuId: 'SKU-10001-BL', spec: 'Blue; XS', productName: 'Wireless Bluetooth Earbuds Pro', total: 400, locked: 70, available: 330, warehouse: 'Beijing Distribution Center', zone: 'Storage Zone', zoneCode: 'BJ001STO', warehouseCode: 'BJ001', barcode: 'UPC: 012345678902', pan: 'KB-10001-BL', purchasePrice: '17.20', supplier: 'Shenzhen Audio Supply Co.', stores: 'Tmall Global', barcodes: ['UPC: 012345678902', 'PAN: KB-10001-BL'] },
   { skuId: 'SKU-10002-42', spec: '42mm Silver', productName: 'Smart Watch Series X', total: 900, locked: 160, available: 740, warehouse: 'Shanghai Main Warehouse', zone: 'Storage Zone', zoneCode: 'SH001STO', warehouseCode: 'SH001', barcode: 'EAN: 6901234567900', pan: '45679001', purchasePrice: '42.00', supplier: 'Huizhou Wearables Ltd.', stores: 'KickBazar Official Store; Shopee SG', barcodes: ['EAN: 6901234567900'] },
@@ -2428,13 +2435,24 @@ function populateInboundListFilters() {
 
 function syncInboundListWarehouseFilterVisibility() {
   const wrap = document.getElementById('inbound-filter-warehouse-wrap');
-  if (!wrap) return;
   const show = typeof isAdminAllWarehouseScope === 'function' ? isAdminAllWarehouseScope() : (isAdminUser() && getWarehouseScope() === 'all');
-  wrap.style.display = show ? '' : 'none';
-  if (!show) {
-    const sel = document.getElementById('inbound-filter-warehouse');
-    if (sel) sel.value = '';
+  if (wrap) {
+    wrap.style.display = show ? '' : 'none';
+    if (!show) {
+      const sel = document.getElementById('inbound-filter-warehouse');
+      if (sel) sel.value = '';
+    }
   }
+  const th = document.getElementById('inbound-th-warehouse');
+  if (th) th.hidden = !show;
+}
+
+function inboundListWarehouseCell(warehouseCode) {
+  const show = typeof isAdminAllWarehouseScope === 'function' && isAdminAllWarehouseScope();
+  if (!show) return '';
+  const code = normalizeWarehouseId(warehouseCode || '');
+  const label = typeof warehouseDisplayName === 'function' ? warehouseDisplayName(code) : code;
+  return `<td>${code}<br><span class="hint">${label}</span></td>`;
 }
 
 function receiptDateKey(updatedAt) {
@@ -2511,9 +2529,12 @@ function renderInboundReceiptList() {
   const pageRows = rows.slice(start, start + pageSize);
 
   document.getElementById('inbound-list-total').textContent = total;
+  const showWhCol = typeof isAdminAllWarehouseScope === 'function' && isAdminAllWarehouseScope();
+  const emptyColspan = showWhCol ? 9 : 8;
   tbody.innerHTML = pageRows.map(r => `
     <tr>
       <td>${r.updatedAt}</td>
+      ${inboundListWarehouseCell(r.warehouseCode)}
       <td><strong>${r.receiptNo}</strong></td>
       <td>${formatInboundListPurchaseOrder(r)}</td>
       <td>${formatInboundListShippingNo(r)}</td>
@@ -2522,7 +2543,7 @@ function renderInboundReceiptList() {
       <td>${r.operator || '—'}</td>
       <td style="text-align:center">${inboundViewButton(r.receiptNo)}</td>
     </tr>
-  `).join('') || '<tr><td colspan="8" style="text-align:center;color:#999">No data</td></tr>';
+  `).join('') || `<tr><td colspan="${emptyColspan}" style="text-align:center;color:#999">No data</td></tr>`;
 
   const pagBar = document.getElementById('inbound-pagination-info');
   if (pagBar) {
@@ -3619,54 +3640,54 @@ function normalizeObStatus(status) {
 }
 
 function syncOutboundListWarehouseFilterVisibility() {
-  const wrap = document.getElementById('ob-filter-warehouse-wrap');
-  if (!wrap) return;
   const show = typeof isAdminAllWarehouseScope === 'function' ? isAdminAllWarehouseScope() : (isAdminUser() && getWarehouseScope() === 'all');
-  wrap.style.display = show ? '' : 'none';
-  if (!show) {
-    const sel = document.getElementById('ob-filter-warehouse');
-    if (sel) sel.value = '';
+  const wrap = document.getElementById('ob-filter-warehouse-wrap');
+  if (wrap) {
+    wrap.style.display = show ? '' : 'none';
+    if (!show) {
+      const sel = document.getElementById('ob-filter-warehouse');
+      if (sel) sel.value = '';
+    }
   }
+  const th = document.getElementById('outbound-th-warehouse');
+  if (th) th.hidden = !show;
 }
 
-function findAlternateWarehouseStock(line) {
-  const need = line.qty || 1;
-  const current = normalizeWarehouseId(line.warehouseId);
+/** Same SKU in other warehouses (STO); sums available per warehouse (prototype “backend” lookup). */
+function findAlternateWarehouseStockSameSku(line) {
   const skuId = line.skuId;
-  const alts = [];
-  const seen = new Set();
+  if (!skuId) return [];
+  const current = normalizeWarehouseId(line.warehouseId);
+  const byWh = new Map();
   skuData.forEach(s => {
+    if (s.skuId !== skuId) return;
     const wh = normalizeWarehouseId(skuWarehouseId(s));
     if (wh === current) return;
-    if (skuId && s.skuId !== skuId) return;
     if (!/STO|Storage/i.test((s.zoneCode || '') + s.zone)) return;
-    if ((s.available || 0) < need) return;
-    const key = wh + '|' + s.skuId;
-    if (seen.has(key)) return;
-    seen.add(key);
-    alts.push({ warehouse: wh, skuId: s.skuId, available: s.available });
+    const av = Number(s.available) || 0;
+    if (av <= 0) return;
+    byWh.set(wh, (byWh.get(wh) || 0) + av);
   });
-  if (!alts.length && line.productName) {
-    skuData.forEach(s => {
-      if ((s.productName || '') !== line.productName) return;
-      const wh = normalizeWarehouseId(skuWarehouseId(s));
-      if (wh === current) return;
-      if (!/STO|Storage/i.test((s.zoneCode || '') + s.zone)) return;
-      if ((s.available || 0) < need) return;
-      const key = wh + '|' + s.skuId;
-      if (seen.has(key)) return;
-      seen.add(key);
-      alts.push({ warehouse: wh, skuId: s.skuId, available: s.available });
-    });
-  }
-  return alts;
+  return [...byWh.entries()].map(([wh, available]) => ({
+    warehouseCode: wh,
+    warehouseName: typeof warehouseDisplayName === 'function' ? warehouseDisplayName(wh) : wh,
+    available
+  }));
 }
 
 function formatAlternateWarehouseHint(line) {
-  const alts = findAlternateWarehouseStock(line);
+  const alts = findAlternateWarehouseStockSameSku(line);
   if (!alts.length) return '';
-  const list = alts.map(a => `${a.warehouse} (${a.skuId} avail ${a.available})`).join('; ');
-  return `<br><span class="hint ob-alt-wh-hint">Other warehouses with stock: ${list}. Consider transfer or re-import for that warehouse.</span>`;
+  const list = alts.map(a => `${a.warehouseName} ${a.available}`).join(', ');
+  return `<span class="ob-alt-wh-hint">Other warehouses: ${list}</span>`;
+}
+
+function outboundListWarehouseCell(warehouseId) {
+  const show = typeof isAdminAllWarehouseScope === 'function' && isAdminAllWarehouseScope();
+  if (!show) return '';
+  const code = formatCanonicalWarehouseCode(warehouseId);
+  const label = typeof warehouseDisplayName === 'function' ? warehouseDisplayName(code) : code;
+  return `<td>${code}<br><span class="hint">${label}</span></td>`;
 }
 
 function scopedOutboundLines() {
@@ -3716,7 +3737,8 @@ function renderOutboundOrderList() {
   if (timeKw) lines = lines.filter(l => lineMatchesObTimeFilter(l, timeKw));
   const whFilter = document.getElementById('ob-filter-warehouse')?.value || '';
   if (whFilter) lines = lines.filter(l => normalizeWarehouseId(l.warehouseId) === normalizeWarehouseId(whFilter));
-  const colSpan = 13;
+  const showWhCol = typeof isAdminAllWarehouseScope === 'function' && isAdminAllWarehouseScope();
+  const colSpan = showWhCol ? 14 : 13;
   body.innerHTML = lines.map(l => {
     const st = normalizeObStatus(l.status);
     const holdHint = l.holdReason && l.outboundType !== 'manual' ? `<div class="ob-hold-hint">${l.holdReason}</div>` : '';
@@ -3724,6 +3746,7 @@ function renderOutboundOrderList() {
     return `<tr>
       <td><input type="checkbox" class="ob-line-check" value="${l.id}"></td>
       <td>${formatObListTimeCell(l)}</td>
+      ${outboundListWarehouseCell(l.warehouseId)}
       <td><a class="btn-link" onclick="openOutboundDetail('${l.outboundNo}')">${l.outboundNo}</a></td>
       <td>${l.skuId}</td>
       <td class="ob-wrap">${l.productName}${holdHint}</td>
@@ -3999,11 +4022,13 @@ function confirmAllocationBatch() {
 }
 
 function showAllocateResult(rows) {
-  document.getElementById('ob-result-body').innerHTML = rows.map(r => `
-    <p>${r.ok ? '✓' : '!'} ${r.orderNo} / ${r.productName}<br>
-    <span class="hint">${r.ok ? 'Pending Picking · Outbound Occupy recorded.' : 'Still Pending Allocation · insufficient available in this warehouse.'}</span>
-    ${!r.ok && r.line ? formatAlternateWarehouseHint(r.line) : ''}</p>
-  `).join('') || '<p>No rows.</p>';
+  document.getElementById('ob-result-body').innerHTML = rows.map(r => {
+    if (r.ok) {
+      return `<p>✓ ${r.orderNo} / ${r.productName}<br><span class="hint">Pending Picking · Outbound Occupy recorded.</span></p>`;
+    }
+    const alt = r.line ? formatAlternateWarehouseHint(r.line) : '';
+    return `<p>! ${r.orderNo} / ${r.productName}<br><span class="hint">Insufficient available in this warehouse.${alt ? ` ${alt}` : ''}</span></p>`;
+  }).join('') || '<p>No rows.</p>';
   openModal('ob-result-modal');
 }
 

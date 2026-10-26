@@ -291,6 +291,12 @@ function isAdminAllWarehouseScope() {
   return isAdminUser() && getWarehouseScope() === 'all';
 }
 
+function warehouseDisplayName(warehouseId) {
+  const id = normalizeWarehouseId(warehouseId);
+  const w = warehouses.find(x => normalizeWarehouseId(x.id) === id);
+  return w ? w.name : id;
+}
+
 function applyAdminAllWarehouseFilterVisibility() {
   const show = isAdminAllWarehouseScope();
   document.querySelectorAll('.filter-wh-scope').forEach(el => {
@@ -389,6 +395,7 @@ function initUserRole() {
 
 const skuData = [
   { skuId: 'SKU-10001-BK', spec: 'Black; M', productName: 'Wireless Bluetooth Earbuds Pro', total: 1200, locked: 200, available: 1000, warehouse: 'Shanghai Main Warehouse', zone: 'Storage Zone', zoneCode: 'SH001STO', warehouseCode: 'SH001', barcode: 'EAN: 6901234567890', pan: '69012378', purchasePrice: '18.50', supplier: 'Shenzhen Audio Supply Co.', stores: 'KickBazar Official Store; Tmall Global', barcodes: ['EAN: 6901234567890', 'UPC: 012345678901', 'PAN: 69012378'] },
+  { skuId: 'SKU-10001-BK', spec: 'Black; M', productName: 'Wireless Bluetooth Earbuds Pro', total: 120, locked: 0, available: 120, warehouse: 'Beijing Distribution Center', zone: 'Storage Zone', zoneCode: 'BJ001STO', warehouseCode: 'BJ001', barcode: 'EAN: 6901234567890', pan: '69012378', purchasePrice: '18.50', supplier: 'Shenzhen Audio Supply Co.', stores: 'Tmall Global', barcodes: ['EAN: 6901234567890'] },
   { skuId: 'SKU-10001-WH', spec: 'White; L', productName: 'Wireless Bluetooth Earbuds Pro', total: 980, locked: 150, available: 830, warehouse: 'Shanghai Main Warehouse', zone: 'Storage Zone', zoneCode: 'SH001STO', warehouseCode: 'SH001', barcode: 'EAN: 6901234567891', pan: '69012379', purchasePrice: '18.50', supplier: 'Shenzhen Audio Supply Co.', stores: 'KickBazar Official Store', barcodes: ['EAN: 6901234567891'] },
   { skuId: 'SKU-10001-BL', spec: 'Blue; XS', productName: 'Wireless Bluetooth Earbuds Pro', total: 400, locked: 70, available: 330, warehouse: 'Beijing Distribution Center', zone: 'Storage Zone', zoneCode: 'BJ001STO', warehouseCode: 'BJ001', barcode: 'UPC: 012345678902', pan: 'KB-10001-BL', purchasePrice: '17.20', supplier: 'Shenzhen Audio Supply Co.', stores: 'Tmall Global', barcodes: ['UPC: 012345678902', 'PAN: KB-10001-BL'] },
   { skuId: 'SKU-10002-42', spec: '42mm Silver', productName: 'Smart Watch Series X', total: 900, locked: 160, available: 740, warehouse: 'Shanghai Main Warehouse', zone: 'Storage Zone', zoneCode: 'SH001STO', warehouseCode: 'SH001', barcode: 'EAN: 6901234567900', pan: '45679001', purchasePrice: '42.00', supplier: 'Huizhou Wearables Ltd.', stores: 'KickBazar Official Store; Shopee SG', barcodes: ['EAN: 6901234567900'] },

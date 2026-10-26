@@ -123,6 +123,7 @@
 | 列 | 说明 |
 |----|------|
 | **Time** | 入库完成时间（`updated_at`） |
+| **Warehouse** | **Admin + All warehouses** 时展示（仓库编码 + 名称）；单仓上下文隐藏 |
 | **Inbound No.** | `IN-{YYYYMMDD}{seq3}` |
 | **Purchase Order** | 采购入库显示 `采购单号`；手动入库 `—` |
 | **Shipping No.** | 采购入库显示 `物流单号`；手动入库 `—` |
