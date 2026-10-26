@@ -3178,7 +3178,11 @@ tbody tr.selected {
         <form class="form-grid" id="receipt-editor-form">
           <div class="form-group"><label>Inbound No.</label><input class="readonly" id="receipt-inbound-no-preview" readonly placeholder="Auto on submit"></div>
           <div class="form-group"><label>Inbound Type</label><input class="readonly" id="receipt-type-label" readonly></div>
-          <div class="form-group"><label>Context Warehouse</label><input class="readonly" id="receipt-warehouse" readonly></div>
+          <div class="form-group" id="receipt-warehouse-wrap">
+            <label>Context Warehouse</label>
+            <input class="readonly" id="receipt-warehouse" readonly>
+            <select id="receipt-warehouse-select" hidden onchange="onReceiptContextWarehouseChange()"></select>
+          </div>
           <div class="form-group" id="receipt-purchase-order-wrap" hidden>
             <label>Purchase Order</label>
             <input class="readonly" id="receipt-purchase-order-summary" readonly placeholder="One PO per Inbound (采购单号)">

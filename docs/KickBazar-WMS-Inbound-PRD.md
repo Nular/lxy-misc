@@ -202,7 +202,7 @@
 1. 列表 **+ New Inbound** → **下拉**选择 **Purchase Inbound** 或 **Manual Inbound**（加行后不可再切换）。  
 2. 弹层展示 **Inbound No.** 预览（提交时生成 **`IN-{YYYYMMDD}{seq3}`**）并写账。  
 3. 标题：**New Inbound** / **View Inbound**。  
-4. 头字段（采购）：**Inbound No.** 预览、**Purchase Order**、**Shipping No.**（只读，自解析结果）；**无头 Remarks**。  
+4. 头字段：**Context Warehouse** — 单仓上下文为只读当前仓；**Admin + All warehouses** 时为**下拉必选**（默认首仓，与 Outbound Import 一致），驱动解析/手动搜 SKU 的默认仓及入库单头 `warehouse_code`。**Inbound No.** 预览、**Purchase Order**、**Shipping No.**（只读，自解析结果）；**无头 Remarks**。  
 5. 行表列（采购 / 手动 **统一顺序**）：**Product Name、SKU ID、SKU**（规格/下拉）、Warehouse、Zone（Storage **只读**）、**Purchase Price**、**Order Qty**（采购可编辑；手动为 —）、Receipt Qty、**Supplier**、**PAN**、Remark、Action。Purchase Price / Supplier / PAN 默认自 SKU 主数据带出，可改。  
 6. **Order Qty ≠ Receipt Qty** → 行 **Remark 必填**；未匹配 Product Name **Warn** 可忽略并提交已匹配行；源文件 **保留**（Preview + Download）。  
 7. 仅 **Cancel** 与 **Confirm Stock-In**；行 **Delete All**。

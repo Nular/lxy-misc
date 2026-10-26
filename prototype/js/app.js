@@ -304,6 +304,9 @@ function applyAdminAllWarehouseFilterVisibility() {
   });
   if (typeof syncInboundListWarehouseFilterVisibility === 'function') syncInboundListWarehouseFilterVisibility();
   if (typeof syncOutboundListWarehouseFilterVisibility === 'function') syncOutboundListWarehouseFilterVisibility();
+  if (typeof syncReceiptWarehouseFieldUI === 'function' && document.getElementById('receipt-editor-modal')?.classList.contains('show')) {
+    syncReceiptWarehouseFieldUI();
+  }
 }
 
 function applyWarehouseScopeToFilters() {

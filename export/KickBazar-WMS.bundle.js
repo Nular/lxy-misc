@@ -330,6 +330,9 @@ function applyAdminAllWarehouseFilterVisibility() {
   });
   if (typeof syncInboundListWarehouseFilterVisibility === 'function') syncInboundListWarehouseFilterVisibility();
   if (typeof syncOutboundListWarehouseFilterVisibility === 'function') syncOutboundListWarehouseFilterVisibility();
+  if (typeof syncReceiptWarehouseFieldUI === 'function' && document.getElementById('receipt-editor-modal')?.classList.contains('show')) {
+    syncReceiptWarehouseFieldUI();
+  }
 }
 
 function applyWarehouseScopeToFilters() {
@@ -2298,7 +2301,7 @@ function openNewInboundTask() {
   receiptEditorSource = 'po-import';
   document.getElementById('receipt-type').value = '';
   document.getElementById('receipt-type-label').value = '—';
-  document.getElementById('receipt-warehouse').value = getInboundWarehouseScope();
+  syncReceiptWarehouseFieldUI();
   const poSum = document.getElementById('receipt-purchase-order-summary');
   if (poSum) poSum.value = '';
   const shipSum = document.getElementById('receipt-shipping-no-summary');
@@ -2331,10 +2334,9 @@ function pickInboundEditorType(mode) {
   if (receiptLockedSource && receiptLockedSource !== mode && receiptEditorLines.length) return;
   receiptLockedSource = mode;
   receiptEditorSource = mode;
-  const wh = getInboundWarehouseScope();
   document.getElementById('receipt-type').value = mode === 'po-import' ? 'Purchase Receipt' : 'Manual Receipt';
   document.getElementById('receipt-type-label').value = inboundTypeLabel(document.getElementById('receipt-type').value);
-  document.getElementById('receipt-warehouse').value = wh;
+  syncReceiptWarehouseFieldUI();
   document.getElementById('receipt-editor-body').hidden = false;
   const typeSel = document.getElementById('receipt-type-select');
   if (typeSel) {
@@ -2364,6 +2366,49 @@ function getInboundWarehouseScope() {
   const scope = getWarehouseScope();
   if (scope === 'all') return warehouses[0] ? normalizeWarehouseId(warehouses[0].id) : 'SH001';
   return normalizeWarehouseId(scope);
+}
+
+/** Warehouse for New Inbound editor (header + default for new lines). */
+function getReceiptEditorWarehouseCode() {
+  const scope = getWarehouseScope();
+  if (scope !== 'all' || !isAdminUser()) return getInboundWarehouseScope();
+  const sel = document.getElementById('receipt-warehouse-select');
+  if (sel && !sel.hidden && sel.value) return normalizeWarehouseId(sel.value);
+  return getInboundWarehouseScope();
+}
+
+function syncReceiptWarehouseFieldUI(forceReadonly) {
+  const input = document.getElementById('receipt-warehouse');
+  const select = document.getElementById('receipt-warehouse-select');
+  if (!input || !select) return;
+  const scope = getWarehouseScope();
+  const showPick = !forceReadonly && !receiptEditorReadonly && typeof isAdminAllWarehouseScope === 'function' && isAdminAllWarehouseScope();
+  const code = getReceiptEditorWarehouseCode();
+  if (showPick) {
+    select.innerHTML = warehouses.map(w => {
+      const id = normalizeWarehouseId(w.id);
+      return `<option value="${id}">${formatCanonicalWarehouseCode(id)} — ${w.name}</option>`;
+    }).join('');
+    const cur = normalizeWarehouseId(select.value || code);
+    if ([...select.options].some(o => o.value === cur)) select.value = cur;
+    else select.value = normalizeWarehouseId(code);
+    select.hidden = false;
+    input.hidden = true;
+    input.value = select.value;
+  } else {
+    select.hidden = true;
+    input.hidden = false;
+    const wh = scope !== 'all' ? normalizeWarehouseId(scope) : code;
+    input.value = `${formatCanonicalWarehouseCode(wh)} — ${typeof warehouseDisplayName === 'function' ? warehouseDisplayName(wh) : wh}`;
+  }
+}
+
+function onReceiptContextWarehouseChange() {
+  const input = document.getElementById('receipt-warehouse');
+  const select = document.getElementById('receipt-warehouse-select');
+  if (input && select && !select.hidden) input.value = select.value;
+  const panel = document.getElementById('receipt-manual-suggest');
+  if (panel) panel.hidden = true;
 }
 
 function getDefaultStorageZoneCode(whCode) {
@@ -2652,7 +2697,7 @@ function lineQtyMismatch(line) {
 function renderReceiptEditorLines() {
   renderReceiptEditorLinesHead();
   const ro = receiptEditorReadonly;
-  const whDefault = getInboundWarehouseScope();
+  const whDefault = getReceiptEditorWarehouseCode();
   const zoneRo = ro || receiptZoneReadonlyForSource();
   const poMode = receiptEditorSource === 'po-import';
   const colSpan = 12;
@@ -2804,7 +2849,7 @@ async function startPoListImport() {
       dropped.forEach(r => receiptUnmatched.push({ row: r.row, importProductName: `${r.importProductName} (PO ${r.purchaseOrder})` }));
       poFilterNote = ` One Inbound allows one Purchase Order; kept ${keep}.`;
     }
-    const wh = getInboundWarehouseScope();
+    const wh = getReceiptEditorWarehouseCode();
     receiptEditorLines = [];
     rows.forEach(dr => buildReceiptLineFromPoRow(dr, wh));
     receiptLockedSource = 'po-import';
@@ -2871,7 +2916,7 @@ function confirmReceiptStockIn() {
     showToast('Add at least one SKU line before stock-in.', 'error');
     return;
   }
-  const wh = getInboundWarehouseScope();
+  const wh = getReceiptEditorWarehouseCode();
   for (const line of receiptEditorLines) {
     if (!line.receiptQty || line.receiptQty < 1) {
       showToast('Receipt Qty must be between 1 and 9,999,999.', 'error');
@@ -2917,7 +2962,7 @@ function confirmReceiptStockIn() {
 }
 
 function persistReceipt(status, writeInventory) {
-  const wh = getInboundWarehouseScope();
+  const wh = getReceiptEditorWarehouseCode();
   const zoneCode = getDefaultStorageZoneCode(wh);
   const ships = collectShippingNosFromLines(receiptEditorLines);
   const shippingNo = ships.length === 1 ? ships[0] : (document.getElementById('receipt-shipping-no-summary')?.value?.trim() || '');
@@ -3038,7 +3083,7 @@ function openReceiptSkuPicker() {
 function renderReceiptSkuPickerList() {
   const tbody = document.getElementById('receipt-sku-picker-body');
   if (!tbody) return;
-  const wh = getInboundWarehouseScope();
+  const wh = getReceiptEditorWarehouseCode();
   const kw = (document.getElementById('receipt-sku-picker-search').value || '').trim().toLowerCase();
   let rows = listWarehouseInventorySkus(wh);
   if (kw) {
@@ -3065,7 +3110,7 @@ function toggleReceiptSkuPick(key, on) {
 }
 
 function confirmReceiptSkuPicker() {
-  const wh = getInboundWarehouseScope();
+  const wh = getReceiptEditorWarehouseCode();
   let added = 0;
   receiptSkuPickerSelected.forEach(key => {
     const [skuId, zoneCode] = key.split('|');
@@ -3104,7 +3149,7 @@ function renderReceiptManualSearch() {
     panel.hidden = true;
     return;
   }
-  const wh = getInboundWarehouseScope();
+  const wh = getReceiptEditorWarehouseCode();
   const pool = listWarehouseInventorySkus(wh);
   const names = [];
   const seen = new Set();
