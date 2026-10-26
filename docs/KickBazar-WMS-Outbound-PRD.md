@@ -116,7 +116,7 @@
 | 2 | **Import / Export**：上传 **订单列表.xlsx**；**Use sample file** / **Download sample .xlsx**；导入前 **行级校验面板**（对齐入库 Import 体验） |
 | 3 | **Manual outbound** 弹窗：SKU ID（只读）→ Product Name（模糊）→ SKU（规格）→ QTY、Reason、Remarks |
 | 4 | 行内 / 批量 **Pack & Ship**：表格确认行 + **Shipping No.**（导入单必填，Manual 选填） |
-| 5 | 列表列：Time（日期+时间两行）、**Warehouse**（Admin + All 时）、Outbound No.、SKU ID、Product Name、SKU、**QTY**、**PAN**、Order No.、**Outbound Type**、Operator、Status、Operation |
+| 5 | 列表列：Time（日期+时间两行）、**Warehouse**（Admin + All 时）、Outbound No.、SKU ID、Product Name、SKU、**QTY**、**PAN**、Order No.、**Store**（导入字段 `Shop`；Manual outbound 为 —）、**Outbound Type**、Operator、Status、Operation |
 | 6 | 筛选：Order No.、SKU ID、**PAN（8 位）**、Time（`datetime-local`，展示时间 ≥ 筛选时间） |
 | 7 | **Outbound Detail**（按批次）：行表、Export Shipping Order、Import Tracking（可选） |
 | 8 | **On Hold**（缺货/待补货行）列表与 **Re-allocate** |
@@ -180,6 +180,7 @@
 | **MerchantOrderID** | **Order No.** | 同一 ID 可多行（多 SKU） |
 | **ItemQuantity** | **Qty** | 正整数；**优先**于 ItemDesc 内数量 |
 | **ItemDesc** | Product Name + SKU ID | 解析 `qty*Product Name-SKU`（可含【】）；示例：`1*Wireless Bluetooth Earbuds Pro-SKU-10001-BK` |
+| **Shop**（可选） | **Store**（列表/流水展示） | 店铺名；缺省为空；**Manual outbound** 固定 **—** |
 
 - 支持 **.xlsx / .xls / .csv**；xlsx 解析依赖内置 XLSX（与入库一致）。
 - **仓库**：Import 弹窗选仓仅 **Admin + 上下文 All**；仓管固定所属仓。

@@ -54,6 +54,12 @@ function lineOutboundTypeDisplay(line) {
   return '—';
 }
 
+function lineStoreDisplay(line) {
+  if (line.outboundType === 'manual') return '—';
+  const shop = (line.shop || '').trim();
+  return shop || '—';
+}
+
 function linePan(line) {
   if (line.pan && /^\d{8}$/.test(line.pan)) return line.pan;
   const row = storageSku(line.warehouseId, line.skuId) || skuData.find(s => s.skuId === line.skuId);
@@ -176,7 +182,8 @@ function validateAndResolveOutboundRows(warehouseId, rawRows) {
       'Product Name': resolved.productName,
       'SKU ID': resolved.skuId,
       Specification: resolved.spec,
-      'Order Time': r['Order Time'] || ''
+      'Order Time': r['Order Time'] || '',
+      shop: (r.shop || r.Shop || '').trim()
     });
   });
   return { errors, validRows, ok: errors.length === 0 && validRows.length > 0 };
@@ -244,6 +251,9 @@ function parseOrderListMatrix(matrix) {
   const idxDesc = typeof findHeaderIndex === 'function'
     ? findHeaderIndex(headers, ['itemdesc', 'item desc'])
     : headers.findIndex(h => /itemdesc/i.test(h));
+  const idxShop = typeof findHeaderIndex === 'function'
+    ? findHeaderIndex(headers, ['shop', 'store'])
+    : headers.findIndex(h => /^shop$/i.test(h) || /^store$/i.test(h));
   if (idxOrder < 0 || idxQty < 0 || idxDesc < 0) {
     throw new Error('Required columns: MerchantOrderID, ItemQuantity, ItemDesc');
   }
@@ -256,6 +266,9 @@ function parseOrderListMatrix(matrix) {
     const itemDesc = typeof cellToDisplay === 'function' ? cellToDisplay(line[idxDesc]) : String(line[idxDesc] || '').trim();
     if (!orderNo || !itemDesc) continue;
     const parsed = parseOutboundItemDesc(itemDesc, itemQty);
+    const shop = idxShop >= 0
+      ? (typeof cellToDisplay === 'function' ? cellToDisplay(line[idxShop]) : String(line[idxShop] || '').trim())
+      : '';
     rows.push({
       'MerchantOrderID': orderNo,
       'Order No': orderNo,
@@ -263,7 +276,8 @@ function parseOrderListMatrix(matrix) {
       'Qty': parsed.qty,
       'ItemDesc': itemDesc,
       'Product Name': parsed.productName,
-      'SKU ID': parsed.skuId
+      'SKU ID': parsed.skuId,
+      shop
     });
   }
   return rows;
@@ -363,9 +377,9 @@ function seedOutbound() {
     warehouseCode: formatCanonicalWarehouseCode(wh)
   });
   const samples = [
-    { orderNo: 'SO-20260821001', skuId: 'SKU-10001-BK', name: 'Wireless Bluetooth Earbuds Pro', spec: 'Black; M', qty: 2, status: 'pending_allocation' },
-    { orderNo: 'SO-20260821002', skuId: 'SKU-10001-WH', name: 'Wireless Bluetooth Earbuds Pro', spec: 'White; L', qty: 1, status: 'pending_picking', preOccupy: true },
-    { orderNo: 'SO-20260821003', skuId: 'SKU-10004-01', name: 'USB-C Flash Drive', spec: '128GB', qty: 2, status: 'pending_allocation', holdReason: 'Awaiting allocation (0 available in STO)' }
+    { orderNo: 'SO-20260821001', skuId: 'SKU-10001-BK', name: 'Wireless Bluetooth Earbuds Pro', spec: 'Black; M', qty: 2, status: 'pending_allocation', shop: 'KickBazar Official Store' },
+    { orderNo: 'SO-20260821002', skuId: 'SKU-10001-WH', name: 'Wireless Bluetooth Earbuds Pro', spec: 'White; L', qty: 1, status: 'pending_picking', preOccupy: true, shop: 'Tmall Global' },
+    { orderNo: 'SO-20260821003', skuId: 'SKU-10004-01', name: 'USB-C Flash Drive', spec: '128GB', qty: 2, status: 'pending_allocation', holdReason: 'Awaiting allocation (0 available in STO)', shop: 'KickBazar Official Store' }
   ];
   samples.forEach(s => {
     const line = {
@@ -388,12 +402,13 @@ function seedOutbound() {
       shippedAt: '',
       operator: 'System',
       status: s.status,
-      holdReason: s.holdReason || ''
+      holdReason: s.holdReason || '',
+      shop: s.shop || ''
     };
     if (s.preOccupy) {
       line.zoneCode = 'SH001STO';
       line.zone = 'Storage Zone';
-      occupySku(wh, s.skuId, s.qty, no, s.orderNo);
+      occupySku(wh, s.skuId, s.qty, no, s.orderNo, s.shop);
       line.inboundNo = nextOutboundInboundLinkNo();
       line.allocatedAt = '2026-08-21 09:15:00';
       line.operator = 'Warehouse Manager';
@@ -402,7 +417,7 @@ function seedOutbound() {
   });
 }
 
-function occupySku(warehouseId, skuId, qty, outboundNo, orderNo) {
+function occupySku(warehouseId, skuId, qty, outboundNo, orderNo, shop) {
   const sku = storageSku(warehouseId, skuId);
   if (!sku || sku.available < qty) return false;
   sku.locked += qty;
@@ -421,7 +436,8 @@ function occupySku(warehouseId, skuId, qty, outboundNo, orderNo) {
     relatedOrderNo: orderNo,
     shippingNo: '—',
     shipmentNo: '—',
-    status: 'Pending Picking'
+    status: 'Pending Picking',
+    shop: (shop || '').trim()
   });
   return true;
 }
@@ -453,7 +469,8 @@ function deductSku(line) {
     shippingNo: lineShippingNo(line),
     status: 'Shipped',
     manualReason: isManual ? (line.manualReason || '—') : undefined,
-    manualRemarks: isManual ? (line.manualRemarks || '—') : undefined
+    manualRemarks: isManual ? (line.manualRemarks || '—') : undefined,
+    shop: isManual ? '' : ((line.shop || '').trim())
   });
   return true;
 }
@@ -569,7 +586,7 @@ function renderOutboundOrderList() {
   const whFilter = document.getElementById('ob-filter-warehouse')?.value || '';
   if (whFilter) lines = lines.filter(l => normalizeWarehouseId(l.warehouseId) === normalizeWarehouseId(whFilter));
   const showWhCol = typeof isAdminAllWarehouseScope === 'function' && isAdminAllWarehouseScope();
-  const colSpan = showWhCol ? 14 : 13;
+  const colSpan = showWhCol ? 15 : 14;
   body.innerHTML = lines.map(l => {
     const st = normalizeObStatus(l.status);
     const holdHint = l.holdReason && l.outboundType !== 'manual' ? `<div class="ob-hold-hint">${l.holdReason}</div>` : '';
@@ -585,6 +602,7 @@ function renderOutboundOrderList() {
       <td>${l.qty}</td>
       <td>${linePan(l)}</td>
       <td>${l.orderNo}</td>
+      <td class="ob-wrap">${lineStoreDisplay(l)}</td>
       <td>${lineOutboundTypeDisplay(l)}</td>
       <td>${l.operator || '—'}</td>
       <td>${lineTag(l.status)}</td>
@@ -806,7 +824,7 @@ function tryAllocate(line) {
     line.holdReason = 'Insufficient available inventory';
     return false;
   }
-  if (!occupySku(line.warehouseId, line.skuId, line.qty, line.outboundNo, line.orderNo)) {
+  if (!occupySku(line.warehouseId, line.skuId, line.qty, line.outboundNo, line.orderNo, line.shop)) {
     line.holdReason = 'Insufficient available inventory';
     return false;
   }
@@ -945,8 +963,8 @@ function buildOutboundSampleCsv(warehouseId) {
   const descs = outboundSampleItemDescsForWarehouse(warehouseId);
   if (!descs || !descs.length) return null;
   const orderId = 'MO-DEMO-2026';
-  const header = 'MerchantOrderID,ItemQuantity,ItemDesc';
-  const body = descs.map(d => `${orderId},1,${d}`).join('\n');
+  const header = 'MerchantOrderID,ItemQuantity,ItemDesc,Shop';
+  const body = descs.map(d => `${orderId},1,${d},KickBazar Official Store`).join('\n');
   return `${header}\n${body}`;
 }
 
@@ -954,8 +972,8 @@ function outboundSampleMatrixForWarehouse(warehouseId) {
   const descs = outboundSampleItemDescsForWarehouse(warehouseId);
   if (!descs || !descs.length) return null;
   const orderId = 'MO-DEMO-2026';
-  return [['MerchantOrderID', 'ItemQuantity', 'ItemDesc']].concat(
-    descs.map(d => [orderId, 1, d])
+  return [['MerchantOrderID', 'ItemQuantity', 'ItemDesc', 'Shop']].concat(
+    descs.map(d => [orderId, 1, d, 'KickBazar Official Store'])
   );
 }
 
@@ -1116,7 +1134,8 @@ function normalizeImportRows(raw) {
         'Product Name': parsed.productName,
         'SKU ID': parsed.skuId,
         'Order Time': r['Order Time'] || '',
-        Specification: r.Specification || '—'
+        Specification: r.Specification || '—',
+        shop: (r.shop || r.Shop || '').trim()
       };
     }
     return r;
@@ -1168,7 +1187,8 @@ function runImportOrders() {
       shippedAt: '',
       operator: 'System',
       status: 'pending_allocation',
-      holdReason: ''
+      holdReason: '',
+      shop: (r.shop || '').trim()
     };
     line.pan = linePan(line);
     if (line.qty <= 0) return;

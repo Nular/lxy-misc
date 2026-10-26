@@ -315,7 +315,7 @@ WMS **不在入库页面创建 SKU 主数据**；仓内可作业前提如下：
 | Outbound Deduct | locked↓、total↓（平台订单发运） |
 | Manual outbound | locked↓、total↓（Manual outbound 发运；详情含 **Reason / Remarks**） |
 
-出库详情含 Time、Warehouse、Zone、SKU ID、Product Name、SKU、Qty、After Change、Type、**Outbound No.**、Operator、**Related Order No.**、**Shipping No.** 等；细则见 [`KickBazar-WMS-Outbound-PRD.md`](KickBazar-WMS-Outbound-PRD.md) §9。
+**Outbound** 列表在 **Record → Outbound** Tab 增加 **Store** 列（导入订单取自 `Shop`；Manual outbound 为 **—**）。出库详情含 Time、Warehouse、Zone、SKU ID、Product Name、SKU、Qty、After Change、Type、**Outbound No.**、Operator、**Related Order No.**、**Store**、**Shipping No.** 等；细则见 [`KickBazar-WMS-Outbound-PRD.md`](KickBazar-WMS-Outbound-PRD.md) §9。
 
 ### 6.4 手动调整流水（Tab：Manual Adjustment）
 

@@ -422,12 +422,12 @@ const recordData = {
     { time: '2026-08-17 15:20:11', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10001-WH', productName: 'Wireless Bluetooth Earbuds Pro', specification: 'White; L', qty: '-10', after: { total: 970, locked: 150, available: 820 }, type: 'Manual Adjustment (Decrease)', order: 'ADJ-20260817002', operator: 'Admin', sub: 'manual', direction: 'Decrease', adjQty: '10', adjType: 'Damage (报损)', reason: 'Carton crushed in storage aisle.', attachment: '—' }
   ],
   occupy: [
-    { time: '2026-08-21 11:45:22', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10001-BK', qty: '50', after: { total: 1200, locked: 200, available: 1000 }, type: 'Outbound Occupy', order: 'OUT-20260821005', operator: 'System', outboundNo: 'OUT-20260821005', relatedOrderNo: 'SO-20260821001', shipmentNo: '—', status: 'Allocated' },
+    { time: '2026-08-21 11:45:22', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10001-BK', qty: '50', after: { total: 1200, locked: 200, available: 1000 }, type: 'Outbound Occupy', order: 'OUT-20260821005', operator: 'System', outboundNo: 'OUT-20260821005', relatedOrderNo: 'SO-20260821001', shipmentNo: '—', status: 'Allocated', shop: 'KickBazar Official Store' },
     { time: '2026-08-21 10:30:18', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10002-42', qty: '30', after: { total: 900, locked: 160, available: 740 }, type: 'Outbound Occupy', order: 'OUT-20260821003', operator: 'System' },
     { time: '2026-08-20 15:12:55', warehouse: 'BJ001', zone: 'BJ001STO (Storage Zone)', sku: 'SKU-10003-01', qty: '100', after: { total: 3200, locked: 560, available: 2640 }, type: 'Outbound Occupy', order: 'OUT-20260820008', operator: 'System' }
   ],
   deduct: [
-    { time: '2026-08-21 14:20:33', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10001-WH', qty: '-25', after: { total: 980, locked: 150, available: 830 }, type: 'Outbound Deduct', order: 'OUT-20260820012', operator: 'Li Ming', outboundNo: 'OUT-20260820012', relatedOrderNo: 'SO-20260820012', shipmentNo: 'SHP-SF1029384756', status: 'Shipped' },
+    { time: '2026-08-21 14:20:33', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10001-WH', qty: '-25', after: { total: 980, locked: 150, available: 830 }, type: 'Outbound Deduct', order: 'OUT-20260820012', operator: 'Li Ming', outboundNo: 'OUT-20260820012', relatedOrderNo: 'SO-20260820012', shipmentNo: 'SHP-SF1029384756', status: 'Shipped', shop: 'Tmall Global' },
     { time: '2026-08-20 17:05:41', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10001-BK', qty: '-40', after: { total: 1000, locked: 150, available: 850 }, type: 'Outbound Deduct', order: 'OUT-20260819015', operator: 'Zhang Wei' }
   ],
   unfreeze: [
@@ -1342,7 +1342,20 @@ function getOutboundRecordSubFilter() {
   return activeSub?.dataset?.outboundSub || 'all';
 }
 
+function syncRecordStoreColumnVisibility() {
+  const show = currentRecordTab === 'outbound';
+  document.querySelectorAll('.record-col-store').forEach(el => { el.hidden = !show; });
+}
+
+function recordStoreDisplay(r) {
+  if (r.type === 'Manual outbound') return '—';
+  if (!isOutboundRecordType(r.type)) return '—';
+  const shop = (r.shop || '').trim();
+  return shop || '—';
+}
+
 function renderRecords() {
+  syncRecordStoreColumnVisibility();
   const tbody = document.getElementById('record-table-body');
   let data = [];
 
@@ -1393,8 +1406,12 @@ function renderRecords() {
     'Manual outbound': 'type-deduct'
   };
 
+  const showStoreCol = currentRecordTab === 'outbound';
   tbody.innerHTML = recordListCache.map((r, idx) => {
     const qtyClass = r.qty.startsWith('+') ? 'up' : r.qty.startsWith('-') ? 'down' : '';
+    const storeCell = showStoreCol
+      ? `<td class="record-col-store">${recordStoreDisplay(r)}</td>`
+      : '';
     return `
       <tr class="record-row-clickable" onclick="openRecordDetail(${idx})" title="View detail">
         <td>${r.time}</td>
@@ -1405,6 +1422,7 @@ function renderRecords() {
         <td class="stock-change">${formatAfterChangeHtml(r)}</td>
         <td class="${typeClass[r.type] || ''}">${r.type}</td>
         <td>${r.order}</td>
+        ${storeCell}
         <td>${r.operator}</td>
         <td style="text-align:center">${recordViewButtonHtml(idx)}</td>
       </tr>
@@ -1499,6 +1517,12 @@ function enrichRecordDetail(r) {
     const skuRow = skuData.find(s => s.skuId === row.sku);
     row.productName = row.productName || skuRow?.productName || '—';
     row.specification = row.specification || skuRow?.spec || '—';
+    if (!row.shop && typeof outboundLines !== 'undefined') {
+      const obLine = outboundLines.find(l =>
+        l.skuId === row.sku && (l.outboundNo === row.outboundNo || l.outboundNo === row.order)
+      );
+      if (obLine) row.shop = obLine.shop || '';
+    }
   }
   return row;
 }
@@ -1521,6 +1545,7 @@ function renderOutboundRecordDetailHtml(r) {
       ${detailRow('Outbound No.', r.outboundNo || r.order)}
       ${detailRow('Operator', r.operator)}
       ${detailRow('Related Order No.', r.relatedOrderNo || '—')}
+      ${detailRow('Store', recordStoreDisplay(r))}
       ${detailRow('Shipping No.', r.shippingNo || '—')}
     </div>`;
   if (r.type === 'Manual outbound') {
