@@ -54,7 +54,7 @@
 | 规则 | 说明 |
 |------|------|
 | 库存行 | Import / Manual 仅允许 `(sku_id, warehouse_code, zone_code)` **已存在** 的 **Storage Zone（STO）** 行 |
-| 订单解析 | **ItemDesc** 解析出 `SKU ID` 后，须在目标仓 STO 有行；否则校验失败 |
+| 订单解析 | **优先 PAN** 反查 SKU；兼容 **ItemDesc** / **SKU ID** 列；须在目标仓 STO 有行 |
 | Manual outbound | **Product Name** 模糊匹配 + **SKU（规格）** 下拉；仅 STO 有货 SKU |
 | 禁止 | Import / Manual 流程中 **INSERT** 商品主数据或库存行 |
 
@@ -189,9 +189,9 @@
 
 ### 7.2 导入前校验（与入库对齐）
 
-1. 解析文件 → **Import validation** 面板：每行 Order No.、SKU ID、Product Name、SKU（规格）、Qty、**Check**（OK / 行级错误原因）。
+1. 解析文件 → **Import validation** 面板列序：**Order No. → PAN → SKU ID → Product Name → SKU → Qty → Check**（Product Name / SKU / SKU ID 由 **PAN** 联动填充）。
 2. 全部通过方可点击 **Import**；否则 **Import** 置灰。
-3. 校验失败常见原因：ItemDesc 格式错误、SKU 在目标仓 **无 STO 行**、Qty 非法。
+3. 校验失败常见原因：**PAN 在仓内无 STO 行**、PAN 与 SKU ID 不一致、Qty 非法、缺少 Order No.。
 
 ### 7.3 样例文件（Demo）
 
