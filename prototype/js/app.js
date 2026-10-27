@@ -531,14 +531,17 @@ function getDashboardTotalInventoryUnits() {
     .reduce((sum, s) => sum + (Number(s.total) || 0), 0);
 }
 
-/** Count Inbound No. not yet Stocked In (e.g. Processing). */
-function countDashboardPendingInboundNos() {
+/** Distinct Inbound No. Stocked In today (calendar day, demo uses UTC date on updatedAt). */
+function countDashboardInboundTodayNos() {
   const scopeIds = new Set(dashboardWarehouseIdsInScope());
   const list = typeof inboundReceipts !== 'undefined' ? inboundReceipts : [];
+  const today = new Date().toISOString().slice(0, 10);
   return list.filter(r => {
-    if (r.status === 'Stocked In') return false;
+    if (r.status !== 'Stocked In') return false;
     const wh = normalizeWarehouseId(r.warehouseCode || '');
-    return scopeIds.has(wh);
+    if (!scopeIds.has(wh)) return false;
+    const day = (r.updatedAt || '').slice(0, 10);
+    return day === today;
   }).length;
 }
 
@@ -582,7 +585,7 @@ function countDashboardShippedTodayOutboundNos() {
 function getDashboardKpiMetrics() {
   return {
     totalInventory: getDashboardTotalInventoryUnits(),
-    pendingInbound: countDashboardPendingInboundNos(),
+    inboundToday: countDashboardInboundTodayNos(),
     pendingAllocation: countDashboardOutboundNosByLineStatus('pending_allocation'),
     pendingPicking: countDashboardOutboundNosByLineStatus('pending_picking'),
     shippedToday: countDashboardShippedTodayOutboundNos()
@@ -615,10 +618,10 @@ function renderHome() {
       <span class="kpi-value">${kpi.totalInventory.toLocaleString()}</span>
       <span class="kpi-sub">units · current warehouse scope</span>
     </div>
-    <div class="kpi-card kpi-pending-inbound" onclick="navigateTo('inbound')" title="Inbound not Stocked In">
-      <span class="kpi-label">Pending Inbound</span>
-      <span class="kpi-value">${kpi.pendingInbound}</span>
-      <span class="kpi-sub">inbound nos.</span>
+    <div class="kpi-card kpi-inbound-today" onclick="navigateTo('inbound')" title="Inbound Stocked In today">
+      <span class="kpi-label">Inbound Today</span>
+      <span class="kpi-value">${kpi.inboundToday}</span>
+      <span class="kpi-sub">stocked in today</span>
     </div>
     <div class="kpi-card kpi-allocation" onclick="openOutboundListTab('pending_allocation')">
       <span class="kpi-label">Pending Allocation</span>

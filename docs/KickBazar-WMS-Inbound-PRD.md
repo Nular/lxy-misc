@@ -422,15 +422,15 @@ COMMIT or ROLLBACK all
 
 ## 14 Dashboard 入库指标建议（衔接主 PRD §7.1）
 
-主 PRD 顶部 **5 张 KPI** 中，与入库直接相关为 **「待入库 Pending Inbound」**（与出库三项 KPI 同排展示）：
+主 PRD 顶部 **5 张 KPI** 中，与入库直接相关为 **「今日入库 Inbound Today」**（与出库三项 KPI 同排展示）：
 
 | 建议 | 说明 |
 |------|------|
-| **统计口径** | 当前 `warehouse_context` 下，**Inbound No.** 个数：`status ≠ Stocked In`（含 **Processing** 等未完成上架状态）。 |
+| **统计口径** | 当前 `warehouse_context` 下，**当日**（自然日）**Stocked In** 的 **Inbound No.** 个数（按单头 **`updated_at`** 落日；不含 Processing、不含弹层未 Confirm 数据）。 |
 | **点击跳转** | → **Inbound 列表**；Admin 保留仓库上下文。 |
-| **次级指标（二期）** | 不在首行 6 卡扩容时，可在 Inbound 列表顶栏或 Dashboard 第二行增加：**今日已入库 SKU 行数**、**今日采购入库运单数**、**Unmatched 待处理行数**（解析 Warn 未重试）。 |
-| **与 PO 关系** | Dashboard **不按 PO 聚合**；PO 多运单体现在多个 Pending Inbound；卡片只显示 **待办条数**，详情进列表看 PO/Shipping。 |
-| **告警（可选）** | 当某仓 *Processing* 解析失败或 *Unmatched* 超阈值，Pending Inbound 卡片角标或 Tooltip 提示「需拆单/上架」。 |
+| **次级指标（二期）** | 可在 Inbound 列表顶栏或 Dashboard 第二行增加：**Processing 解析中任务数**、**今日已入库 SKU 行数**、**Unmatched 待处理行数**（解析 Warn 未重试）。 |
+| **与 PO 关系** | Dashboard **不按 PO 聚合**；一张采购运单对应一次 Confirm 后的一个 Inbound No.；卡片为 **当日完成上架单数**，详情进列表看 PO/Shipping。 |
+| **告警（可选）** | Processing / Unmatched 异常不在本 KPI 体现；二期可用独立角标或列表顶栏提示。 |
 
 ---
 

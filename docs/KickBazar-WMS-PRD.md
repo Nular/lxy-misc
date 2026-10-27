@@ -360,7 +360,7 @@ WMS **不在入库页面创建 SKU 主数据**；仓内可作业前提如下：
 | # | 中文 | 英文 | 统计口径 |
 |---|------|------|----------|
 | 1 | 总库存 | Total Inventory | 当前范围内所有 SKU 库存行的 **Σ `total`（实物件数）** |
-| 2 | 待入库 | Pending Inbound | 状态 **非 Stocked In** 的 **Inbound No.** 个数（如 **Processing**） |
+| 2 | 今日入库 | Inbound Today | 当日（自然日）**Confirm Stock-In** 且状态为 **Stocked In** 的 **Inbound No.** 个数（按入库单 **`updated_at`** 落日，与列表一致） |
 | 3 | 待分配 | Pending Allocation | 存在 **≥1** 行 `line_status = pending_allocation` 的 **Outbound No.** 去重个数 |
 | 4 | 待拣货 | Pending Picking | 存在 **≥1** 行 `line_status = pending_picking` 的 **Outbound No.** 去重个数 |
 | 5 | 今日已发货 | Shipped Today | 当日（自然日）存在 **≥1** 行 `line_status = shipped` 的 **Outbound No.** 去重个数 |
@@ -372,7 +372,7 @@ WMS **不在入库页面创建 SKU 主数据**；仓内可作业前提如下：
 | 卡片 | 跳转 |
 |------|------|
 | Total Inventory | Inventory → SPU/SKU Inventory（**默认 SKU Tab**） |
-| Pending Inbound | Inbound 列表 |
+| Inbound Today | Inbound 列表（当日已上架单证） |
 | Pending Allocation | Outbound 列表 → **Pending Allocation** Tab |
 | Pending Picking | Outbound 列表 → **Pending Picking** Tab |
 | Shipped Today | Outbound 列表 → **Shipped** Tab（当日发运口径与列表一致） |

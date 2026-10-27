@@ -1184,8 +1184,8 @@ tbody tr.selected {
 
 .kpi-card.kpi-total { border-top: 3px solid #1677ff; }
 .kpi-card.kpi-total .kpi-value { color: #1677ff; }
-.kpi-card.kpi-pending-inbound { border-top: 3px solid #13c2c2; }
-.kpi-card.kpi-pending-inbound .kpi-value { color: #13c2c2; }
+.kpi-card.kpi-inbound-today { border-top: 3px solid #13c2c2; }
+.kpi-card.kpi-inbound-today .kpi-value { color: #13c2c2; }
 .kpi-card.kpi-allocation { border-top: 3px solid #fa8c16; }
 .kpi-card.kpi-allocation .kpi-value { color: #fa8c16; }
 .kpi-card.kpi-picking { border-top: 3px solid #d48806; }
