@@ -3,7 +3,7 @@
 > **文档性质**：出库模块 **独立 PRD**，与《KickBazar WMS 产品需求说明（仓库与库存）》(`KickBazar-WMS-PRD.md`)、[`KickBazar-WMS-Inbound-PRD.md`](KickBazar-WMS-Inbound-PRD.md) 配套使用。  
 > **范围**：订单行列表（OMS 作业台）、订单导入、**Manual outbound**、分配占用、打包发运、出库批次/详情、与 **Inventory Record → Outbound** 流水联动。  
 > **不包含**：仓库/库区主数据（主 PRD §3–§4）、SKU 零库存初始化（§5.0.1）、入库（入库 PRD）、独立采购单（PO）模块。  
-> **版本**：2026-10-23（对齐离线原型：`prototype/js/outbound.js`、`export/KickBazar-WMS.html`）  
+> **版本**：2026-10-27（订单导入：**SKU ID + PAN** 模板；PAN 优先解析；校验表列序见 §7.2）  
 > **相对 2026-10 初版出库 PRD 的重要变更**：**特殊出库**不再「确认即扣减」；统一为 **Manual outbound** 走 **Pending Allocation → Occupy → Deduct**；列表增加 **Outbound Type**、**PAN**、**QTY** 等（见 §13、附录 A）。
 
 ---
@@ -206,9 +206,13 @@
 - Import 执行：进度条；完成后生成 **Outbound No.（OB…）**、批次 `source_file`、行状态 **pending_allocation**。
 - **不占用、不写流水**，直至 Confirm Allocation。
 
-### 7.5 导出发运表 / 回导运单（可选）
+### 7.5 Admin 订单导出与导出发运表
 
-- **Export Shipping Order**：导出待打包行 CSV，字段含 Outbound No.、Order No.、SKU ID、Tracking 占位等。
+| 场景 | 列顺序（建议） | 说明 |
+|------|----------------|------|
+| **Admin 订单导出模块**（商家后台 → WMS 导入模板） | **第 1 列 SKU ID**、**第 2 列 PAN**、MerchantOrderID、ItemQuantity、Shop（可选） | 与 Import 模板一致，便于运营「导出 → 填单 → 回传 WMS」 |
+| **Export Shipping Order**（WMS 内待打包导出） | Outbound No.、Order No.、**PAN**、SKU ID、Product Name、SKU、Qty、Tracking 占位等 | 与列表 PAN 列对齐 |
+
 - **Import Tracking No.**：按 Order No. + SKU ID 匹配 **Pending Picking** 行，写入 Shipping No. 并 **Shipped + Deduct**（与 Pack & Ship 等效写账）。
 
 ---
@@ -324,6 +328,8 @@ Home 首行 **5** 张 KPI 中，下列 **3** 项来自出库（**Outbound No. �
 | — | 列表 **PAN、QTY**；Time 两行展示；PAN 筛选 |
 | Pack 与 Tracking 分离描述 | **Pack & Ship** 弹窗表格 + Shipping No.（导入必填 / Manual 选填） |
 | Record 仅 Occupy/Deduct | 子筛增加 **Manual**；Type **Manual outbound** + Reason/Remarks |
+| Import 仅 ItemDesc | **SKU ID + PAN 列**；**PAN 优先**解析；校验表含 PAN 列（§7.1–7.2） |
+| Admin 导出无 PAN | 导出模板 **第 1–2 列 SKU ID、PAN**（§7.5） |
 
 ---
 
@@ -339,13 +345,13 @@ Home 首行 **5** 张 KPI 中，下列 **3** 项来自出库（**Outbound No. �
 
 ---
 
-## 附录 A 原型实现摘要（2026-10-23）
+## 附录 A 原型实现摘要（2026-10-27）
 
 供评审 / 测试验收对照（**静态演示数据即可**，非生产接口）：
 
 1. **主列表**：`page-outbound-orders`；状态 Tab 由 `OB_LIST_TABS` 渲染。  
-2. **Import**：`openImportOrders` → `applyOutboundImportPreview` → `runImportOrders`。  
-3. **Sample**：`fillSampleOrderCsv`、`downloadOutboundOrderSampleFile`（按仓 STO 生成 `MO-DEMO-2026` 两行）。  
+2. **Import**：`parseOrderListMatrix`（PAN 列）→ `resolveOutboundSkuByPan` → `applyOutboundImportPreview` → `runImportOrders`；校验表列 **Order No. / PAN / SKU ID / …**。  
+3. **Sample**：`outboundSampleMatrixForWarehouse` 表头 **`SKU ID,PAN,MerchantOrderID,ItemQuantity,Shop`**。  
 4. **Manual**：`openManualOutboundModal` / `submitManualOutbound`；模态框 id `ob-special-modal`。  
 5. **分配 / 打包**：`confirmAllocationBatch`、`openPackTrackingModal`、`submitPackAndShip`。  
 6. **流水**：`recordData.occupy` / `deduct` + Manual 扣减写入 `type: Manual outbound`；`renderOutboundRecordDetailHtml`。  

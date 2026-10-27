@@ -3,7 +3,7 @@
 > **文档性质**：入库模块 **独立 PRD**，与《KickBazar WMS 产品需求说明（仓库与库存）》(`KickBazar-WMS-PRD.md`) 配套使用。  
 > **范围**：入库任务（Inbound No.）列表、新建、采购 xlsx 导入、手动加行、确认上架写账、详情查看、与库存流水联动。  
 > **不包含**：独立 **采购单（PO）模块**（本期不做）；仓库/库区主数据（主 PRD §3–§4）。  
-> **版本**：2026-10-21（对齐原型：`采购.xlsx`、PO / Shipping No.、Record & Inbound 详情）  
+> **版本**：2026-10-27（表单/行表：SKU ID 主键联动；§6.1；出库 PAN 导入见出库 PRD §7）  
 > **原型参考**：`prototype/index.html`、`export/KickBazar-WMS.html`
 
 ---
@@ -85,8 +85,8 @@
 | 2 | **+ New Inbound**：下拉 **Purchase Inbound** / **Manual Inbound**（加行后不可切换） |
 | 3 | 采购：上传 **`采购.xlsx`**（**每次仅允许一个物流单号**）、Product Name 匹配、PO/Shipping 绑定 |
 | 4 | 手动：Product Name 搜索加行 |
-| 5 | 行级 **Warehouse、Receipt Qty**；采购 **Zone=Storage 只读**、**Order Qty 可编辑** |
-| 6 | 行 **Remark**（Order ≠ Receipt 时必填）；行 Delete / Delete All |
+| 5 | 新建弹层：**表单**（Inbound No./Type、Context Warehouse、采购 PO/Shipping）+ **行表**（SKU ID 主键 → Name/SKU 联动；商务列；见 §6.1） |
+| 6 | **Remarks**：采购 Order≠Receipt 必填；**手动每行必填**；行 **Delete（二次确认）** / Delete All |
 | 7 | 列表 **View**（眼睛）；**Inbound Detail** 头信息 + 行表；源文件 **Preview / Download** |
 | 8 | **筛选**：Time、Inbound No.、Inbound Type、Operator（+ Admin 可选 Warehouse） |
 | 9 | 写账生成 **Inbound No.**；同步 **Inventory Record → Inbound** 流水与详情 |
@@ -233,13 +233,13 @@
 | 采购单号 | **Purchase Order** | 头字段 + 列表列；**一单一流水一个 PO** |
 | 物流单号 | **Shipping No.** | 头字段 + 列表列；与 Inbound No. 绑定 |
 | Product Name | **Product Name** | 匹配键（源文件原文展示） |
-| 需求数量 | **Order Qty** | 解析后可 **编辑**；Receipt Qty 默认等于 Order Qty |
+| 需求数量 | **Order Qty** | 解析后 **只读**；Receipt Qty 默认等于 Order Qty，可改 |
 
 **流程**：
 
 1. 上传 xlsx → 校验表头 → **Parse**。  
-2. 按 **Product Name** 匹配当前仓已初始化 SKU；**单 SKU** 自动绑定并反显 **SKU ID**；**多 SKU** 行内 **下拉必选**（规格），选中后反显 SKU ID。  
-3. 填写 **Warehouse**、**Receipt Qty**；**Zone** 默认 Storage Zone 不可改；**Order Qty ≠ Receipt Qty** 时行 **Remark** 必填。  
+2. 按 **Product Name** 匹配当前仓已初始化 SKU；**单 SKU** 自动绑定 **SKU ID** 并联动 Product Name / SKU；**多 SKU** 在 **SKU ID 列下拉必选**。  
+3. 填写 **Warehouse**（Admin+All 行内可选）、**Receipt Qty**；**Zone** 固定 Storage 不可改；**Order Qty ≠ Receipt Qty** 时 **Remarks** 必填。  
 4. **匹配失败**：**Unmatched**（行号 + Product Name）；可忽略 Warn 提交已匹配行。  
 5. **源文件** 系统保留；**Inbound Detail** 支持 **Preview**（表格）与 **Download**（原文件或预览矩阵导出）。  
 6. **多物流单号**：解析前校验整表 `物流单号` 唯一，否则 Toast（中文）：*一次上传仅允许一个物流单号…请拆分 Excel 后分别创建 Inbound*。  
@@ -256,8 +256,8 @@
 | 步骤 | 规则 |
 |------|------|
 | 匹配键 | **Product Name** 列（与商品库名/别名归一化后包含或分词匹配） |
-| 多命中 | 行内 **SKU 下拉必选**；选中后带出 **SKU ID、Spec** |
-| 单命中 | 自动绑定 SKU ID |
+| 多命中 | **SKU ID 列下拉必选**；选中后 **Product Name、SKU（规格）只读联动** |
+| 单命中 | 自动绑定 **SKU ID** 并联动 Name / SKU |
 | 零命中 | Unmatched 列表，不入明细 |
 | 库存行 | 绑定后须存在 `(sku_id, warehouse_code, zone_code)` 行（§2.2） |
 
@@ -296,21 +296,20 @@
 |----------|------|------|--------|------|
 | SKU ID | SKU 编号 | Y | — | 4–50 字符；**§2.2 库存行须存在** |
 | Product Name | 商品名称 | — | — | 匹配后 **只读** |
-| SKU | 规格 | — | — | 展示列名 **SKU**（非 Spec）；多匹配时下拉 |
+| SKU | 规格 | — | — | 展示列名 **SKU**；由 **SKU ID** 联动 **只读** |
 | Shipping No. | 物流单号 | Y（采购） | — | 来自 `物流单号`；头上汇总 |
 | Purchase Order | 采购单号 | Y（采购） | — | 来自 `采购单号` |
-| Order Qty | 需求数量 | N | — | 来自 `需求数量`，采购 **可编辑** |
-| Line Remark | 行备注 | 条件必填 | — | Order Qty ≠ Receipt Qty 时 **必填** |
-| Warehouse | 仓库 | Y | 上下文仓 | 行级可改（仓管仅所属仓） |
+| Order Qty | 需求数量 | N | — | 采购：来自 `需求数量` **只读**；手动：**手输** |
+| Warehouse | 仓库 | Y | 上下文仓 | 单仓只读展示；**Admin+All 行内下拉**（仓管仅所属仓） |
 | **Receipt Qty** | 实际上架数量 | Y | — | 整数 **1–9,999,999**；**唯一写账数量** |
 | Variance | 差异 | — | — | 计算：`Receipt Qty − Order Qty`，只读 |
-| Zone | 库区 | Y | 默认 STO | 须 Enable；`zone_code` |
+| Zone | 库区 | Y | 默认 STO | **不可选**；对应当前 Warehouse 的 **Storage Zone**；须 Enable |
 | Primary Barcode | 条码值 | N | — | **只读展示**（EAN 优先，主 PRD §1.2） |
 | Purchase Price | 采购价 | N | SKU 主数据 | 采购入库 **只读**；手动可展示默认价 |
 | PAN | 平台码 | N | SKU 主数据 | 行展示；可编辑（与原型一致） |
 | Supplier | 供应商 | N | SKU 主数据 | 采购 **只读**；手动 **手输**；1–200 字符 |
-| Line Remarks | 行备注 | 条件/手动必填 | — | 采购：Order≠Receipt 必填；**手动：每行必填** |
-| Remarks（头） | — | — | — | **已取消**；异常仅用行 Remark |
+| Remarks（行） | 行备注 | 条件/手动必填 | — | 采购：Order≠Receipt 必填；**手动：每行必填**；界面列名 **Remarks** |
+| Remarks（头） | — | — | — | **已取消**；异常仅用行 Remarks |
 
 ### 8.2 相对旧稿删除/合并的字段
 
@@ -414,7 +413,10 @@ COMMIT or ROLLBACK all
 | Receipt Type含 Manual Adjustment | **Manual Receipt** |
 | 行 Total / Physical / Variance 写账 | 仅 **Receipt Qty** 写账；Variance 只读对账 |
 | Import/Add 可隐含建 SKU | **§2.2 仅匹配已有库存行** |
-| PAN/Barcode 入库必填编辑 | **只读**；主数据在商品库 |
+| PAN/Barcode 入库必填编辑 | **PAN 行展示可改**；条码主数据在商品库只读 |
+| 行表 Product Name 在前 + Order Qty 可改 | **SKU ID 主键**；Name/SKU 联动；采购 Order Qty **只读** |
+| 手动 Remark 可选 | **手动每行 Remarks 必填** |
+| Delete 无确认 | **Delete 二次确认** |
 | 两种导入类型「采购导入和人工调整」 | **Purchase Receipt / Manual Receipt**；「调整」= ADJ 单 |
 | 未写仓库初始化 | **§2.1 原有库导入 + 零库存行** |
 | ItemDesc xlsx / 头 Remarks | **`采购.xlsx` + Product Name**；行 Remark |
@@ -453,14 +455,14 @@ COMMIT or ROLLBACK all
 
 ---
 
-## 附录 A 原型变更摘要（2026-10-21）
+## 附录 A 原型变更摘要（2026-10-27）
 
-供评审/飞书粘贴用，与实现对齐：
+供评审/飞书粘贴用，与 `prototype/js/inbound.js` 对齐：
 
-1. **列表**：Time、Inbound No.、Purchase Order、Shipping No.、Inbound Type、SKU Qty、Operator、View。  
-2. **新建**：下拉 Purchase / Manual Inbound；采购上传 **`采购.xlsx`**；**单文件单运单号**。  
-3. **绑定**：1 Inbound No. = 1 PO；1 PO → N Shipping No.（跨多个 Inbound）。  
-4. **行编辑**：SKU ID + SKU 列；Zone 只读；Order Qty 可编辑；无头 Remarks。  
-5. **Inbound Detail**：头 8 字段 + 行表 After Change（T/L/A 箭头）。  
-6. **Record Detail（Inbound）**：单页含 PO Preview、Shipping No.、Product Name、SKU。  
-7. **源文件**：Preview + Download 留存。
+1. **列表**：Time、（Admin+All **Warehouse**）、Inbound No.、PO、Shipping No.、Type、SKU Qty、Operator、View。  
+2. **表单**：Inbound No. / Type 只读；Context Warehouse（Admin+All 下拉）；**手动隐藏 PO / Shipping**。  
+3. **行表列序**：SKU ID → Product Name → SKU → Warehouse → Zone（Storage 固定）→ Purchase Price → Order Qty → Receipt Qty → Supplier → PAN → Remarks → Delete（确认）。  
+4. **绑定**：1 Inbound = 1 PO；1 PO → N Shipping（多 Inbound）；1 PO → N **PAN**（多行/多次入库）。  
+5. **采购 xlsx**：单运单；Product Name 解析 → **SKU ID**；Order Qty **只读**。  
+6. **Inbound Detail / Record**：不变（见 §7.4–7.5）。  
+7. **源文件**：Preview + Download。
