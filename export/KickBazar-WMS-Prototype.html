@@ -1332,6 +1332,46 @@ tbody tr.selected {
   margin-bottom: 12px;
 }
 
+.emp-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.emp-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.emp-avatar-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #e6f4ff;
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.emp-avatar-lg {
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  object-fit: cover;
+  margin-top: 8px;
+}
+
+.emp-image-preview {
+  min-height: 8px;
+}
+
+.form-grid .required {
+  color: #ff4d4f;
+}
+
 .editor-mode-hint,
 .editor-lines-toolbar {
   margin-bottom: 12px;
@@ -2181,13 +2221,14 @@ tbody tr.selected {
         <div class="nav-item" data-page="inbound">Inbound</div>
         <div class="nav-item" data-page="outbound-orders">Outbound</div>
 
-        <div class="nav-item parent nav-warehouses-group" data-group="warehouses">
-          <span>Warehouses</span>
+        <div class="nav-item parent nav-system-setting-group" data-group="system-setting">
+          <span>System Setting</span>
           <span class="nav-admin-tag">Admin</span>
           <span class="chevron">▼</span>
         </div>
-        <div class="nav-item sub nav-warehouses-group" data-page="warehouse-management">Warehouse Management</div>
-        <div class="nav-item sub nav-warehouses-group" data-page="zone-management">Zone Management</div>
+        <div class="nav-item sub nav-system-setting-group" data-page="employees">Employees</div>
+        <div class="nav-item sub nav-system-setting-group" data-page="warehouse-management">Warehouse Management</div>
+        <div class="nav-item sub nav-system-setting-group" data-page="zone-management">Zone Management</div>
       </nav>
 
       <!-- Content Area -->
@@ -2237,6 +2278,66 @@ tbody tr.selected {
                   <tbody id="dashboard-activity-table"></tbody>
                 </table>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========== EMPLOYEES (System Setting) ========== -->
+        <div class="page" id="page-employees">
+          <div class="page-header">
+            <h1 class="page-title">Employees</h1>
+            <p class="page-subtitle">Manage warehouse operator accounts and permissions (Admin only)</p>
+          </div>
+          <div class="page-body">
+            <div class="filter-bar module-filter-bar">
+              <div class="filter-item">
+                <label>Search by</label>
+                <select id="emp-search-field">
+                  <option value="name">Name</option>
+                  <option value="email">Email</option>
+                  <option value="phone">Phone</option>
+                  <option value="employeeNo">Employee No.</option>
+                  <option value="status">Status</option>
+                </select>
+              </div>
+              <div class="filter-item filter-grow">
+                <label>Keyword</label>
+                <input type="text" id="emp-search-keyword" placeholder="Search or leave empty for all">
+              </div>
+              <div class="filter-item">
+                <label>Status</label>
+                <select id="emp-filter-status">
+                  <option value="">All</option>
+                  <option value="Enable">Enable</option>
+                  <option value="Disable">Disable</option>
+                </select>
+              </div>
+              <div class="filter-actions">
+                <button class="btn btn-primary" onclick="searchEmployees()">Search</button>
+                <button class="btn" onclick="resetEmployeeFilters()">Reset</button>
+              </div>
+            </div>
+            <div class="toolbar">
+              <span>Total <strong id="emp-list-total">0</strong></span>
+              <button class="btn btn-primary admin-only-action" onclick="openEmployeeModal('create')">+ Add Employee</button>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Employee No.</th>
+                    <th>Image / Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Warehouse</th>
+                    <th>Status</th>
+                    <th>Created at</th>
+                    <th>Last Login at</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="employees-table-body"></tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -2694,6 +2795,7 @@ tbody tr.selected {
                 <thead>
                   <tr>
                     <th>Time</th>
+                    <th class="col-wh-scope" id="inbound-th-warehouse" hidden>Warehouse</th>
                     <th>Inbound No.</th>
                     <th>Purchase Order</th>
                     <th>Shipping No.</th>
@@ -2771,6 +2873,7 @@ tbody tr.selected {
                   <tr>
                     <th style="width:36px"><input type="checkbox" id="ob-list-check-all" onchange="toggleOutboundListChecks(this.checked)"></th>
                     <th>Time</th>
+                    <th class="col-wh-scope" id="outbound-th-warehouse" hidden>Warehouse</th>
                     <th>Outbound No.</th>
                     <th>SKU ID</th>
                     <th>Product Name</th>
@@ -2778,6 +2881,7 @@ tbody tr.selected {
                     <th>QTY</th>
                     <th>PAN</th>
                     <th>Order No.</th>
+                    <th>Store</th>
                     <th>Outbound Type</th>
                     <th>Operator</th>
                     <th>Status</th>
@@ -2864,6 +2968,67 @@ tbody tr.selected {
   </div>
 
   <!-- Create/Edit Warehouse Modal -->
+  <div class="modal-overlay" id="employee-modal">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <span class="modal-title" id="employee-modal-title">Add Employee</span>
+        <button class="modal-close" onclick="closeModal('employee-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form class="form-grid" id="employee-form">
+          <div class="form-group" id="emp-no-wrap" hidden>
+            <label>Employee No.</label>
+            <input class="readonly" id="emp-no-display" readonly>
+          </div>
+          <div class="form-group">
+            <label>Email <span class="required">*</span></label>
+            <input type="email" id="emp-email" maxlength="200" placeholder="user@company.com">
+          </div>
+          <div class="form-group">
+            <label>Phone</label>
+            <input type="text" id="emp-phone" maxlength="30" placeholder="Optional">
+          </div>
+          <div class="form-group" id="emp-password-wrap">
+            <label>Password <span class="required">*</span></label>
+            <input type="password" id="emp-password" autocomplete="new-password">
+          </div>
+          <div class="form-group" id="emp-password2-wrap">
+            <label>Confirm Password <span class="required">*</span></label>
+            <input type="password" id="emp-password2" autocomplete="new-password">
+          </div>
+          <div class="form-group">
+            <label>Warehouse <span class="required">*</span></label>
+            <select id="emp-warehouse"></select>
+          </div>
+          <div class="form-group" id="emp-status-wrap">
+            <label>Status</label>
+            <select id="emp-status">
+              <option value="Enable">Enable</option>
+              <option value="Disable">Disable</option>
+            </select>
+          </div>
+          <div class="form-group" id="emp-name-wrap" hidden>
+            <label>Name</label>
+            <input type="text" id="emp-name" placeholder="Display name">
+          </div>
+          <div class="form-group">
+            <label>Images</label>
+            <input type="file" id="emp-image-file" accept="image/*" onchange="onEmployeeImagePicked(this)">
+            <div id="emp-image-preview" class="emp-image-preview"></div>
+          </div>
+          <div class="form-group form-span-2">
+            <label>Remark</label>
+            <input type="text" id="emp-remark" maxlength="500" placeholder="Optional">
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('employee-modal')">Cancel</button>
+        <button class="btn btn-primary" id="employee-submit-btn" onclick="submitEmployee()">Create</button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-overlay" id="warehouse-modal">
     <div class="modal modal-lg">
       <div class="modal-header">
@@ -3176,7 +3341,11 @@ tbody tr.selected {
         <form class="form-grid" id="receipt-editor-form">
           <div class="form-group"><label>Inbound No.</label><input class="readonly" id="receipt-inbound-no-preview" readonly placeholder="Auto on submit"></div>
           <div class="form-group"><label>Inbound Type</label><input class="readonly" id="receipt-type-label" readonly></div>
-          <div class="form-group"><label>Context Warehouse</label><input class="readonly" id="receipt-warehouse" readonly></div>
+          <div class="form-group" id="receipt-warehouse-wrap">
+            <label>Context Warehouse</label>
+            <input class="readonly" id="receipt-warehouse" readonly>
+            <select id="receipt-warehouse-select" hidden onchange="onReceiptContextWarehouseChange()"></select>
+          </div>
           <div class="form-group" id="receipt-purchase-order-wrap" hidden>
             <label>Purchase Order</label>
             <input class="readonly" id="receipt-purchase-order-summary" readonly placeholder="One PO per Inbound (采购单号)">

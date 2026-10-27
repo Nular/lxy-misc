@@ -1323,6 +1323,46 @@ tbody tr.selected {
   margin-bottom: 12px;
 }
 
+.emp-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.emp-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.emp-avatar-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #e6f4ff;
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.emp-avatar-lg {
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  object-fit: cover;
+  margin-top: 8px;
+}
+
+.emp-image-preview {
+  min-height: 8px;
+}
+
+.form-grid .required {
+  color: #ff4d4f;
+}
+
 .editor-mode-hint,
 .editor-lines-toolbar {
   margin-bottom: 12px;

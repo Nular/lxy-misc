@@ -11,9 +11,10 @@ html = (proto / "index.html").read_text(encoding="utf-8")
 css = (proto / "css" / "styles.css").read_text(encoding="utf-8")
 js_xlsx = (proto / "vendor" / "xlsx.full.min.js").read_text(encoding="utf-8")
 js_app = (proto / "js" / "app.js").read_text(encoding="utf-8")
+js_employees = (proto / "js" / "employees.js").read_text(encoding="utf-8")
 js_inbound = (proto / "js" / "inbound.js").read_text(encoding="utf-8")
 js_outbound = (proto / "js" / "outbound.js").read_text(encoding="utf-8")
-js_bundle = js_xlsx + "\n\n" + js_app + "\n\n" + js_inbound + "\n\n" + js_outbound
+js_bundle = js_xlsx + "\n\n" + js_app + "\n\n" + js_employees + "\n\n" + js_inbound + "\n\n" + js_outbound
 
 css_link_pat = re.compile(
     r'  <link rel="stylesheet" href="css/styles\.css"[^>]*>\s*\n',
@@ -22,6 +23,7 @@ css_link_pat = re.compile(
 script_block_pat = re.compile(
     r'  <script src="vendor/xlsx\.full\.min\.js[^"]*"></script>\s*\n'
     r'  <script src="js/app\.js[^"]*"></script>\s*\n'
+    r'  <script src="js/employees\.js[^"]*"></script>\s*\n'
     r'  <script src="js/inbound\.js[^"]*"></script>\s*\n'
     r'  <script src="js/outbound\.js[^"]*"></script>\s*\n',
     re.MULTILINE,

@@ -1,7 +1,7 @@
 # KickBazar WMS 产品需求说明（仓库与库存）
 
 > **文档说明**  
-> 本文档为 WMS **仓库与库存基础** PRD（**第 1–8 章** + **§9 关联索引**），与飞书主 PRD 同源。  
+> 本文档为 WMS **仓库与库存基础** PRD（**第 1–9 章** + **§10 关联索引**），与飞书主 PRD 同源。  
 > **作业单据**（入库 / 出库）不在本文展开，见：[`KickBazar-WMS-Inbound-PRD.md`](KickBazar-WMS-Inbound-PRD.md)、[`KickBazar-WMS-Outbound-PRD.md`](KickBazar-WMS-Outbound-PRD.md)。**本期不含**独立采购单（PO）模块；采购到货通过入库 **Purchase Inbound**（上传 **`采购.xlsx`**，按 **Product Name** 匹配，绑定 **Purchase Order / Shipping No.**，规则见入库 PRD §5.1.1）完成。  
 > **2026-10 修订**：Dashboard 仓库上下文；库区去掉 Zone Name；Record Tab 与全局筛选见第 6、7 章；SKU 导入与零库存初始化见 §5.0。  
 > 原型（库存）：https://itkaop.axshare.com/?id=5yfdzj&p=spu_sku_inventory&sc=3&g=1  
@@ -31,7 +31,7 @@
 | 已锁定库存 | Locked | locked | 是 | 已下单未发货预占 |
 | 未锁定库存 | Available | available | **否** | 实时计算 `total - locked` |
 
-- Available 不落库；并发更新时对 SQL UPDATE 校验 `(total - locked) >= 需求量`（出库占用、扣减等见 §8.2）。
+- Available 不落库；并发更新时对 SQL UPDATE 校验 `(total - locked) >= 需求量`（出库占用、扣减等见 §9.2）。
 - **空间模型（本期）**：库存粒度 = **仓库 × 库区（Zone）**；库位 Bin Location 五段模型预留，货架/层/列本期仅建档或不做。
 - **仓库编码**：`warehouse_code` 系统生成规则见 **§3.2.1**（例 `SH001`）；库区编码见 **§4.0 / §4.1**（例 `SH001STO`）。
 
@@ -50,7 +50,7 @@
 | 2 | Inventory | SPU/SKU inventory、Record |
 | 3 | **Inbound** | 入库单（见 [`KickBazar-WMS-Inbound-PRD.md`](KickBazar-WMS-Inbound-PRD.md)） |
 | 5 | Outbound | 出库单 |
-| 6 | **Warehouses** | **仅 Admin**：Warehouse Management、Zone Management |
+| 6 | **System Setting** | **仅 Admin**：Employees、Warehouse Management、Zone Management |
 
 Dashboard **Quick Actions** 与侧栏 **Inbound** / **Outbound** 跳转对应列表页。
 
@@ -60,8 +60,8 @@ Dashboard **Quick Actions** 与侧栏 **Inbound** / **Outbound** 跳转对应列
 
 | 角色 | 主路径 | 仓库上下文 | 导航与写操作 |
 |------|--------|------------|--------------|
-| **管理员（Admin）** | 建仓、管库区；库存与流水核对；仓库停用→启用 | 在 **Home（Dashboard）** 选择 **All** 或指定 **Warehouse**；切换后全系统列表/指标按新范围刷新 | 可见 **Warehouses**；库存调整见 §5.3 |
-| **仓库管理员（Warehouse Manager）** | 库存查看、流水、入出库作业 | **仅所属 Warehouse**，不可 All；侧栏只读展示所属仓 | **不展示 Warehouses**；不可建仓/删仓/管库区主数据；库存调整**仅限所属仓**（§5.3） |
+| **管理员（Admin）** | 员工账号、建仓、管库区；库存与流水核对；仓库停用→启用 | 在 **Home（Dashboard）** 选择 **All** 或指定 **Warehouse**；切换后全系统列表/指标按新范围刷新 | 可见 **System Setting**；库存调整见 §5.3 |
+| **仓库管理员（Warehouse Manager）** | 库存查看、流水、入出库作业 | **仅所属 Warehouse**，不可 All；侧栏只读展示所属仓 | **不展示 System Setting**；不可建员工/建仓/删仓/管库区主数据；库存调整**仅限所属仓**（§5.3） |
 
 ### 2.1 仓库上下文（全局数据范围）
 
@@ -77,7 +77,7 @@ Dashboard **Quick Actions** 与侧栏 **Inbound** / **Outbound** 跳转对应列
 
 ## 3 仓库管理
 
-入口：`Warehouses → Warehouse Management`。**仅 Admin** 可访问（仓管无侧栏入口；URL 直链不可操作，提示 Admin only）。
+入口：`System Setting → Warehouse Management`。**仅 Admin** 可访问（仓管无侧栏入口；URL 直链不可操作，提示 Admin only）。
 
 ### 3.1 仓库列表
 
@@ -145,7 +145,7 @@ Dashboard **Quick Actions** 与侧栏 **Inbound** / **Outbound** 跳转对应列
 
 ## 4 仓库库区管理
 
-入口：`Warehouses → Zone Management`。**仅 Admin**。从仓库列表 Zone count 双击或「Manage Zones」进入时，锁定该仓 Warehouse Code 筛选（可清除后看全部，若全局上下文为单仓则与 §2.1 联动）。
+入口：`System Setting → Zone Management`。**仅 Admin**。从仓库列表 Zone count 双击或「Manage Zones」进入时，锁定该仓 Warehouse Code 筛选（可清除后看全部，若全局上下文为单仓则与 §2.1 联动）。
 
 ### 4.0 字段说明（列表）
 
@@ -222,7 +222,7 @@ WMS **不在入库页面创建 SKU 主数据**；仓内可作业前提如下：
 | 校验项 | 规则 | 失败处理 |
 |--------|------|----------|
 | 库存行存在 | 存在记录 `(sku_id, warehouse_code, zone_code)` | 拒绝写账；提示 **SKU not registered in this warehouse/zone**（文案产品定稿） |
-| 仓/区可用 | 仓库 Enable、目标库区 Enable；上架默认 **Storage Zone**（§8.1） | 拒绝 |
+| 仓/区可用 | 仓库 Enable、目标库区 Enable；上架默认 **Storage Zone**（§9.1） | 拒绝 |
 | 商品主数据 | SKU 在商品库存在且可读 | 拒绝 |
 
 **入库匹配规则**：采购 **`采购.xlsx`（Product Name 列）** 与手动 **Product Name** 搜索均只能匹配 **当前 `warehouse_code` 下已存在库存行** 的 SKU；**不得**因入库而 **自动新建** 库存行或商品主数据。若需新 SKU 进仓，须先走 **§5.0.1 下发/初始化** 再入库。
@@ -432,15 +432,82 @@ WMS **不在入库页面创建 SKU 主数据**；仓内可作业前提如下：
 
 ---
 
-## 8 跨模块契约
+## 8 权限设置（Employees）
 
-### 8.1 库区写入（入出库遵守）
+入口：**System Setting → Employees**。**仅 Admin** 可访问（与 §2 一致；仓管无侧栏入口）。
+
+### 8.1 页面与搜索
+
+- **主标题**：Employees  
+- **搜索**：点击 **Search** 后刷新（非实时）。搜索类别（单选）与关键字组合：  
+  - **Name**、**Email**、**Phone**、**Employee No.**、**Status**（关键字对所选字段 **包含** 匹配）  
+- **Status 筛选**（可选）：Enable / Disable；与关键字 **AND**  
+- **Reset**：清空关键字与 Status 筛选并刷新列表  
+
+### 8.2 列表字段
+
+| 列名 | 字段 | 说明 |
+|------|------|------|
+| Employee No. | `employee_no` | **系统生成**；规则见 §8.4；创建后不可改 |
+| Image / Name | `avatar_url` / `display_name` | 头像可选；名称展示（Add 时可由 Email 前缀默认，Edit 可维护） |
+| Email | `email` | 登录账号，唯一 |
+| Phone | `phone` | 选填 |
+| Warehouse | `warehouse_code` | 所属仓；下拉数据源为 **当前 Warehouses 列表**（§3） |
+| Status | `status` | Enable / Disable |
+| Created at | `created_at` | **系统生成** |
+| Last Login at | `last_login_at` | **系统自动记录**最近登录时间 |
+| Action | — | **View**、**Edit**、**Delete** |
+
+默认排序：**Created at 降序**（新建在前）。
+
+### 8.3 新增（Add Employee）
+
+| 字段 | 必填 | 说明 |
+|------|------|------|
+| Employee No. | — | **前端隐藏**；提交成功后系统按 §8.4 生成并展示 |
+| Email | **是** | 唯一；格式校验 |
+| Phone | 否 | |
+| Password | **是** | 初始密码 |
+| Confirm Password | **是** | 须与 Password 一致 |
+| Warehouse | **是** | 下拉；选项 = 当前 **Warehouses 主数据列表**（含 Enable/Disable 仓是否可选由产品定稿，**建议仅 Enable**） |
+| Images | 否 | 头像上传 |
+| Remark | 否 | 备注 |
+
+创建成功后默认 **Status = Enable**；**Created at** 写入当前时间；**Last Login at** 为空或「—」直至首次登录。
+
+### 8.4 Employee No. 生成规则
+
+| 项 | 规则 |
+|----|------|
+| 格式 | **`{YYYY}{SEQ3}`**，共 **7 位** |
+| `YYYY` | 4 位自然年（创建时服务器年） |
+| `SEQ3` | 3 位数字 `001`–`999`，在**同一自然年内**单调递增 |
+| 示例 | 2026 年第 1 个员工 → `2026001`；第 2 个 → `2026002` |
+| 唯一性 | 全系统唯一；生成后**不可修改** |
+
+### 8.5 编辑 / 查看 / 删除
+
+- **View**：只读展示全部字段（含 Employee No.、Status、Created at、Last Login at）；密码不可见。  
+- **Edit**：可改 Email、Phone、Warehouse、Images、Remark、Status；**Password** 可选填（留空表示不改）；Employee No. 只读。  
+- **Delete**：二次确认后删除；若账号存在未完结业务引用（产品扩展），应拒绝并 Toast。
+
+### 8.6 与仓库、角色的关系
+
+- 仓库创建表单 **Warehouse Manager** 多选（§3.1）数据源可引用 **Enable 状态的 Employees**（所属仓匹配或 Admin 账号，实现阶段对齐）。  
+- **Warehouse Manager** 登录后数据范围 = 其 **Warehouse** 字段对应 `warehouse_code`（§2.1）；**Admin** 不受单仓绑定（Dashboard 可选 All）。  
+- 禁用（Disable）账号：**不可登录**；不影响历史流水 Operator 展示。
+
+---
+
+## 9 跨模块契约
+
+### 9.1 库区写入（入出库遵守）
 
 入库上架进**存储区**；出库推荐启用存储区且 available>0；停用仓/区不可作新作业目标。细则同飞书 §8.1。
 
 **入库匹配前置（与 §5.0.2 一致）**：确认上架前须已存在 **`warehouse_code` + `zone_code` + SKU ID`** 库存行（可为 0 库存）；否则拒绝匹配与写账。SKU 须已完成 **§5.0.1** 自商品库导入并在该仓生成占位行。
 
-### 8.2 写账与流水 Tab
+### 9.2 写账与流水 Tab
 
 | 事件 | 实物 | 锁定 | 未锁定 | 流水 Tab |
 |------|------|------|--------|----------|
@@ -455,7 +522,7 @@ WMS **不在入库页面创建 SKU 主数据**；仓内可作业前提如下：
 
 库存变更与流水同一事务，禁止账实不符。
 
-### 8.3 本侧提供与 `warehouse_context`
+### 9.3 本侧提供与 `warehouse_context`
 
 - 仓库/库区主数据；出库推荐（仓 + SKU + 存储区 + enable + available>0）。
 - 删仓前：无库存且无未完成入出库单。
@@ -464,11 +531,11 @@ WMS **不在入库页面创建 SKU 主数据**；仓内可作业前提如下：
 
 - 列表/聚合 API 在单仓上下文下**强制** `warehouse_code`；与前端隐藏 Warehouse 筛选一致。
 - 上下文切换仅在 **Dashboard** 触发（专用接口或 Dashboard 聚合刷新）；Inventory/Record 列表接口**不得**附带切换副作用。
-- **`Warehouses/*`**：Admin only；仓管可调库存/流水/所属仓调整单与入出库（按角色配置）。
+- **`System Setting/*`**（Employees、Warehouse、Zone）：Admin only；仓管可调库存/流水/所属仓调整单与入出库（按角色配置）。
 
 ---
 
-## 9 关联模块 PRD（采购 / 入库 / 出库）
+## 10 关联模块 PRD（采购 / 入库 / 出库）
 
 本文档仅描述 **仓库、库区、库存、流水、Dashboard** 等基础能力。以下作业模块有 **独立 PRD**，正文不在此重复：
 
@@ -476,7 +543,7 @@ WMS **不在入库页面创建 SKU 主数据**；仓内可作业前提如下：
 |------|------|-------------------|
 | **采购单** Purchase Order | [`KickBazar-WMS-PO-PRD.md`](KickBazar-WMS-PO-PRD.md) | 不写库存；SKU 行须满足 **§5.0.1–§5.0.2** |
 | **入库** Inbound Receipt | [`KickBazar-WMS-Inbound-PRD.md`](KickBazar-WMS-Inbound-PRD.md) | Stocked In 写 **§6.1** 流水并 UPDATE 已有库存行；**禁止**入库流程建 SKU/库存行 |
-| **出库** Outbound | [`KickBazar-WMS-Outbound-PRD.md`](KickBazar-WMS-Outbound-PRD.md) | **普通出库**：Occupy → 取件后 Deduct；**特殊出库**：直接 Deduct；打包录单号不改库存（**§8.2**） |
+| **出库** Outbound | [`KickBazar-WMS-Outbound-PRD.md`](KickBazar-WMS-Outbound-PRD.md) | **普通出库**：Occupy → 取件后 Deduct；**特殊出库**：直接 Deduct；打包录单号不改库存（**§9.2**） |
 
 侧栏与 Dashboard Quick Actions 仍可进入上述模块；实现与验收以 **独立 PRD** 为准。
 
@@ -490,6 +557,7 @@ WMS **不在入库页面创建 SKU 主数据**；仓内可作业前提如下：
 | Dashboard 布局 | §7：6 KPI + Quick Actions + Admin Setup + Today's Operations 流水表 | 与 Axure/截图一致；Pending 指标原型为演示聚合数 |
 | Warehouse / Zone Code | `SH001`、`SH001STO` | 原型 mock 已统一无连字符 |
 | 单据号 | `IN-20260821001`、`OB…`、`ADJ-YYYYMMDDNNN` | 入库流水 Related Order No. = Inbound No. |
+| System Setting | Employees + 仓/库区 | 侧栏 **System Setting**；Employees 列表与 Add 表单 |
 | Record Tab 顺序 | All 首位 | 一致 |
 | Opening 子筛 | 不单独 Opening | 一致 |
 | 入库 | 独立 PRD | 原型 `inbound.js`：采购 xlsx 导入 + 手动导入，Confirm Stock-In 写流水 |

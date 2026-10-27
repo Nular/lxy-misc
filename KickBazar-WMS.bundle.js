@@ -317,6 +317,12 @@ function isAdminAllWarehouseScope() {
   return isAdminUser() && getWarehouseScope() === 'all';
 }
 
+function warehouseDisplayName(warehouseId) {
+  const id = normalizeWarehouseId(warehouseId);
+  const w = warehouses.find(x => normalizeWarehouseId(x.id) === id);
+  return w ? w.name : id;
+}
+
 function applyAdminAllWarehouseFilterVisibility() {
   const show = isAdminAllWarehouseScope();
   document.querySelectorAll('.filter-wh-scope').forEach(el => {
@@ -324,6 +330,9 @@ function applyAdminAllWarehouseFilterVisibility() {
   });
   if (typeof syncInboundListWarehouseFilterVisibility === 'function') syncInboundListWarehouseFilterVisibility();
   if (typeof syncOutboundListWarehouseFilterVisibility === 'function') syncOutboundListWarehouseFilterVisibility();
+  if (typeof syncReceiptWarehouseFieldUI === 'function' && document.getElementById('receipt-editor-modal')?.classList.contains('show')) {
+    syncReceiptWarehouseFieldUI();
+  }
 }
 
 function applyWarehouseScopeToFilters() {
@@ -364,6 +373,7 @@ function refreshAllScopedViews() {
   renderHome();
   renderWarehouses();
   renderZones();
+  if (typeof renderEmployeesList === 'function') renderEmployeesList();
   renderSpuTable();
   renderSkuTable();
   renderRecords();
@@ -371,7 +381,7 @@ function refreshAllScopedViews() {
 
 function applyRoleAndScopeUI() {
   const admin = isAdminUser();
-  document.querySelectorAll('.nav-warehouses-group').forEach(el => {
+  document.querySelectorAll('.nav-system-setting-group').forEach(el => {
     el.style.display = admin ? '' : 'none';
   });
   document.querySelectorAll('.admin-only-action').forEach(el => {
@@ -385,7 +395,7 @@ function applyRoleAndScopeUI() {
     const active = document.querySelector('.page.active');
     if (active) {
       const pageId = active.id.replace('page-', '');
-      if (pageId === 'warehouse-management' || pageId === 'zone-management') {
+      if (pageId === 'employees' || pageId === 'warehouse-management' || pageId === 'zone-management') {
         navigateTo('home');
       }
     }
@@ -403,7 +413,7 @@ function setUserRole(role) {
   refreshAllScopedViews();
   const extra = role === 'admin'
     ? 'Full warehouse access.'
-    : 'Scoped to assigned warehouse; Warehouses menu hidden.';
+    : 'Scoped to assigned warehouse; System Setting menu hidden.';
   showToast(role === 'admin' ? `Role: Admin. ${extra}` : `Role: Warehouse Manager. ${extra}`, 'info');
 }
 
@@ -415,6 +425,7 @@ function initUserRole() {
 
 const skuData = [
   { skuId: 'SKU-10001-BK', spec: 'Black; M', productName: 'Wireless Bluetooth Earbuds Pro', total: 1200, locked: 200, available: 1000, warehouse: 'Shanghai Main Warehouse', zone: 'Storage Zone', zoneCode: 'SH001STO', warehouseCode: 'SH001', barcode: 'EAN: 6901234567890', pan: '69012378', purchasePrice: '18.50', supplier: 'Shenzhen Audio Supply Co.', stores: 'KickBazar Official Store; Tmall Global', barcodes: ['EAN: 6901234567890', 'UPC: 012345678901', 'PAN: 69012378'] },
+  { skuId: 'SKU-10001-BK', spec: 'Black; M', productName: 'Wireless Bluetooth Earbuds Pro', total: 120, locked: 0, available: 120, warehouse: 'Beijing Distribution Center', zone: 'Storage Zone', zoneCode: 'BJ001STO', warehouseCode: 'BJ001', barcode: 'EAN: 6901234567890', pan: '69012378', purchasePrice: '18.50', supplier: 'Shenzhen Audio Supply Co.', stores: 'Tmall Global', barcodes: ['EAN: 6901234567890'] },
   { skuId: 'SKU-10001-WH', spec: 'White; L', productName: 'Wireless Bluetooth Earbuds Pro', total: 980, locked: 150, available: 830, warehouse: 'Shanghai Main Warehouse', zone: 'Storage Zone', zoneCode: 'SH001STO', warehouseCode: 'SH001', barcode: 'EAN: 6901234567891', pan: '69012379', purchasePrice: '18.50', supplier: 'Shenzhen Audio Supply Co.', stores: 'KickBazar Official Store', barcodes: ['EAN: 6901234567891'] },
   { skuId: 'SKU-10001-BL', spec: 'Blue; XS', productName: 'Wireless Bluetooth Earbuds Pro', total: 400, locked: 70, available: 330, warehouse: 'Beijing Distribution Center', zone: 'Storage Zone', zoneCode: 'BJ001STO', warehouseCode: 'BJ001', barcode: 'UPC: 012345678902', pan: 'KB-10001-BL', purchasePrice: '17.20', supplier: 'Shenzhen Audio Supply Co.', stores: 'Tmall Global', barcodes: ['UPC: 012345678902', 'PAN: KB-10001-BL'] },
   { skuId: 'SKU-10002-42', spec: '42mm Silver', productName: 'Smart Watch Series X', total: 900, locked: 160, available: 740, warehouse: 'Shanghai Main Warehouse', zone: 'Storage Zone', zoneCode: 'SH001STO', warehouseCode: 'SH001', barcode: 'EAN: 6901234567900', pan: '45679001', purchasePrice: '42.00', supplier: 'Huizhou Wearables Ltd.', stores: 'KickBazar Official Store; Shopee SG', barcodes: ['EAN: 6901234567900'] },
@@ -438,12 +449,12 @@ const recordData = {
     { time: '2026-08-17 15:20:11', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10001-WH', productName: 'Wireless Bluetooth Earbuds Pro', specification: 'White; L', qty: '-10', after: { total: 970, locked: 150, available: 820 }, type: 'Manual Adjustment (Decrease)', order: 'ADJ-20260817002', operator: 'Admin', sub: 'manual', direction: 'Decrease', adjQty: '10', adjType: 'Damage (报损)', reason: 'Carton crushed in storage aisle.', attachment: '—' }
   ],
   occupy: [
-    { time: '2026-08-21 11:45:22', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10001-BK', qty: '50', after: { total: 1200, locked: 200, available: 1000 }, type: 'Outbound Occupy', order: 'OUT-20260821005', operator: 'System', outboundNo: 'OUT-20260821005', relatedOrderNo: 'SO-20260821001', shipmentNo: '—', status: 'Allocated' },
+    { time: '2026-08-21 11:45:22', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10001-BK', qty: '50', after: { total: 1200, locked: 200, available: 1000 }, type: 'Outbound Occupy', order: 'OUT-20260821005', operator: 'System', outboundNo: 'OUT-20260821005', relatedOrderNo: 'SO-20260821001', shipmentNo: '—', status: 'Allocated', shop: 'KickBazar Official Store' },
     { time: '2026-08-21 10:30:18', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10002-42', qty: '30', after: { total: 900, locked: 160, available: 740 }, type: 'Outbound Occupy', order: 'OUT-20260821003', operator: 'System' },
     { time: '2026-08-20 15:12:55', warehouse: 'BJ001', zone: 'BJ001STO (Storage Zone)', sku: 'SKU-10003-01', qty: '100', after: { total: 3200, locked: 560, available: 2640 }, type: 'Outbound Occupy', order: 'OUT-20260820008', operator: 'System' }
   ],
   deduct: [
-    { time: '2026-08-21 14:20:33', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10001-WH', qty: '-25', after: { total: 980, locked: 150, available: 830 }, type: 'Outbound Deduct', order: 'OUT-20260820012', operator: 'Li Ming', outboundNo: 'OUT-20260820012', relatedOrderNo: 'SO-20260820012', shipmentNo: 'SHP-SF1029384756', status: 'Shipped' },
+    { time: '2026-08-21 14:20:33', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10001-WH', qty: '-25', after: { total: 980, locked: 150, available: 830 }, type: 'Outbound Deduct', order: 'OUT-20260820012', operator: 'Li Ming', outboundNo: 'OUT-20260820012', relatedOrderNo: 'SO-20260820012', shipmentNo: 'SHP-SF1029384756', status: 'Shipped', shop: 'Tmall Global' },
     { time: '2026-08-20 17:05:41', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10001-BK', qty: '-40', after: { total: 1000, locked: 150, available: 850 }, type: 'Outbound Deduct', order: 'OUT-20260819015', operator: 'Zhang Wei' }
   ],
   unfreeze: [
@@ -468,6 +479,7 @@ function bootWmsPrototype() {
   renderHome();
   renderWarehouses();
   renderZones();
+  if (typeof renderEmployeesList === 'function') renderEmployeesList();
   renderSpuTable();
   renderSkuTable();
   renderRecords();
@@ -529,6 +541,7 @@ function navigateTo(pageId) {
     if (typeof syncInboundListWarehouseFilterVisibility === 'function') syncInboundListWarehouseFilterVisibility();
     if (typeof renderInboundReceiptList === 'function') renderInboundReceiptList();
   }
+  if (pageId === 'employees' && typeof renderEmployeesList === 'function') renderEmployeesList();
 }
 
 // ========== Home / Dashboard ==========
@@ -662,6 +675,7 @@ function renderHome() {
   `).join('');
 
   document.getElementById('dashboard-admin-tasks').innerHTML = [
+    { page: 'employees', title: 'Employees', icon: 'task-icon-wh' },
     { page: 'warehouse-management', title: 'Warehouse Management', icon: 'task-icon-wh' },
     { page: 'zone-management', title: 'Zone Management', icon: 'task-icon-zone' }
   ].map(t => `
@@ -962,6 +976,7 @@ function confirmDeleteWarehouse() {
   closeModal('delete-warehouse-modal');
   renderWarehouses();
   renderZones();
+  if (typeof renderEmployeesList === 'function') renderEmployeesList();
   populateWarehouseSelects();
   refreshDashboard();
   showToast('Deleted successfully.', 'success');
@@ -1358,6 +1373,12 @@ function getOutboundRecordSubFilter() {
   return activeSub?.dataset?.outboundSub || 'all';
 }
 
+function outboundRecordShopDisplay(r) {
+  if (r.type === 'Manual outbound') return '—';
+  const shop = (r.shop || '').trim();
+  return shop || '—';
+}
+
 function renderRecords() {
   const tbody = document.getElementById('record-table-body');
   let data = [];
@@ -1515,6 +1536,12 @@ function enrichRecordDetail(r) {
     const skuRow = skuData.find(s => s.skuId === row.sku);
     row.productName = row.productName || skuRow?.productName || '—';
     row.specification = row.specification || skuRow?.spec || '—';
+    if (!row.shop && typeof outboundLines !== 'undefined') {
+      const obLine = outboundLines.find(l =>
+        l.skuId === row.sku && (l.outboundNo === row.outboundNo || l.outboundNo === row.order)
+      );
+      if (obLine) row.shop = obLine.shop || '';
+    }
   }
   return row;
 }
@@ -1537,6 +1564,7 @@ function renderOutboundRecordDetailHtml(r) {
       ${detailRow('Outbound No.', r.outboundNo || r.order)}
       ${detailRow('Operator', r.operator)}
       ${detailRow('Related Order No.', r.relatedOrderNo || '—')}
+      ${detailRow('Shop', outboundRecordShopDisplay(r))}
       ${detailRow('Shipping No.', r.shippingNo || '—')}
     </div>`;
   if (r.type === 'Manual outbound') {
@@ -1691,6 +1719,316 @@ function showToast(message, type = 'info') {
   toast.textContent = message;
   container.appendChild(toast);
   setTimeout(() => toast.remove(), 4000);
+}
+
+
+// System Setting → Employees (permission / account prototype)
+
+let employees = [
+  {
+    employeeNo: '2026001',
+    name: 'Zhang Wei',
+    email: 'zhang.wei@kickbazar.com',
+    phone: '+86 138 0013 8000',
+    warehouseCode: '',
+    role: 'admin',
+    status: 'Enable',
+    imageDataUrl: '',
+    remark: 'Platform administrator',
+    createdAt: '2026-01-08 09:00:00',
+    lastLoginAt: '2026-10-27 08:12:33'
+  },
+  {
+    employeeNo: '2026002',
+    name: 'Li Ming',
+    email: 'li.ming@kickbazar.com',
+    phone: '+86 139 0013 9001',
+    warehouseCode: 'SH001',
+    role: 'warehouse',
+    status: 'Enable',
+    imageDataUrl: '',
+    remark: 'Shanghai main warehouse manager',
+    createdAt: '2026-02-14 11:20:00',
+    lastLoginAt: '2026-10-26 17:45:02'
+  },
+  {
+    employeeNo: '2026003',
+    name: 'Wang Fang',
+    email: 'wang.fang@kickbazar.com',
+    phone: '+86 137 0013 7002',
+    warehouseCode: 'BJ001',
+    role: 'warehouse',
+    status: 'Enable',
+    imageDataUrl: '',
+    remark: '',
+    createdAt: '2026-03-01 10:00:00',
+    lastLoginAt: '2026-10-25 09:30:00'
+  },
+  {
+    employeeNo: '2025004',
+    name: 'Chen Hua',
+    email: 'chen.hua@kickbazar.com',
+    phone: '',
+    warehouseCode: 'SH001',
+    role: 'warehouse',
+    status: 'Disable',
+    imageDataUrl: '',
+    remark: 'Offboarded — account disabled',
+    createdAt: '2025-11-20 14:00:00',
+    lastLoginAt: '2026-08-01 12:00:00'
+  }
+];
+
+let currentEmployeeEdit = null;
+let employeeFormMode = 'create';
+
+function nextEmployeeNo() {
+  const year = new Date().getFullYear();
+  let max = 0;
+  employees.forEach(e => {
+    const m = String(e.employeeNo).match(new RegExp('^' + year + '(\\d{3})$'));
+    if (m) max = Math.max(max, parseInt(m[1], 10));
+  });
+  return `${year}${String(max + 1).padStart(3, '0')}`;
+}
+
+function warehouseLabel(code) {
+  if (!code) return 'All Warehouses (Admin)';
+  const wh = warehouses.find(w => w.id === code);
+  return wh ? `${wh.name} (${code})` : code;
+}
+
+function employeeAvatarHtml(emp) {
+  if (emp.imageDataUrl) {
+    return `<img class="emp-avatar" src="${emp.imageDataUrl}" alt="">`;
+  }
+  const initial = (emp.name || emp.email || '?').trim().charAt(0).toUpperCase();
+  return `<span class="emp-avatar emp-avatar-fallback">${initial}</span>`;
+}
+
+function renderEmployeesList() {
+  const tbody = document.getElementById('employees-table-body');
+  if (!tbody) return;
+
+  const field = document.getElementById('emp-search-field').value;
+  const kw = (document.getElementById('emp-search-keyword').value || '').trim().toLowerCase();
+  const status = document.getElementById('emp-filter-status').value;
+
+  let rows = [...employees];
+  if (kw) {
+    rows = rows.filter(e => {
+      const val = (() => {
+        if (field === 'name') return e.name || '';
+        if (field === 'email') return e.email || '';
+        if (field === 'phone') return e.phone || '';
+        if (field === 'employeeNo') return e.employeeNo || '';
+        if (field === 'status') return e.status || '';
+        return '';
+      })();
+      return val.toLowerCase().includes(kw);
+    });
+  }
+  if (status) rows = rows.filter(e => e.status === status);
+  rows.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+
+  const totalEl = document.getElementById('emp-list-total');
+  if (totalEl) totalEl.textContent = rows.length;
+
+  tbody.innerHTML = rows.map(e => `
+    <tr>
+      <td><strong>${e.employeeNo}</strong></td>
+      <td class="emp-name-cell">${employeeAvatarHtml(e)}<span>${e.name || '—'}</span></td>
+      <td>${e.email}</td>
+      <td>${e.phone || '—'}</td>
+      <td>${warehouseLabel(e.warehouseCode)}</td>
+      <td><span class="tag ${e.status === 'Enable' ? 'tag-enable' : 'tag-disable'}">${e.status}</span></td>
+      <td>${e.createdAt}</td>
+      <td>${e.lastLoginAt || '—'}</td>
+      <td>
+        <div class="action-links">
+          <a onclick="openEmployeeModal('view','${e.employeeNo}')">View</a>
+          <a onclick="openEmployeeModal('edit','${e.employeeNo}')">Edit</a>
+          <a class="danger" onclick="deleteEmployee('${e.employeeNo}')">Delete</a>
+        </div>
+      </td>
+    </tr>
+  `).join('') || '<tr><td colspan="9" style="text-align:center;color:#999">No employees</td></tr>';
+}
+
+function searchEmployees() {
+  renderEmployeesList();
+  showToast('Employee search applied', 'success');
+}
+
+function resetEmployeeFilters() {
+  document.getElementById('emp-search-keyword').value = '';
+  document.getElementById('emp-filter-status').value = '';
+  renderEmployeesList();
+}
+
+function populateEmployeeWarehouseSelect(selectId, selected) {
+  const sel = document.getElementById(selectId);
+  if (!sel) return;
+  sel.innerHTML = warehouses.map(w =>
+    `<option value="${w.id}">${w.name} (${w.id})</option>`
+  ).join('');
+  if (selected) sel.value = selected;
+}
+
+function openEmployeeModal(mode, employeeNo) {
+  if (!isAdminUser()) {
+    showToast('Admin only.', 'error');
+    return;
+  }
+  employeeFormMode = mode;
+  currentEmployeeEdit = employeeNo ? employees.find(e => e.employeeNo === employeeNo) : null;
+
+  const title = document.getElementById('employee-modal-title');
+  const noWrap = document.getElementById('emp-no-wrap');
+  const pwdWrap = document.getElementById('emp-password-wrap');
+  const submitBtn = document.getElementById('employee-submit-btn');
+
+  if (mode === 'create') {
+    title.textContent = 'Add Employee';
+    noWrap.hidden = true;
+    pwdWrap.hidden = false;
+    document.getElementById('emp-email').value = '';
+    document.getElementById('emp-phone').value = '';
+    document.getElementById('emp-password').value = '';
+    document.getElementById('emp-password2').value = '';
+    document.getElementById('emp-remark').value = '';
+    document.getElementById('emp-name-wrap').hidden = true;
+    populateEmployeeWarehouseSelect('emp-warehouse', warehouses[0]?.id);
+    document.getElementById('emp-image-preview').innerHTML = '';
+    document.getElementById('emp-image-file').value = '';
+    submitBtn.textContent = 'Create';
+    submitBtn.hidden = false;
+  } else if (currentEmployeeEdit) {
+    title.textContent = mode === 'view' ? 'View Employee' : 'Edit Employee';
+    noWrap.hidden = false;
+    document.getElementById('emp-no-display').value = currentEmployeeEdit.employeeNo;
+    document.getElementById('emp-email').value = currentEmployeeEdit.email;
+    document.getElementById('emp-phone').value = currentEmployeeEdit.phone || '';
+    document.getElementById('emp-name-wrap').hidden = false;
+    document.getElementById('emp-name').value = currentEmployeeEdit.name || '';
+    document.getElementById('emp-remark').value = currentEmployeeEdit.remark || '';
+    populateEmployeeWarehouseSelect('emp-warehouse', currentEmployeeEdit.warehouseCode || warehouses[0]?.id);
+    document.getElementById('emp-status').value = currentEmployeeEdit.status;
+    pwdWrap.hidden = mode === 'view';
+    document.getElementById('emp-password').value = '';
+    document.getElementById('emp-password2').value = '';
+    document.getElementById('emp-image-preview').innerHTML = currentEmployeeEdit.imageDataUrl
+      ? employeeAvatarHtml(currentEmployeeEdit)
+      : employeeAvatarHtml(currentEmployeeEdit);
+    submitBtn.textContent = 'Save';
+    submitBtn.hidden = mode === 'view';
+  }
+
+  const ro = mode === 'view';
+  ['emp-email', 'emp-phone', 'emp-name', 'emp-warehouse', 'emp-remark', 'emp-status', 'emp-password', 'emp-password2', 'emp-image-file'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.disabled = ro;
+  });
+  document.getElementById('emp-status-wrap').hidden = mode === 'create';
+
+  openModal('employee-modal');
+}
+
+function onEmployeeImagePicked(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    const preview = document.getElementById('emp-image-preview');
+    preview.innerHTML = `<img class="emp-avatar-lg" src="${reader.result}" alt="">`;
+    preview.dataset.dataUrl = reader.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function submitEmployee() {
+  const email = document.getElementById('emp-email').value.trim();
+  const phone = document.getElementById('emp-phone').value.trim();
+  const name = document.getElementById('emp-name').value.trim();
+  const warehouseCode = document.getElementById('emp-warehouse').value;
+  const remark = document.getElementById('emp-remark').value.trim();
+  const preview = document.getElementById('emp-image-preview');
+  const imageDataUrl = preview.dataset.dataUrl || (currentEmployeeEdit && currentEmployeeEdit.imageDataUrl) || '';
+
+  if (!email) {
+    showToast('Email is required.', 'error');
+    return;
+  }
+  if (!warehouseCode) {
+    showToast('Warehouse is required.', 'error');
+    return;
+  }
+
+  if (employeeFormMode === 'create') {
+    const pwd = document.getElementById('emp-password').value;
+    const pwd2 = document.getElementById('emp-password2').value;
+    if (!pwd) {
+      showToast('Password is required.', 'error');
+      return;
+    }
+    if (pwd !== pwd2) {
+      showToast('Passwords do not match.', 'error');
+      return;
+    }
+    if (employees.some(e => e.email.toLowerCase() === email.toLowerCase())) {
+      showToast('Email already exists.', 'error');
+      return;
+    }
+    const displayName = name || email.split('@')[0];
+    employees.unshift({
+      employeeNo: nextEmployeeNo(),
+      name: displayName,
+      email,
+      phone,
+      warehouseCode,
+      role: 'warehouse',
+      status: 'Enable',
+      imageDataUrl,
+      remark,
+      createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+      lastLoginAt: '—'
+    });
+    showToast('Employee created.', 'success');
+  } else if (currentEmployeeEdit && employeeFormMode === 'edit') {
+    const pwd = document.getElementById('emp-password').value;
+    const pwd2 = document.getElementById('emp-password2').value;
+    if (pwd && pwd !== pwd2) {
+      showToast('Passwords do not match.', 'error');
+      return;
+    }
+    Object.assign(currentEmployeeEdit, {
+      name: name || currentEmployeeEdit.name,
+      email,
+      phone,
+      warehouseCode,
+      remark,
+      status: document.getElementById('emp-status').value,
+      imageDataUrl: imageDataUrl || currentEmployeeEdit.imageDataUrl
+    });
+    showToast('Employee updated.', 'success');
+  }
+
+  closeModal('employee-modal');
+  renderEmployeesList();
+}
+
+function deleteEmployee(employeeNo) {
+  if (!isAdminUser()) return;
+  const emp = employees.find(e => e.employeeNo === employeeNo);
+  if (!emp) return;
+  if (!confirm(`Delete employee ${emp.name} (${employeeNo})?`)) return;
+  employees = employees.filter(e => e.employeeNo !== employeeNo);
+  renderEmployeesList();
+  showToast('Employee deleted.', 'success');
+}
+
+function listEmployeesForWarehouseManagerSelect() {
+  return employees.filter(e => e.status === 'Enable');
 }
 
 
@@ -2291,7 +2629,7 @@ function openNewInboundTask() {
   receiptEditorSource = 'po-import';
   document.getElementById('receipt-type').value = '';
   document.getElementById('receipt-type-label').value = '—';
-  document.getElementById('receipt-warehouse').value = getInboundWarehouseScope();
+  syncReceiptWarehouseFieldUI();
   const poSum = document.getElementById('receipt-purchase-order-summary');
   if (poSum) poSum.value = '';
   const shipSum = document.getElementById('receipt-shipping-no-summary');
@@ -2324,10 +2662,9 @@ function pickInboundEditorType(mode) {
   if (receiptLockedSource && receiptLockedSource !== mode && receiptEditorLines.length) return;
   receiptLockedSource = mode;
   receiptEditorSource = mode;
-  const wh = getInboundWarehouseScope();
   document.getElementById('receipt-type').value = mode === 'po-import' ? 'Purchase Receipt' : 'Manual Receipt';
   document.getElementById('receipt-type-label').value = inboundTypeLabel(document.getElementById('receipt-type').value);
-  document.getElementById('receipt-warehouse').value = wh;
+  syncReceiptWarehouseFieldUI();
   document.getElementById('receipt-editor-body').hidden = false;
   const typeSel = document.getElementById('receipt-type-select');
   if (typeSel) {
@@ -2357,6 +2694,49 @@ function getInboundWarehouseScope() {
   const scope = getWarehouseScope();
   if (scope === 'all') return warehouses[0] ? normalizeWarehouseId(warehouses[0].id) : 'SH001';
   return normalizeWarehouseId(scope);
+}
+
+/** Warehouse for New Inbound editor (header + default for new lines). */
+function getReceiptEditorWarehouseCode() {
+  const scope = getWarehouseScope();
+  if (scope !== 'all' || !isAdminUser()) return getInboundWarehouseScope();
+  const sel = document.getElementById('receipt-warehouse-select');
+  if (sel && !sel.hidden && sel.value) return normalizeWarehouseId(sel.value);
+  return getInboundWarehouseScope();
+}
+
+function syncReceiptWarehouseFieldUI(forceReadonly) {
+  const input = document.getElementById('receipt-warehouse');
+  const select = document.getElementById('receipt-warehouse-select');
+  if (!input || !select) return;
+  const scope = getWarehouseScope();
+  const showPick = !forceReadonly && !receiptEditorReadonly && typeof isAdminAllWarehouseScope === 'function' && isAdminAllWarehouseScope();
+  const code = getReceiptEditorWarehouseCode();
+  if (showPick) {
+    select.innerHTML = warehouses.map(w => {
+      const id = normalizeWarehouseId(w.id);
+      return `<option value="${id}">${formatCanonicalWarehouseCode(id)} — ${w.name}</option>`;
+    }).join('');
+    const cur = normalizeWarehouseId(select.value || code);
+    if ([...select.options].some(o => o.value === cur)) select.value = cur;
+    else select.value = normalizeWarehouseId(code);
+    select.hidden = false;
+    input.hidden = true;
+    input.value = select.value;
+  } else {
+    select.hidden = true;
+    input.hidden = false;
+    const wh = scope !== 'all' ? normalizeWarehouseId(scope) : code;
+    input.value = `${formatCanonicalWarehouseCode(wh)} — ${typeof warehouseDisplayName === 'function' ? warehouseDisplayName(wh) : wh}`;
+  }
+}
+
+function onReceiptContextWarehouseChange() {
+  const input = document.getElementById('receipt-warehouse');
+  const select = document.getElementById('receipt-warehouse-select');
+  if (input && select && !select.hidden) input.value = select.value;
+  const panel = document.getElementById('receipt-manual-suggest');
+  if (panel) panel.hidden = true;
 }
 
 function getDefaultStorageZoneCode(whCode) {
@@ -2428,13 +2808,24 @@ function populateInboundListFilters() {
 
 function syncInboundListWarehouseFilterVisibility() {
   const wrap = document.getElementById('inbound-filter-warehouse-wrap');
-  if (!wrap) return;
   const show = typeof isAdminAllWarehouseScope === 'function' ? isAdminAllWarehouseScope() : (isAdminUser() && getWarehouseScope() === 'all');
-  wrap.style.display = show ? '' : 'none';
-  if (!show) {
-    const sel = document.getElementById('inbound-filter-warehouse');
-    if (sel) sel.value = '';
+  if (wrap) {
+    wrap.style.display = show ? '' : 'none';
+    if (!show) {
+      const sel = document.getElementById('inbound-filter-warehouse');
+      if (sel) sel.value = '';
+    }
   }
+  const th = document.getElementById('inbound-th-warehouse');
+  if (th) th.hidden = !show;
+}
+
+function inboundListWarehouseCell(warehouseCode) {
+  const show = typeof isAdminAllWarehouseScope === 'function' && isAdminAllWarehouseScope();
+  if (!show) return '';
+  const code = normalizeWarehouseId(warehouseCode || '');
+  const label = typeof warehouseDisplayName === 'function' ? warehouseDisplayName(code) : code;
+  return `<td>${code}<br><span class="hint">${label}</span></td>`;
 }
 
 function receiptDateKey(updatedAt) {
@@ -2511,9 +2902,12 @@ function renderInboundReceiptList() {
   const pageRows = rows.slice(start, start + pageSize);
 
   document.getElementById('inbound-list-total').textContent = total;
+  const showWhCol = typeof isAdminAllWarehouseScope === 'function' && isAdminAllWarehouseScope();
+  const emptyColspan = showWhCol ? 9 : 8;
   tbody.innerHTML = pageRows.map(r => `
     <tr>
       <td>${r.updatedAt}</td>
+      ${inboundListWarehouseCell(r.warehouseCode)}
       <td><strong>${r.receiptNo}</strong></td>
       <td>${formatInboundListPurchaseOrder(r)}</td>
       <td>${formatInboundListShippingNo(r)}</td>
@@ -2522,7 +2916,7 @@ function renderInboundReceiptList() {
       <td>${r.operator || '—'}</td>
       <td style="text-align:center">${inboundViewButton(r.receiptNo)}</td>
     </tr>
-  `).join('') || '<tr><td colspan="8" style="text-align:center;color:#999">No data</td></tr>';
+  `).join('') || `<tr><td colspan="${emptyColspan}" style="text-align:center;color:#999">No data</td></tr>`;
 
   const pagBar = document.getElementById('inbound-pagination-info');
   if (pagBar) {
@@ -2631,7 +3025,7 @@ function lineQtyMismatch(line) {
 function renderReceiptEditorLines() {
   renderReceiptEditorLinesHead();
   const ro = receiptEditorReadonly;
-  const whDefault = getInboundWarehouseScope();
+  const whDefault = getReceiptEditorWarehouseCode();
   const zoneRo = ro || receiptZoneReadonlyForSource();
   const poMode = receiptEditorSource === 'po-import';
   const colSpan = 12;
@@ -2783,7 +3177,7 @@ async function startPoListImport() {
       dropped.forEach(r => receiptUnmatched.push({ row: r.row, importProductName: `${r.importProductName} (PO ${r.purchaseOrder})` }));
       poFilterNote = ` One Inbound allows one Purchase Order; kept ${keep}.`;
     }
-    const wh = getInboundWarehouseScope();
+    const wh = getReceiptEditorWarehouseCode();
     receiptEditorLines = [];
     rows.forEach(dr => buildReceiptLineFromPoRow(dr, wh));
     receiptLockedSource = 'po-import';
@@ -2850,7 +3244,7 @@ function confirmReceiptStockIn() {
     showToast('Add at least one SKU line before stock-in.', 'error');
     return;
   }
-  const wh = getInboundWarehouseScope();
+  const wh = getReceiptEditorWarehouseCode();
   for (const line of receiptEditorLines) {
     if (!line.receiptQty || line.receiptQty < 1) {
       showToast('Receipt Qty must be between 1 and 9,999,999.', 'error');
@@ -2896,7 +3290,7 @@ function confirmReceiptStockIn() {
 }
 
 function persistReceipt(status, writeInventory) {
-  const wh = getInboundWarehouseScope();
+  const wh = getReceiptEditorWarehouseCode();
   const zoneCode = getDefaultStorageZoneCode(wh);
   const ships = collectShippingNosFromLines(receiptEditorLines);
   const shippingNo = ships.length === 1 ? ships[0] : (document.getElementById('receipt-shipping-no-summary')?.value?.trim() || '');
@@ -3017,7 +3411,7 @@ function openReceiptSkuPicker() {
 function renderReceiptSkuPickerList() {
   const tbody = document.getElementById('receipt-sku-picker-body');
   if (!tbody) return;
-  const wh = getInboundWarehouseScope();
+  const wh = getReceiptEditorWarehouseCode();
   const kw = (document.getElementById('receipt-sku-picker-search').value || '').trim().toLowerCase();
   let rows = listWarehouseInventorySkus(wh);
   if (kw) {
@@ -3044,7 +3438,7 @@ function toggleReceiptSkuPick(key, on) {
 }
 
 function confirmReceiptSkuPicker() {
-  const wh = getInboundWarehouseScope();
+  const wh = getReceiptEditorWarehouseCode();
   let added = 0;
   receiptSkuPickerSelected.forEach(key => {
     const [skuId, zoneCode] = key.split('|');
@@ -3083,7 +3477,7 @@ function renderReceiptManualSearch() {
     panel.hidden = true;
     return;
   }
-  const wh = getInboundWarehouseScope();
+  const wh = getReceiptEditorWarehouseCode();
   const pool = listWarehouseInventorySkus(wh);
   const names = [];
   const seen = new Set();
@@ -3200,6 +3594,12 @@ function lineOutboundTypeDisplay(line) {
   if (st === 'shipped') return 'Outbound deduct';
   if (st === 'pending_picking') return 'Outbound occupy';
   return '—';
+}
+
+function lineStoreDisplay(line) {
+  if (line.outboundType === 'manual') return '—';
+  const shop = (line.shop || '').trim();
+  return shop || '—';
 }
 
 function linePan(line) {
@@ -3324,7 +3724,8 @@ function validateAndResolveOutboundRows(warehouseId, rawRows) {
       'Product Name': resolved.productName,
       'SKU ID': resolved.skuId,
       Specification: resolved.spec,
-      'Order Time': r['Order Time'] || ''
+      'Order Time': r['Order Time'] || '',
+      shop: (r.shop || r.Shop || '').trim()
     });
   });
   return { errors, validRows, ok: errors.length === 0 && validRows.length > 0 };
@@ -3392,6 +3793,9 @@ function parseOrderListMatrix(matrix) {
   const idxDesc = typeof findHeaderIndex === 'function'
     ? findHeaderIndex(headers, ['itemdesc', 'item desc'])
     : headers.findIndex(h => /itemdesc/i.test(h));
+  const idxShop = typeof findHeaderIndex === 'function'
+    ? findHeaderIndex(headers, ['shop', 'store'])
+    : headers.findIndex(h => /^shop$/i.test(h) || /^store$/i.test(h));
   if (idxOrder < 0 || idxQty < 0 || idxDesc < 0) {
     throw new Error('Required columns: MerchantOrderID, ItemQuantity, ItemDesc');
   }
@@ -3404,6 +3808,9 @@ function parseOrderListMatrix(matrix) {
     const itemDesc = typeof cellToDisplay === 'function' ? cellToDisplay(line[idxDesc]) : String(line[idxDesc] || '').trim();
     if (!orderNo || !itemDesc) continue;
     const parsed = parseOutboundItemDesc(itemDesc, itemQty);
+    const shop = idxShop >= 0
+      ? (typeof cellToDisplay === 'function' ? cellToDisplay(line[idxShop]) : String(line[idxShop] || '').trim())
+      : '';
     rows.push({
       'MerchantOrderID': orderNo,
       'Order No': orderNo,
@@ -3411,7 +3818,8 @@ function parseOrderListMatrix(matrix) {
       'Qty': parsed.qty,
       'ItemDesc': itemDesc,
       'Product Name': parsed.productName,
-      'SKU ID': parsed.skuId
+      'SKU ID': parsed.skuId,
+      shop
     });
   }
   return rows;
@@ -3511,9 +3919,9 @@ function seedOutbound() {
     warehouseCode: formatCanonicalWarehouseCode(wh)
   });
   const samples = [
-    { orderNo: 'SO-20260821001', skuId: 'SKU-10001-BK', name: 'Wireless Bluetooth Earbuds Pro', spec: 'Black; M', qty: 2, status: 'pending_allocation' },
-    { orderNo: 'SO-20260821002', skuId: 'SKU-10001-WH', name: 'Wireless Bluetooth Earbuds Pro', spec: 'White; L', qty: 1, status: 'pending_picking', preOccupy: true },
-    { orderNo: 'SO-20260821003', skuId: 'SKU-10004-01', name: 'USB-C Flash Drive', spec: '128GB', qty: 2, status: 'pending_allocation', holdReason: 'Awaiting allocation (0 available in STO)' }
+    { orderNo: 'SO-20260821001', skuId: 'SKU-10001-BK', name: 'Wireless Bluetooth Earbuds Pro', spec: 'Black; M', qty: 2, status: 'pending_allocation', shop: 'KickBazar Official Store' },
+    { orderNo: 'SO-20260821002', skuId: 'SKU-10001-WH', name: 'Wireless Bluetooth Earbuds Pro', spec: 'White; L', qty: 1, status: 'pending_picking', preOccupy: true, shop: 'Tmall Global' },
+    { orderNo: 'SO-20260821003', skuId: 'SKU-10004-01', name: 'USB-C Flash Drive', spec: '128GB', qty: 2, status: 'pending_allocation', holdReason: 'Awaiting allocation (0 available in STO)', shop: 'KickBazar Official Store' }
   ];
   samples.forEach(s => {
     const line = {
@@ -3536,12 +3944,13 @@ function seedOutbound() {
       shippedAt: '',
       operator: 'System',
       status: s.status,
-      holdReason: s.holdReason || ''
+      holdReason: s.holdReason || '',
+      shop: s.shop || ''
     };
     if (s.preOccupy) {
       line.zoneCode = 'SH001STO';
       line.zone = 'Storage Zone';
-      occupySku(wh, s.skuId, s.qty, no, s.orderNo);
+      occupySku(wh, s.skuId, s.qty, no, s.orderNo, s.shop);
       line.inboundNo = nextOutboundInboundLinkNo();
       line.allocatedAt = '2026-08-21 09:15:00';
       line.operator = 'Warehouse Manager';
@@ -3550,7 +3959,7 @@ function seedOutbound() {
   });
 }
 
-function occupySku(warehouseId, skuId, qty, outboundNo, orderNo) {
+function occupySku(warehouseId, skuId, qty, outboundNo, orderNo, shop) {
   const sku = storageSku(warehouseId, skuId);
   if (!sku || sku.available < qty) return false;
   sku.locked += qty;
@@ -3569,7 +3978,8 @@ function occupySku(warehouseId, skuId, qty, outboundNo, orderNo) {
     relatedOrderNo: orderNo,
     shippingNo: '—',
     shipmentNo: '—',
-    status: 'Pending Picking'
+    status: 'Pending Picking',
+    shop: (shop || '').trim()
   });
   return true;
 }
@@ -3601,7 +4011,8 @@ function deductSku(line) {
     shippingNo: lineShippingNo(line),
     status: 'Shipped',
     manualReason: isManual ? (line.manualReason || '—') : undefined,
-    manualRemarks: isManual ? (line.manualRemarks || '—') : undefined
+    manualRemarks: isManual ? (line.manualRemarks || '—') : undefined,
+    shop: isManual ? '' : ((line.shop || '').trim())
   });
   return true;
 }
@@ -3619,54 +4030,54 @@ function normalizeObStatus(status) {
 }
 
 function syncOutboundListWarehouseFilterVisibility() {
-  const wrap = document.getElementById('ob-filter-warehouse-wrap');
-  if (!wrap) return;
   const show = typeof isAdminAllWarehouseScope === 'function' ? isAdminAllWarehouseScope() : (isAdminUser() && getWarehouseScope() === 'all');
-  wrap.style.display = show ? '' : 'none';
-  if (!show) {
-    const sel = document.getElementById('ob-filter-warehouse');
-    if (sel) sel.value = '';
+  const wrap = document.getElementById('ob-filter-warehouse-wrap');
+  if (wrap) {
+    wrap.style.display = show ? '' : 'none';
+    if (!show) {
+      const sel = document.getElementById('ob-filter-warehouse');
+      if (sel) sel.value = '';
+    }
   }
+  const th = document.getElementById('outbound-th-warehouse');
+  if (th) th.hidden = !show;
 }
 
-function findAlternateWarehouseStock(line) {
-  const need = line.qty || 1;
-  const current = normalizeWarehouseId(line.warehouseId);
+/** Same SKU in other warehouses (STO); sums available per warehouse (prototype “backend” lookup). */
+function findAlternateWarehouseStockSameSku(line) {
   const skuId = line.skuId;
-  const alts = [];
-  const seen = new Set();
+  if (!skuId) return [];
+  const current = normalizeWarehouseId(line.warehouseId);
+  const byWh = new Map();
   skuData.forEach(s => {
+    if (s.skuId !== skuId) return;
     const wh = normalizeWarehouseId(skuWarehouseId(s));
     if (wh === current) return;
-    if (skuId && s.skuId !== skuId) return;
     if (!/STO|Storage/i.test((s.zoneCode || '') + s.zone)) return;
-    if ((s.available || 0) < need) return;
-    const key = wh + '|' + s.skuId;
-    if (seen.has(key)) return;
-    seen.add(key);
-    alts.push({ warehouse: wh, skuId: s.skuId, available: s.available });
+    const av = Number(s.available) || 0;
+    if (av <= 0) return;
+    byWh.set(wh, (byWh.get(wh) || 0) + av);
   });
-  if (!alts.length && line.productName) {
-    skuData.forEach(s => {
-      if ((s.productName || '') !== line.productName) return;
-      const wh = normalizeWarehouseId(skuWarehouseId(s));
-      if (wh === current) return;
-      if (!/STO|Storage/i.test((s.zoneCode || '') + s.zone)) return;
-      if ((s.available || 0) < need) return;
-      const key = wh + '|' + s.skuId;
-      if (seen.has(key)) return;
-      seen.add(key);
-      alts.push({ warehouse: wh, skuId: s.skuId, available: s.available });
-    });
-  }
-  return alts;
+  return [...byWh.entries()].map(([wh, available]) => ({
+    warehouseCode: wh,
+    warehouseName: typeof warehouseDisplayName === 'function' ? warehouseDisplayName(wh) : wh,
+    available
+  }));
 }
 
 function formatAlternateWarehouseHint(line) {
-  const alts = findAlternateWarehouseStock(line);
+  const alts = findAlternateWarehouseStockSameSku(line);
   if (!alts.length) return '';
-  const list = alts.map(a => `${a.warehouse} (${a.skuId} avail ${a.available})`).join('; ');
-  return `<br><span class="hint ob-alt-wh-hint">Other warehouses with stock: ${list}. Consider transfer or re-import for that warehouse.</span>`;
+  const list = alts.map(a => `${a.warehouseName} ${a.available}`).join(', ');
+  return `<span class="ob-alt-wh-hint">Other warehouses: ${list}</span>`;
+}
+
+function outboundListWarehouseCell(warehouseId) {
+  const show = typeof isAdminAllWarehouseScope === 'function' && isAdminAllWarehouseScope();
+  if (!show) return '';
+  const code = formatCanonicalWarehouseCode(warehouseId);
+  const label = typeof warehouseDisplayName === 'function' ? warehouseDisplayName(code) : code;
+  return `<td>${code}<br><span class="hint">${label}</span></td>`;
 }
 
 function scopedOutboundLines() {
@@ -3716,7 +4127,8 @@ function renderOutboundOrderList() {
   if (timeKw) lines = lines.filter(l => lineMatchesObTimeFilter(l, timeKw));
   const whFilter = document.getElementById('ob-filter-warehouse')?.value || '';
   if (whFilter) lines = lines.filter(l => normalizeWarehouseId(l.warehouseId) === normalizeWarehouseId(whFilter));
-  const colSpan = 13;
+  const showWhCol = typeof isAdminAllWarehouseScope === 'function' && isAdminAllWarehouseScope();
+  const colSpan = showWhCol ? 15 : 14;
   body.innerHTML = lines.map(l => {
     const st = normalizeObStatus(l.status);
     const holdHint = l.holdReason && l.outboundType !== 'manual' ? `<div class="ob-hold-hint">${l.holdReason}</div>` : '';
@@ -3724,6 +4136,7 @@ function renderOutboundOrderList() {
     return `<tr>
       <td><input type="checkbox" class="ob-line-check" value="${l.id}"></td>
       <td>${formatObListTimeCell(l)}</td>
+      ${outboundListWarehouseCell(l.warehouseId)}
       <td><a class="btn-link" onclick="openOutboundDetail('${l.outboundNo}')">${l.outboundNo}</a></td>
       <td>${l.skuId}</td>
       <td class="ob-wrap">${l.productName}${holdHint}</td>
@@ -3731,6 +4144,7 @@ function renderOutboundOrderList() {
       <td>${l.qty}</td>
       <td>${linePan(l)}</td>
       <td>${l.orderNo}</td>
+      <td class="ob-wrap">${lineStoreDisplay(l)}</td>
       <td>${lineOutboundTypeDisplay(l)}</td>
       <td>${l.operator || '—'}</td>
       <td>${lineTag(l.status)}</td>
@@ -3952,7 +4366,7 @@ function tryAllocate(line) {
     line.holdReason = 'Insufficient available inventory';
     return false;
   }
-  if (!occupySku(line.warehouseId, line.skuId, line.qty, line.outboundNo, line.orderNo)) {
+  if (!occupySku(line.warehouseId, line.skuId, line.qty, line.outboundNo, line.orderNo, line.shop)) {
     line.holdReason = 'Insufficient available inventory';
     return false;
   }
@@ -3999,11 +4413,13 @@ function confirmAllocationBatch() {
 }
 
 function showAllocateResult(rows) {
-  document.getElementById('ob-result-body').innerHTML = rows.map(r => `
-    <p>${r.ok ? '✓' : '!'} ${r.orderNo} / ${r.productName}<br>
-    <span class="hint">${r.ok ? 'Pending Picking · Outbound Occupy recorded.' : 'Still Pending Allocation · insufficient available in this warehouse.'}</span>
-    ${!r.ok && r.line ? formatAlternateWarehouseHint(r.line) : ''}</p>
-  `).join('') || '<p>No rows.</p>';
+  document.getElementById('ob-result-body').innerHTML = rows.map(r => {
+    if (r.ok) {
+      return `<p>✓ ${r.orderNo} / ${r.productName}<br><span class="hint">Pending Picking · Outbound Occupy recorded.</span></p>`;
+    }
+    const alt = r.line ? formatAlternateWarehouseHint(r.line) : '';
+    return `<p>! ${r.orderNo} / ${r.productName}<br><span class="hint">Insufficient available in this warehouse.${alt ? ` ${alt}` : ''}</span></p>`;
+  }).join('') || '<p>No rows.</p>';
   openModal('ob-result-modal');
 }
 
@@ -4089,8 +4505,8 @@ function buildOutboundSampleCsv(warehouseId) {
   const descs = outboundSampleItemDescsForWarehouse(warehouseId);
   if (!descs || !descs.length) return null;
   const orderId = 'MO-DEMO-2026';
-  const header = 'MerchantOrderID,ItemQuantity,ItemDesc';
-  const body = descs.map(d => `${orderId},1,${d}`).join('\n');
+  const header = 'MerchantOrderID,ItemQuantity,ItemDesc,Shop';
+  const body = descs.map(d => `${orderId},1,${d},KickBazar Official Store`).join('\n');
   return `${header}\n${body}`;
 }
 
@@ -4098,8 +4514,8 @@ function outboundSampleMatrixForWarehouse(warehouseId) {
   const descs = outboundSampleItemDescsForWarehouse(warehouseId);
   if (!descs || !descs.length) return null;
   const orderId = 'MO-DEMO-2026';
-  return [['MerchantOrderID', 'ItemQuantity', 'ItemDesc']].concat(
-    descs.map(d => [orderId, 1, d])
+  return [['MerchantOrderID', 'ItemQuantity', 'ItemDesc', 'Shop']].concat(
+    descs.map(d => [orderId, 1, d, 'KickBazar Official Store'])
   );
 }
 
@@ -4260,7 +4676,8 @@ function normalizeImportRows(raw) {
         'Product Name': parsed.productName,
         'SKU ID': parsed.skuId,
         'Order Time': r['Order Time'] || '',
-        Specification: r.Specification || '—'
+        Specification: r.Specification || '—',
+        shop: (r.shop || r.Shop || '').trim()
       };
     }
     return r;
@@ -4312,7 +4729,8 @@ function runImportOrders() {
       shippedAt: '',
       operator: 'System',
       status: 'pending_allocation',
-      holdReason: ''
+      holdReason: '',
+      shop: (r.shop || '').trim()
     };
     line.pan = linePan(line);
     if (line.qty <= 0) return;

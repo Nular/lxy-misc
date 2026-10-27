@@ -347,6 +347,7 @@ function refreshAllScopedViews() {
   renderHome();
   renderWarehouses();
   renderZones();
+  if (typeof renderEmployeesList === 'function') renderEmployeesList();
   renderSpuTable();
   renderSkuTable();
   renderRecords();
@@ -354,7 +355,7 @@ function refreshAllScopedViews() {
 
 function applyRoleAndScopeUI() {
   const admin = isAdminUser();
-  document.querySelectorAll('.nav-warehouses-group').forEach(el => {
+  document.querySelectorAll('.nav-system-setting-group').forEach(el => {
     el.style.display = admin ? '' : 'none';
   });
   document.querySelectorAll('.admin-only-action').forEach(el => {
@@ -368,7 +369,7 @@ function applyRoleAndScopeUI() {
     const active = document.querySelector('.page.active');
     if (active) {
       const pageId = active.id.replace('page-', '');
-      if (pageId === 'warehouse-management' || pageId === 'zone-management') {
+      if (pageId === 'employees' || pageId === 'warehouse-management' || pageId === 'zone-management') {
         navigateTo('home');
       }
     }
@@ -386,7 +387,7 @@ function setUserRole(role) {
   refreshAllScopedViews();
   const extra = role === 'admin'
     ? 'Full warehouse access.'
-    : 'Scoped to assigned warehouse; Warehouses menu hidden.';
+    : 'Scoped to assigned warehouse; System Setting menu hidden.';
   showToast(role === 'admin' ? `Role: Admin. ${extra}` : `Role: Warehouse Manager. ${extra}`, 'info');
 }
 
@@ -452,6 +453,7 @@ function bootWmsPrototype() {
   renderHome();
   renderWarehouses();
   renderZones();
+  if (typeof renderEmployeesList === 'function') renderEmployeesList();
   renderSpuTable();
   renderSkuTable();
   renderRecords();
@@ -513,6 +515,7 @@ function navigateTo(pageId) {
     if (typeof syncInboundListWarehouseFilterVisibility === 'function') syncInboundListWarehouseFilterVisibility();
     if (typeof renderInboundReceiptList === 'function') renderInboundReceiptList();
   }
+  if (pageId === 'employees' && typeof renderEmployeesList === 'function') renderEmployeesList();
 }
 
 // ========== Home / Dashboard ==========
@@ -646,6 +649,7 @@ function renderHome() {
   `).join('');
 
   document.getElementById('dashboard-admin-tasks').innerHTML = [
+    { page: 'employees', title: 'Employees', icon: 'task-icon-wh' },
     { page: 'warehouse-management', title: 'Warehouse Management', icon: 'task-icon-wh' },
     { page: 'zone-management', title: 'Zone Management', icon: 'task-icon-zone' }
   ].map(t => `
@@ -946,6 +950,7 @@ function confirmDeleteWarehouse() {
   closeModal('delete-warehouse-modal');
   renderWarehouses();
   renderZones();
+  if (typeof renderEmployeesList === 'function') renderEmployeesList();
   populateWarehouseSelects();
   refreshDashboard();
   showToast('Deleted successfully.', 'success');

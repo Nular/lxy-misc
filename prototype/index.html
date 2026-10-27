@@ -104,13 +104,14 @@
         <div class="nav-item" data-page="inbound">Inbound</div>
         <div class="nav-item" data-page="outbound-orders">Outbound</div>
 
-        <div class="nav-item parent nav-warehouses-group" data-group="warehouses">
-          <span>Warehouses</span>
+        <div class="nav-item parent nav-system-setting-group" data-group="system-setting">
+          <span>System Setting</span>
           <span class="nav-admin-tag">Admin</span>
           <span class="chevron">▼</span>
         </div>
-        <div class="nav-item sub nav-warehouses-group" data-page="warehouse-management">Warehouse Management</div>
-        <div class="nav-item sub nav-warehouses-group" data-page="zone-management">Zone Management</div>
+        <div class="nav-item sub nav-system-setting-group" data-page="employees">Employees</div>
+        <div class="nav-item sub nav-system-setting-group" data-page="warehouse-management">Warehouse Management</div>
+        <div class="nav-item sub nav-system-setting-group" data-page="zone-management">Zone Management</div>
       </nav>
 
       <!-- Content Area -->
@@ -160,6 +161,66 @@
                   <tbody id="dashboard-activity-table"></tbody>
                 </table>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ========== EMPLOYEES (System Setting) ========== -->
+        <div class="page" id="page-employees">
+          <div class="page-header">
+            <h1 class="page-title">Employees</h1>
+            <p class="page-subtitle">Manage warehouse operator accounts and permissions (Admin only)</p>
+          </div>
+          <div class="page-body">
+            <div class="filter-bar module-filter-bar">
+              <div class="filter-item">
+                <label>Search by</label>
+                <select id="emp-search-field">
+                  <option value="name">Name</option>
+                  <option value="email">Email</option>
+                  <option value="phone">Phone</option>
+                  <option value="employeeNo">Employee No.</option>
+                  <option value="status">Status</option>
+                </select>
+              </div>
+              <div class="filter-item filter-grow">
+                <label>Keyword</label>
+                <input type="text" id="emp-search-keyword" placeholder="Search or leave empty for all">
+              </div>
+              <div class="filter-item">
+                <label>Status</label>
+                <select id="emp-filter-status">
+                  <option value="">All</option>
+                  <option value="Enable">Enable</option>
+                  <option value="Disable">Disable</option>
+                </select>
+              </div>
+              <div class="filter-actions">
+                <button class="btn btn-primary" onclick="searchEmployees()">Search</button>
+                <button class="btn" onclick="resetEmployeeFilters()">Reset</button>
+              </div>
+            </div>
+            <div class="toolbar">
+              <span>Total <strong id="emp-list-total">0</strong></span>
+              <button class="btn btn-primary admin-only-action" onclick="openEmployeeModal('create')">+ Add Employee</button>
+            </div>
+            <div class="table-wrapper">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Employee No.</th>
+                    <th>Image / Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Warehouse</th>
+                    <th>Status</th>
+                    <th>Created at</th>
+                    <th>Last Login at</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="employees-table-body"></tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -790,6 +851,67 @@
   </div>
 
   <!-- Create/Edit Warehouse Modal -->
+  <div class="modal-overlay" id="employee-modal">
+    <div class="modal modal-md">
+      <div class="modal-header">
+        <span class="modal-title" id="employee-modal-title">Add Employee</span>
+        <button class="modal-close" onclick="closeModal('employee-modal')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form class="form-grid" id="employee-form">
+          <div class="form-group" id="emp-no-wrap" hidden>
+            <label>Employee No.</label>
+            <input class="readonly" id="emp-no-display" readonly>
+          </div>
+          <div class="form-group">
+            <label>Email <span class="required">*</span></label>
+            <input type="email" id="emp-email" maxlength="200" placeholder="user@company.com">
+          </div>
+          <div class="form-group">
+            <label>Phone</label>
+            <input type="text" id="emp-phone" maxlength="30" placeholder="Optional">
+          </div>
+          <div class="form-group" id="emp-password-wrap">
+            <label>Password <span class="required">*</span></label>
+            <input type="password" id="emp-password" autocomplete="new-password">
+          </div>
+          <div class="form-group" id="emp-password2-wrap">
+            <label>Confirm Password <span class="required">*</span></label>
+            <input type="password" id="emp-password2" autocomplete="new-password">
+          </div>
+          <div class="form-group">
+            <label>Warehouse <span class="required">*</span></label>
+            <select id="emp-warehouse"></select>
+          </div>
+          <div class="form-group" id="emp-status-wrap">
+            <label>Status</label>
+            <select id="emp-status">
+              <option value="Enable">Enable</option>
+              <option value="Disable">Disable</option>
+            </select>
+          </div>
+          <div class="form-group" id="emp-name-wrap" hidden>
+            <label>Name</label>
+            <input type="text" id="emp-name" placeholder="Display name">
+          </div>
+          <div class="form-group">
+            <label>Images</label>
+            <input type="file" id="emp-image-file" accept="image/*" onchange="onEmployeeImagePicked(this)">
+            <div id="emp-image-preview" class="emp-image-preview"></div>
+          </div>
+          <div class="form-group form-span-2">
+            <label>Remark</label>
+            <input type="text" id="emp-remark" maxlength="500" placeholder="Optional">
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" onclick="closeModal('employee-modal')">Cancel</button>
+        <button class="btn btn-primary" id="employee-submit-btn" onclick="submitEmployee()">Create</button>
+      </div>
+    </div>
+  </div>
+
   <div class="modal-overlay" id="warehouse-modal">
     <div class="modal modal-lg">
       <div class="modal-header">
@@ -1413,6 +1535,7 @@
 
   <script src="vendor/xlsx.full.min.js?v=record-detail-v2"></script>
   <script src="js/app.js?v=record-detail-v2"></script>
+  <script src="js/employees.js?v=record-detail-v2"></script>
   <script src="js/inbound.js?v=record-detail-v2"></script>
   <script src="js/outbound.js?v=record-detail-v2"></script>
 </body>
