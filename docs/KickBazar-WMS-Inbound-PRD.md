@@ -142,6 +142,7 @@
 | **Purchase Order ↔ Shipping No.** | **一个 PO 可对应多个 Shipping No.**（分布在多个 Inbound 上，按运单分批入库） |
 | **上传文件 ↔ Shipping No.** | **一次上传（一次 Parse）仅允许一个非空 `物流单号`**；文件含多个运单号 → **拒绝解析**并提示按运单拆表后分别建 Inbound |
 | **Shipping No. 必填** | 采购入库 Confirm Stock-In 前须有 Shipping No.（来自 xlsx 或头字段汇总） |
+| **Inbound No. ↔ PO ↔ PAN** | **一个 Inbound No. 仅对应一个 Purchase Order**；**一个 Purchase Order 可对应多个 PAN**（多 SKU 行 / 多次入库分摊同一 PO） |
 
 ### 5.2 搜索（Search）
 
@@ -202,9 +203,9 @@
 1. 列表 **+ New Inbound** → **下拉**选择 **Purchase Inbound** 或 **Manual Inbound**（加行后不可再切换）。  
 2. 弹层展示 **Inbound No.** 预览（提交时生成 **`IN-{YYYYMMDD}{seq3}`**）并写账。  
 3. 标题：**New Inbound** / **View Inbound**。  
-4. 头字段：**Context Warehouse** — 单仓上下文为只读当前仓；**Admin + All warehouses** 时为**下拉必选**（默认首仓，与 Outbound Import 一致），驱动解析/手动搜 SKU 的默认仓及入库单头 `warehouse_code`。**Inbound No.** 预览、**Purchase Order**、**Shipping No.**（只读，自解析结果）；**无头 Remarks**。  
-5. 行表列（采购 / 手动 **统一顺序**）：**Product Name、SKU ID、SKU**（规格/下拉）、Warehouse、Zone（Storage **只读**）、**Purchase Price**、**Order Qty**（采购可编辑；手动为 —）、Receipt Qty、**Supplier**、**PAN**、Remark、Action。Purchase Price / Supplier / PAN 默认自 SKU 主数据带出，可改。  
-6. **Order Qty ≠ Receipt Qty** → 行 **Remark 必填**；未匹配 Product Name **Warn** 可忽略并提交已匹配行；源文件 **保留**（Preview + Download）。  
+4. **表单（只读/展示）**：**Inbound No.**、**Inbound Type**（仅展示）。**Context Warehouse**：单仓上下文只读；**Admin + All warehouses** 时**下拉可选**（与 Outbound Import 一致）。**Purchase Order**、**Shipping No.**：仅 **Purchase Inbound** 展示，自 `采购.xlsx` 解析（`采购单号` / `物流单号`）；**Manual Inbound 不显示**。**无头 Remarks**。  
+5. **行表（采购 / 手动统一列序）**：**SKU ID**（唯一标识；多命中时行内下拉必选）→ **Product Name**、**SKU**（均由 SKU ID 联动只读展示）→ **Warehouse**（Admin+All 时行内下拉）→ **Zone**（不可选，对应当前 Warehouse 的 **Storage Zone**）→ **Purchase Price**（自 SKU 主数据自动带出，采购只读）→ **Order Qty**（采购自文件只读；**手动入库手输**）→ **Receipt Qty**（手输）→ **Supplier**（采购自动带出只读；**手动手输**）→ **PAN** → **Remarks** → **Action（Delete，二次确认）**。  
+6. **Remarks**：**Order Qty ≠ Receipt Qty** 时必填（采购）；**手动入库每行 Remarks 必填**。未匹配 Product Name **Warn** 可忽略并提交已匹配行；源文件 **保留**（Preview + Download）。  
 7. 仅 **Cancel** 与 **Confirm Stock-In**；行 **Delete All**。
 
 ### 6.2 行数上限
@@ -247,8 +248,8 @@
 ### 7.2 手动导入（Manual Import）
 
 1. **Search SKU**：输入 **SKU ID** 或 **Product Name**（包含匹配），数据源 = 当前上下文仓 **已初始化库存行**（Total=0 可选）。  
-2. 选中后加行，只读带出商品信息；填写 **Warehouse、Zone、Receipt Qty**。  
-3. 可追加多行；**Confirm Stock-In** 一次性提交。
+2. 选中后加行：以 **SKU ID** 为主键，**Product Name / SKU / Purchase Price / PAN** 联动展示；手填 **Order Qty、Receipt Qty、Supplier、Remarks**（Remarks 必填）。  
+3. **Warehouse** 在 Admin+All 时行内可选；**Zone** 固定 Storage。可追加多行；**Confirm Stock-In** 一次性提交。
 
 ### 7.3 Product Name 匹配（采购文件）
 
@@ -305,8 +306,10 @@
 | Variance | 差异 | — | — | 计算：`Receipt Qty − Order Qty`，只读 |
 | Zone | 库区 | Y | 默认 STO | 须 Enable；`zone_code` |
 | Primary Barcode | 条码值 | N | — | **只读展示**（EAN 优先，主 PRD §1.2） |
-| PAN | 平台码 | N | — | **只读**；13 位结构在 **商品库** 维护，不在入库页编辑 |
-| Supplier | 供应商 | N | — | 可放头或行；1–200 字符 |
+| Purchase Price | 采购价 | N | SKU 主数据 | 采购入库 **只读**；手动可展示默认价 |
+| PAN | 平台码 | N | SKU 主数据 | 行展示；可编辑（与原型一致） |
+| Supplier | 供应商 | N | SKU 主数据 | 采购 **只读**；手动 **手输**；1–200 字符 |
+| Line Remarks | 行备注 | 条件/手动必填 | — | 采购：Order≠Receipt 必填；**手动：每行必填** |
 | Remarks（头） | — | — | — | **已取消**；异常仅用行 Remark |
 
 ### 8.2 相对旧稿删除/合并的字段

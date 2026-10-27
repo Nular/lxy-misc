@@ -1260,7 +1260,7 @@
           <label class="field-label">Product Name（模糊搜索）</label>
           <input type="text" id="receipt-manual-search" class="manual-product-search" placeholder="输入商品名称关键词…" oninput="renderReceiptManualSearch()">
           <div id="receipt-manual-suggest" class="manual-suggest-list" hidden></div>
-          <span class="hint">下拉仅显示 Product Name；在表格中选择 SKU 后回显 SKU ID。</span>
+          <span class="hint">搜索加行后以 <strong>SKU ID</strong> 为唯一标识；Product Name / SKU 由 SKU ID 联动展示。</span>
         </div>
         <div class="editor-lines-toolbar" id="receipt-lines-toolbar">
           <button type="button" class="btn" id="receipt-delete-all-btn" hidden onclick="deleteAllReceiptLines()">Delete All</button>
@@ -1269,7 +1269,7 @@
           <table>
             <thead id="receipt-editor-lines-head">
               <tr>
-                <th>SKU ID</th><th>Product Name</th><th>Spec</th><th>Warehouse</th><th>Zone</th><th>Order Qty</th><th>Receipt Qty</th><th>Remark</th><th style="width:72px">Action</th>
+                <th>SKU ID</th><th>Product Name</th><th>SKU</th><th>Warehouse</th><th>Zone</th><th>Purchase Price</th><th>Order Qty</th><th>Receipt Qty</th><th>Supplier</th><th>PAN</th><th>Remarks</th><th style="width:72px">Action</th>
               </tr>
             </thead>
             <tbody id="receipt-editor-lines"></tbody>
@@ -1335,7 +1335,7 @@
       </div>
       <div class="modal-body">
         <div id="ob-import-step-upload">
-          <p class="hint"><strong>订单列表.xlsx</strong>: <code>MerchantOrderID</code> → Order No., <code>ItemQuantity</code> → Qty, <code>ItemDesc</code> → parse <code>qty*Product Name-SKU</code>. Warehouse picker only when Admin + context All.</p>
+          <p class="hint"><strong>订单列表.xlsx</strong>（导出模板前两列）：<code>SKU ID</code>、<code>PAN</code>；<code>MerchantOrderID</code> → Order No.，<code>ItemQuantity</code> → Qty。导入按 <strong>PAN</strong> 解析 Product Name / SKU / SKU ID（可带 SKU ID 列校验）。Admin + All 时选 Warehouse。</p>
           <div class="form-group" id="ob-import-wh-wrap">
             <label>Warehouse</label>
             <select id="ob-import-wh" onchange="revalidateOutboundImportPreview()"></select>

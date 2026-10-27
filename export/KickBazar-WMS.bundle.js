@@ -2572,55 +2572,56 @@ function applyReceiptLineSku(lineIndex, skuId) {
   renderReceiptEditorLines();
 }
 
-function receiptSkuSelectHtml(line, lineIndex, ro) {
+function receiptSkuIdCellHtml(line, lineIndex, ro) {
   const candidates = line.skuCandidates || [];
-  if (!candidates.length) return '<span class="hint">—</span>';
-  if (ro || candidates.length === 1) {
-    return candidates.length === 1 ? candidates[0].spec : (line.spec || '—');
-  }
+  if (ro || !candidates.length) return line.skuId ? `<strong>${line.skuId}</strong>` : '—';
+  if (candidates.length === 1 && line.skuId) return `<strong>${line.skuId}</strong>`;
   const opts = candidates.map(c =>
-    `<option value="${c.skuId}" ${line.skuId === c.skuId ? 'selected' : ''}>${c.spec || c.skuId}</option>`
+    `<option value="${c.skuId}" ${line.skuId === c.skuId ? 'selected' : ''}>${c.skuId} — ${c.spec || '—'}</option>`
   ).join('');
-  return `<select class="${line.skuId ? '' : 'input-required'}" onchange="applyReceiptLineSku(${lineIndex}, this.value)"><option value="">Select SKU (required)…</option>${opts}</select>`;
+  return `<select class="${line.skuId ? '' : 'input-required'}" onchange="applyReceiptLineSku(${lineIndex}, this.value)"><option value="">Select SKU ID…</option>${opts}</select>`;
 }
 
 function renderReceiptEditorLinesHead() {
   const head = document.getElementById('receipt-editor-lines-head');
   if (!head) return;
   head.innerHTML = `<tr>
-    <th>Product Name</th><th>SKU ID</th><th>SKU</th>
+    <th>SKU ID</th><th>Product Name</th><th>SKU</th>
     <th>Warehouse</th><th>Zone</th><th>Purchase Price</th>
-    <th>Order Qty</th><th>Receipt Qty</th><th>Supplier</th><th>PAN</th><th>Remark</th>
+    <th>Order Qty</th><th>Receipt Qty</th><th>Supplier</th><th>PAN</th><th>Remarks</th>
     <th style="width:72px">Action</th>
   </tr>`;
 }
 
+function receiptLineWarehouseEditable(ro) {
+  return !ro && typeof isAdminAllWarehouseScope === 'function' && isAdminAllWarehouseScope();
+}
+
 function receiptCommercialInputHtml(field, lineIndex, line, ro, inputType) {
   const val = line[field] != null ? String(line[field]) : '';
-  if (ro) return val || '—';
+  const poMode = receiptEditorSource === 'po-import';
+  const readOnlyCommercial = ro || (poMode && (field === 'purchasePrice' || field === 'supplier'));
+  const readOnlyPrice = ro || field === 'purchasePrice';
+  const locked = field === 'purchasePrice' ? readOnlyPrice : readOnlyCommercial;
+  if (locked) return val || '—';
   const type = inputType || 'text';
   return `<input type="${type}" value="${val.replace(/"/g, '&quot;')}" onchange="receiptEditorLines[${lineIndex}].${field}=this.value">`;
 }
 
 function warehouseSelectHtml(selected, lineIndex, ro) {
-  const scope = getWarehouseScope();
-  let list = warehouses.map(w => normalizeWarehouseId(w.id));
-  if (scope !== 'all') list = list.filter(id => id === normalizeWarehouseId(scope));
-  if (ro) return selected;
-  return `<select onchange="receiptEditorLines[${lineIndex}].warehouseCode=this.value;renderReceiptEditorLines()">${list.map(c => `<option value="${c}" ${c === selected ? 'selected' : ''}>${c}</option>`).join('')}</select>`;
+  const wh = normalizeWarehouseId(selected);
+  if (ro || !receiptLineWarehouseEditable(ro)) {
+    const name = typeof warehouseDisplayName === 'function' ? warehouseDisplayName(wh) : wh;
+    return `${formatCanonicalWarehouseCode(wh)} — ${name}`;
+  }
+  const list = warehouses.map(w => normalizeWarehouseId(w.id));
+  return `<select onchange="receiptEditorLines[${lineIndex}].warehouseCode=this.value;renderReceiptEditorLines()">${list.map(c => `<option value="${c}" ${c === wh ? 'selected' : ''}>${formatCanonicalWarehouseCode(c)}</option>`).join('')}</select>`;
 }
 
 function zoneSelectHtml(warehouseCode, selected, lineIndex, ro) {
   const wh = normalizeWarehouseId(warehouseCode);
   const zc = selected || getDefaultStorageZoneCode(wh);
-  if (ro) return `${zc} <span class="hint">(Storage Zone)</span>`;
-  const opts = zones.filter(z => normalizeWarehouseId(z.whId) === wh && z.type === 'Storage Zone');
-  const codes = opts.map(z => {
-    const code = normalizeWarehouseId(z.code.replace(/STO$/i, '')) + 'STO';
-    return code;
-  });
-  if (!codes.length) codes.push(getDefaultStorageZoneCode(wh));
-  return `<select onchange="receiptEditorLines[${lineIndex}].zoneCode=this.value;renderReceiptEditorLines()">${codes.map(c => `<option value="${c}" ${c === zc ? 'selected' : ''}>${c}</option>`).join('')}</select>`;
+  return `${zc} <span class="hint">(Storage Zone)</span>`;
 }
 
 function receiptZoneReadonlyForSource() {
@@ -3032,6 +3033,11 @@ function lineQtyMismatch(line) {
   return o !== r;
 }
 
+function lineRemarksRequired(line) {
+  if (receiptEditorSource === 'manual') return true;
+  return lineQtyMismatch(line);
+}
+
 function renderReceiptEditorLines() {
   renderReceiptEditorLinesHead();
   const ro = receiptEditorReadonly;
@@ -3044,25 +3050,23 @@ function renderReceiptEditorLines() {
     const zc = l.zoneCode || getDefaultStorageZoneCode(wh);
     l.warehouseCode = wh;
     l.zoneCode = zc;
-    const mismatch = lineQtyMismatch(l);
+    const remarksRequired = lineRemarksRequired(l);
     const remarkCell = ro
       ? (l.lineRemarks || '—')
-      : `<input type="text" maxlength="200" placeholder="${mismatch ? 'Required' : 'Optional'}" value="${l.lineRemarks || ''}" class="${mismatch ? 'input-required' : ''}" oninput="receiptEditorLines[${i}].lineRemarks=this.value">`;
+      : `<input type="text" maxlength="200" placeholder="${remarksRequired ? 'Required' : 'Optional'}" value="${l.lineRemarks || ''}" class="${remarksRequired ? 'input-required' : ''}" oninput="receiptEditorLines[${i}].lineRemarks=this.value">`;
     const orderCell = poMode
-      ? (ro ? (l.orderQty ?? '—') : `<input type="number" min="1" max="9999999" value="${l.orderQty ?? 0}" onchange="receiptEditorLines[${i}].orderQty=parseInt(this.value,10)||0;renderReceiptEditorLines()">`)
-      : '—';
+      ? (ro ? (l.orderQty ?? '—') : (l.orderQty ?? '—'))
+      : (ro ? (l.orderQty ?? '—') : `<input type="number" min="1" max="9999999" value="${l.orderQty || 1}" onchange="receiptEditorLines[${i}].orderQty=parseInt(this.value,10)||0;renderReceiptEditorLines()">`);
     const deleteCell = ro
       ? '—'
       : `<button type="button" class="btn btn-sm" onclick="deleteReceiptLine(${i})">Delete</button>`;
-    const displayName = poMode ? (l.importProductName || l.productName || '—') : (l.productName || '—');
-    const skuIdCell = l.skuId ? `<strong>${l.skuId}</strong>` : '—';
-    const skuCell = (l.skuCandidates && l.skuCandidates.length > 1 && !ro)
-      ? receiptSkuSelectHtml(l, i, ro)
-      : (l.spec || (l.skuCandidates && l.skuCandidates[0] && l.skuCandidates[0].spec) || '—');
+    const displayName = l.skuId ? (l.productName || '—') : (poMode ? (l.importProductName || '—') : (l.productName || '—'));
+    const skuIdCell = receiptSkuIdCellHtml(l, i, ro);
+    const skuCell = l.skuId ? (l.spec || '—') : '—';
     return `
     <tr>
-      <td>${displayName}</td>
       <td>${skuIdCell}</td>
+      <td>${displayName}</td>
       <td>${skuCell}</td>
       <td>${warehouseSelectHtml(wh, i, ro)}</td>
       <td>${zoneSelectHtml(wh, zc, i, zoneRo)}</td>
@@ -3084,6 +3088,7 @@ function renderReceiptEditorLines() {
 
 function deleteReceiptLine(index) {
   if (receiptEditorReadonly) return;
+  if (!window.confirm('Delete this line?')) return;
   receiptEditorLines.splice(index, 1);
   if (!receiptEditorLines.length) receiptLockedSource = null;
   renderReceiptEditorLines();
@@ -3260,12 +3265,14 @@ function confirmReceiptStockIn() {
       showToast('Receipt Qty must be between 1 and 9,999,999.', 'error');
       return;
     }
-    if (lineQtyMismatch(line) && !(line.lineRemarks || '').trim()) {
-      showToast('Remark is required on each line where Order Qty ≠ Receipt Qty.', 'error');
+    if (lineRemarksRequired(line) && !(line.lineRemarks || '').trim()) {
+      showToast(receiptEditorSource === 'manual'
+        ? 'Remarks is required on each manual inbound line.'
+        : 'Remarks is required on each line where Order Qty ≠ Receipt Qty.', 'error');
       return;
     }
     if (receiptEditorSource === 'po-import' && !line.skuId) {
-      showToast('Select SKU for each purchase line with multiple matches.', 'error');
+      showToast('Select SKU ID for each purchase line with multiple matches.', 'error');
       return;
     }
     if (receiptEditorSource === 'manual' && !line.skuId) {
@@ -3458,16 +3465,21 @@ function confirmReceiptSkuPicker() {
       showToast('You have already uploaded 10,000 records. Adding new data will clear all existing data.', 'warning');
       return;
     }
-    receiptEditorLines.push({
+    const manualLine = {
       skuId: inv.skuId,
       productName: inv.productName,
       spec: inv.spec,
-      orderQty: 0,
+      orderQty: 1,
       receiptQty: 1,
       barcode: primaryBarcode(inv),
       warehouseCode: wh,
-      zoneCode: inv.zoneCode
-    });
+      zoneCode: inv.zoneCode,
+      purchasePrice: '',
+      supplier: '',
+      pan: ''
+    };
+    enrichReceiptLineCommercialFields(manualLine, inv.skuId);
+    receiptEditorLines.push(manualLine);
     added++;
   });
   if (added) {
@@ -3525,7 +3537,7 @@ function renderReceiptManualSearch() {
       skuId: auto ? auto.skuId : '',
       spec: auto ? auto.spec : '',
       skuResolved: !!auto,
-      orderQty: 0,
+      orderQty: 1,
       receiptQty: 1,
       warehouseCode: wh,
       zoneCode: auto ? auto.zoneCode : getDefaultStorageZoneCode(wh),
@@ -3539,7 +3551,7 @@ function renderReceiptManualSearch() {
     input.value = '';
     panel.hidden = true;
     renderReceiptEditorLines();
-    showToast('Product line added — select SKU in table.', 'success');
+    showToast(auto ? 'Line added.' : 'Line added — select SKU ID in table.', 'success');
   };
 }
 
@@ -3665,6 +3677,28 @@ function parseOutboundItemDesc(itemDesc, itemQuantity) {
   return { qty, productName: rest, skuId: '' };
 }
 
+function resolveOutboundSkuByPan(warehouseId, pan) {
+  const whCode = formatCanonicalWarehouseCode(warehouseId);
+  const key = String(pan || '').trim();
+  if (!key) return { skuId: '—', productName: '—', spec: '—', pan: '', ok: false, error: 'Missing PAN' };
+  const stoRows = listStoSkusForWarehouse(warehouseId);
+  const row = stoRows.find(s => {
+    const p = String(s.pan || '').trim();
+    if (p && p === key) return true;
+    return (s.barcodes || []).some(b => String(b).replace(/^PAN:\s*/i, '').trim() === key);
+  });
+  if (!row) {
+    return { skuId: '—', productName: '—', spec: '—', pan: key, ok: false, error: 'PAN not found in warehouse STO' };
+  }
+  return {
+    skuId: row.skuId,
+    productName: row.productName,
+    spec: row.spec || '—',
+    pan: row.pan || key,
+    ok: true
+  };
+}
+
 function resolveOutboundSku(warehouseId, skuId, productName) {
   const whCode = formatCanonicalWarehouseCode(warehouseId);
   if (skuId) {
@@ -3714,8 +3748,9 @@ function validateAndResolveOutboundRows(warehouseId, rawRows) {
       errors.push({ row: rowNum, order: '—', msg: 'Missing MerchantOrderID' });
       return;
     }
-    if (!r['Product Name'] && !r['SKU ID']) {
-      errors.push({ row: rowNum, order: r['Order No'], msg: 'ItemDesc format invalid (need qty*Product-SKU)' });
+    const pan = String(r.PAN || r.pan || '').trim();
+    if (!pan && !r['SKU ID'] && !r['Product Name']) {
+      errors.push({ row: rowNum, order: r['Order No'], msg: 'Missing PAN (or legacy ItemDesc / SKU ID)' });
       return;
     }
     const qty = parseInt(r.Qty, 10) || 0;
@@ -3723,13 +3758,20 @@ function validateAndResolveOutboundRows(warehouseId, rawRows) {
       errors.push({ row: rowNum, order: r['Order No'], msg: 'ItemQuantity must be positive' });
       return;
     }
-    const resolved = resolveOutboundSku(warehouseId, r['SKU ID'], r['Product Name']);
+    const resolved = pan
+      ? resolveOutboundSkuByPan(warehouseId, pan)
+      : resolveOutboundSku(warehouseId, r['SKU ID'], r['Product Name']);
     if (!resolved.ok) {
       errors.push({ row: rowNum, order: r['Order No'], msg: resolved.error || 'SKU not found in warehouse STO' });
       return;
     }
+    if (pan && r['SKU ID'] && r['SKU ID'] !== resolved.skuId) {
+      errors.push({ row: rowNum, order: r['Order No'], msg: 'SKU ID does not match PAN' });
+      return;
+    }
     validRows.push({
       'Order No': r['Order No'],
+      PAN: resolved.pan || pan,
       Qty: qty,
       'Product Name': resolved.productName,
       'SKU ID': resolved.skuId,
@@ -3759,11 +3801,11 @@ function renderOutboundImportValidation(result) {
     summary.textContent = `All ${result.validRows.length} row(s) matched warehouse SKU rows. Ready to import.`;
   }
   const rows = result.validRows.map(v => `
-    <tr><td>${v['Order No']}</td><td>${v['SKU ID']}</td><td>${v['Product Name']}</td><td>${v.Specification}</td><td>${v.Qty}</td><td class="tag tag-enable">OK</td></tr>
+    <tr><td>${v['Order No']}</td><td>${v.PAN || '—'}</td><td>${v['SKU ID']}</td><td>${v['Product Name']}</td><td>${v.Specification}</td><td>${v.Qty}</td><td class="tag tag-enable">OK</td></tr>
   `).concat(result.errors.map(e => `
-    <tr><td>${e.order}</td><td>—</td><td>—</td><td>—</td><td>—</td><td class="ob-hold-hint">Row ${e.row}: ${e.msg}</td></tr>
+    <tr><td>${e.order}</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td class="ob-hold-hint">Row ${e.row}: ${e.msg}</td></tr>
   `));
-  wrap.innerHTML = `<table><thead><tr><th>Order No.</th><th>SKU ID</th><th>Product Name</th><th>SKU</th><th>Qty</th><th>Check</th></tr></thead><tbody>${rows.join('')}</tbody></table>`;
+  wrap.innerHTML = `<table><thead><tr><th>Order No.</th><th>PAN</th><th>SKU ID</th><th>Product Name</th><th>SKU</th><th>Qty</th><th>Check</th></tr></thead><tbody>${rows.join('')}</tbody></table>`;
 }
 
 function applyOutboundImportPreview(rawRows) {
@@ -3794,6 +3836,12 @@ function revalidateOutboundImportPreview() {
 function parseOrderListMatrix(matrix) {
   if (!matrix || !matrix.length) return [];
   const headers = matrix[0].map(c => (typeof cellToDisplay === 'function' ? cellToDisplay(c) : String(c || '').trim()));
+  const idxSku = typeof findHeaderIndex === 'function'
+    ? findHeaderIndex(headers, ['sku id', 'skuid'])
+    : headers.findIndex(h => /^sku\s*id$/i.test(h));
+  const idxPan = typeof findHeaderIndex === 'function'
+    ? findHeaderIndex(headers, ['pan'])
+    : headers.findIndex(h => /^pan$/i.test(h));
   const idxOrder = typeof findHeaderIndex === 'function'
     ? findHeaderIndex(headers, ['merchantorderid', 'merchant order id', 'order no'])
     : headers.findIndex(h => /merchantorderid/i.test(h));
@@ -3806,8 +3854,11 @@ function parseOrderListMatrix(matrix) {
   const idxShop = typeof findHeaderIndex === 'function'
     ? findHeaderIndex(headers, ['shop', 'store'])
     : headers.findIndex(h => /^shop$/i.test(h) || /^store$/i.test(h));
-  if (idxOrder < 0 || idxQty < 0 || idxDesc < 0) {
-    throw new Error('Required columns: MerchantOrderID, ItemQuantity, ItemDesc');
+  if (idxOrder < 0 || idxQty < 0) {
+    throw new Error('Required columns: MerchantOrderID, ItemQuantity');
+  }
+  if (idxPan < 0 && idxDesc < 0 && idxSku < 0) {
+    throw new Error('Required: PAN column (preferred) or ItemDesc / SKU ID');
   }
   const rows = [];
   for (let r = 1; r < matrix.length; r++) {
@@ -3815,20 +3866,32 @@ function parseOrderListMatrix(matrix) {
     if (!line || !line.some(c => c !== '' && c != null)) continue;
     const orderNo = (typeof cellToDisplay === 'function' ? cellToDisplay(line[idxOrder]) : String(line[idxOrder] || '').trim());
     const itemQty = line[idxQty];
-    const itemDesc = typeof cellToDisplay === 'function' ? cellToDisplay(line[idxDesc]) : String(line[idxDesc] || '').trim();
-    if (!orderNo || !itemDesc) continue;
-    const parsed = parseOutboundItemDesc(itemDesc, itemQty);
+    const pan = idxPan >= 0
+      ? (typeof cellToDisplay === 'function' ? cellToDisplay(line[idxPan]) : String(line[idxPan] || '').trim())
+      : '';
+    const skuIdCol = idxSku >= 0
+      ? (typeof cellToDisplay === 'function' ? cellToDisplay(line[idxSku]) : String(line[idxSku] || '').trim())
+      : '';
+    const itemDesc = idxDesc >= 0
+      ? (typeof cellToDisplay === 'function' ? cellToDisplay(line[idxDesc]) : String(line[idxDesc] || '').trim())
+      : '';
+    if (!orderNo) continue;
+    if (!pan && !itemDesc && !skuIdCol) continue;
+    const parsed = itemDesc ? parseOutboundItemDesc(itemDesc, itemQty) : { qty: parseInt(String(itemQty).replace(/,/g, ''), 10) || 0, productName: '', skuId: skuIdCol };
+    const qty = parsed.qty > 0 ? parsed.qty : (parseInt(String(itemQty).replace(/,/g, ''), 10) || 0);
     const shop = idxShop >= 0
       ? (typeof cellToDisplay === 'function' ? cellToDisplay(line[idxShop]) : String(line[idxShop] || '').trim())
       : '';
     rows.push({
       'MerchantOrderID': orderNo,
       'Order No': orderNo,
-      'ItemQuantity': parsed.qty,
-      'Qty': parsed.qty,
+      'ItemQuantity': qty,
+      'Qty': qty,
       'ItemDesc': itemDesc,
+      PAN: pan,
+      pan,
+      'SKU ID': skuIdCol || parsed.skuId,
       'Product Name': parsed.productName,
-      'SKU ID': parsed.skuId,
       shop
     });
   }
@@ -4512,20 +4575,19 @@ function outboundSampleItemDescsForWarehouse(warehouseId) {
 }
 
 function buildOutboundSampleCsv(warehouseId) {
-  const descs = outboundSampleItemDescsForWarehouse(warehouseId);
-  if (!descs || !descs.length) return null;
-  const orderId = 'MO-DEMO-2026';
-  const header = 'MerchantOrderID,ItemQuantity,ItemDesc,Shop';
-  const body = descs.map(d => `${orderId},1,${d},KickBazar Official Store`).join('\n');
-  return `${header}\n${body}`;
+  const matrix = outboundSampleMatrixForWarehouse(warehouseId);
+  if (!matrix) return null;
+  return matrix.map(row => row.join(',')).join('\n');
 }
 
 function outboundSampleMatrixForWarehouse(warehouseId) {
   const descs = outboundSampleItemDescsForWarehouse(warehouseId);
   if (!descs || !descs.length) return null;
   const orderId = 'MO-DEMO-2026';
-  return [['MerchantOrderID', 'ItemQuantity', 'ItemDesc', 'Shop']].concat(
-    descs.map(d => [orderId, 1, d, 'KickBazar Official Store'])
+  const pick = listStoSkusForWarehouse(warehouseId).filter(s => (s.available ?? 0) > 0 || (s.total ?? 0) > 0).slice(0, 2);
+  if (!pick.length) return null;
+  return [['SKU ID', 'PAN', 'MerchantOrderID', 'ItemQuantity', 'Shop']].concat(
+    pick.map(s => [s.skuId, s.pan || '', orderId, 1, 'KickBazar Official Store'])
   );
 }
 
@@ -4646,7 +4708,7 @@ function onOutboundFilePicked(input, kind) {
       if (!ok) {
         obImportValidatedRows = null;
         document.getElementById('ob-import-btn').disabled = true;
-        document.getElementById('ob-import-file-msg').textContent = 'Required: MerchantOrderID, ItemQuantity, ItemDesc.';
+        document.getElementById('ob-import-file-msg').textContent = 'Required: SKU ID, PAN, MerchantOrderID, ItemQuantity (or legacy ItemDesc).';
         renderOutboundImportValidation({ errors: [], validRows: [] });
         return;
       }
@@ -4675,16 +4737,20 @@ function parseCsv(text) {
 
 function normalizeImportRows(raw) {
   return raw.map(r => {
-    if (r['MerchantOrderID'] || r.ItemDesc) {
-      const orderNo = r['MerchantOrderID'] || r['Order No'];
+    const orderNo = r['MerchantOrderID'] || r['Order No'];
+    const pan = String(r.PAN || r.pan || '').trim();
+    if (orderNo || r.ItemDesc || pan || r['SKU ID']) {
       const parsed = r.ItemDesc
         ? parseOutboundItemDesc(r.ItemDesc, r.ItemQuantity || r.Qty)
-        : { qty: parseInt(r.Qty, 10), productName: r['Product Name'], skuId: r['SKU ID'] };
+        : { qty: parseInt(r.Qty || r.ItemQuantity, 10), productName: r['Product Name'] || '', skuId: r['SKU ID'] || '' };
+      const qty = parsed.qty > 0 ? parsed.qty : (parseInt(r.Qty || r.ItemQuantity, 10) || 0);
       return {
         'Order No': orderNo,
-        Qty: parsed.qty,
+        PAN: pan,
+        pan,
+        Qty: qty,
         'Product Name': parsed.productName,
-        'SKU ID': parsed.skuId,
+        'SKU ID': parsed.skuId || r['SKU ID'] || '',
         'Order Time': r['Order Time'] || '',
         Specification: r.Specification || '—',
         shop: (r.shop || r.Shop || '').trim()

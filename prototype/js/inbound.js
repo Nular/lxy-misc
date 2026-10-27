@@ -528,55 +528,56 @@ function applyReceiptLineSku(lineIndex, skuId) {
   renderReceiptEditorLines();
 }
 
-function receiptSkuSelectHtml(line, lineIndex, ro) {
+function receiptSkuIdCellHtml(line, lineIndex, ro) {
   const candidates = line.skuCandidates || [];
-  if (!candidates.length) return '<span class="hint">—</span>';
-  if (ro || candidates.length === 1) {
-    return candidates.length === 1 ? candidates[0].spec : (line.spec || '—');
-  }
+  if (ro || !candidates.length) return line.skuId ? `<strong>${line.skuId}</strong>` : '—';
+  if (candidates.length === 1 && line.skuId) return `<strong>${line.skuId}</strong>`;
   const opts = candidates.map(c =>
-    `<option value="${c.skuId}" ${line.skuId === c.skuId ? 'selected' : ''}>${c.spec || c.skuId}</option>`
+    `<option value="${c.skuId}" ${line.skuId === c.skuId ? 'selected' : ''}>${c.skuId} — ${c.spec || '—'}</option>`
   ).join('');
-  return `<select class="${line.skuId ? '' : 'input-required'}" onchange="applyReceiptLineSku(${lineIndex}, this.value)"><option value="">Select SKU (required)…</option>${opts}</select>`;
+  return `<select class="${line.skuId ? '' : 'input-required'}" onchange="applyReceiptLineSku(${lineIndex}, this.value)"><option value="">Select SKU ID…</option>${opts}</select>`;
 }
 
 function renderReceiptEditorLinesHead() {
   const head = document.getElementById('receipt-editor-lines-head');
   if (!head) return;
   head.innerHTML = `<tr>
-    <th>Product Name</th><th>SKU ID</th><th>SKU</th>
+    <th>SKU ID</th><th>Product Name</th><th>SKU</th>
     <th>Warehouse</th><th>Zone</th><th>Purchase Price</th>
-    <th>Order Qty</th><th>Receipt Qty</th><th>Supplier</th><th>PAN</th><th>Remark</th>
+    <th>Order Qty</th><th>Receipt Qty</th><th>Supplier</th><th>PAN</th><th>Remarks</th>
     <th style="width:72px">Action</th>
   </tr>`;
 }
 
+function receiptLineWarehouseEditable(ro) {
+  return !ro && typeof isAdminAllWarehouseScope === 'function' && isAdminAllWarehouseScope();
+}
+
 function receiptCommercialInputHtml(field, lineIndex, line, ro, inputType) {
   const val = line[field] != null ? String(line[field]) : '';
-  if (ro) return val || '—';
+  const poMode = receiptEditorSource === 'po-import';
+  const readOnlyCommercial = ro || (poMode && (field === 'purchasePrice' || field === 'supplier'));
+  const readOnlyPrice = ro || field === 'purchasePrice';
+  const locked = field === 'purchasePrice' ? readOnlyPrice : readOnlyCommercial;
+  if (locked) return val || '—';
   const type = inputType || 'text';
   return `<input type="${type}" value="${val.replace(/"/g, '&quot;')}" onchange="receiptEditorLines[${lineIndex}].${field}=this.value">`;
 }
 
 function warehouseSelectHtml(selected, lineIndex, ro) {
-  const scope = getWarehouseScope();
-  let list = warehouses.map(w => normalizeWarehouseId(w.id));
-  if (scope !== 'all') list = list.filter(id => id === normalizeWarehouseId(scope));
-  if (ro) return selected;
-  return `<select onchange="receiptEditorLines[${lineIndex}].warehouseCode=this.value;renderReceiptEditorLines()">${list.map(c => `<option value="${c}" ${c === selected ? 'selected' : ''}>${c}</option>`).join('')}</select>`;
+  const wh = normalizeWarehouseId(selected);
+  if (ro || !receiptLineWarehouseEditable(ro)) {
+    const name = typeof warehouseDisplayName === 'function' ? warehouseDisplayName(wh) : wh;
+    return `${formatCanonicalWarehouseCode(wh)} — ${name}`;
+  }
+  const list = warehouses.map(w => normalizeWarehouseId(w.id));
+  return `<select onchange="receiptEditorLines[${lineIndex}].warehouseCode=this.value;renderReceiptEditorLines()">${list.map(c => `<option value="${c}" ${c === wh ? 'selected' : ''}>${formatCanonicalWarehouseCode(c)}</option>`).join('')}</select>`;
 }
 
 function zoneSelectHtml(warehouseCode, selected, lineIndex, ro) {
   const wh = normalizeWarehouseId(warehouseCode);
   const zc = selected || getDefaultStorageZoneCode(wh);
-  if (ro) return `${zc} <span class="hint">(Storage Zone)</span>`;
-  const opts = zones.filter(z => normalizeWarehouseId(z.whId) === wh && z.type === 'Storage Zone');
-  const codes = opts.map(z => {
-    const code = normalizeWarehouseId(z.code.replace(/STO$/i, '')) + 'STO';
-    return code;
-  });
-  if (!codes.length) codes.push(getDefaultStorageZoneCode(wh));
-  return `<select onchange="receiptEditorLines[${lineIndex}].zoneCode=this.value;renderReceiptEditorLines()">${codes.map(c => `<option value="${c}" ${c === zc ? 'selected' : ''}>${c}</option>`).join('')}</select>`;
+  return `${zc} <span class="hint">(Storage Zone)</span>`;
 }
 
 function receiptZoneReadonlyForSource() {
@@ -988,6 +989,11 @@ function lineQtyMismatch(line) {
   return o !== r;
 }
 
+function lineRemarksRequired(line) {
+  if (receiptEditorSource === 'manual') return true;
+  return lineQtyMismatch(line);
+}
+
 function renderReceiptEditorLines() {
   renderReceiptEditorLinesHead();
   const ro = receiptEditorReadonly;
@@ -1000,25 +1006,23 @@ function renderReceiptEditorLines() {
     const zc = l.zoneCode || getDefaultStorageZoneCode(wh);
     l.warehouseCode = wh;
     l.zoneCode = zc;
-    const mismatch = lineQtyMismatch(l);
+    const remarksRequired = lineRemarksRequired(l);
     const remarkCell = ro
       ? (l.lineRemarks || '—')
-      : `<input type="text" maxlength="200" placeholder="${mismatch ? 'Required' : 'Optional'}" value="${l.lineRemarks || ''}" class="${mismatch ? 'input-required' : ''}" oninput="receiptEditorLines[${i}].lineRemarks=this.value">`;
+      : `<input type="text" maxlength="200" placeholder="${remarksRequired ? 'Required' : 'Optional'}" value="${l.lineRemarks || ''}" class="${remarksRequired ? 'input-required' : ''}" oninput="receiptEditorLines[${i}].lineRemarks=this.value">`;
     const orderCell = poMode
-      ? (ro ? (l.orderQty ?? '—') : `<input type="number" min="1" max="9999999" value="${l.orderQty ?? 0}" onchange="receiptEditorLines[${i}].orderQty=parseInt(this.value,10)||0;renderReceiptEditorLines()">`)
-      : '—';
+      ? (ro ? (l.orderQty ?? '—') : (l.orderQty ?? '—'))
+      : (ro ? (l.orderQty ?? '—') : `<input type="number" min="1" max="9999999" value="${l.orderQty || 1}" onchange="receiptEditorLines[${i}].orderQty=parseInt(this.value,10)||0;renderReceiptEditorLines()">`);
     const deleteCell = ro
       ? '—'
       : `<button type="button" class="btn btn-sm" onclick="deleteReceiptLine(${i})">Delete</button>`;
-    const displayName = poMode ? (l.importProductName || l.productName || '—') : (l.productName || '—');
-    const skuIdCell = l.skuId ? `<strong>${l.skuId}</strong>` : '—';
-    const skuCell = (l.skuCandidates && l.skuCandidates.length > 1 && !ro)
-      ? receiptSkuSelectHtml(l, i, ro)
-      : (l.spec || (l.skuCandidates && l.skuCandidates[0] && l.skuCandidates[0].spec) || '—');
+    const displayName = l.skuId ? (l.productName || '—') : (poMode ? (l.importProductName || '—') : (l.productName || '—'));
+    const skuIdCell = receiptSkuIdCellHtml(l, i, ro);
+    const skuCell = l.skuId ? (l.spec || '—') : '—';
     return `
     <tr>
-      <td>${displayName}</td>
       <td>${skuIdCell}</td>
+      <td>${displayName}</td>
       <td>${skuCell}</td>
       <td>${warehouseSelectHtml(wh, i, ro)}</td>
       <td>${zoneSelectHtml(wh, zc, i, zoneRo)}</td>
@@ -1040,6 +1044,7 @@ function renderReceiptEditorLines() {
 
 function deleteReceiptLine(index) {
   if (receiptEditorReadonly) return;
+  if (!window.confirm('Delete this line?')) return;
   receiptEditorLines.splice(index, 1);
   if (!receiptEditorLines.length) receiptLockedSource = null;
   renderReceiptEditorLines();
@@ -1216,12 +1221,14 @@ function confirmReceiptStockIn() {
       showToast('Receipt Qty must be between 1 and 9,999,999.', 'error');
       return;
     }
-    if (lineQtyMismatch(line) && !(line.lineRemarks || '').trim()) {
-      showToast('Remark is required on each line where Order Qty ≠ Receipt Qty.', 'error');
+    if (lineRemarksRequired(line) && !(line.lineRemarks || '').trim()) {
+      showToast(receiptEditorSource === 'manual'
+        ? 'Remarks is required on each manual inbound line.'
+        : 'Remarks is required on each line where Order Qty ≠ Receipt Qty.', 'error');
       return;
     }
     if (receiptEditorSource === 'po-import' && !line.skuId) {
-      showToast('Select SKU for each purchase line with multiple matches.', 'error');
+      showToast('Select SKU ID for each purchase line with multiple matches.', 'error');
       return;
     }
     if (receiptEditorSource === 'manual' && !line.skuId) {
@@ -1414,16 +1421,21 @@ function confirmReceiptSkuPicker() {
       showToast('You have already uploaded 10,000 records. Adding new data will clear all existing data.', 'warning');
       return;
     }
-    receiptEditorLines.push({
+    const manualLine = {
       skuId: inv.skuId,
       productName: inv.productName,
       spec: inv.spec,
-      orderQty: 0,
+      orderQty: 1,
       receiptQty: 1,
       barcode: primaryBarcode(inv),
       warehouseCode: wh,
-      zoneCode: inv.zoneCode
-    });
+      zoneCode: inv.zoneCode,
+      purchasePrice: '',
+      supplier: '',
+      pan: ''
+    };
+    enrichReceiptLineCommercialFields(manualLine, inv.skuId);
+    receiptEditorLines.push(manualLine);
     added++;
   });
   if (added) {
@@ -1481,7 +1493,7 @@ function renderReceiptManualSearch() {
       skuId: auto ? auto.skuId : '',
       spec: auto ? auto.spec : '',
       skuResolved: !!auto,
-      orderQty: 0,
+      orderQty: 1,
       receiptQty: 1,
       warehouseCode: wh,
       zoneCode: auto ? auto.zoneCode : getDefaultStorageZoneCode(wh),
@@ -1495,7 +1507,7 @@ function renderReceiptManualSearch() {
     input.value = '';
     panel.hidden = true;
     renderReceiptEditorLines();
-    showToast('Product line added — select SKU in table.', 'success');
+    showToast(auto ? 'Line added.' : 'Line added — select SKU ID in table.', 'success');
   };
 }
 

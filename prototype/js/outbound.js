@@ -113,6 +113,28 @@ function parseOutboundItemDesc(itemDesc, itemQuantity) {
   return { qty, productName: rest, skuId: '' };
 }
 
+function resolveOutboundSkuByPan(warehouseId, pan) {
+  const whCode = formatCanonicalWarehouseCode(warehouseId);
+  const key = String(pan || '').trim();
+  if (!key) return { skuId: '—', productName: '—', spec: '—', pan: '', ok: false, error: 'Missing PAN' };
+  const stoRows = listStoSkusForWarehouse(warehouseId);
+  const row = stoRows.find(s => {
+    const p = String(s.pan || '').trim();
+    if (p && p === key) return true;
+    return (s.barcodes || []).some(b => String(b).replace(/^PAN:\s*/i, '').trim() === key);
+  });
+  if (!row) {
+    return { skuId: '—', productName: '—', spec: '—', pan: key, ok: false, error: 'PAN not found in warehouse STO' };
+  }
+  return {
+    skuId: row.skuId,
+    productName: row.productName,
+    spec: row.spec || '—',
+    pan: row.pan || key,
+    ok: true
+  };
+}
+
 function resolveOutboundSku(warehouseId, skuId, productName) {
   const whCode = formatCanonicalWarehouseCode(warehouseId);
   if (skuId) {
@@ -162,8 +184,9 @@ function validateAndResolveOutboundRows(warehouseId, rawRows) {
       errors.push({ row: rowNum, order: '—', msg: 'Missing MerchantOrderID' });
       return;
     }
-    if (!r['Product Name'] && !r['SKU ID']) {
-      errors.push({ row: rowNum, order: r['Order No'], msg: 'ItemDesc format invalid (need qty*Product-SKU)' });
+    const pan = String(r.PAN || r.pan || '').trim();
+    if (!pan && !r['SKU ID'] && !r['Product Name']) {
+      errors.push({ row: rowNum, order: r['Order No'], msg: 'Missing PAN (or legacy ItemDesc / SKU ID)' });
       return;
     }
     const qty = parseInt(r.Qty, 10) || 0;
@@ -171,13 +194,20 @@ function validateAndResolveOutboundRows(warehouseId, rawRows) {
       errors.push({ row: rowNum, order: r['Order No'], msg: 'ItemQuantity must be positive' });
       return;
     }
-    const resolved = resolveOutboundSku(warehouseId, r['SKU ID'], r['Product Name']);
+    const resolved = pan
+      ? resolveOutboundSkuByPan(warehouseId, pan)
+      : resolveOutboundSku(warehouseId, r['SKU ID'], r['Product Name']);
     if (!resolved.ok) {
       errors.push({ row: rowNum, order: r['Order No'], msg: resolved.error || 'SKU not found in warehouse STO' });
       return;
     }
+    if (pan && r['SKU ID'] && r['SKU ID'] !== resolved.skuId) {
+      errors.push({ row: rowNum, order: r['Order No'], msg: 'SKU ID does not match PAN' });
+      return;
+    }
     validRows.push({
       'Order No': r['Order No'],
+      PAN: resolved.pan || pan,
       Qty: qty,
       'Product Name': resolved.productName,
       'SKU ID': resolved.skuId,
@@ -207,11 +237,11 @@ function renderOutboundImportValidation(result) {
     summary.textContent = `All ${result.validRows.length} row(s) matched warehouse SKU rows. Ready to import.`;
   }
   const rows = result.validRows.map(v => `
-    <tr><td>${v['Order No']}</td><td>${v['SKU ID']}</td><td>${v['Product Name']}</td><td>${v.Specification}</td><td>${v.Qty}</td><td class="tag tag-enable">OK</td></tr>
+    <tr><td>${v['Order No']}</td><td>${v.PAN || '—'}</td><td>${v['SKU ID']}</td><td>${v['Product Name']}</td><td>${v.Specification}</td><td>${v.Qty}</td><td class="tag tag-enable">OK</td></tr>
   `).concat(result.errors.map(e => `
-    <tr><td>${e.order}</td><td>—</td><td>—</td><td>—</td><td>—</td><td class="ob-hold-hint">Row ${e.row}: ${e.msg}</td></tr>
+    <tr><td>${e.order}</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td class="ob-hold-hint">Row ${e.row}: ${e.msg}</td></tr>
   `));
-  wrap.innerHTML = `<table><thead><tr><th>Order No.</th><th>SKU ID</th><th>Product Name</th><th>SKU</th><th>Qty</th><th>Check</th></tr></thead><tbody>${rows.join('')}</tbody></table>`;
+  wrap.innerHTML = `<table><thead><tr><th>Order No.</th><th>PAN</th><th>SKU ID</th><th>Product Name</th><th>SKU</th><th>Qty</th><th>Check</th></tr></thead><tbody>${rows.join('')}</tbody></table>`;
 }
 
 function applyOutboundImportPreview(rawRows) {
@@ -242,6 +272,12 @@ function revalidateOutboundImportPreview() {
 function parseOrderListMatrix(matrix) {
   if (!matrix || !matrix.length) return [];
   const headers = matrix[0].map(c => (typeof cellToDisplay === 'function' ? cellToDisplay(c) : String(c || '').trim()));
+  const idxSku = typeof findHeaderIndex === 'function'
+    ? findHeaderIndex(headers, ['sku id', 'skuid'])
+    : headers.findIndex(h => /^sku\s*id$/i.test(h));
+  const idxPan = typeof findHeaderIndex === 'function'
+    ? findHeaderIndex(headers, ['pan'])
+    : headers.findIndex(h => /^pan$/i.test(h));
   const idxOrder = typeof findHeaderIndex === 'function'
     ? findHeaderIndex(headers, ['merchantorderid', 'merchant order id', 'order no'])
     : headers.findIndex(h => /merchantorderid/i.test(h));
@@ -254,8 +290,11 @@ function parseOrderListMatrix(matrix) {
   const idxShop = typeof findHeaderIndex === 'function'
     ? findHeaderIndex(headers, ['shop', 'store'])
     : headers.findIndex(h => /^shop$/i.test(h) || /^store$/i.test(h));
-  if (idxOrder < 0 || idxQty < 0 || idxDesc < 0) {
-    throw new Error('Required columns: MerchantOrderID, ItemQuantity, ItemDesc');
+  if (idxOrder < 0 || idxQty < 0) {
+    throw new Error('Required columns: MerchantOrderID, ItemQuantity');
+  }
+  if (idxPan < 0 && idxDesc < 0 && idxSku < 0) {
+    throw new Error('Required: PAN column (preferred) or ItemDesc / SKU ID');
   }
   const rows = [];
   for (let r = 1; r < matrix.length; r++) {
@@ -263,20 +302,32 @@ function parseOrderListMatrix(matrix) {
     if (!line || !line.some(c => c !== '' && c != null)) continue;
     const orderNo = (typeof cellToDisplay === 'function' ? cellToDisplay(line[idxOrder]) : String(line[idxOrder] || '').trim());
     const itemQty = line[idxQty];
-    const itemDesc = typeof cellToDisplay === 'function' ? cellToDisplay(line[idxDesc]) : String(line[idxDesc] || '').trim();
-    if (!orderNo || !itemDesc) continue;
-    const parsed = parseOutboundItemDesc(itemDesc, itemQty);
+    const pan = idxPan >= 0
+      ? (typeof cellToDisplay === 'function' ? cellToDisplay(line[idxPan]) : String(line[idxPan] || '').trim())
+      : '';
+    const skuIdCol = idxSku >= 0
+      ? (typeof cellToDisplay === 'function' ? cellToDisplay(line[idxSku]) : String(line[idxSku] || '').trim())
+      : '';
+    const itemDesc = idxDesc >= 0
+      ? (typeof cellToDisplay === 'function' ? cellToDisplay(line[idxDesc]) : String(line[idxDesc] || '').trim())
+      : '';
+    if (!orderNo) continue;
+    if (!pan && !itemDesc && !skuIdCol) continue;
+    const parsed = itemDesc ? parseOutboundItemDesc(itemDesc, itemQty) : { qty: parseInt(String(itemQty).replace(/,/g, ''), 10) || 0, productName: '', skuId: skuIdCol };
+    const qty = parsed.qty > 0 ? parsed.qty : (parseInt(String(itemQty).replace(/,/g, ''), 10) || 0);
     const shop = idxShop >= 0
       ? (typeof cellToDisplay === 'function' ? cellToDisplay(line[idxShop]) : String(line[idxShop] || '').trim())
       : '';
     rows.push({
       'MerchantOrderID': orderNo,
       'Order No': orderNo,
-      'ItemQuantity': parsed.qty,
-      'Qty': parsed.qty,
+      'ItemQuantity': qty,
+      'Qty': qty,
       'ItemDesc': itemDesc,
+      PAN: pan,
+      pan,
+      'SKU ID': skuIdCol || parsed.skuId,
       'Product Name': parsed.productName,
-      'SKU ID': parsed.skuId,
       shop
     });
   }
@@ -960,20 +1011,19 @@ function outboundSampleItemDescsForWarehouse(warehouseId) {
 }
 
 function buildOutboundSampleCsv(warehouseId) {
-  const descs = outboundSampleItemDescsForWarehouse(warehouseId);
-  if (!descs || !descs.length) return null;
-  const orderId = 'MO-DEMO-2026';
-  const header = 'MerchantOrderID,ItemQuantity,ItemDesc,Shop';
-  const body = descs.map(d => `${orderId},1,${d},KickBazar Official Store`).join('\n');
-  return `${header}\n${body}`;
+  const matrix = outboundSampleMatrixForWarehouse(warehouseId);
+  if (!matrix) return null;
+  return matrix.map(row => row.join(',')).join('\n');
 }
 
 function outboundSampleMatrixForWarehouse(warehouseId) {
   const descs = outboundSampleItemDescsForWarehouse(warehouseId);
   if (!descs || !descs.length) return null;
   const orderId = 'MO-DEMO-2026';
-  return [['MerchantOrderID', 'ItemQuantity', 'ItemDesc', 'Shop']].concat(
-    descs.map(d => [orderId, 1, d, 'KickBazar Official Store'])
+  const pick = listStoSkusForWarehouse(warehouseId).filter(s => (s.available ?? 0) > 0 || (s.total ?? 0) > 0).slice(0, 2);
+  if (!pick.length) return null;
+  return [['SKU ID', 'PAN', 'MerchantOrderID', 'ItemQuantity', 'Shop']].concat(
+    pick.map(s => [s.skuId, s.pan || '', orderId, 1, 'KickBazar Official Store'])
   );
 }
 
@@ -1094,7 +1144,7 @@ function onOutboundFilePicked(input, kind) {
       if (!ok) {
         obImportValidatedRows = null;
         document.getElementById('ob-import-btn').disabled = true;
-        document.getElementById('ob-import-file-msg').textContent = 'Required: MerchantOrderID, ItemQuantity, ItemDesc.';
+        document.getElementById('ob-import-file-msg').textContent = 'Required: SKU ID, PAN, MerchantOrderID, ItemQuantity (or legacy ItemDesc).';
         renderOutboundImportValidation({ errors: [], validRows: [] });
         return;
       }
@@ -1123,16 +1173,20 @@ function parseCsv(text) {
 
 function normalizeImportRows(raw) {
   return raw.map(r => {
-    if (r['MerchantOrderID'] || r.ItemDesc) {
-      const orderNo = r['MerchantOrderID'] || r['Order No'];
+    const orderNo = r['MerchantOrderID'] || r['Order No'];
+    const pan = String(r.PAN || r.pan || '').trim();
+    if (orderNo || r.ItemDesc || pan || r['SKU ID']) {
       const parsed = r.ItemDesc
         ? parseOutboundItemDesc(r.ItemDesc, r.ItemQuantity || r.Qty)
-        : { qty: parseInt(r.Qty, 10), productName: r['Product Name'], skuId: r['SKU ID'] };
+        : { qty: parseInt(r.Qty || r.ItemQuantity, 10), productName: r['Product Name'] || '', skuId: r['SKU ID'] || '' };
+      const qty = parsed.qty > 0 ? parsed.qty : (parseInt(r.Qty || r.ItemQuantity, 10) || 0);
       return {
         'Order No': orderNo,
-        Qty: parsed.qty,
+        PAN: pan,
+        pan,
+        Qty: qty,
         'Product Name': parsed.productName,
-        'SKU ID': parsed.skuId,
+        'SKU ID': parsed.skuId || r['SKU ID'] || '',
         'Order Time': r['Order Time'] || '',
         Specification: r.Specification || '—',
         shop: (r.shop || r.Shop || '').trim()
