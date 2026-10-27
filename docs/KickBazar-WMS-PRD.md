@@ -441,7 +441,7 @@ WMS **不在入库页面创建 SKU 主数据**；仓内可作业前提如下：
 - **主标题**：Employees  
 - **搜索**：点击 **Search** 后刷新（非实时）。搜索类别（单选）与关键字组合：  
   - **Name**、**Email**、**Phone**、**Employee No.**、**Status**（关键字对所选字段 **包含** 匹配）  
-- **Status 筛选**（可选）：Enable / Disable；与关键字 **AND**  
+- **Status 筛选**（可选）：`disable` / `active` / `locked`；与关键字 **AND**  
 - **Reset**：清空关键字与 Status 筛选并刷新列表  
 
 ### 8.2 列表字段
@@ -453,7 +453,7 @@ WMS **不在入库页面创建 SKU 主数据**；仓内可作业前提如下：
 | Email | `email` | 登录账号，唯一 |
 | Phone | `phone` | 选填 |
 | Warehouse | `warehouse_code` | 所属仓；下拉数据源为 **当前 Warehouses 列表**（§3） |
-| Status | `status` | Enable / Disable |
+| Status | `status` | `disable` / `active` / `locked`（见 §8.5） |
 | Created at | `created_at` | **系统生成** |
 | Last Login at | `last_login_at` | **系统自动记录**最近登录时间 |
 | Action | — | **View**、**Edit**、**Delete** |
@@ -472,8 +472,9 @@ WMS **不在入库页面创建 SKU 主数据**；仓内可作业前提如下：
 | Warehouse | **是** | 下拉；选项 = 当前 **Warehouses 主数据列表**（含 Enable/Disable 仓是否可选由产品定稿，**建议仅 Enable**） |
 | Images | 否 | 头像上传 |
 | Remark | 否 | 备注 |
+| Status | — | **新建表单不展示**；系统默认 **`disable`** |
 
-创建成功后默认 **Status = Enable**；**Created at** 写入当前时间；**Last Login at** 为空或「—」直至首次登录。
+创建成功后 **Status 固定为 `disable`**（须通过 **Edit** 改为 `active` 或 `locked`）；**Created at** 写入当前时间；**Last Login at** 为空或「—」直至首次登录。
 
 ### 8.4 Employee No. 生成规则
 
@@ -488,14 +489,22 @@ WMS **不在入库页面创建 SKU 主数据**；仓内可作业前提如下：
 ### 8.5 编辑 / 查看 / 删除
 
 - **View**：只读展示全部字段（含 Employee No.、Status、Created at、Last Login at）；密码不可见。  
-- **Edit**：可改 Email、Phone、Warehouse、Images、Remark、Status；**Password** 可选填（留空表示不改）；Employee No. 只读。  
+- **Edit**：在 Add 字段基础上增加 **Status**（必选其一：`disable`、`active`、`locked`）；另可改 Email、Phone、Warehouse、Images、Remark、Name；**Password** 可选填（留空表示不改）；Employee No. 只读。  
+
+**Status 语义（建议）**：
+
+| 值 | 含义 |
+|----|------|
+| `disable` | 未启用 / 不可登录（新建默认） |
+| `active` | 正常可用 |
+| `locked` | 锁定（不可登录，可人工解锁为 active） |
 - **Delete**：二次确认后删除；若账号存在未完结业务引用（产品扩展），应拒绝并 Toast。
 
 ### 8.6 与仓库、角色的关系
 
-- 仓库创建表单 **Warehouse Manager** 多选（§3.1）数据源可引用 **Enable 状态的 Employees**（所属仓匹配或 Admin 账号，实现阶段对齐）。  
+- 仓库创建表单 **Warehouse Manager** 多选（§3.1）数据源可引用 **`status = active`** 的 Employees（所属仓匹配或 Admin 账号，实现阶段对齐）。  
 - **Warehouse Manager** 登录后数据范围 = 其 **Warehouse** 字段对应 `warehouse_code`（§2.1）；**Admin** 不受单仓绑定（Dashboard 可选 All）。  
-- 禁用（Disable）账号：**不可登录**；不影响历史流水 Operator 展示。
+- **`disable` / `locked`** 账号：**不可登录**；不影响历史流水 Operator 展示。
 
 ---
 

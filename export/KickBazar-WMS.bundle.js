@@ -1732,7 +1732,7 @@ let employees = [
     phone: '+86 138 0013 8000',
     warehouseCode: '',
     role: 'admin',
-    status: 'Enable',
+    status: 'active',
     imageDataUrl: '',
     remark: 'Platform administrator',
     createdAt: '2026-01-08 09:00:00',
@@ -1745,7 +1745,7 @@ let employees = [
     phone: '+86 139 0013 9001',
     warehouseCode: 'SH001',
     role: 'warehouse',
-    status: 'Enable',
+    status: 'active',
     imageDataUrl: '',
     remark: 'Shanghai main warehouse manager',
     createdAt: '2026-02-14 11:20:00',
@@ -1758,9 +1758,9 @@ let employees = [
     phone: '+86 137 0013 7002',
     warehouseCode: 'BJ001',
     role: 'warehouse',
-    status: 'Enable',
+    status: 'locked',
     imageDataUrl: '',
-    remark: '',
+    remark: 'Temporarily locked pending audit',
     createdAt: '2026-03-01 10:00:00',
     lastLoginAt: '2026-10-25 09:30:00'
   },
@@ -1771,7 +1771,7 @@ let employees = [
     phone: '',
     warehouseCode: 'SH001',
     role: 'warehouse',
-    status: 'Disable',
+    status: 'disable',
     imageDataUrl: '',
     remark: 'Offboarded — account disabled',
     createdAt: '2025-11-20 14:00:00',
@@ -1796,6 +1796,12 @@ function warehouseLabel(code) {
   if (!code) return 'All Warehouses (Admin)';
   const wh = warehouses.find(w => w.id === code);
   return wh ? `${wh.name} (${code})` : code;
+}
+
+function employeeStatusTagClass(status) {
+  if (status === 'active') return 'tag-enable';
+  if (status === 'locked') return 'tag-warning';
+  return 'tag-disable';
 }
 
 function employeeAvatarHtml(emp) {
@@ -1841,7 +1847,7 @@ function renderEmployeesList() {
       <td>${e.email}</td>
       <td>${e.phone || '—'}</td>
       <td>${warehouseLabel(e.warehouseCode)}</td>
-      <td><span class="tag ${e.status === 'Enable' ? 'tag-enable' : 'tag-disable'}">${e.status}</span></td>
+      <td><span class="tag ${employeeStatusTagClass(e.status)}">${e.status}</span></td>
       <td>${e.createdAt}</td>
       <td>${e.lastLoginAt || '—'}</td>
       <td>
@@ -1929,7 +1935,8 @@ function openEmployeeModal(mode, employeeNo) {
     const el = document.getElementById(id);
     if (el) el.disabled = ro;
   });
-  document.getElementById('emp-status-wrap').hidden = mode === 'create';
+  const statusWrap = document.getElementById('emp-status-wrap');
+  statusWrap.hidden = mode === 'create';
 
   openModal('employee-modal');
 }
@@ -1987,7 +1994,7 @@ function submitEmployee() {
       phone,
       warehouseCode,
       role: 'warehouse',
-      status: 'Enable',
+      status: 'disable',
       imageDataUrl,
       remark,
       createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
@@ -2028,7 +2035,7 @@ function deleteEmployee(employeeNo) {
 }
 
 function listEmployeesForWarehouseManagerSelect() {
-  return employees.filter(e => e.status === 'Enable');
+  return employees.filter(e => e.status === 'active');
 }
 
 

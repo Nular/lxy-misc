@@ -2308,8 +2308,9 @@ tbody tr.selected {
                 <label>Status</label>
                 <select id="emp-filter-status">
                   <option value="">All</option>
-                  <option value="Enable">Enable</option>
-                  <option value="Disable">Disable</option>
+                  <option value="disable">disable</option>
+                  <option value="active">active</option>
+                  <option value="locked">locked</option>
                 </select>
               </div>
               <div class="filter-actions">
@@ -3000,11 +3001,12 @@ tbody tr.selected {
             <label>Warehouse <span class="required">*</span></label>
             <select id="emp-warehouse"></select>
           </div>
-          <div class="form-group" id="emp-status-wrap">
+          <div class="form-group" id="emp-status-wrap" hidden>
             <label>Status</label>
             <select id="emp-status">
-              <option value="Enable">Enable</option>
-              <option value="Disable">Disable</option>
+              <option value="disable">disable</option>
+              <option value="active">active</option>
+              <option value="locked">locked</option>
             </select>
           </div>
           <div class="form-group" id="emp-name-wrap" hidden>
