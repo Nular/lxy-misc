@@ -3,7 +3,7 @@
 > **文档性质**：出库模块 **独立 PRD**，与《KickBazar WMS 产品需求说明（仓库与库存）》(`KickBazar-WMS-PRD.md`)、[`KickBazar-WMS-Inbound-PRD.md`](KickBazar-WMS-Inbound-PRD.md) 配套使用。  
 > **范围**：订单行列表（OMS 作业台）、订单导入、**Manual outbound**、分配占用、打包发运、出库批次/详情、与 **Inventory Record → Outbound** 流水联动。  
 > **不包含**：仓库/库区主数据（主 PRD §3–§4）、SKU 零库存初始化（§5.0.1）、入库（入库 PRD）、独立采购单（PO）模块。  
-> **版本**：2026-10-27（订单导入：**SKU ID + PAN** 模板；PAN 优先解析；校验表列序见 §7.2）  
+> **版本**：2026-10-28（订单导入：**SKU ID 为主键**；PAN 可选校验；Name/SKU 联动）  
 > **相对 2026-10 初版出库 PRD 的重要变更**：**特殊出库**不再「确认即扣减」；统一为 **Manual outbound** 走 **Pending Allocation → Occupy → Deduct**；列表增加 **Outbound Type**、**PAN**、**QTY** 等（见 §13、附录 A）。
 
 ---
@@ -54,7 +54,7 @@
 | 规则 | 说明 |
 |------|------|
 | 库存行 | Import / Manual 仅允许 `(sku_id, warehouse_code, zone_code)` **已存在** 的 **Storage Zone（STO）** 行 |
-| 订单解析 | **优先 PAN** 反查 SKU；兼容 **ItemDesc** / **SKU ID** 列；须在目标仓 STO 有行 |
+| 订单解析 | **SKU ID**（`订单列表.xlsx` 必填）反查商品；**PAN** 可选与 SKU ID 交叉校验；兼容旧 **ItemDesc** 模板 |
 | Manual outbound | **Product Name** 模糊匹配 + **SKU（规格）** 下拉；仅 STO 有货 SKU |
 | 禁止 | Import / Manual 流程中 **INSERT** 商品主数据或库存行 |
 
@@ -177,21 +177,22 @@
 
 | 表格列 | 系统字段 | 规则 |
 |--------|----------|------|
-| **SKU ID**（导出模板 **第 1 列**） | SKU ID | 可选；与 PAN 同时存在时须与 PAN 解析结果一致 |
-| **PAN**（导出模板 **第 2 列**） | PAN | **推荐匹配键**；在目标仓 STO 反查 SKU ID、Product Name、SKU（规格） |
+| **SKU ID** | **SKU ID** | **匹配主键**（必填）；须在目标仓 STO 有库存行 |
+| **PAN** | PAN | **可选**；若填写须与 SKU ID 解析结果一致 |
 | **MerchantOrderID** | **Order No.** | 同一 ID 可多行（多 SKU） |
 | **ItemQuantity** | **Qty** | 正整数 |
-| **ItemDesc**（兼容旧模板） | Product Name + SKU ID | 无 PAN 列时仍支持 `qty*Product Name-SKU` 解析 |
-| **Shop**（可选） | 作业行 **Store** | 店铺名；Manual outbound 为 **—** |
+| **Product Name / SKU** | — | **不以上传列匹配**；Import 校验表由 **SKU ID 联动展示** |
+| **ItemDesc**（兼容旧模板） | — | 无 SKU ID 列时的遗留格式；新模板 **必须含 SKU ID** |
+| **Shop**（可选） | 作业行 **Store** | Manual outbound 为 **—** |
 
 - 支持 **.xlsx / .xls / .csv**；xlsx 解析依赖内置 XLSX（与入库一致）。
 - **仓库**：Import 弹窗选仓仅 **Admin + 上下文 All**；仓管固定所属仓。
 
 ### 7.2 导入前校验（与入库对齐）
 
-1. 解析文件 → **Import validation** 面板列序：**Order No. → PAN → SKU ID → Product Name → SKU → Qty → Check**（Product Name / SKU / SKU ID 由 **PAN** 联动填充）。
-2. 全部通过方可点击 **Import**；否则 **Import** 置灰。
-3. 校验失败常见原因：**PAN 在仓内无 STO 行**、PAN 与 SKU ID 不一致、Qty 非法、缺少 Order No.。
+1. 解析文件 → **Import validation** 面板列序：**Order No. → SKU ID → Product Name → SKU → PAN → Qty → Check**（Name/SKU/PAN 由 **SKU ID** 填充）。  
+2. 全部通过方可点击 **Import**；否则 **Import** 置灰。  
+3. 校验失败常见原因：**SKU ID 在仓内无 STO 行**、PAN 与 SKU ID 不一致、Qty 非法、缺少 Order No. / SKU ID。  。
 
 ### 7.3 样例文件（Demo）
 
@@ -210,7 +211,7 @@
 
 | 场景 | 列顺序（建议） | 说明 |
 |------|----------------|------|
-| **Admin 订单导出模块**（商家后台 → WMS 导入模板） | **第 1 列 SKU ID**、**第 2 列 PAN**、MerchantOrderID、ItemQuantity、Shop（可选） | 与 Import 模板一致，便于运营「导出 → 填单 → 回传 WMS」 |
+| **Admin 订单导出模块**（商家后台 → WMS 导入模板） | **第 1 列 SKU ID**（主键）、**第 2 列 PAN**（可选）、MerchantOrderID、ItemQuantity、Shop | 运营导出须含 **SKU ID** |
 | **Export Shipping Order**（WMS 内待打包导出） | Outbound No.、Order No.、**PAN**、SKU ID、Product Name、SKU、Qty、Tracking 占位等 | 与列表 PAN 列对齐 |
 
 - **Import Tracking No.**：按 Order No. + SKU ID 匹配 **Pending Picking** 行，写入 Shipping No. 并 **Shipped + Deduct**（与 Pack & Ship 等效写账）。
@@ -328,8 +329,8 @@ Home 首行 **5** 张 KPI 中，下列 **3** 项来自出库（**Outbound No. �
 | — | 列表 **PAN、QTY**；Time 两行展示；PAN 筛选 |
 | Pack 与 Tracking 分离描述 | **Pack & Ship** 弹窗表格 + Shipping No.（导入必填 / Manual 选填） |
 | Record 仅 Occupy/Deduct | 子筛增加 **Manual**；Type **Manual outbound** + Reason/Remarks |
-| Import 仅 ItemDesc | **SKU ID + PAN 列**；**PAN 优先**解析；校验表含 PAN 列（§7.1–7.2） |
-| Admin 导出无 PAN | 导出模板 **第 1–2 列 SKU ID、PAN**（§7.5） |
+| Import 仅 ItemDesc | **SKU ID 必填**；PAN 可选校验（§7.1–7.2） |
+| Import PAN 为主键 | **SKU ID 为主键**；PAN 交叉校验 |
 
 ---
 
@@ -350,7 +351,7 @@ Home 首行 **5** 张 KPI 中，下列 **3** 项来自出库（**Outbound No. �
 供评审 / 测试验收对照（**静态演示数据即可**，非生产接口）：
 
 1. **主列表**：`page-outbound-orders`；状态 Tab 由 `OB_LIST_TABS` 渲染。  
-2. **Import**：`parseOrderListMatrix`（PAN 列）→ `resolveOutboundSkuByPan` → `applyOutboundImportPreview` → `runImportOrders`；校验表列 **Order No. / PAN / SKU ID / …**。  
+2. **Import**：`parseOrderListMatrix`（**SKU ID 必填**）→ `resolveOutboundSku` → 校验表；PAN 可选一致性校验。  
 3. **Sample**：`outboundSampleMatrixForWarehouse` 表头 **`SKU ID,PAN,MerchantOrderID,ItemQuantity,Shop`**。  
 4. **Manual**：`openManualOutboundModal` / `submitManualOutbound`；模态框 id `ob-special-modal`。  
 5. **分配 / 打包**：`confirmAllocationBatch`、`openPackTrackingModal`、`submitPackAndShip`。  

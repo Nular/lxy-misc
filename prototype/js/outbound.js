@@ -184,26 +184,27 @@ function validateAndResolveOutboundRows(warehouseId, rawRows) {
       errors.push({ row: rowNum, order: '—', msg: 'Missing MerchantOrderID' });
       return;
     }
-    const pan = String(r.PAN || r.pan || '').trim();
-    if (!pan && !r['SKU ID'] && !r['Product Name']) {
-      errors.push({ row: rowNum, order: r['Order No'], msg: 'Missing PAN (or legacy ItemDesc / SKU ID)' });
+    if (!r['SKU ID']) {
+      errors.push({ row: rowNum, order: r['Order No'], msg: 'Missing SKU ID' });
       return;
     }
+    const pan = String(r.PAN || r.pan || '').trim();
     const qty = parseInt(r.Qty, 10) || 0;
     if (qty <= 0) {
       errors.push({ row: rowNum, order: r['Order No'], msg: 'ItemQuantity must be positive' });
       return;
     }
-    const resolved = pan
-      ? resolveOutboundSkuByPan(warehouseId, pan)
-      : resolveOutboundSku(warehouseId, r['SKU ID'], r['Product Name']);
+    const resolved = resolveOutboundSku(warehouseId, r['SKU ID'], '');
     if (!resolved.ok) {
-      errors.push({ row: rowNum, order: r['Order No'], msg: resolved.error || 'SKU not found in warehouse STO' });
+      errors.push({ row: rowNum, order: r['Order No'], msg: resolved.error || 'SKU ID not found in warehouse STO' });
       return;
     }
-    if (pan && r['SKU ID'] && r['SKU ID'] !== resolved.skuId) {
-      errors.push({ row: rowNum, order: r['Order No'], msg: 'SKU ID does not match PAN' });
-      return;
+    if (pan) {
+      const byPan = resolveOutboundSkuByPan(warehouseId, pan);
+      if (byPan.ok && byPan.skuId !== resolved.skuId) {
+        errors.push({ row: rowNum, order: r['Order No'], msg: 'SKU ID does not match PAN' });
+        return;
+      }
     }
     validRows.push({
       'Order No': r['Order No'],
@@ -237,11 +238,11 @@ function renderOutboundImportValidation(result) {
     summary.textContent = `All ${result.validRows.length} row(s) matched warehouse SKU rows. Ready to import.`;
   }
   const rows = result.validRows.map(v => `
-    <tr><td>${v['Order No']}</td><td>${v.PAN || '—'}</td><td>${v['SKU ID']}</td><td>${v['Product Name']}</td><td>${v.Specification}</td><td>${v.Qty}</td><td class="tag tag-enable">OK</td></tr>
+    <tr><td>${v['Order No']}</td><td>${v['SKU ID']}</td><td>${v['Product Name']}</td><td>${v.Specification}</td><td>${v.PAN || '—'}</td><td>${v.Qty}</td><td class="tag tag-enable">OK</td></tr>
   `).concat(result.errors.map(e => `
     <tr><td>${e.order}</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td class="ob-hold-hint">Row ${e.row}: ${e.msg}</td></tr>
   `));
-  wrap.innerHTML = `<table><thead><tr><th>Order No.</th><th>PAN</th><th>SKU ID</th><th>Product Name</th><th>SKU</th><th>Qty</th><th>Check</th></tr></thead><tbody>${rows.join('')}</tbody></table>`;
+  wrap.innerHTML = `<table><thead><tr><th>Order No.</th><th>SKU ID</th><th>Product Name</th><th>SKU</th><th>PAN</th><th>Qty</th><th>Check</th></tr></thead><tbody>${rows.join('')}</tbody></table>`;
 }
 
 function applyOutboundImportPreview(rawRows) {
@@ -290,11 +291,11 @@ function parseOrderListMatrix(matrix) {
   const idxShop = typeof findHeaderIndex === 'function'
     ? findHeaderIndex(headers, ['shop', 'store'])
     : headers.findIndex(h => /^shop$/i.test(h) || /^store$/i.test(h));
-  if (idxOrder < 0 || idxQty < 0) {
-    throw new Error('Required columns: MerchantOrderID, ItemQuantity');
+  if (idxOrder < 0 || idxQty < 0 || idxSku < 0) {
+    throw new Error('Required columns: SKU ID, MerchantOrderID, ItemQuantity');
   }
-  if (idxPan < 0 && idxDesc < 0 && idxSku < 0) {
-    throw new Error('Required: PAN column (preferred) or ItemDesc / SKU ID');
+  if (idxPan < 0 && idxDesc < 0) {
+    /* PAN / ItemDesc optional when SKU ID present */
   }
   const rows = [];
   for (let r = 1; r < matrix.length; r++) {
@@ -311,8 +312,7 @@ function parseOrderListMatrix(matrix) {
     const itemDesc = idxDesc >= 0
       ? (typeof cellToDisplay === 'function' ? cellToDisplay(line[idxDesc]) : String(line[idxDesc] || '').trim())
       : '';
-    if (!orderNo) continue;
-    if (!pan && !itemDesc && !skuIdCol) continue;
+    if (!orderNo || !skuIdCol) continue;
     const parsed = itemDesc ? parseOutboundItemDesc(itemDesc, itemQty) : { qty: parseInt(String(itemQty).replace(/,/g, ''), 10) || 0, productName: '', skuId: skuIdCol };
     const qty = parsed.qty > 0 ? parsed.qty : (parseInt(String(itemQty).replace(/,/g, ''), 10) || 0);
     const shop = idxShop >= 0

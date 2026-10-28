@@ -1242,7 +1242,7 @@
         </form>
         <input type="hidden" id="receipt-type" value="">
         <div id="receipt-source-po-import" class="source-panel" hidden>
-          <p class="hint">Upload <strong>采购.xlsx</strong>: <code>采购单号</code> → Purchase Order (one per Inbound), <code>物流单号</code> → Shipping No.（<strong>每次上传仅允许一个</strong>）, <code>Product Name</code>, <code>需求数量</code> → Order Qty.</p>
+          <p class="hint">Upload <strong>采购.xlsx</strong>: <code>采购单号</code> → Purchase Order, <code>物流单号</code> → Shipping No.（<strong>每次上传仅允许一个</strong>）, <code>SKU ID</code>（<strong>匹配主键</strong>）, <code>需求数量</code> → Order Qty；<code>Product Name</code> 可选（展示/对账）。</p>
           <div class="inbound-alert inbound-shipping-split-hint" id="receipt-shipping-split-hint" role="note">
             <strong>每次上传仅允许一个物流单号</strong>
             <p style="margin:8px 0 0">若 Excel 中存在多个不同的 <code>物流单号</code>，系统将<strong>拒绝解析</strong>并提示拆分文件。请按运单号筛选或拆表后分别点击「+ New Inbound」入库；同一 <code>采购单号</code> 可对应多个 Inbound（每个运单一次入库）。</p>
@@ -1252,7 +1252,7 @@
           <div id="receipt-source-file-meta" class="hint" hidden></div>
           <button type="button" class="btn" id="receipt-source-preview-btn" hidden onclick="openReceiptSourcePreview()">Preview source file</button>
           <div id="receipt-unmatched-panel" class="inbound-alert" hidden>
-            <strong>Warn — unmatched Product Name</strong> — Check spelling or list the product on Seller before inbound.
+            <strong>Warn — unmatched SKU ID</strong> — Check SKU ID or initialize inventory in this warehouse before inbound.
             <ul id="receipt-unmatched-list"></ul>
           </div>
         </div>
@@ -1335,7 +1335,7 @@
       </div>
       <div class="modal-body">
         <div id="ob-import-step-upload">
-          <p class="hint"><strong>订单列表.xlsx</strong>（导出模板前两列）：<code>SKU ID</code>、<code>PAN</code>；<code>MerchantOrderID</code> → Order No.，<code>ItemQuantity</code> → Qty。导入按 <strong>PAN</strong> 解析 Product Name / SKU / SKU ID（可带 SKU ID 列校验）。Admin + All 时选 Warehouse。</p>
+          <p class="hint"><strong>订单列表.xlsx</strong>：<code>SKU ID</code>（<strong>匹配主键</strong>）、<code>PAN</code>（可选校验）、<code>MerchantOrderID</code> → Order No.，<code>ItemQuantity</code> → Qty；Product Name / SKU 由 SKU ID 联动。Admin + All 时选 Warehouse。</p>
           <div class="form-group" id="ob-import-wh-wrap">
             <label>Warehouse</label>
             <select id="ob-import-wh" onchange="revalidateOutboundImportPreview()"></select>

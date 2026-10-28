@@ -3,7 +3,7 @@
 > **文档性质**：入库模块 **独立 PRD**，与《KickBazar WMS 产品需求说明（仓库与库存）》(`KickBazar-WMS-PRD.md`) 配套使用。  
 > **范围**：入库任务（Inbound No.）列表、新建、采购 xlsx 导入、手动加行、确认上架写账、详情查看、与库存流水联动。  
 > **不包含**：独立 **采购单（PO）模块**（本期不做）；仓库/库区主数据（主 PRD §3–§4）。  
-> **版本**：2026-10-27（表单/行表：SKU ID 主键联动；§6.1；出库 PAN 导入见出库 PRD §7）  
+> **版本**：2026-10-28（上传 Excel：**SKU ID 为主键**匹配；Name/SKU/PAN 联动展示）  
 > **原型参考**：`prototype/index.html`、`export/KickBazar-WMS.html`
 
 ---
@@ -14,7 +14,7 @@
 
 1. 支持仓内 **上架入库**：将实物数量记入指定 **仓库 × 库区** 库存行，并生成 **库存流水**（Record → Inbound）。
 2. 将线下两类入库收敛为系统内两种 **入库任务**（每次 **Confirm Stock-In** 生成一个 **Inbound No.**）：
-   - **采购入库**（界面 **Purchase Inbound** / `Purchase Receipt`）：上传运营表 **`采购.xlsx`**，按 **Product Name** 匹配仓内 SKU；绑定 **采购单号（Purchase Order）** 与 **物流单号（Shipping No.）**；行级填写 Warehouse、Receipt Qty 等后上架。
+   - **采购入库**（界面 **Purchase Inbound** / `Purchase Receipt`）：上传运营表 **`采购.xlsx`**，以 **SKU ID** 为主键匹配仓内库存行；绑定 **Purchase Order** / **Shipping No.**；**Product Name** 等由 SKU ID 联动展示。
    - **手动入库**（界面 **Manual Inbound** / `Manual Receipt`）：按 **Product Name** 模糊搜索加行，填写数量后上架（无 PO / Shipping / 源文件）。
 3. 匹配失败行 **不入账**：提示无法匹配的商品（核对拼写或在 Seller 端上架），与线下「商品未上架先上架」一致。
 4. **无 Draft**：未 Confirm Stock-In 的数据仅存在于当前新建弹层，不入列表；xlsx 解析可进入 **Processing**（异步进度）。**Stocked In** 后仅 **查看详情**，不可删改。
@@ -58,8 +58,8 @@
 
 | 录入方式 | 匹配键 | 成功条件 | 失败 |
 |----------|--------|----------|------|
-| Purchase Inbound | **Product Name**（`采购.xlsx`）→ SKU | 匹配成功且 `(sku_id, warehouse_code, zone_code)` 存在；多 SKU **行内下拉必选** | Unmatched 提醒；无库存行拒绝写账 |
-| Manual Inbound | Product Name 搜索 | 选择器 **仅展示** 已初始化库存行（含 Total=0） | 未下发 SKU **不可选** |
+| Purchase Inbound | **SKU ID**（`采购.xlsx` 必填列） | 当前仓存在 `(sku_id, warehouse_code, zone_code)` 库存行；**Product Name 可选**（对账/展示） | Unmatched（行号 + SKU ID）；无库存行拒绝写账 |
+| Manual Inbound | **SKU ID**（搜索选中） | 选择器 **仅展示** 已初始化库存行（含 Total=0） | 未下发 SKU **不可选** |
 
 **禁止**：在入库单、Import 流程中 **INSERT** 商品主数据或库存行。
 
@@ -83,7 +83,7 @@
 |---|------|
 | 1 | 入库单列表（Time、Inbound No.、**Purchase Order**、**Shipping No.**、Inbound Type、SKU Qty、Operator、View） |
 | 2 | **+ New Inbound**：下拉 **Purchase Inbound** / **Manual Inbound**（加行后不可切换） |
-| 3 | 采购：上传 **`采购.xlsx`**（**每次仅允许一个物流单号**）、Product Name 匹配、PO/Shipping 绑定 |
+| 3 | 采购：上传 **`采购.xlsx`**（**SKU ID** + 需求数量；单运单号）；PO/Shipping 绑定 |
 | 4 | 手动：Product Name 搜索加行 |
 | 5 | 新建弹层：**表单**（Inbound No./Type、Context Warehouse、采购 PO/Shipping）+ **行表**（SKU ID 主键 → Name/SKU 联动；商务列；见 §6.1） |
 | 6 | **Remarks**：采购 Order≠Receipt 必填；**手动每行必填**；行 **Delete（二次确认）** / Delete All |
@@ -205,7 +205,7 @@
 3. 标题：**New Inbound** / **View Inbound**。  
 4. **表单（只读/展示）**：**Inbound No.**、**Inbound Type**（仅展示）。**Context Warehouse**：单仓上下文只读；**Admin + All warehouses** 时**下拉可选**（与 Outbound Import 一致）。**Purchase Order**、**Shipping No.**：仅 **Purchase Inbound** 展示，自 `采购.xlsx` 解析（`采购单号` / `物流单号`）；**Manual Inbound 不显示**。**无头 Remarks**。  
 5. **行表（采购 / 手动统一列序）**：**SKU ID**（唯一标识；多命中时行内下拉必选）→ **Product Name**、**SKU**（均由 SKU ID 联动只读展示）→ **Warehouse**（Admin+All 时行内下拉）→ **Zone**（不可选，对应当前 Warehouse 的 **Storage Zone**）→ **Purchase Price**（自 SKU 主数据自动带出，采购只读）→ **Order Qty**（采购自文件只读；**手动入库手输**）→ **Receipt Qty**（手输）→ **Supplier**（采购自动带出只读；**手动手输**）→ **PAN** → **Remarks** → **Action（Delete，二次确认）**。  
-6. **Remarks**：**Order Qty ≠ Receipt Qty** 时必填（采购）；**手动入库每行 Remarks 必填**。未匹配 Product Name **Warn** 可忽略并提交已匹配行；源文件 **保留**（Preview + Download）。  
+6. **Remarks**：**Order Qty ≠ Receipt Qty** 时必填（采购）；**手动入库每行 Remarks 必填**。未匹配 **SKU ID** **Warn** 可忽略并提交已匹配行；源文件 **保留**（Preview + Download）。  
 7. 仅 **Cancel** 与 **Confirm Stock-In**；行 **Delete All**。
 
 ### 6.2 行数上限
@@ -232,15 +232,16 @@
 |------|----------|------|
 | 采购单号 | **Purchase Order** | 头字段 + 列表列；**一单一流水一个 PO** |
 | 物流单号 | **Shipping No.** | 头字段 + 列表列；与 Inbound No. 绑定 |
-| Product Name | **Product Name** | 匹配键（源文件原文展示） |
+| **SKU ID** | **SKU ID** | **匹配主键**（必填）；须在目标仓已有库存行 |
+| Product Name | Product Name | **可选**；解析后由 SKU ID **联动展示**，不作匹配键 |
 | 需求数量 | **Order Qty** | 解析后 **只读**；Receipt Qty 默认等于 Order Qty，可改 |
 
 **流程**：
 
-1. 上传 xlsx → 校验表头 → **Parse**。  
-2. 按 **Product Name** 匹配当前仓已初始化 SKU；**单 SKU** 自动绑定 **SKU ID** 并联动 Product Name / SKU；**多 SKU** 在 **SKU ID 列下拉必选**。  
-3. 填写 **Warehouse**（Admin+All 行内可选）、**Receipt Qty**；**Zone** 固定 Storage 不可改；**Order Qty ≠ Receipt Qty** 时 **Remarks** 必填。  
-4. **匹配失败**：**Unmatched**（行号 + Product Name）；可忽略 Warn 提交已匹配行。  
+1. 上传 xlsx → 校验表头（**SKU ID、需求数量** 必填）→ **Parse**。  
+2. 按 **SKU ID** 匹配当前仓已初始化库存行；命中后 **Product Name、SKU（规格）、Purchase Price、PAN、Supplier** 等 **只读联动**。  
+3. 填写 **Warehouse**（Admin+All 行内可选）、**Receipt Qty**；**Zone** 固定 Storage；**Order Qty ≠ Receipt Qty** 时 **Remarks** 必填。  
+4. **匹配失败**：**Unmatched**（行号 + **SKU ID**）；可忽略 Warn 提交已匹配行。  
 5. **源文件** 系统保留；**Inbound Detail** 支持 **Preview**（表格）与 **Download**（原文件或预览矩阵导出）。  
 6. **多物流单号**：解析前校验整表 `物流单号` 唯一，否则 Toast（中文）：*一次上传仅允许一个物流单号…请拆分 Excel 后分别创建 Inbound*。  
 **表头非法**：Toast 提示重新上传。
@@ -251,15 +252,14 @@
 2. 选中后加行：以 **SKU ID** 为主键，**Product Name / SKU / Purchase Price / PAN** 联动展示；手填 **Order Qty、Receipt Qty、Supplier、Remarks**（Remarks 必填）。  
 3. **Warehouse** 在 Admin+All 时行内可选；**Zone** 固定 Storage。可追加多行；**Confirm Stock-In** 一次性提交。
 
-### 7.3 Product Name 匹配（采购文件）
+### 7.3 SKU ID 匹配（采购文件）
 
 | 步骤 | 规则 |
 |------|------|
-| 匹配键 | **Product Name** 列（与商品库名/别名归一化后包含或分词匹配） |
-| 多命中 | **SKU ID 列下拉必选**；选中后 **Product Name、SKU（规格）只读联动** |
-| 单命中 | 自动绑定 **SKU ID** 并联动 Name / SKU |
-| 零命中 | Unmatched 列表，不入明细 |
-| 库存行 | 绑定后须存在 `(sku_id, warehouse_code, zone_code)` 行（§2.2） |
+| 匹配键 | **`SKU ID` 列**（必填） |
+| 命中 | 反显 **Product Name、SKU、商务字段**；写账仍校验 `(sku_id, warehouse_code, zone_code)` |
+| 零命中 | Unmatched 列表（SKU ID）；不入明细 |
+| Product Name 列 | 可选；与主数据不一致时 **以 SKU ID 为准** |
 
 ### 7.4 Inbound Detail（列表 View）
 
@@ -284,7 +284,7 @@
 
 - Stocked In 每明细行写一条 **Inbound 流水**；列表 **Related Order No.** = **Inbound No.**（主 PRD §6.1）。  
 - 流水 **View → Record Detail**（**单页**，无旧版「Inbound」子区块）：Time、Warehouse、Zone、SKU ID、Product Name、**SKU**、Qty、**After Change**、Type、**Inbound No.**、Operator、**Inbound Remarks**（行备注聚合）、**Related Purchase Order**（含 **Preview** 跳转源文件）、**Shipping No.**  
-- 不再展示 ItemDesc / Specification 分节字段；采购匹配键为 **Product Name**（非 ItemDesc 模板）。
+- 不再展示 ItemDesc / Specification 分节字段；采购上传匹配键为 **SKU ID**（`采购.xlsx`）。
 
 ---
 
@@ -419,7 +419,8 @@ COMMIT or ROLLBACK all
 | Delete 无确认 | **Delete 二次确认** |
 | 两种导入类型「采购导入和人工调整」 | **Purchase Receipt / Manual Receipt**；「调整」= ADJ 单 |
 | 未写仓库初始化 | **§2.1 原有库导入 + 零库存行** |
-| ItemDesc xlsx / 头 Remarks | **`采购.xlsx` + Product Name**；行 Remark |
+| ItemDesc / Product Name 匹配 | **`采购.xlsx` + SKU ID 主键**；行 Remarks |
+| Product Name 为采购匹配键 | **SKU ID 为采购 Excel 匹配键** |
 | 列表无 PO/Shipping | 列表含 **Purchase Order、Shipping No.** |
 | Record 详情双子区块 | **单页** 含 PO Preview、Shipping No. |
 
@@ -463,6 +464,6 @@ COMMIT or ROLLBACK all
 2. **表单**：Inbound No. / Type 只读；Context Warehouse（Admin+All 下拉）；**手动隐藏 PO / Shipping**。  
 3. **行表列序**：SKU ID → Product Name → SKU → Warehouse → Zone（Storage 固定）→ Purchase Price → Order Qty → Receipt Qty → Supplier → PAN → Remarks → Delete（确认）。  
 4. **绑定**：1 Inbound = 1 PO；1 PO → N Shipping（多 Inbound）；1 PO → N **PAN**（多行/多次入库）。  
-5. **采购 xlsx**：单运单；Product Name 解析 → **SKU ID**；Order Qty **只读**。  
+5. **采购 xlsx**：**SKU ID 必填**；单运单；Order Qty 只读；Name/SKU 联动。  
 6. **Inbound Detail / Record**：不变（见 §7.4–7.5）。  
 7. **源文件**：Preview + Download。

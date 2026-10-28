@@ -262,29 +262,49 @@ function parsePurchaseXlsxMatrix(matrix) {
   const headers = matrix[0].map(c => cellToDisplay(c));
   const idxPo = findHeaderIndex(headers, ['采购单号', 'purchase order']);
   const idxShip = findHeaderIndex(headers, ['物流单号', 'shipping no', 'shipping no.']);
+  const idxSku = findHeaderIndex(headers, ['sku id', 'skuid', 'sku编号', 'sku 编号']);
   const idxName = findHeaderIndex(headers, ['product name', 'productname', '商品名称']);
   const idxQty = findHeaderIndex(headers, ['需求数量', 'order qty']);
-  if (idxName < 0 || idxQty < 0) {
-    throw new Error('Missing required columns: Product Name and 需求数量');
+  if (idxSku < 0 || idxQty < 0) {
+    throw new Error('Missing required columns: SKU ID and 需求数量');
   }
   const rows = [];
   for (let r = 1; r < matrix.length; r++) {
     const line = matrix[r];
     if (!line || !line.some(c => c !== '' && c != null)) continue;
-    const productName = cellToDisplay(line[idxName]);
+    const skuId = cellToDisplay(line[idxSku]);
+    const productName = idxName >= 0 ? cellToDisplay(line[idxName]) : '';
     const qtyRaw = line[idxQty];
     const orderQty = parseInt(String(qtyRaw).replace(/,/g, ''), 10);
-    if (!productName) continue;
+    if (!skuId) continue;
     if (!orderQty || orderQty < 1) continue;
     rows.push({
       row: r + 1,
       purchaseOrder: idxPo >= 0 ? cellToDisplay(line[idxPo]) : '',
       shippingNo: idxShip >= 0 ? cellToDisplay(line[idxShip]) : '',
-      importProductName: productName,
+      skuId,
+      importProductName: productName || skuId,
       orderQty
     });
   }
   return { rows, preview: matrix.slice(0, Math.min(matrix.length, 25)) };
+}
+
+function resolveInboundSkuBySkuId(warehouseCode, skuId) {
+  const wh = normalizeWarehouseId(warehouseCode);
+  const id = String(skuId || '').trim();
+  if (!id) return { ok: false, error: 'Missing SKU ID' };
+  const pool = listWarehouseInventorySkus(wh).filter(s => s.skuId === id);
+  if (!pool.length) {
+    return { ok: false, error: 'SKU ID not registered in this warehouse' };
+  }
+  const stoRows = pool.filter(s => /STO|Storage/i.test(String(s.zoneCode || '') + String(s.zone || '')));
+  const primary = stoRows[0] || pool[0];
+  return {
+    ok: true,
+    primary,
+    candidates: pool.map(s => ({ skuId: s.skuId, spec: s.spec, zoneCode: s.zoneCode, productName: s.productName }))
+  };
 }
 
 function readFileAsArrayBuffer(file) {
@@ -1074,27 +1094,28 @@ function countActiveInboundJobs() {
 
 function buildReceiptLineFromPoRow(dr, wh) {
   const zoneCode = getDefaultStorageZoneCode(wh);
-  const candidates = matchSkusByProductName(dr.importProductName, wh);
-  if (!candidates.length) {
-    receiptUnmatched.push({ row: dr.row, importProductName: dr.importProductName, purchaseOrder: dr.purchaseOrder });
+  const resolved = resolveInboundSkuBySkuId(wh, dr.skuId);
+  if (!resolved.ok) {
+    receiptUnmatched.push({ row: dr.row, importProductName: dr.skuId || dr.importProductName || '—' });
     return;
   }
+  const { primary, candidates } = resolved;
   const skuCandidates = candidates.map(c => ({ skuId: c.skuId, spec: c.spec, zoneCode: c.zoneCode }));
-  const single = candidates.length === 1 ? candidates[0] : null;
+  const single = candidates.length === 1 ? primary : null;
   receiptEditorLines.push({
     purchaseOrder: dr.purchaseOrder,
     shippingNo: dr.shippingNo || '',
-    importProductName: dr.importProductName,
-    productName: single ? single.productName : dr.importProductName,
-    skuId: single ? single.skuId : '',
-    spec: single ? single.spec : '',
-    skuCandidates,
-    skuResolved: !!single,
+    importProductName: dr.importProductName || primary.productName,
+    productName: primary.productName,
+    skuId: primary.skuId,
+    spec: primary.spec,
+    skuCandidates: candidates.length > 1 ? skuCandidates : (single ? skuCandidates : []),
+    skuResolved: true,
     orderQty: dr.orderQty,
     receiptQty: dr.orderQty,
-    barcode: single ? primaryBarcode(single) : '',
+    barcode: primaryBarcode(primary),
     warehouseCode: wh,
-    zoneCode: single ? (single.zoneCode || zoneCode) : zoneCode,
+    zoneCode: primary.zoneCode || zoneCode,
     purchasePrice: '',
     supplier: '',
     pan: ''
