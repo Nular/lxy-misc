@@ -116,7 +116,7 @@
 | 4 | 行内 / 批量 **Pack & Ship**：表格确认行 + **Shipping No.**（导入单必填，Manual 选填） |
 | 5 | 列表列：Time（日期+时间两行）、**Warehouse**（Admin + All 时）、Outbound No.、SKU ID、Product Name、SKU、**QTY**、**PAN**、Order No.、**Store**（源字段 `shop`；Manual outbound 为 —）、**Outbound Type**、Operator、Status、Operation |
 | 6 | 筛选：Order No.、SKU ID、**PAN（8 位）**、Time（`datetime-local`，展示时间 ≥ 筛选时间） |
-| 7 | **Outbound Detail**（按批次）：行表、Export Shipping Order、Import Tracking（可选） |
+| 7 | **Outbound Detail**（按批次）：行表、Export Shipping Order、Import Shipping No.（可选） |
 | 8 | **On Hold**（缺货/待补货行）列表与 **Re-allocate** |
 | 9 | 同步 **Record → Outbound** 子筛：All / Occupy / Deduct / **Manual**；流水详情字段 §9 |
 | 10 | Tab **Pending Picking / Shipped** 隐藏 **Manual outbound**、**Import**（仅待分配阶段可创建） |
@@ -212,9 +212,9 @@
 | 场景 | 列顺序（建议） | 说明 |
 |------|----------------|------|
 | **Admin 订单导出模块**（商家后台 → WMS 导入模板） | **第 1 列 SKU ID**（主键）、**第 2 列 PAN**（可选）、MerchantOrderID、ItemQuantity、Shop | 运营导出须含 **SKU ID** |
-| **Export Shipping Order**（WMS 内待打包导出） | Outbound No.、Order No.、**PAN**、SKU ID、Product Name、SKU、Qty、Tracking 占位等 | 与列表 PAN 列对齐 |
+| **Export Shipping Order**（WMS 内待打包导出） | Outbound No.、Order No.、**PAN**、SKU ID、Product Name、SKU、Qty、**Shipping No.** 占位等 | 与列表 PAN 列对齐 |
 
-- **Import Tracking No.**：按 Order No. + SKU ID 匹配 **Pending Picking** 行，写入 Shipping No. 并 **Shipped + Deduct**（与 Pack & Ship 等效写账）。
+- **Import Shipping No.**：CSV 含 **Shipping No.** 列；按 Order No. + SKU ID（及 Outbound No.）匹配 **Pending Picking** 行，写入 **Shipping No.** 并 **Shipped + Deduct**（与 Pack & Ship 等效写账）。**不使用 Tracking No. 字段名。**
 
 ---
 
@@ -281,7 +281,7 @@
 ### 10.1 批次详情
 
 - 从列表 **Outbound No.** 进入；展示同批次行、批次状态（Pending Outbound / Partially Outbound / Fully Outbound）。
-- 操作：Export Shipping Order、Import Tracking、按状态筛选行。
+- 操作：Export Shipping Order、Import Shipping No.、按状态筛选行。
 
 ### 10.2 On Hold
 
@@ -297,7 +297,7 @@
 | Import / Manual 创建 | — | — | — | 无 |
 | Confirm Allocation | — | ↑ | ↓ | Outbound Occupy |
 | Pack & Ship | ↓ | ↓ | — | Outbound Deduct / Manual outbound |
-| Export / 仅录入 Tracking 草稿 | — | — | — | 无 |
+| Export / 仅录入 Shipping No. 草稿 | — | — | — | 无 |
 | 补货 Inbound | ↑ | — | ↑ | Inbound（入库 PRD） |
 
 占用、扣减与流水 **同一事务**；失败整行回滚。
@@ -328,7 +328,7 @@ Home 首行 **5** 张 KPI 中，下列 **3** 项来自出库（**Outbound No. �
 | 关联 Inbound No. 列（出库列表） | 已移除；入库关联不在出库列表展示 |
 | Import 无校验面板 | **Import validation** 表（对齐入库） |
 | — | 列表 **PAN、QTY**；Time 两行展示；PAN 筛选 |
-| Pack 与 Tracking 分离描述 | **Pack & Ship** 弹窗表格 + Shipping No.（导入必填 / Manual 选填） |
+| Pack 与运单分离描述 | **Pack & Ship** 弹窗 + **Shipping No.**（导入必填 / Manual 选填）；无 Tracking No. |
 | Record 仅 Occupy/Deduct | 子筛增加 **Manual**；Type **Manual outbound** + Reason/Remarks |
 | Import 仅 ItemDesc | **SKU ID 必填**；PAN 可选校验（§7.1–7.2） |
 | Import PAN 为主键 | **SKU ID 为主键**；PAN 交叉校验 |

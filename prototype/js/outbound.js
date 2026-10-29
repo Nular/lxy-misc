@@ -25,7 +25,7 @@ let obOrderImportRows = null;
 let obTrackCsv = '';
 
 function lineShippingNo(line) {
-  return line.shippingNo || line.trackingNo || '—';
+  return line.shippingNo || '—';
 }
 
 function outboundOperatorName() {
@@ -766,7 +766,7 @@ function detailActions(tab) {
     return `<span class="hint">Select lines and confirm allocation to lock stock (Outbound Occupy).</span><button class="btn btn-primary" onclick="confirmAllocationBatch()">Confirm Allocation</button>`;
   }
   if (tab === 'pending_picking') {
-    return `<span class="hint">Pack and enter tracking to ship (Outbound Deduct).</span><button class="btn btn-primary" onclick="openPackTrackingModal()">Pack &amp; Ship</button>`;
+    return `<span class="hint">Pack and enter Shipping No. to ship (Outbound Deduct).</span><button class="btn btn-primary" onclick="openPackTrackingModal()">Pack &amp; Ship</button>`;
   }
   return '';
 }
@@ -967,14 +967,14 @@ function confirmExportShippingOrder() {
   const ext = document.getElementById('ob-export-format').value;
   const batch = outboundBatches.find(b => b.outboundNo === currentOutboundNo);
   const lines = outboundLines.filter(l => l.outboundNo === currentOutboundNo && normalizeObStatus(l.status) === 'pending_picking');
-  const header = 'Outbound No,Order No,SKU ID,Product Name,Qty,Warehouse,Zone,Tracking No';
+  const header = 'Outbound No,Order No,SKU ID,Product Name,Qty,Warehouse,Zone,Shipping No';
   const csv = [header].concat(lines.map(l =>
     [l.outboundNo, l.orderNo, l.skuId, l.productName, l.qty, formatCanonicalWarehouseCode(l.warehouseId), l.zoneCode, ''].join(',')
   )).join('\n');
   const name = `ShippingOrder_${batch ? batch.warehouseCode : 'WH'}_${ymd()}.${ext === 'csv' ? 'csv' : 'csv'}`;
   downloadTextFile(name, csv);
   closeModal('ob-export-modal');
-  showToast(`Export successful. Fill Tracking No. and import it on Allocated. File: ${name}`, 'success');
+  showToast(`Export successful. Fill Shipping No. and import via Import Shipping No. File: ${name}`, 'success');
 }
 
 function renderOnHold() {
@@ -1138,7 +1138,7 @@ function onOutboundFilePicked(input, kind) {
       if (!ok) {
         obImportValidatedRows = null;
         document.getElementById('ob-import-btn').disabled = true;
-        document.getElementById('ob-import-file-msg').textContent = 'Required: SKU ID, PAN, MerchantOrderID, ItemQuantity (or legacy ItemDesc).';
+        document.getElementById('ob-import-file-msg').textContent = 'Required: SKU ID, MerchantOrderID, ItemQuantity (legacy ItemDesc-only templates need a SKU ID column).';
         renderOutboundImportValidation({ errors: [], validRows: [] });
         return;
       }
@@ -1147,7 +1147,7 @@ function onOutboundFilePicked(input, kind) {
     } else {
       obTrackCsv = String(reader.result || '');
       document.getElementById('ob-track-preview').textContent = obTrackCsv.slice(0, 800);
-      document.getElementById('ob-track-btn').disabled = !/shipping|tracking/i.test(obTrackCsv);
+      document.getElementById('ob-track-btn').disabled = !/shipping\s*no/i.test(obTrackCsv);
     }
   };
   reader.readAsText(file);
@@ -1284,7 +1284,7 @@ function openImportTracking() {
 
 function fillSampleTrackCsv() {
   const lines = outboundLines.filter(l => l.outboundNo === currentOutboundNo && normalizeObStatus(l.status) === 'pending_picking');
-  obTrackCsv = 'Outbound No,Order No,SKU ID,Tracking No\n' + lines.map((l, i) => `${l.outboundNo},${l.orderNo},${l.skuId},TRK${ymd()}${String(i + 1).padStart(4, '0')}`).join('\n');
+  obTrackCsv = 'Outbound No,Order No,SKU ID,Shipping No\n' + lines.map((l, i) => `${l.outboundNo},${l.orderNo},${l.skuId},SF${ymd()}${String(i + 1).padStart(4, '0')}`).join('\n');
   document.getElementById('ob-track-preview').textContent = obTrackCsv || 'No allocated lines';
   document.getElementById('ob-track-btn').disabled = !lines.length;
 }
@@ -1305,8 +1305,12 @@ function runImportTracking() {
       failed += 1;
       return;
     }
-    const tracking = r['Shipping No'] || r['Tracking No'];
-    line.shippingNo = tracking;
+    const shippingNo = (r['Shipping No'] || '').trim();
+    if (!shippingNo) {
+      failed += 1;
+      return;
+    }
+    line.shippingNo = shippingNo;
     if (!deductSku(line)) {
       failed += 1;
       return;
@@ -1347,7 +1351,7 @@ function openPackTrackingModal(onlyId) {
 
 function submitPackAndShip() {
   const onlyId = document.getElementById('ob-pack-line-id').value;
-  const tracking = (document.getElementById('ob-pack-shipping').value || '').trim();
+  const shippingNo = (document.getElementById('ob-pack-shipping').value || '').trim();
   const ids = onlyId ? [onlyId] : selectedLineIds();
   let targets = outboundLines.filter(l => normalizeObStatus(l.status) === 'pending_picking' && (!ids.length || ids.includes(l.id)));
   if (currentOutboundNo && document.getElementById('page-outbound-detail')?.classList.contains('active')) {
@@ -1358,14 +1362,14 @@ function submitPackAndShip() {
     return;
   }
   const needsShipping = targets.some(l => l.outboundType !== 'manual');
-  if (needsShipping && !tracking) {
+  if (needsShipping && !shippingNo) {
     showToast('Shipping No. is required for imported order lines.', 'warning');
     return;
   }
   let ok = 0;
   let fail = 0;
   targets.forEach(l => {
-    l.shippingNo = tracking;
+    l.shippingNo = shippingNo;
     if (!deductSku(l)) {
       fail += 1;
       return;
