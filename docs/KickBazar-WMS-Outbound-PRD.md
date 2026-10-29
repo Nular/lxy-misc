@@ -54,7 +54,7 @@
 | 规则 | 说明 |
 |------|------|
 | 库存行 | Import / Manual 仅允许 `(sku_id, warehouse_id, zone_id)` **已存在** 的 **Storage Zone（STO）** 行 |
-| 订单解析 | **SKU ID**（`订单列表.xlsx` 必填）反查商品；**PAN** 可选与 SKU ID 交叉校验；兼容旧 **ItemDesc** 模板 |
+| 订单解析（Import） | **本期**：`订单列表.xlsx` **必填 SKU ID**，在目标 `warehouse_id` 下查 **STO 库存行** 写作业；**PAN** 可选，填写则须与 SKU ID 对应商品一致；**不用** Product Name / ItemDesc 匹配 SKU（ItemDesc 仅兼容无 SKU ID 列的旧模板） |
 | Manual outbound | **Product Name** 模糊匹配 + **SKU（规格）** 下拉；仅 STO 有货 SKU |
 | 禁止 | Import / Manual 流程中 **INSERT** 商品主数据或库存行 |
 
@@ -171,12 +171,14 @@
 
 ## 7 订单导入（Import Orders）
 
+**本期匹配规则**：Import 以表格 **SKU ID** 为主键，在 Import 所选 **`warehouse_id`** 下定位 `(sku_id, warehouse_id, zone_id)` STO 行并占用/扣减库存；**PAN** 为可选交叉校验字段，不参与主匹配。
+
 ### 7.1 文件格式（`订单列表.xlsx`）
 
 | 表格列 | 系统字段 | 规则 |
 |--------|----------|------|
-| **SKU ID** | **SKU ID** | **匹配主键**（必填）；须在目标仓 STO 有库存行 |
-| **PAN** | PAN | **可选**；若填写须与 SKU ID 解析结果一致 |
+| **SKU ID** | **SKU ID** | **必填**；**唯一匹配键**，须在目标仓 STO 有库存行 |
+| **PAN** | PAN | **可选**；若填写须与该 SKU ID 在仓内主数据 PAN 一致 |
 | **MerchantOrderID** | **Order No.** | 同一 ID 可多行（多 SKU） |
 | **ItemQuantity** | **Qty** | 正整数 |
 | **Product Name / SKU** | — | **不以上传列匹配**；Import 校验表由 **SKU ID 联动展示** |
@@ -190,7 +192,7 @@
 
 1. 解析文件 → **Import validation** 面板列序：**Order No. → SKU ID → Product Name → SKU → PAN → Qty → Check**（Name/SKU/PAN 由 **SKU ID** 填充）。  
 2. 全部通过方可点击 **Import**；否则 **Import** 置灰。  
-3. 校验失败常见原因：**SKU ID 在仓内无 STO 行**、PAN 与 SKU ID 不一致、Qty 非法、缺少 Order No. / SKU ID。  。
+3. 校验失败常见原因：**SKU ID 在仓内无 STO 行**、PAN 与 SKU ID 不一致、Qty 非法、缺少 Order No. / SKU ID。
 
 ### 7.3 样例文件（Demo）
 

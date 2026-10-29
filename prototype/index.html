@@ -1334,7 +1334,7 @@
       </div>
       <div class="modal-body">
         <div id="ob-import-step-upload">
-          <p class="hint"><strong>订单列表.xlsx</strong>：<code>SKU ID</code>（<strong>匹配主键</strong>）、<code>PAN</code>（可选校验）、<code>MerchantOrderID</code> → Order No.，<code>ItemQuantity</code> → Qty；Product Name / SKU 由 SKU ID 联动。Admin + All 时选 Warehouse。</p>
+          <p class="hint"><strong>订单列表.xlsx</strong> 本期：<code>SKU ID</code>（<strong>必填，定位 STO 库存</strong>）、<code>PAN</code>（可选校验）、<code>MerchantOrderID</code> → Order No.，<code>ItemQuantity</code> → Qty；Product Name / SKU 由 SKU ID 反查展示。Admin + All 时选 Warehouse。</p>
           <div class="form-group" id="ob-import-wh-wrap">
             <label>Warehouse</label>
             <select id="ob-import-wh" onchange="revalidateOutboundImportPreview()"></select>

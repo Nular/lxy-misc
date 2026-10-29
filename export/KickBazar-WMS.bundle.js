@@ -3725,9 +3725,9 @@ function resolveOutboundSku(warehouseId, skuId, productName) {
     const row = skuData.find(s =>
       s.skuId === skuId && formatCanonicalWarehouseCode(skuWarehouseId(s)) === whCode
     );
-    if (row) return { skuId: row.skuId, productName: row.productName, spec: row.spec || '—', ok: !!storageSku(warehouseId, skuId) };
+    if (row) return { skuId: row.skuId, productName: row.productName, spec: row.spec || '—', pan: row.pan || '', ok: !!storageSku(warehouseId, skuId) };
     const sto = storageSku(warehouseId, skuId);
-    if (sto) return { skuId: sto.skuId, productName: sto.productName || productName, spec: sto.spec || '—', ok: true };
+    if (sto) return { skuId: sto.skuId, productName: sto.productName || productName, spec: sto.spec || '—', pan: sto.pan || '', ok: true };
     return { skuId, productName: productName || skuId, spec: '—', ok: false, error: 'No Storage Zone row for this SKU in warehouse' };
   }
   if (typeof matchSkusByProductName === 'function') {
@@ -3792,7 +3792,7 @@ function validateAndResolveOutboundRows(warehouseId, rawRows) {
     }
     validRows.push({
       'Order No': r['Order No'],
-      PAN: resolved.pan || pan,
+      PAN: pan || resolved.pan || '',
       Qty: qty,
       'Product Name': resolved.productName,
       'SKU ID': resolved.skuId,
@@ -3897,8 +3897,7 @@ function parseOrderListMatrix(matrix) {
       ? (typeof cellToDisplay === 'function' ? cellToDisplay(line[idxDesc]) : String(line[idxDesc] || '').trim())
       : '';
     if (!orderNo || !skuIdCol) continue;
-    const parsed = itemDesc ? parseOutboundItemDesc(itemDesc, itemQty) : { qty: parseInt(String(itemQty).replace(/,/g, ''), 10) || 0, productName: '', skuId: skuIdCol };
-    const qty = parsed.qty > 0 ? parsed.qty : (parseInt(String(itemQty).replace(/,/g, ''), 10) || 0);
+    const qty = parseInt(String(itemQty).replace(/,/g, ''), 10) || 0;
     const shop = idxShop >= 0
       ? (typeof cellToDisplay === 'function' ? cellToDisplay(line[idxShop]) : String(line[idxShop] || '').trim())
       : '';
@@ -3910,8 +3909,8 @@ function parseOrderListMatrix(matrix) {
       'ItemDesc': itemDesc,
       PAN: pan,
       pan,
-      'SKU ID': skuIdCol || parsed.skuId,
-      'Product Name': parsed.productName,
+      'SKU ID': skuIdCol,
+      'Product Name': '',
       shop
     });
   }
@@ -4592,14 +4591,6 @@ function ensureOutboundImportWarehouseOptions() {
   select.innerHTML = list.map(w => `<option value="${w.id}">${formatCanonicalWarehouseCode(w.id)} — ${w.name}</option>`).join('');
 }
 
-function outboundSampleItemDescsForWarehouse(warehouseId) {
-  const wh = formatCanonicalWarehouseCode(warehouseId);
-  const stoRows = listStoSkusForWarehouse(wh).filter(s => (s.available ?? 0) > 0 || (s.total ?? 0) > 0);
-  const pick = stoRows.slice(0, 2);
-  if (!pick.length) return null;
-  return pick.map(s => `1*${s.productName}-${s.skuId}`);
-}
-
 function buildOutboundSampleCsv(warehouseId) {
   const matrix = outboundSampleMatrixForWarehouse(warehouseId);
   if (!matrix) return null;
@@ -4607,8 +4598,6 @@ function buildOutboundSampleCsv(warehouseId) {
 }
 
 function outboundSampleMatrixForWarehouse(warehouseId) {
-  const descs = outboundSampleItemDescsForWarehouse(warehouseId);
-  if (!descs || !descs.length) return null;
   const orderId = 'MO-DEMO-2026';
   const pick = listStoSkusForWarehouse(warehouseId).filter(s => (s.available ?? 0) > 0 || (s.total ?? 0) > 0).slice(0, 2);
   if (!pick.length) return null;
@@ -4765,24 +4754,26 @@ function normalizeImportRows(raw) {
   return raw.map(r => {
     const orderNo = r['MerchantOrderID'] || r['Order No'];
     const pan = String(r.PAN || r.pan || '').trim();
-    if (orderNo || r.ItemDesc || pan || r['SKU ID']) {
-      const parsed = r.ItemDesc
-        ? parseOutboundItemDesc(r.ItemDesc, r.ItemQuantity || r.Qty)
-        : { qty: parseInt(r.Qty || r.ItemQuantity, 10), productName: r['Product Name'] || '', skuId: r['SKU ID'] || '' };
-      const qty = parsed.qty > 0 ? parsed.qty : (parseInt(r.Qty || r.ItemQuantity, 10) || 0);
-      return {
-        'Order No': orderNo,
-        PAN: pan,
-        pan,
-        Qty: qty,
-        'Product Name': parsed.productName,
-        'SKU ID': parsed.skuId || r['SKU ID'] || '',
-        'Order Time': r['Order Time'] || '',
-        Specification: r.Specification || '—',
-        shop: (r.shop || r.Shop || '').trim()
-      };
+    let skuId = String(r['SKU ID'] || '').trim();
+    let productName = r['Product Name'] || '';
+    let qty = parseInt(String(r.Qty || r.ItemQuantity || '').replace(/,/g, ''), 10) || 0;
+    if (!skuId && r.ItemDesc) {
+      const parsed = parseOutboundItemDesc(r.ItemDesc, r.ItemQuantity || r.Qty);
+      skuId = parsed.skuId;
+      productName = parsed.productName;
+      if (!qty && parsed.qty) qty = parsed.qty;
     }
-    return r;
+    return {
+      'Order No': orderNo,
+      PAN: pan,
+      pan,
+      Qty: qty,
+      'Product Name': productName,
+      'SKU ID': skuId,
+      'Order Time': r['Order Time'] || '',
+      Specification: r.Specification || '—',
+      shop: (r.shop || r.Shop || '').trim()
+    };
   });
 }
 
