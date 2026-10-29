@@ -243,7 +243,7 @@ WMS **不在入库页面创建 SKU 主数据**；仓内可作业前提如下：
 
 筛选：同 5.1 + SKU ID。
 
-表格列：SKU ID、Specification、Product Name、Total、Locked、Available、Warehouse、**Zone**、Zone Code、Primary Barcode、PAN、**Store**（店铺名称，多个以 `;` 分隔，只读同步自 Admin/Seller）、Operation（库存调整 §5.3）。
+表格列：SKU ID、Specification、Product Name、Total、Locked、Available、Warehouse、**Zone**、**Zone ID**、Primary Barcode、PAN、**Store**（店铺名称，多个以 `;` 分隔，只读同步自 Admin/Seller；源字段 `shop`/`stores`）、Operation（库存调整 §5.3）。
 
 从仓库 **Stock** 跳转：URL 带 `warehouse_code`；参数丢失则展示全部并提示手动选择（若已实现全局单仓上下文，则以上下文为准）。
 
@@ -315,7 +315,7 @@ WMS **不在入库页面创建 SKU 主数据**；仓内可作业前提如下：
 | Outbound Deduct | locked↓、total↓（平台订单发运） |
 | Manual outbound | locked↓、total↓（Manual outbound 发运；详情含 **Reason / Remarks**） |
 
-出库流水列表不单独展示店铺列；**流水详情**含 **Shop**（导入订单取自 `Shop`；Manual outbound 为 **—**），以及 Time、Warehouse、Zone、SKU ID、Product Name、SKU、Qty、After Change、Type、**Outbound No.**、Operator、**Related Order No.**、**Shipping No.** 等；细则见 [`KickBazar-WMS-Outbound-PRD.md`](KickBazar-WMS-Outbound-PRD.md) §9。
+出库流水列表不单独展示店铺列；**流水详情**含 **Store**（源字段 `shop`；Manual outbound 为 **—**），以及 Time、Warehouse、Zone、SKU ID、Product Name、SKU、Qty、After Change、Type、**Outbound No.**、Operator、**Related Order No.**、**Shipping No.** 等；细则见 [`KickBazar-WMS-Outbound-PRD.md`](KickBazar-WMS-Outbound-PRD.md) §9。
 
 ### 6.4 手动调整流水（Tab：Manual Adjustment）
 

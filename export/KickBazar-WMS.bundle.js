@@ -449,12 +449,12 @@ const recordData = {
     { time: '2026-08-17 15:20:11', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10001-WH', productName: 'Wireless Bluetooth Earbuds Pro', specification: 'White; L', qty: '-10', after: { total: 970, locked: 150, available: 820 }, type: 'Manual Adjustment (Decrease)', order: 'ADJ-20260817002', operator: 'Admin', sub: 'manual', direction: 'Decrease', adjQty: '10', adjType: 'Damage (报损)', reason: 'Carton crushed in storage aisle.', attachment: '—' }
   ],
   occupy: [
-    { time: '2026-08-21 11:45:22', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10001-BK', qty: '50', after: { total: 1200, locked: 200, available: 1000 }, type: 'Outbound Occupy', order: 'OUT-20260821005', operator: 'System', outboundNo: 'OUT-20260821005', relatedOrderNo: 'SO-20260821001', shipmentNo: '—', status: 'Allocated', shop: 'KickBazar Official Store' },
+    { time: '2026-08-21 11:45:22', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10001-BK', qty: '50', after: { total: 1200, locked: 200, available: 1000 }, type: 'Outbound Occupy', order: 'OB202608210001', operator: 'System', outboundNo: 'OB202608210001', relatedOrderNo: 'SO-20260821001', shippingNo: '—', status: 'Allocated', shop: 'KickBazar Official Store' },
     { time: '2026-08-21 10:30:18', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10002-42', qty: '30', after: { total: 900, locked: 160, available: 740 }, type: 'Outbound Occupy', order: 'OUT-20260821003', operator: 'System' },
     { time: '2026-08-20 15:12:55', warehouse: 'BJ001', zone: 'BJ001STO (Storage Zone)', sku: 'SKU-10003-01', qty: '100', after: { total: 3200, locked: 560, available: 2640 }, type: 'Outbound Occupy', order: 'OUT-20260820008', operator: 'System' }
   ],
   deduct: [
-    { time: '2026-08-21 14:20:33', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10001-WH', qty: '-25', after: { total: 980, locked: 150, available: 830 }, type: 'Outbound Deduct', order: 'OUT-20260820012', operator: 'Li Ming', outboundNo: 'OUT-20260820012', relatedOrderNo: 'SO-20260820012', shipmentNo: 'SHP-SF1029384756', status: 'Shipped', shop: 'Tmall Global' },
+    { time: '2026-08-21 14:20:33', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10001-WH', qty: '-25', after: { total: 980, locked: 150, available: 830 }, type: 'Outbound Deduct', order: 'OB202608200012', operator: 'Li Ming', outboundNo: 'OB202608200012', relatedOrderNo: 'SO-20260820012', shippingNo: 'SF1029384756', status: 'Shipped', shop: 'Tmall Global' },
     { time: '2026-08-20 17:05:41', warehouse: 'SH001', zone: 'SH001STO (Storage Zone)', sku: 'SKU-10001-BK', qty: '-40', after: { total: 1000, locked: 150, available: 850 }, type: 'Outbound Deduct', order: 'OUT-20260819015', operator: 'Zhang Wei' }
   ],
   unfreeze: [
@@ -1376,7 +1376,7 @@ function getOutboundRecordSubFilter() {
   return activeSub?.dataset?.outboundSub || 'all';
 }
 
-function outboundRecordShopDisplay(r) {
+function outboundRecordStoreDisplay(r) {
   if (r.type === 'Manual outbound') return '—';
   const shop = (r.shop || '').trim();
   return shop || '—';
@@ -1533,8 +1533,8 @@ function enrichRecordDetail(r) {
   if (row.type === 'Outbound Occupy' || row.type === 'Outbound Deduct' || row.type === 'Manual outbound') {
     row.outboundNo = row.outboundNo || row.order;
     row.relatedOrderNo = row.relatedOrderNo || '—';
-    row.shipmentNo = row.shipmentNo || row.trackingNo || '—';
     row.shippingNo = row.shippingNo || '—';
+    if (row.shipmentNo) delete row.shipmentNo;
     row.status = row.status || (row.type === 'Outbound Occupy' ? 'Allocated' : 'Shipped');
     const skuRow = skuData.find(s => s.skuId === row.sku);
     row.productName = row.productName || skuRow?.productName || '—';
@@ -1567,7 +1567,7 @@ function renderOutboundRecordDetailHtml(r) {
       ${detailRow('Outbound No.', r.outboundNo || r.order)}
       ${detailRow('Operator', r.operator)}
       ${detailRow('Related Order No.', r.relatedOrderNo || '—')}
-      ${detailRow('Shop', outboundRecordShopDisplay(r))}
+      ${detailRow('Store', outboundRecordStoreDisplay(r))}
       ${detailRow('Shipping No.', r.shippingNo || '—')}
     </div>`;
   if (r.type === 'Manual outbound') {
@@ -3603,7 +3603,6 @@ let outboundListTab = 'pending_allocation';
 
 let outboundBatches = [];
 let outboundLines = [];
-let obSeq = { OB: 1, SHP: 1, MO: 1 };
 let currentOutboundNo = null;
 let currentObTab = 'all';
 let obOrderCsv = '';
@@ -3946,10 +3945,20 @@ function ymd(date) {
   return d.toISOString().slice(0, 10).replace(/-/g, '');
 }
 
-function nextDocNo(prefix, warehouseId) {
-  const code = formatCanonicalWarehouseCode(warehouseId);
-  const n = String(obSeq[prefix]++).padStart(4, '0');
-  return `${prefix}${code}${ymd()}${n}`;
+/** Outbound No.: OB + yyyyMMdd + 3-digit seq (import & manual). */
+function nextOutboundNo() {
+  const d = ymd();
+  const prefix = `OB${d}`;
+  let max = 0;
+  const bump = no => {
+    if (!no || !String(no).startsWith(prefix)) return;
+    const tail = String(no).slice(prefix.length);
+    const n = parseInt(tail, 10);
+    if (!Number.isNaN(n)) max = Math.max(max, n);
+  };
+  outboundLines.forEach(l => bump(l.outboundNo));
+  outboundBatches.forEach(b => bump(b.outboundNo));
+  return `${prefix}${String(max + 1).padStart(3, '0')}`;
 }
 
 function storageSku(warehouseId, skuId) {
@@ -4004,7 +4013,7 @@ function lineTag(status) {
 
 function seedOutbound() {
   const wh = 'SH001';
-  const no = nextDocNo('OB', wh);
+  const no = nextOutboundNo();
   outboundBatches.push({
     outboundNo: no,
     importedAt: '2026-08-21 09:10:00',
@@ -4031,7 +4040,6 @@ function seedOutbound() {
       zoneCode: '—',
       zone: '—',
       shippingNo: '—',
-      shipmentNo: '—',
       inboundNo: '—',
       importedAt: '2026-08-21 09:10:00',
       allocatedAt: '',
@@ -4071,7 +4079,6 @@ function occupySku(warehouseId, skuId, qty, outboundNo, orderNo, shop) {
     outboundNo,
     relatedOrderNo: orderNo,
     shippingNo: '—',
-    shipmentNo: '—',
     status: 'Pending Picking',
     shop: (shop || '').trim()
   });
@@ -4101,7 +4108,6 @@ function deductSku(line) {
     operator: outboundOperatorName(),
     outboundNo: line.outboundNo,
     relatedOrderNo: line.orderNo,
-    shipmentNo: lineShippingNo(line),
     shippingNo: lineShippingNo(line),
     status: 'Shipped',
     manualReason: isManual ? (line.manualReason || '—') : undefined,
@@ -4329,12 +4335,11 @@ function renderOutboundDetail() {
       <td>${l.spec}</td>
       <td>${l.qty}</td>
       <td>${l.zoneCode}</td>
-      <td>${l.shipmentNo}</td>
       <td>${lineShippingNo(l)}</td>
       <td>${lineTag(l.status)}</td>
       <td>${lineAction(l)}</td>
     </tr>
-  `).join('') || '<tr><td colspan="12" style="text-align:center;color:#999">No lines in this tab</td></tr>';
+  `).join('') || '<tr><td colspan="11" style="text-align:center;color:#999">No lines in this tab</td></tr>';
 }
 
 function setOutboundTab(tab) {
@@ -4532,7 +4537,7 @@ function viewOutboundLine(id) {
       <div class="label">Zone</div><div class="value">${l.zoneCode} ${l.zone}</div>
       <div class="label">Outbound No.</div><div class="value">${l.outboundNo}</div>
       <div class="label">Order No.</div><div class="value">${l.orderNo}</div>
-      <div class="label">Shipment No.</div><div class="value">${l.shipmentNo}</div>
+      <div class="label">Store</div><div class="value">${lineStoreDisplay(l)}</div>
       <div class="label">Shipping No.</div><div class="value">${lineShippingNo(l)}</div>
     </div>`;
   openModal('ob-line-modal');
@@ -4795,7 +4800,7 @@ function runImportOrders() {
   document.getElementById('ob-import-cancel').disabled = true;
   const scope = getWarehouseScope();
   const wh = scope === 'all' ? document.getElementById('ob-import-wh').value : scope;
-  const outboundNo = nextDocNo('OB', wh);
+  const outboundNo = nextOutboundNo();
   let allocated = 0;
   let ignored = 0;
   const seen = new Set();
@@ -4819,7 +4824,6 @@ function runImportOrders() {
       zone: '—',
       zoneCode: '—',
       shippingNo: '—',
-      shipmentNo: '—',
       inboundNo: '—',
       importedAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
       allocatedAt: '',
@@ -4883,7 +4887,6 @@ function runImportTracking() {
   const rows = parseCsv(obTrackCsv);
   let matched = 0;
   let failed = 0;
-  const shipmentByTracking = {};
   rows.forEach(r => {
     const line = outboundLines.find(l =>
       normalizeObStatus(l.status) === 'pending_picking' &&
@@ -4897,9 +4900,7 @@ function runImportTracking() {
       return;
     }
     const tracking = r['Shipping No'] || r['Tracking No'];
-    if (!shipmentByTracking[tracking]) shipmentByTracking[tracking] = nextDocNo('SHP', line.warehouseId);
     line.shippingNo = tracking;
-    line.shipmentNo = shipmentByTracking[tracking];
     if (!deductSku(line)) {
       failed += 1;
       return;
@@ -4959,7 +4960,6 @@ function submitPackAndShip() {
   let fail = 0;
   targets.forEach(l => {
     l.shippingNo = tracking;
-    l.shipmentNo = nextDocNo('SHP', l.warehouseId);
     if (!deductSku(l)) {
       fail += 1;
       return;
@@ -5113,7 +5113,7 @@ function submitManualOutbound() {
     showToast('SKU not found in warehouse STO.', 'error');
     return;
   }
-  const outboundNo = nextDocNo('MO', wh);
+  const outboundNo = nextOutboundNo();
   const reasonLabel = MANUAL_OUTBOUND_REASONS.find(r => r.code === reasonCode)?.label || reasonCode;
   const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
   const pan = linePan({ warehouseId: wh, skuId, pan: null });
@@ -5133,7 +5133,6 @@ function submitManualOutbound() {
     zone: '—',
     zoneCode: '—',
     shippingNo: '—',
-    shipmentNo: '—',
     inboundNo: '—',
     importedAt: now,
     allocatedAt: '',

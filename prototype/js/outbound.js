@@ -18,7 +18,6 @@ let outboundListTab = 'pending_allocation';
 
 let outboundBatches = [];
 let outboundLines = [];
-let obSeq = { OB: 1, SHP: 1, MO: 1 };
 let currentOutboundNo = null;
 let currentObTab = 'all';
 let obOrderCsv = '';
@@ -361,10 +360,20 @@ function ymd(date) {
   return d.toISOString().slice(0, 10).replace(/-/g, '');
 }
 
-function nextDocNo(prefix, warehouseId) {
-  const code = formatCanonicalWarehouseCode(warehouseId);
-  const n = String(obSeq[prefix]++).padStart(4, '0');
-  return `${prefix}${code}${ymd()}${n}`;
+/** Outbound No.: OB + yyyyMMdd + 3-digit seq (import & manual). */
+function nextOutboundNo() {
+  const d = ymd();
+  const prefix = `OB${d}`;
+  let max = 0;
+  const bump = no => {
+    if (!no || !String(no).startsWith(prefix)) return;
+    const tail = String(no).slice(prefix.length);
+    const n = parseInt(tail, 10);
+    if (!Number.isNaN(n)) max = Math.max(max, n);
+  };
+  outboundLines.forEach(l => bump(l.outboundNo));
+  outboundBatches.forEach(b => bump(b.outboundNo));
+  return `${prefix}${String(max + 1).padStart(3, '0')}`;
 }
 
 function storageSku(warehouseId, skuId) {
@@ -419,7 +428,7 @@ function lineTag(status) {
 
 function seedOutbound() {
   const wh = 'SH001';
-  const no = nextDocNo('OB', wh);
+  const no = nextOutboundNo();
   outboundBatches.push({
     outboundNo: no,
     importedAt: '2026-08-21 09:10:00',
@@ -446,7 +455,6 @@ function seedOutbound() {
       zoneCode: '—',
       zone: '—',
       shippingNo: '—',
-      shipmentNo: '—',
       inboundNo: '—',
       importedAt: '2026-08-21 09:10:00',
       allocatedAt: '',
@@ -486,7 +494,6 @@ function occupySku(warehouseId, skuId, qty, outboundNo, orderNo, shop) {
     outboundNo,
     relatedOrderNo: orderNo,
     shippingNo: '—',
-    shipmentNo: '—',
     status: 'Pending Picking',
     shop: (shop || '').trim()
   });
@@ -516,7 +523,6 @@ function deductSku(line) {
     operator: outboundOperatorName(),
     outboundNo: line.outboundNo,
     relatedOrderNo: line.orderNo,
-    shipmentNo: lineShippingNo(line),
     shippingNo: lineShippingNo(line),
     status: 'Shipped',
     manualReason: isManual ? (line.manualReason || '—') : undefined,
@@ -744,12 +750,11 @@ function renderOutboundDetail() {
       <td>${l.spec}</td>
       <td>${l.qty}</td>
       <td>${l.zoneCode}</td>
-      <td>${l.shipmentNo}</td>
       <td>${lineShippingNo(l)}</td>
       <td>${lineTag(l.status)}</td>
       <td>${lineAction(l)}</td>
     </tr>
-  `).join('') || '<tr><td colspan="12" style="text-align:center;color:#999">No lines in this tab</td></tr>';
+  `).join('') || '<tr><td colspan="11" style="text-align:center;color:#999">No lines in this tab</td></tr>';
 }
 
 function setOutboundTab(tab) {
@@ -947,7 +952,7 @@ function viewOutboundLine(id) {
       <div class="label">Zone</div><div class="value">${l.zoneCode} ${l.zone}</div>
       <div class="label">Outbound No.</div><div class="value">${l.outboundNo}</div>
       <div class="label">Order No.</div><div class="value">${l.orderNo}</div>
-      <div class="label">Shipment No.</div><div class="value">${l.shipmentNo}</div>
+      <div class="label">Store</div><div class="value">${lineStoreDisplay(l)}</div>
       <div class="label">Shipping No.</div><div class="value">${lineShippingNo(l)}</div>
     </div>`;
   openModal('ob-line-modal');
@@ -1210,7 +1215,7 @@ function runImportOrders() {
   document.getElementById('ob-import-cancel').disabled = true;
   const scope = getWarehouseScope();
   const wh = scope === 'all' ? document.getElementById('ob-import-wh').value : scope;
-  const outboundNo = nextDocNo('OB', wh);
+  const outboundNo = nextOutboundNo();
   let allocated = 0;
   let ignored = 0;
   const seen = new Set();
@@ -1234,7 +1239,6 @@ function runImportOrders() {
       zone: '—',
       zoneCode: '—',
       shippingNo: '—',
-      shipmentNo: '—',
       inboundNo: '—',
       importedAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
       allocatedAt: '',
@@ -1298,7 +1302,6 @@ function runImportTracking() {
   const rows = parseCsv(obTrackCsv);
   let matched = 0;
   let failed = 0;
-  const shipmentByTracking = {};
   rows.forEach(r => {
     const line = outboundLines.find(l =>
       normalizeObStatus(l.status) === 'pending_picking' &&
@@ -1312,9 +1315,7 @@ function runImportTracking() {
       return;
     }
     const tracking = r['Shipping No'] || r['Tracking No'];
-    if (!shipmentByTracking[tracking]) shipmentByTracking[tracking] = nextDocNo('SHP', line.warehouseId);
     line.shippingNo = tracking;
-    line.shipmentNo = shipmentByTracking[tracking];
     if (!deductSku(line)) {
       failed += 1;
       return;
@@ -1374,7 +1375,6 @@ function submitPackAndShip() {
   let fail = 0;
   targets.forEach(l => {
     l.shippingNo = tracking;
-    l.shipmentNo = nextDocNo('SHP', l.warehouseId);
     if (!deductSku(l)) {
       fail += 1;
       return;
@@ -1528,7 +1528,7 @@ function submitManualOutbound() {
     showToast('SKU not found in warehouse STO.', 'error');
     return;
   }
-  const outboundNo = nextDocNo('MO', wh);
+  const outboundNo = nextOutboundNo();
   const reasonLabel = MANUAL_OUTBOUND_REASONS.find(r => r.code === reasonCode)?.label || reasonCode;
   const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
   const pan = linePan({ warehouseId: wh, skuId, pan: null });
@@ -1548,7 +1548,6 @@ function submitManualOutbound() {
     zone: '—',
     zoneCode: '—',
     shippingNo: '—',
-    shipmentNo: '—',
     inboundNo: '—',
     importedAt: now,
     allocatedAt: '',

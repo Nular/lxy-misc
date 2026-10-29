@@ -53,7 +53,7 @@
 
 | 规则 | 说明 |
 |------|------|
-| 库存行 | Import / Manual 仅允许 `(sku_id, warehouse_code, zone_code)` **已存在** 的 **Storage Zone（STO）** 行 |
+| 库存行 | Import / Manual 仅允许 `(sku_id, warehouse_id, zone_id)` **已存在** 的 **Storage Zone（STO）** 行 |
 | 订单解析 | **SKU ID**（`订单列表.xlsx` 必填）反查商品；**PAN** 可选与 SKU ID 交叉校验；兼容旧 **ItemDesc** 模板 |
 | Manual outbound | **Product Name** 模糊匹配 + **SKU（规格）** 下拉；仅 STO 有货 SKU |
 | 禁止 | Import / Manual 流程中 **INSERT** 商品主数据或库存行 |
@@ -79,7 +79,7 @@
 | **Imported Order**（普通出库） | Import **订单列表.xlsx** | MerchantOrderID | Occupy → Deduct |
 | **Manual outbound**（手工出库） | 工具栏 **Manual outbound** | 固定展示 `(Manual)` | Occupy → Deduct（流水 Type=Manual outbound） |
 
-> **说明**：2026-10 初版 PRD 中的 **Special Outbound（SX 单、确认即扣减）** 已由原型收敛为 **Manual outbound + 标准作业流**；单号前缀使用 **`MO`**（见 §4.2）。
+> **说明**：2026-10 初版 PRD 中的 **Special Outbound（SX 单、确认即扣减）** 已由原型收敛为 **Manual outbound + 标准作业流**；**Outbound No.** 与 Import 共用 **`OB` + 日期 + 3 位**（不再使用 `MO` / `SX` 前缀）。
 
 ### 3.2 列表列「Outbound Type」（展示语义）
 
@@ -98,13 +98,11 @@
 
 | 单据 | 规则 | 示例 |
 |------|------|------|
-| **Outbound No.**（Import 批次） | `OB` + `warehouse_code` + `yyyyMMdd` + 4 位流水；**一次 Import 一个号** | `OBSH001202610210001` |
-| **Outbound No.**（Manual 批次） | `MO` + `warehouse_code` + `yyyyMMdd` + 4 位流水；**一次 Manual 确认一个号** | `MOSH001202610230001` |
-| **Shipment No.** | `SHP` + `warehouse_code` + `yyyyMMdd` + 4 位流水；**每个 Shipping No. 一个**（多行同包裹可共用） | `SHPSH001202610210001` |
+| **Outbound No.** | **`OB` + `yyyyMMdd` + 3 位流水**；Import 与 Manual **同一规则**；一次 Import / 一次 Manual 提交各生成一个号 | `OB202610210001` |
 | **Shipping No.** | 承运商面单号；**Pack & Ship** 或运单回导录入 | `SF1029384756` |
 | **Order No.** | 导入列 **MerchantOrderID**；Manual 为 `(Manual)` | `MO-DEMO-2026` |
 
-`warehouse_code` 为 canonical 5 位（主 PRD §3.2.1）。
+作业行绑定 **`warehouse_id`**、**`zone_id`**（canonical 5 位仓码 + 库区 id，如 `SH001`、`SH001STO`；见主 PRD §3.2.1、§4）。
 
 ---
 
@@ -116,7 +114,7 @@
 | 2 | **Import / Export**：上传 **订单列表.xlsx**；**Use sample file** / **Download sample .xlsx**；导入前 **行级校验面板**（对齐入库 Import 体验） |
 | 3 | **Manual outbound** 弹窗：SKU ID（只读）→ Product Name（模糊）→ SKU（规格）→ QTY、Reason、Remarks |
 | 4 | 行内 / 批量 **Pack & Ship**：表格确认行 + **Shipping No.**（导入单必填，Manual 选填） |
-| 5 | 列表列：Time（日期+时间两行）、**Warehouse**（Admin + All 时）、Outbound No.、SKU ID、Product Name、SKU、**QTY**、**PAN**、Order No.、**Store**（导入字段 `Shop`；Manual outbound 为 —）、**Outbound Type**、Operator、Status、Operation |
+| 5 | 列表列：Time（日期+时间两行）、**Warehouse**（Admin + All 时）、Outbound No.、SKU ID、Product Name、SKU、**QTY**、**PAN**、Order No.、**Store**（源字段 `shop`；Manual outbound 为 —）、**Outbound Type**、Operator、Status、Operation |
 | 6 | 筛选：Order No.、SKU ID、**PAN（8 位）**、Time（`datetime-local`，展示时间 ≥ 筛选时间） |
 | 7 | **Outbound Detail**（按批次）：行表、Export Shipping Order、Import Tracking（可选） |
 | 8 | **On Hold**（缺货/待补货行）列表与 **Re-allocate** |
@@ -148,7 +146,7 @@
 ### 6.3 分配（Confirm Allocation）
 
 - 勾选行批量确认；粒度：**订单行 × SKU**（Import 一行一条作业行）。
-- 成功：`line_status → pending_picking`，写入 **zone_code**（目标 STO），写 **Outbound Occupy**。
+- 成功：`line_status → pending_picking`，写入 **zone_id**（目标 STO），写 **Outbound Occupy**。
 - 失败：保持 **pending_allocation**，提示缺货或 SKU 无 STO 行；**不部分占用**（行级原子）。若本仓不足，后端按**同一 SKU ID** 检索其他仓库 **STO** 可用量并汇总；结果弹层在缺货文案旁展示 **`Other warehouses: {仓库名} {可用量}, …`**（一期仅提示，不自动调拨）。
 - **Pending Allocation** 行支持 **Delete** 删除作业行（未占用、未发运）。
 - 并发：`available ≥ qty`（主 PRD §5）。
@@ -159,7 +157,7 @@
 2. 录入 **Shipping No.**：
    - **Imported Order**：**必填**；
    - **Manual outbound**：**选填**。
-3. 确认：写 **Shipment No.**（按 Shipping No. 聚合）、`line_status → shipped`，写 **Outbound Deduct** 或 **Manual outbound** 流水。
+3. 确认：`line_status → shipped`，写入 **Shipping No.**，写 **Outbound Deduct** 或 **Manual outbound** 流水（**不设 Shipment No.**）。
 
 ### 6.5 缺货与拆单（拍板）
 
@@ -183,7 +181,7 @@
 | **ItemQuantity** | **Qty** | 正整数 |
 | **Product Name / SKU** | — | **不以上传列匹配**；Import 校验表由 **SKU ID 联动展示** |
 | **ItemDesc**（兼容旧模板） | — | 无 SKU ID 列时的遗留格式；新模板 **必须含 SKU ID** |
-| **Shop**（可选） | 作业行 **Store** | Manual outbound 为 **—** |
+| **Shop**（可选，源系统字段名） | UI **Store**；持久化 `shop` | Manual outbound 为 **—** |
 
 - 支持 **.xlsx / .xls / .csv**；xlsx 解析依赖内置 XLSX（与入库一致）。
 - **仓库**：Import 弹窗选仓仅 **Admin + 上下文 All**；仓管固定所属仓。
@@ -238,7 +236,7 @@
 
 ### 8.3 提交结果
 
-- 生成 **Outbound No.（MO…）**、`order_no = (Manual)`、`outbound_type = manual`、`line_status = pending_allocation`。
+- 生成 **Outbound No.（OB…）**、`order_no = (Manual)`、`outbound_type = manual`、`line_status = pending_allocation`。
 - **不立即扣减**；后续与导入行相同：**Confirm Allocation → Pack & Ship**。
 
 ---
@@ -260,7 +258,7 @@
 
 与主 PRD §6：**Time、Warehouse、Zone、SKU ID、Qty、After Change、Type、Related Order No.、Operator** 等。
 
-- **Related Order No.**：出库类为 **Outbound No.**（OB… / MO…）；详情中另展示平台 **Order No.**。
+- **Related Order No.**：出库类为 **Outbound No.**（`OB…`）；详情中另展示平台 **Order No.**。
 
 ### 9.3 流水详情（Record Detail，单页）
 
@@ -268,6 +266,7 @@
 |------|------|
 | Time, Warehouse, Zone, SKU ID, Product Name, SKU, Qty, After Change, Type, Outbound No., Operator | 通用块 |
 | Related Order No. | 电商平台订单号（Manual 为 `(Manual)`） |
+| **Store** | UI 展示；源数据字段 **`shop`**；**Manual outbound** 为 **—**（仅详情，列表 Outbound Tab 无 Store 列） |
 | Shipping No. | 发运后填写 |
 | **Reason, Remarks** | 仅 **Manual outbound** |
 
@@ -322,7 +321,7 @@ Home 首行 **5** 张 KPI 中，下列 **3** 项来自出库（**Outbound No. �
 | 初版 | 本文（原型拍板） |
 |------|----------------|
 | 独立 **Special Outbound** 页，确认即 **Deduct** | **Manual outbound** 弹窗，走 **Pending Allocation → Occupy → Deduct** |
-| 单号 **SX…** | Manual 批次 **MO…**；Import 仍为 **OB…** |
+| 单号 **SX…** / **MO…** | **Outbound No.** 统一 **`OB` + yyyyMMdd + 3 位**（Import / Manual） |
 | 列表无 Outbound Type | 增加 **Outbound Type** 列（§3.2） |
 | 关联 Inbound No. 列（出库列表） | 已移除；入库关联不在出库列表展示 |
 | Import 无校验面板 | **Import validation** 表（对齐入库） |
