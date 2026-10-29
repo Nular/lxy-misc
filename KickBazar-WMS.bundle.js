@@ -3034,7 +3034,7 @@ function renderUnmatchedPanel() {
   panel.hidden = false;
   const hasShipSkip = receiptUnmatched.some(u => String(u.importProductName || '').includes('(Shipping '));
   const shipIntro = hasShipSkip
-    ? `<p class="hint" style="margin:0 0 8px"><strong>Multiple tracking numbers in file.</strong> Upload one shipment at a time—rows tied to other Shipping Nos. were skipped.</p>`
+    ? `<p class="hint" style="margin:0 0 8px"><strong>Multiple Shipping Nos. in file.</strong> Upload one shipment at a time—rows tied to other Shipping Nos. were skipped.</p>`
     : '';
   list.innerHTML = shipIntro + receiptUnmatched.map(u => `<li>Row ${u.row}: ${u.importProductName || u.itemDesc || '—'}</li>`).join('');
 }
@@ -3610,7 +3610,7 @@ let obOrderImportRows = null;
 let obTrackCsv = '';
 
 function lineShippingNo(line) {
-  return line.shippingNo || line.trackingNo || '—';
+  return line.shippingNo || '—';
 }
 
 function outboundOperatorName() {
@@ -3725,9 +3725,9 @@ function resolveOutboundSku(warehouseId, skuId, productName) {
     const row = skuData.find(s =>
       s.skuId === skuId && formatCanonicalWarehouseCode(skuWarehouseId(s)) === whCode
     );
-    if (row) return { skuId: row.skuId, productName: row.productName, spec: row.spec || '—', ok: !!storageSku(warehouseId, skuId) };
+    if (row) return { skuId: row.skuId, productName: row.productName, spec: row.spec || '—', pan: row.pan || '', ok: !!storageSku(warehouseId, skuId) };
     const sto = storageSku(warehouseId, skuId);
-    if (sto) return { skuId: sto.skuId, productName: sto.productName || productName, spec: sto.spec || '—', ok: true };
+    if (sto) return { skuId: sto.skuId, productName: sto.productName || productName, spec: sto.spec || '—', pan: sto.pan || '', ok: true };
     return { skuId, productName: productName || skuId, spec: '—', ok: false, error: 'No Storage Zone row for this SKU in warehouse' };
   }
   if (typeof matchSkusByProductName === 'function') {
@@ -3792,7 +3792,7 @@ function validateAndResolveOutboundRows(warehouseId, rawRows) {
     }
     validRows.push({
       'Order No': r['Order No'],
-      PAN: resolved.pan || pan,
+      PAN: pan || resolved.pan || '',
       Qty: qty,
       'Product Name': resolved.productName,
       'SKU ID': resolved.skuId,
@@ -3897,8 +3897,7 @@ function parseOrderListMatrix(matrix) {
       ? (typeof cellToDisplay === 'function' ? cellToDisplay(line[idxDesc]) : String(line[idxDesc] || '').trim())
       : '';
     if (!orderNo || !skuIdCol) continue;
-    const parsed = itemDesc ? parseOutboundItemDesc(itemDesc, itemQty) : { qty: parseInt(String(itemQty).replace(/,/g, ''), 10) || 0, productName: '', skuId: skuIdCol };
-    const qty = parsed.qty > 0 ? parsed.qty : (parseInt(String(itemQty).replace(/,/g, ''), 10) || 0);
+    const qty = parseInt(String(itemQty).replace(/,/g, ''), 10) || 0;
     const shop = idxShop >= 0
       ? (typeof cellToDisplay === 'function' ? cellToDisplay(line[idxShop]) : String(line[idxShop] || '').trim())
       : '';
@@ -3910,8 +3909,8 @@ function parseOrderListMatrix(matrix) {
       'ItemDesc': itemDesc,
       PAN: pan,
       pan,
-      'SKU ID': skuIdCol || parsed.skuId,
-      'Product Name': parsed.productName,
+      'SKU ID': skuIdCol,
+      'Product Name': '',
       shop
     });
   }
@@ -4352,7 +4351,7 @@ function detailActions(tab) {
     return `<span class="hint">Select lines and confirm allocation to lock stock (Outbound Occupy).</span><button class="btn btn-primary" onclick="confirmAllocationBatch()">Confirm Allocation</button>`;
   }
   if (tab === 'pending_picking') {
-    return `<span class="hint">Pack and enter tracking to ship (Outbound Deduct).</span><button class="btn btn-primary" onclick="openPackTrackingModal()">Pack &amp; Ship</button>`;
+    return `<span class="hint">Pack and enter Shipping No. to ship (Outbound Deduct).</span><button class="btn btn-primary" onclick="openPackTrackingModal()">Pack &amp; Ship</button>`;
   }
   return '';
 }
@@ -4553,14 +4552,14 @@ function confirmExportShippingOrder() {
   const ext = document.getElementById('ob-export-format').value;
   const batch = outboundBatches.find(b => b.outboundNo === currentOutboundNo);
   const lines = outboundLines.filter(l => l.outboundNo === currentOutboundNo && normalizeObStatus(l.status) === 'pending_picking');
-  const header = 'Outbound No,Order No,SKU ID,Product Name,Qty,Warehouse,Zone,Tracking No';
+  const header = 'Outbound No,Order No,SKU ID,Product Name,Qty,Warehouse,Zone,Shipping No';
   const csv = [header].concat(lines.map(l =>
     [l.outboundNo, l.orderNo, l.skuId, l.productName, l.qty, formatCanonicalWarehouseCode(l.warehouseId), l.zoneCode, ''].join(',')
   )).join('\n');
   const name = `ShippingOrder_${batch ? batch.warehouseCode : 'WH'}_${ymd()}.${ext === 'csv' ? 'csv' : 'csv'}`;
   downloadTextFile(name, csv);
   closeModal('ob-export-modal');
-  showToast(`Export successful. Fill Tracking No. and import it on Allocated. File: ${name}`, 'success');
+  showToast(`Export successful. Fill Shipping No. and import via Import Shipping No. File: ${name}`, 'success');
 }
 
 function renderOnHold() {
@@ -4592,14 +4591,6 @@ function ensureOutboundImportWarehouseOptions() {
   select.innerHTML = list.map(w => `<option value="${w.id}">${formatCanonicalWarehouseCode(w.id)} — ${w.name}</option>`).join('');
 }
 
-function outboundSampleItemDescsForWarehouse(warehouseId) {
-  const wh = formatCanonicalWarehouseCode(warehouseId);
-  const stoRows = listStoSkusForWarehouse(wh).filter(s => (s.available ?? 0) > 0 || (s.total ?? 0) > 0);
-  const pick = stoRows.slice(0, 2);
-  if (!pick.length) return null;
-  return pick.map(s => `1*${s.productName}-${s.skuId}`);
-}
-
 function buildOutboundSampleCsv(warehouseId) {
   const matrix = outboundSampleMatrixForWarehouse(warehouseId);
   if (!matrix) return null;
@@ -4607,8 +4598,6 @@ function buildOutboundSampleCsv(warehouseId) {
 }
 
 function outboundSampleMatrixForWarehouse(warehouseId) {
-  const descs = outboundSampleItemDescsForWarehouse(warehouseId);
-  if (!descs || !descs.length) return null;
   const orderId = 'MO-DEMO-2026';
   const pick = listStoSkusForWarehouse(warehouseId).filter(s => (s.available ?? 0) > 0 || (s.total ?? 0) > 0).slice(0, 2);
   if (!pick.length) return null;
@@ -4734,7 +4723,7 @@ function onOutboundFilePicked(input, kind) {
       if (!ok) {
         obImportValidatedRows = null;
         document.getElementById('ob-import-btn').disabled = true;
-        document.getElementById('ob-import-file-msg').textContent = 'Required: SKU ID, PAN, MerchantOrderID, ItemQuantity (or legacy ItemDesc).';
+        document.getElementById('ob-import-file-msg').textContent = 'Required: SKU ID, MerchantOrderID, ItemQuantity (legacy ItemDesc-only templates need a SKU ID column).';
         renderOutboundImportValidation({ errors: [], validRows: [] });
         return;
       }
@@ -4743,7 +4732,7 @@ function onOutboundFilePicked(input, kind) {
     } else {
       obTrackCsv = String(reader.result || '');
       document.getElementById('ob-track-preview').textContent = obTrackCsv.slice(0, 800);
-      document.getElementById('ob-track-btn').disabled = !/shipping|tracking/i.test(obTrackCsv);
+      document.getElementById('ob-track-btn').disabled = !/shipping\s*no/i.test(obTrackCsv);
     }
   };
   reader.readAsText(file);
@@ -4765,24 +4754,26 @@ function normalizeImportRows(raw) {
   return raw.map(r => {
     const orderNo = r['MerchantOrderID'] || r['Order No'];
     const pan = String(r.PAN || r.pan || '').trim();
-    if (orderNo || r.ItemDesc || pan || r['SKU ID']) {
-      const parsed = r.ItemDesc
-        ? parseOutboundItemDesc(r.ItemDesc, r.ItemQuantity || r.Qty)
-        : { qty: parseInt(r.Qty || r.ItemQuantity, 10), productName: r['Product Name'] || '', skuId: r['SKU ID'] || '' };
-      const qty = parsed.qty > 0 ? parsed.qty : (parseInt(r.Qty || r.ItemQuantity, 10) || 0);
-      return {
-        'Order No': orderNo,
-        PAN: pan,
-        pan,
-        Qty: qty,
-        'Product Name': parsed.productName,
-        'SKU ID': parsed.skuId || r['SKU ID'] || '',
-        'Order Time': r['Order Time'] || '',
-        Specification: r.Specification || '—',
-        shop: (r.shop || r.Shop || '').trim()
-      };
+    let skuId = String(r['SKU ID'] || '').trim();
+    let productName = r['Product Name'] || '';
+    let qty = parseInt(String(r.Qty || r.ItemQuantity || '').replace(/,/g, ''), 10) || 0;
+    if (!skuId && r.ItemDesc) {
+      const parsed = parseOutboundItemDesc(r.ItemDesc, r.ItemQuantity || r.Qty);
+      skuId = parsed.skuId;
+      productName = parsed.productName;
+      if (!qty && parsed.qty) qty = parsed.qty;
     }
-    return r;
+    return {
+      'Order No': orderNo,
+      PAN: pan,
+      pan,
+      Qty: qty,
+      'Product Name': productName,
+      'SKU ID': skuId,
+      'Order Time': r['Order Time'] || '',
+      Specification: r.Specification || '—',
+      shop: (r.shop || r.Shop || '').trim()
+    };
   });
 }
 
@@ -4878,7 +4869,7 @@ function openImportTracking() {
 
 function fillSampleTrackCsv() {
   const lines = outboundLines.filter(l => l.outboundNo === currentOutboundNo && normalizeObStatus(l.status) === 'pending_picking');
-  obTrackCsv = 'Outbound No,Order No,SKU ID,Tracking No\n' + lines.map((l, i) => `${l.outboundNo},${l.orderNo},${l.skuId},TRK${ymd()}${String(i + 1).padStart(4, '0')}`).join('\n');
+  obTrackCsv = 'Outbound No,Order No,SKU ID,Shipping No\n' + lines.map((l, i) => `${l.outboundNo},${l.orderNo},${l.skuId},SF${ymd()}${String(i + 1).padStart(4, '0')}`).join('\n');
   document.getElementById('ob-track-preview').textContent = obTrackCsv || 'No allocated lines';
   document.getElementById('ob-track-btn').disabled = !lines.length;
 }
@@ -4899,8 +4890,12 @@ function runImportTracking() {
       failed += 1;
       return;
     }
-    const tracking = r['Shipping No'] || r['Tracking No'];
-    line.shippingNo = tracking;
+    const shippingNo = (r['Shipping No'] || '').trim();
+    if (!shippingNo) {
+      failed += 1;
+      return;
+    }
+    line.shippingNo = shippingNo;
     if (!deductSku(line)) {
       failed += 1;
       return;
@@ -4941,7 +4936,7 @@ function openPackTrackingModal(onlyId) {
 
 function submitPackAndShip() {
   const onlyId = document.getElementById('ob-pack-line-id').value;
-  const tracking = (document.getElementById('ob-pack-shipping').value || '').trim();
+  const shippingNo = (document.getElementById('ob-pack-shipping').value || '').trim();
   const ids = onlyId ? [onlyId] : selectedLineIds();
   let targets = outboundLines.filter(l => normalizeObStatus(l.status) === 'pending_picking' && (!ids.length || ids.includes(l.id)));
   if (currentOutboundNo && document.getElementById('page-outbound-detail')?.classList.contains('active')) {
@@ -4952,14 +4947,14 @@ function submitPackAndShip() {
     return;
   }
   const needsShipping = targets.some(l => l.outboundType !== 'manual');
-  if (needsShipping && !tracking) {
+  if (needsShipping && !shippingNo) {
     showToast('Shipping No. is required for imported order lines.', 'warning');
     return;
   }
   let ok = 0;
   let fail = 0;
   targets.forEach(l => {
-    l.shippingNo = tracking;
+    l.shippingNo = shippingNo;
     if (!deductSku(l)) {
       fail += 1;
       return;

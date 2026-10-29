@@ -3451,7 +3451,7 @@ tbody tr.selected {
       </div>
       <div class="modal-body">
         <div id="ob-import-step-upload">
-          <p class="hint"><strong>订单列表.xlsx</strong>：<code>SKU ID</code>（<strong>匹配主键</strong>）、<code>PAN</code>（可选校验）、<code>MerchantOrderID</code> → Order No.，<code>ItemQuantity</code> → Qty；Product Name / SKU 由 SKU ID 联动。Admin + All 时选 Warehouse。</p>
+          <p class="hint"><strong>订单列表.xlsx</strong> 本期：<code>SKU ID</code>（<strong>必填，定位 STO 库存</strong>）、<code>PAN</code>（可选校验）、<code>MerchantOrderID</code> → Order No.，<code>ItemQuantity</code> → Qty；Product Name / SKU 由 SKU ID 反查展示。Admin + All 时选 Warehouse。</p>
           <div class="form-group" id="ob-import-wh-wrap">
             <label>Warehouse</label>
             <select id="ob-import-wh" onchange="revalidateOutboundImportPreview()"></select>
@@ -3484,11 +3484,11 @@ tbody tr.selected {
   <div class="modal-overlay" id="ob-track-modal">
     <div class="modal modal-md">
       <div class="modal-header">
-        <span class="modal-title">Import Tracking No.</span>
+        <span class="modal-title">Import Shipping No.</span>
         <button class="modal-close" onclick="closeModal('ob-track-modal')">&times;</button>
       </div>
       <div class="modal-body">
-        <p class="hint">After courier label is ready. Columns: Order No, SKU ID, Tracking No. Lines move to Awaiting Pickup. Inventory unchanged until Confirm Shipment.</p>
+        <p class="hint">After courier label is ready. CSV columns: Outbound No, Order No, SKU ID, <strong>Shipping No.</strong> Matching lines ship and deduct inventory (same as Pack &amp; Ship).</p>
         <input type="file" id="ob-track-file" accept=".csv,text/csv" onchange="onOutboundFilePicked(this, 'track')">
         <button class="btn" type="button" onclick="fillSampleTrackCsv()">Use sample for selected Allocated lines</button>
         <pre id="ob-track-preview" class="ob-preview"></pre>
